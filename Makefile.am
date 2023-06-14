@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4 -I .
 
-SUBDIRS = include lib bin vmod etc doc man
+SUBDIRS = include lib bin vmod etc doc man contrib
 
 TESTS = tools/magic_check.sh
 
@@ -26,6 +26,7 @@ EXTRA_DIST = \
 	varnishapi.pc.in \
 	varnish.m4 \
 	varnish-legacy.m4 \
+	vsc.am \
 	vtc.am \
 	wflags.py
 
@@ -35,6 +36,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
+    --with-contrib \
     CFLAGS="$(EXTCFLAGS)"
 
 if WITH_UNWIND
@@ -80,22 +82,11 @@ gcov_digest:
 witness.dot: all
 	$(MAKE) check AM_VTC_LOG_FLAGS=-pdebug=+witness
 	$(AM_V_GEN) $(srcdir)/tools/witness.sh witness.dot bin/varnishtest/ \
-		lib/libvmod_*/
+		vmod/
 
 .dot.svg:
-if ! HAVE_DOT
-	@echo ==================================================
-	@echo You need graphviz installed to generate svg output
-	@echo ==================================================
-	@false
-else
 	$(AM_V_GEN) $(DOT) -Tsvg $< >$@
-endif
 
-if HAVE_DOT
 witness: witness.svg
-else
-witness: witness.dot
-endif
 
 .PHONY: cscope witness.dot

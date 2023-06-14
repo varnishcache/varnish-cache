@@ -233,12 +233,14 @@ MCH_Fd_Inherit(int fd, const char *what)
  * Listen to stdout+stderr from the child
  */
 
+static const char *whining_child = C_ERR;
+
 static int v_matchproto_(vlu_f)
 child_line(void *priv, const char *p)
 {
 	(void)priv;
 
-	MGT_Complain(C_INFO, "Child (%jd) said %s", (intmax_t)child_pid, p);
+	MGT_Complain(whining_child, "Child (%jd) said %s", (intmax_t)child_pid, p);
 	return (0);
 }
 
@@ -292,7 +294,7 @@ child_poker(const struct vev *e, int what)
 static void
 mgt_launch_child(struct cli *cli)
 {
-	pid_t pid;
+	pid_t pid, pidr;
 	unsigned u;
 	char *p;
 	struct vev *e;
@@ -349,6 +351,10 @@ mgt_launch_child(struct cli *cli)
 		assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(heritage.std_fd, STDERR_FILENO) == STDERR_FILENO);
 
+		setbuf(stdout, NULL);
+		setbuf(stderr, NULL);
+		printf("Child starts\n");
+
 		/*
 		 * Close all FDs the child shouldn't know about
 		 *
@@ -378,6 +384,10 @@ mgt_launch_child(struct cli *cli)
 		heritage.cls = mgt_cls;
 		heritage.ident = VSB_data(vident) + 1;
 
+		vext_load();
+
+		STV_Init();
+
 		VJ_subproc(JAIL_SUBPROC_WORKER);
 
 		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
@@ -385,7 +395,7 @@ mgt_launch_child(struct cli *cli)
 
 		/*
 		 * We pass these two params because child_main needs them
-		 * Well before it has found its own param struct.
+		 * well before it has found its own param struct.
 		 */
 		child_main(mgt_param.sigsegv_handler,
 		    mgt_param.wthread_stacksize);
@@ -416,6 +426,22 @@ mgt_launch_child(struct cli *cli)
 
 	child_std_vlu = VLU_New(child_line, NULL, 0);
 	AN(child_std_vlu);
+
+	/* Wait for cache/cache_cli.c::CLI_Run() to check in */
+	if (VCLI_ReadResult(child_cli_in, &u, NULL, mgt_param.cli_timeout)) {
+		assert(u == CLIS_COMMS);
+		pidr = waitpid(pid, &i, 0);
+		assert(pidr == pid);
+		do {
+			i = VLU_Fd(child_std_vlu, child_output);
+		} while (i == 0);
+		MGT_Complain(C_ERR, "Child failed on launch");
+		exit(1);		// XXX Harsh ?
+	} else {
+		assert(u == CLIS_OK);
+		fprintf(stderr, "Child launched OK\n");
+	}
+	whining_child = C_INFO;
 
 	AZ(ev_listen);
 	e = VEV_Alloc();

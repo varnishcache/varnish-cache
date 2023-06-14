@@ -41,24 +41,53 @@
 #include "vus.h"
 #include "vtcp.h"
 
+static int
+sun_init(struct sockaddr_un *uds, const char *path, const char **err)
+{
+	AN(uds);
+	AN(path);
+	assert(VUS_is(path));
+
+	if (err)
+		*err = NULL;
+
+	if (strlen(path) + 1 > sizeof(uds->sun_path)) {
+		errno = ENAMETOOLONG;
+		if (err)
+			*err = "Path too long for a Unix domain socket";
+		return (-1);
+	}
+	if (! strcmp(path, "@")) {
+		errno = EINVAL;
+		if (err)
+			*err = "The empty abstract socket name is not"
+			    " supported";
+		return (-1);
+	}
+	memset(uds->sun_path, 0, sizeof(uds->sun_path));
+	if (*path == '@')
+		bprintf(uds->sun_path, "%c%s", 0, path + 1);
+	else
+		bprintf(uds->sun_path, "%s", path);
+	uds->sun_family = PF_UNIX;
+	return (0);
+}
+
 int
 VUS_resolver(const char *path, vus_resolved_f *func, void *priv,
 	     const char **err)
 {
 	struct sockaddr_un uds;
-	int ret = 0;
-
-	AN(path);
-	assert(*path == '/');
+	int ret;
 
 	AN(err);
-	*err = NULL;
-	if (strlen(path) + 1 > sizeof(uds.sun_path)) {
-		*err = "Path too long for a Unix domain socket";
-		return (-1);
-	}
-	bprintf(uds.sun_path, "%s", path);
-	uds.sun_family = PF_UNIX;
+
+	ret = sun_init(&uds, path, err);
+	if (ret)
+		return (ret);
+
+	assert(uds.sun_path[1] != '\0');
+
 	if (func != NULL)
 		ret = func(priv, &uds);
 	return (ret);
@@ -68,7 +97,9 @@ int
 VUS_bind(const struct sockaddr_un *uds, const char **errp)
 {
 	int sd, e;
-	socklen_t sl = sizeof(*uds);
+	socklen_t sl;
+
+	sl = VUS_socklen(uds);
 
 	if (errp != NULL)
 		*errp = NULL;
@@ -106,12 +137,18 @@ VUS_connect(const char *path, int msec)
 	int s, i;
 	struct pollfd fds[1];
 	struct sockaddr_un uds;
-	socklen_t sl = (socklen_t) sizeof(uds);
+	socklen_t sl;
 
 	if (path == NULL)
 		return (-1);
-	uds.sun_family = PF_UNIX;
-	bprintf(uds.sun_path, "%s", path);
+	i = sun_init(&uds, path, NULL);
+	if (i)
+		return (i);
+
+	assert(uds.sun_path[1] != '\0');
+
+	sl = VUS_socklen(&uds);
+
 	AN(sl);
 
 	s = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -153,4 +190,20 @@ VUS_connect(const char *path, int msec)
 	}
 
 	return (VTCP_connected(s));
+}
+
+socklen_t
+VUS_socklen(const struct sockaddr_un *uds)
+{
+	socklen_t sl;
+	const char *p;
+	if (*uds->sun_path)
+		sl = sizeof(*uds);
+	else {
+		p = strchr(uds->sun_path + 1, '\0');
+		assert(p != NULL);
+		sl = p - (const char*)uds;
+	}
+	assert(sl <= sizeof(*uds));
+	return sl;
 }

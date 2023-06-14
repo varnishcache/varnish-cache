@@ -1,0 +1,56 @@
+varnishtest "VRB_Ignore and connection close"
+
+server s1 {
+	rxreq
+	txresp -body HIT
+} -start
+
+varnish v1 -arg "-p timeout_idle=1" -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/synth") {
+			return (synth(200, "SYNTH"));
+		}
+	}
+} -start
+
+# Prime an object
+client c1 {
+	txreq -url /hit
+	rxresp
+	expect resp.status == 200
+	expect resp.body == HIT
+} -run
+
+# Test synth
+client c2 {
+	txreq -req POST -url /synth -hdr "Content-Length: 2"
+	# Send 1 byte
+	send a
+	# Wait timeout_idle
+	delay 2
+	# Send 1 byte
+	send b
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == SYNTH
+	expect resp.http.connection == close
+	timeout 0.5
+	expect_close
+} -run
+
+# Test cache hit
+client c3 {
+	txreq -req GET -url /hit -hdr "Content-Length: 2"
+	# Send 1 byte
+	send a
+	# Wait timeout_idle
+	delay 2
+	# Send 1 byte
+	send b
+	rxresp
+	expect resp.status == 200
+	expect resp.body == HIT
+	expect resp.http.connection == close
+	timeout 0.5
+	expect_close
+} -run

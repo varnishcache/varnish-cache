@@ -1,0 +1,83 @@
+varnishtest "Test backend IMS with weak and strong LM"
+
+server s1 {
+	rxreq
+	txresp -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -nodate -body "1"
+
+	# When origin does not send a Date, varnish inserts one, prompting IMS
+	rxreq
+	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
+	txresp -status 304 -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr "Date: Wed, 11 Sep 2013 13:36:55 GMT" \
+
+	# LM was the same as Date
+	rxreq
+	expect req.http.if-modified-since == <undef>
+	txresp -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr "Date: Wed, 11 Sep 2013 13:36:56 GMT" \
+		-body "2"
+
+	# LM was one second older than Date
+	rxreq
+	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
+	txresp -status 304 -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr "Date: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr {ETag: "foo"}
+
+	# LM was the same as Date, but we had an ETag, prompting INM
+	rxreq
+	expect req.http.if-modified-since == <undef>
+	expect req.http.if-none-match == {"foo"}
+	txresp -status 304 -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr "Date: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr {ETag: "foo"}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1ms;
+		set beresp.grace = 0s;
+		set beresp.keep = 1m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "1"
+	expect resp.http.was-304 == "false"
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "1"
+	expect resp.http.was-304 == "true"
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "2"
+	expect resp.http.was-304 == "false"
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "2"
+	expect resp.http.was-304 == "true"
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "2"
+	expect resp.http.was-304 == "true"
+} -run

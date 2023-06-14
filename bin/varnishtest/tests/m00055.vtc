@@ -1,0 +1,59 @@
+varnishtest "Test $Restrict scope"
+
+feature topbuild
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+
+varnish v1 -arg "-pvmod_path=${tmpdir}" -vcl+backend {} -start
+
+
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
+filewrite -a ${tmpdir}/libvmod_wrong.so {
+[
+	[
+	    "$VMOD",
+	    "1.0",
+	    "wrong",
+	    "Vmod_vmod_wrong_Func",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "17",
+	    "0"
+	],
+	[
+	    "$CPROTO",
+	    "struct Vmod_vmod_wrong_Func {",
+	    "",
+	    "}"
+	],
+	[
+	    "$FUNC",
+	    "test",
+	    [
+			[
+				"VOID"
+			],
+	    "Vmod_vmod_wrong_Func.test",
+	    ""
+	    ]
+	],
+	[
+	    "$RESTRICT",
+	    [
+			"vcl_recv",
+			"foo",
+			"deliver"
+	    ]
+	]
+]
+}
+
+filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
+
+varnish v1 -errvcl {invalid scope for $Restrict: foo} { import wrong; }
+
+shell "rm -f ${tmpdir}/libvmod_wrong.so ${tmpdir}wrong.vcl"

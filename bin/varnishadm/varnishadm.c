@@ -124,6 +124,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 	if (status == CLIS_AUTH) {
 		if (S_arg == NULL) {
 			fprintf(stderr, "Authentication required\n");
+			free(answer);
 			closefd(&sock);
 			return (-1);
 		}
@@ -132,6 +133,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 			fprintf(stderr, "Cannot open \"%s\": %s\n",
 			    S_arg, strerror(errno));
 			closefd(&sock);
+			free(answer);
 			return (-1);
 		}
 		VCLI_AuthResponse(fd, answer, buf);
@@ -172,8 +174,10 @@ pass_answer(int fd, enum pass_mode_e mode)
 
 	u = VCLI_ReadResult(fd, &status, &answer, timeout);
 	if (u) {
-		if (status == CLIS_COMMS)
-			RL_EXIT(0);
+		if (status == CLIS_COMMS) {
+			fprintf(stderr, "%s\n", answer);
+			RL_EXIT(2);
+		}
 		if (answer)
 			fprintf(stderr, "%s\n", answer);
 		RL_EXIT(1);
@@ -253,9 +257,9 @@ command_generator (const char *text, int state)
 			return (NULL);
 		}
 		jsn_cmds = vjsn_parse(answer, &err);
+		free(answer);
 		if (err != NULL)
 			return (NULL);
-		free(answer);
 		AN(jsn_cmds);
 		AN(jsn_cmds->value);
 		assert (vjsn_is_array(jsn_cmds->value));
@@ -302,6 +306,7 @@ interactive(int sock)
 {
 	struct pollfd fds[2];
 	int i;
+	unsigned status;
 	line_sock = sock;
 	rl_already_prompted = 1;
 	rl_callback_handler_install("varnish> ", send_line);
@@ -322,8 +327,10 @@ interactive(int sock)
 		if (fds[0].revents & POLLIN) {
 			/* Get rid of the prompt, kinda hackish */
 			printf("\r           \r");
-			(void)pass_answer(fds[0].fd, pass_interactive);
+			status = pass_answer(fds[0].fd, pass_interactive);
 			rl_forced_update_display();
+			if (status == CLIS_CLOSE)
+				RL_EXIT(0);
 		}
 		if (fds[1].revents & POLLIN) {
 			rl_callback_read_char();

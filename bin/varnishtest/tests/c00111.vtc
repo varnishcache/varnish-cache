@@ -1,0 +1,29 @@
+varnishtest "LRU error without transit buffer"
+
+server s1 -repeat 2 {
+	non_fatal
+	rxreq
+	txresp -bodylen 1850000
+} -start
+
+varnish v1 -arg "-s Transient=malloc,1m" -vcl+backend { } -start
+
+client c1 {
+	non_fatal
+	txreq -method POST
+	rxresp
+} -run
+
+varnish v1 -vsl_catchup
+varnish v1 -expect fetch_failed == 1
+
+varnish v1 -cliok "param.set transit_buffer 4k"
+
+client c2 {
+	txreq -method POST
+	rxresp
+} -run
+
+varnish v1 -vsl_catchup
+varnish v1 -expect s_fetch == 2
+varnish v1 -expect fetch_failed == 1

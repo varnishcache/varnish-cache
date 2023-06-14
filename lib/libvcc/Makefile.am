@@ -30,6 +30,8 @@ libvcc_la_SOURCES = \
 	vcc_utils.c \
 	vcc_var.c \
 	vcc_vmod.c \
+	vcc_vmod.h \
+	vcc_vmod_sym.c \
 	vcc_xref.c
 
 dist_noinst_SCRIPTS = \

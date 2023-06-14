@@ -190,14 +190,15 @@ failedtests () (
 	test ! -d $LOGDIR &&
 	LOGDIR="bin/varnishtest/tests"
 
-	grep -l ':test-result: FAIL' "$LOGDIR"/*.trs |
+	find . -name '*.trs' -print | xargs grep -l ':test-result: FAIL' |
 	while read trs
 	do
 		name=`basename "${trs}" .trs`
-		vtc="${name}.vtc"
+		vtc=`echo $trs | sed -e 's/trs$/vtc/' -e 's/.*sub\///' `
+		logfile=`echo $trs | sed -e 's/trs$/log/'`
 		log="${name}.log"
-		rev=`git log -n 1 --pretty=format:%H "${VTCDIR}/${vtc}"`
-		cp "${LOGDIR}/${log}" "${REPORTDIR}/_${log}"
+		rev=`git log -n 1 --pretty=format:%H "${vtc}"`
+		cp "${logfile}" "${REPORTDIR}/_${log}"
 		echo "VTCGITREV ${name} ${rev}"
 		echo "MANIFEST _${log}"
 	done

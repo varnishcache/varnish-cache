@@ -3,21 +3,6 @@ varnishtest "Check that max_restarts outside vcl_recv works and that we don't fa
 server s1 {
 	rxreq
 	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
 } -start
 
 varnish v1 -vcl+backend {

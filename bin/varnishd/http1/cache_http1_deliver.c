@@ -72,7 +72,9 @@ v1d_error(struct req *req, const char *msg)
 	    "Server: Varnish\r\n"
 	    "Connection: close\r\n\r\n";
 
-	VSLb(req->vsl, SLT_Error, "%s", msg);
+	AZ(req->wrk->v1l);
+
+	VSLbs(req->vsl, SLT_Error, TOSTRAND(msg));
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
 	VSLb(req->vsl, SLT_RespStatus, "500");
 	VSLb(req->vsl, SLT_RespReason, "Internal Server Error");
@@ -121,8 +123,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
 		if (VDP_Push(ctx, req->vdc, req->ws, &v1d_vdp, NULL)) {
-			v1d_error(req, "workspace_thread overflow");
-			AZ(req->wrk->v1l);
+			v1d_error(req, "Failure to push v1d processor");
 			return;
 		}
 	}
@@ -137,14 +138,12 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		return;
 	}
 
-	AZ(req->wrk->v1l);
 	V1L_Open(req->wrk, req->wrk->aws, &req->sp->fd, req->vsl,
 	    req->t_prev + SESS_TMO(req->sp, send_timeout),
 	    cache_param->http1_iovs);
 
 	if (WS_Overflowed(req->wrk->aws)) {
 		v1d_error(req, "workspace_thread overflow");
-		AZ(req->wrk->v1l);
 		return;
 	}
 
@@ -164,7 +163,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	AZ(req->wrk->v1l);
 
 	req->acct.resp_hdrbytes += hdrbytes;
-	req->acct.resp_bodybytes += VDP_Close(req->vdc);
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 
 	if (sc == SC_NULL && err && req->sp->fd >= 0)
 		sc = SC_REM_CLOSE;

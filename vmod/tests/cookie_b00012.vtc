@@ -27,7 +27,7 @@ client c1 {
 	expect resp.http.X-foo == resp.http.X-bar
 
 	expect resp.http.X-baz != resp.http.X-foo
-	expect resp.http.X-baz == "biscuit=standard; empire=jellytots;"
+	expect resp.http.X-baz == "biscuit=standard; empire=jellytots"
 
 	expect resp.http.X-qux == ""
 } -run

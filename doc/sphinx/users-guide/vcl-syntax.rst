@@ -99,10 +99,10 @@ Built in subroutines
 
 Varnish has quite a few built-in subroutines that are called for each
 transaction as it flows through Varnish. These built-in subroutines are
-all named ``vcl_*`` and are explained in :ref:`vcl-built-in-subs`.
+all named ``vcl_*`` and are explained in :ref:`vcl_steps`.
 
 Processing in built-in subroutines ends with ``return (<action>)``
-(see :ref:`user-guide-vcl_actions`).
+(see :ref:`vcl_actions`).
 
 The :ref:`vcl-built-in-code` also contains custom assistant subroutines
 called by the built-in subroutines, also prefixed with ``vcl_``.
@@ -128,9 +128,9 @@ subroutine's name::
 Custom subroutines in VCL do not take arguments, nor do they return
 values.
 
-``return (<action>)`` (see :ref:`user-guide-vcl_actions`) as shown in
+``return (<action>)`` (see :ref:`vcl_actions`) as shown in
 the example above returns all the way from the top level built in
-subroutine (see :ref:`vcl-built-in-subs`) which, possibly through
+subroutine (see :ref:`vcl_steps`) which, possibly through
 multiple steps, lead to the call of the custom subroutine.
 
 ``return`` without an action resumes execution after the ``call``

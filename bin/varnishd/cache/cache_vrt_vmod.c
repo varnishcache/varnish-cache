@@ -132,7 +132,7 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 		    strcmp(d->name, nm) ||
 		    d->func == NULL ||
 		    d->func_len <= 0 ||
-		    d->proto == NULL ||
+		    d->proto != NULL ||
 		    d->json == NULL) {
 			VSB_printf(ctx->msg, "Loading vmod %s from %s (%s):\n",
 			    nm, backup, path);

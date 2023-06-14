@@ -15,6 +15,7 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		objx.enum(martin);
 		set resp.http.foo = objx.foo("");
+		set resp.http.bar = objx.bar("");
 	}
 } -start
 
@@ -23,4 +24,5 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.foo == "BOO"
+	expect resp.http.bar == "BOO"
 } -run

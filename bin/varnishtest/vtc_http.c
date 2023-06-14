@@ -389,7 +389,7 @@ cmd_http_expect_pattern(CMD_ARGS)
 		if (*p != t)
 			vtc_fatal(hp->vl,
 			    "EXPECT PATTERN FAIL @%zd should 0x%02x is 0x%02x",
-			    p - hp->body, t, *p);
+			    (ssize_t) (p - hp->body), t, *p);
 		t += 1;
 		t &= ~0x08;
 	}
@@ -496,12 +496,12 @@ http_rxchar(struct http *hp, int n, int eof)
 		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, hp->timeout);
+		i = poll(pfd, 1, (int)(hp->timeout * 1000));
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0) {
 			vtc_log(hp->vl, hp->fatal,
-			    "HTTP rx timeout (fd:%d %u ms)",
+			    "HTTP rx timeout (fd:%d %.3fs)",
 			    hp->sess->fd, hp->timeout);
 			continue;
 		}
@@ -769,7 +769,7 @@ cmd_http_gunzip(CMD_ARGS)
 
 static char* const *
 http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
-    char *body, unsigned nohost)
+    char *body, unsigned nohost, unsigned nodate)
 {
 	long bodylen = 0;
 	char *b, *c;
@@ -785,9 +785,16 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			nolen = 1;
 		} else if (!strcmp(*av, "-nohost")) {
 			nohost = 1;
+		} else if (!strcmp(*av, "-nodate")) {
+			nodate = 1;
 		} else if (!strcmp(*av, "-hdr")) {
+			if (!strncasecmp(av[1], "Content-Length:", 15) ||
+			    !strncasecmp(av[1], "Transfer-Encoding:", 18))
+				nolen = 1;
 			if (!strncasecmp(av[1], "Host:", 5))
 				nohost = 1;
+			if (!strncasecmp(av[1], "Date:", 5))
+				nodate = 1;
 			VSB_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 		} else if (!strcmp(*av, "-hdrlen")) {
@@ -832,34 +839,24 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			body = synth_body(av[1], 0);
 			bodylen = strlen(body);
 			av++;
-		} else if (!strcmp(*av, "-gzipresidual")) {
-			hp->gzipresidual = strtoul(av[1], NULL, 0);
-			av++;
-		} else if (!strcmp(*av, "-gziplevel")) {
-			hp->gziplevel = strtoul(av[1], NULL, 0);
-			av++;
-		} else if (!strcmp(*av, "-gziplen")) {
-			assert(body == nullbody);
-			free(body);
-			b = synth_body(av[1], 1);
-			vtc_gzip(hp, b, &body, &bodylen);
-			free(b);
-			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
-			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
-			av++;
-		} else if (!strcmp(*av, "-gzipbody")) {
-			assert(body == nullbody);
-			free(body);
-			vtc_gzip(hp, av[1], &body, &bodylen);
-			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
-			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
-			av++;
+		} else if (!strncmp(*av, "-gzip", 5)) {
+			l = vtc_gzip_cmd(hp, av, &body, &bodylen);
+			if (l == 0)
+				break;
+			av += l;
+			if (l > 1)
+				VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 		} else
 			break;
 	}
 	if (!nohost) {
 		VSB_cat(hp->vsb, "Host: ");
 		macro_cat(vl, hp->vsb, "localhost", NULL);
+		VSB_cat(hp->vsb, nl);
+	}
+	if (!nodate) {
+		VSB_cat(hp->vsb, "Date: ");
+		macro_cat(vl, hp->vsb, "date", NULL);
 		VSB_cat(hp->vsb, nl);
 	}
 	if (body != NULL && !nolen)
@@ -906,10 +903,17 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         following ones.
  *
  *         \-nohost
- *                 Don't include a Host header in the request.
+ *                 Don't include a Host header in the request. Also Implied
+ *                 by the addition of a Host header with ``-hdr``.
  *
  *         \-nolen
- *                 Don't include a Content-Length header.
+ *                 Don't include a Content-Length header. Also implied by the
+ *                 addition of a Content-Length or Transfer-Encoding header
+ *                 with ``-hdr``.
+ *
+ *         \-nodate
+ *                 Don't include a Date header in the response. Also implied
+ *                 by the addition of a Date header with ``-hdr``.
  *
  *         \-hdr STRING
  *                 Add STRING as a header, it must follow this format:
@@ -985,7 +989,7 @@ cmd_http_txresp(CMD_ARGS)
 	/* send a "Content-Length: 0" header unless something else happens */
 	REPLACE(body, "");
 
-	av = http_tx_parse_args(av, vl, hp, body, 1);
+	av = http_tx_parse_args(av, vl, hp, body, 1, 0);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txresp spec: %s\n", *av);
 
@@ -1217,7 +1221,7 @@ cmd_http_txreq(CMD_ARGS)
 				"HTTP2-Settings: %s%s", nl, nl, up, nl);
 
 	nohost = strcmp(proto, "HTTP/1.1") != 0;
-	av = http_tx_parse_args(av, vl, hp, NULL, nohost);
+	av = http_tx_parse_args(av, vl, hp, NULL, nohost, 1);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txreq spec: %s\n", *av);
 	http_write(hp, 4, "txreq");
@@ -1454,7 +1458,7 @@ cmd_http_timeout(CMD_ARGS)
 	d = VNUM(av[1]);
 	if (isnan(d))
 		vtc_fatal(vl, "timeout is not a number (%s)", av[1]);
-	hp->timeout = (int)(d * 1000.0);
+	hp->timeout = d;
 }
 
 /* SECTION: client-server.spec.expect_close
@@ -1481,7 +1485,7 @@ cmd_http_expect_close(CMD_ARGS)
 		fds[0].fd = hp->sess->fd;
 		fds[0].events = POLLIN;
 		fds[0].revents = 0;
-		i = poll(fds, 1, hp->timeout);
+		i = poll(fds, 1, (int)(hp->timeout * 1000));
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
@@ -1802,7 +1806,7 @@ http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
 	AN(hp);
 	hp->sess = vsp;
 	hp->sess->fd = sock;
-	hp->timeout = vtc_maxdur * 1000 / 2;
+	hp->timeout = vtc_maxdur * .5;
 
 	if (rcvbuf) {
 		// XXX setsockopt() too late on SunOS

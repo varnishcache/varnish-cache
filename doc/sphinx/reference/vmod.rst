@@ -264,6 +264,42 @@ managing instances, in particular their memory management. As the
 lifetime of object instances is the vcl, they will usually be
 allocated from the heap.
 
+Functions and Methods scope restriction
+---------------------------------------
+
+The ``$Restrict`` stanza offers a way to limit the scope of the preceding vmod function
+or method, so that they can only be called from restricted vcl call sites.
+It must only appear after a ``$Method`` or ``$Function`` and has the following syntax::
+
+    $Restrict scope1 [scope2 ...]
+
+Possible scope values are:
+``backend, client, housekeeping, vcl_recv, vcl_pipe, vcl_pass, vcl_hash, vcl_purge, vcl_miss, vcl_hit,
+vcl_deliver, vcl_synth, vcl_backend_fetch, vcl_backend_response, vcl_backend_error, vcl_init, vcl_fini``
+
+Deprecated Aliases
+------------------
+
+The ``$Alias`` stanza offers a mechanism to rename a function or an
+object's method without removing the previous name. This allows name
+changes to maintain compatibility until the alias is dropped.
+
+The syntax for a function is::
+
+    $Alias deprecated_function original_function
+
+    [description]
+
+The syntax for a method is::
+
+    $Alias .deprecated_method object.original_method
+
+    [description]
+
+The ``$Alias`` stanza can appear anywhere, this allows grouping them
+in a dedicated "deprecated" section of their manual. The optional
+description can be used to explain why a function was renamed.
+
 .. _ref-vmod-vcl-c-types:
 
 VCL and C data types

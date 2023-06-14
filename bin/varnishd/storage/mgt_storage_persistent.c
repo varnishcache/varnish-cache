@@ -137,18 +137,14 @@ smp_metrics(struct smp_sc *sc)
  * Set up persistent storage silo in the master process.
  */
 
-void
+void v_matchproto_(storage_init_f)
 smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 {
 	struct smp_sc		*sc;
-	struct smp_sign		sgn;
 	void *target;
-	int i;
-
-	ASSERT_MGT();
+	int i, mmap_flags;
 
 	AZ(av[ac]);
-
 
 #ifdef HAVE_SYS_PERSONALITY_H
 	i = personality(0xffffffff); /* Fetch old personality. */
@@ -198,22 +194,20 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	AZ(ftruncate(sc->fd, sc->mediasize));
 
 	/* Try to determine correct mmap address */
-	i = read(sc->fd, &sgn, sizeof sgn);
-	assert(i == sizeof sgn);
-	if (!strcmp(sgn.ident, "SILO"))
-		target = (void*)(uintptr_t)sgn.mapped;
-	else
-		target = NULL;
+	target = NULL;
+
+	mmap_flags = MAP_NOCORE | MAP_NOSYNC | MAP_SHARED;
+
+#ifdef MAP_ALIGNED_SUPER
+	mmap_flags |= MAP_ALIGNED_SUPER;
+#endif
 
 	sc->base = (void*)mmap(target, sc->mediasize, PROT_READ|PROT_WRITE,
-	    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, 0);
+	    mmap_flags, sc->fd, 0);
 
 	if (sc->base == MAP_FAILED)
-		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
-		    VAS_errtxt(errno));
-	if (target != NULL && sc->base != target)
-		fprintf(stderr, "WARNING: Persistent silo lost to ASLR %s\n",
-		    sc->filename);
+		ARGV_ERR("(-spersistent) failed to mmap (%s) @%p\n",
+		    VAS_errtxt(errno), target);
 
 	smp_def_sign(sc, &sc->idn, 0, "SILO");
 	sc->ident = SIGN_DATA(&sc->idn);

@@ -19,6 +19,7 @@ The VCL language
 
 	VCL - The Varnish Configuration Language <vcl>
 	VCL Variables <vcl-var>
+	VCL Steps <vcl-step>
 	VCL backend configuration <vcl-backend>
 	VCL backend health probe <vcl-probe>
 	states.rst
@@ -97,6 +98,7 @@ For Developers & DevOps
 
 	Shell tricks <shell_tricks>
 	VMODS - Extensions to VCL <vmod>
+	VEXT - Varnish Extensions <vext>
 	VSM - Shared memory use <vsm>
 	VDIR - Backends & Directors <directors>
 	VCLI - CLI protocol API <cli_protocol>

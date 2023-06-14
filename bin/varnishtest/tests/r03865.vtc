@@ -1,0 +1,82 @@
+varnishtest "ESI onerror"
+
+server s1 {
+	rxreq
+	expect req.url == "/abort"
+	txresp -hdr {surrogate-control: content="ESI/1.0"} \
+	    -body {before <esi:include src="/fail" onerror="abort"/> after}
+
+} -start
+
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
+varnish v1 -cliok "param.set feature +esi_include_onerror"
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		if (bereq.url == "/fail") {
+			return (error(604));
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = beresp.http.surrogate-control ~ "ESI/1.0";
+		unset beresp.http.surrogate-control;
+	}
+	sub vcl_backend_error {
+		if (beresp.status == 604) {
+			set beresp.body = "FOOBAR";
+			return(deliver);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/abort"
+	non_fatal
+	rxresphdrs
+	expect resp.status == 200
+	rxchunk
+	rxchunk
+	expect_close
+	expect resp.body == "before "
+} -run
+
+varnish v1 -cliok "param.set max_esi_depth 0"
+
+client c1 {
+	txreq -url "/abort"
+	non_fatal
+	rxresphdrs
+	expect resp.status == 200
+	rxchunk
+	rxchunk
+	expect_close
+	expect resp.body == "before "
+} -run
+
+varnish v1 -cliok "param.set max_esi_depth 1"
+
+varnish v1 -vsl_catchup
+
+server s1 -wait
+
+server s1 {
+	rxreq
+	expect req.url == "/continue"
+	txresp -hdr {surrogate-control: content="ESI/1.0"} \
+	    -body {before <esi:include src="/fail" onerror="continue"/> after}
+} -start
+
+client c1 {
+	fatal
+	txreq -url "/continue"
+	rxresp
+	expect resp.body == "before FOOBAR after"
+} -run
+
+varnish v1 -cliok "param.set max_esi_depth 0"
+
+client c1 {
+	fatal
+	txreq -url "/continue"
+	rxresp
+	expect resp.body == "before  after"
+} -run

@@ -8,11 +8,13 @@ nobase_pkginclude_HEADERS = \
 	tbl/ban_arg_oper.h \
 	tbl/ban_oper.h \
 	tbl/ban_vars.h \
-	tbl/bo_flags.h \
+	tbl/bereq_flags.h \
+	tbl/beresp_flags.h \
 	tbl/boc_state.h \
 	tbl/body_status.h \
 	tbl/cli_cmds.h \
 	tbl/debug_bits.h \
+	tbl/experimental_bits.h \
 	tbl/feature_bits.h \
 	tbl/h2_error.h \
 	tbl/h2_frames.h \
@@ -22,16 +24,18 @@ nobase_pkginclude_HEADERS = \
 	tbl/http_headers.h \
 	tbl/http_response.h \
 	tbl/locks.h \
-	tbl/mgt_vcc.h \
 	tbl/obj_attr.h \
 	tbl/oc_exp_flags.h \
 	tbl/oc_flags.h \
 	tbl/params.h \
+	tbl/req_bereq_flags.h \
 	tbl/req_flags.h \
 	tbl/sess_attr.h \
 	tbl/sess_close.h \
 	tbl/symbol_kind.h \
+	tbl/vcc_feature_bits.h \
 	tbl/vcl_returns.h \
+	tbl/vcl_context.h \
 	tbl/vcl_states.h \
 	tbl/vhd_fsm.h \
 	tbl/vhd_fsm_funcs.h \
@@ -65,6 +69,7 @@ nobase_pkginclude_HEADERS += \
 	vcl.h \
 	vcs.h \
 	vmod_abi.h \
+	vnum.h \
 	vqueue.h \
 	vre.h \
 	vre_pcre2.h \
@@ -97,7 +102,6 @@ nobase_noinst_HEADERS = \
 	vjsn.h \
 	vlu.h \
 	vmb.h \
-	vnum.h \
 	vpf.h \
 	vsc_priv.h \
 	vsl_priv.h \

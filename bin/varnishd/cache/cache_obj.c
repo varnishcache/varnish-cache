@@ -109,6 +109,7 @@ obj_newboc(void)
 	Lck_New(&boc->mtx, lck_busyobj);
 	AZ(pthread_cond_init(&boc->cond, NULL));
 	boc->refcount = 1;
+	boc->transit_buffer = cache_param->transit_buffer;
 	return (boc);
 }
 
@@ -216,6 +217,25 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
  * surplus space allocated.
  */
 
+static void
+obj_extend_condwait(const struct objcore *oc)
+{
+
+	if (oc->boc->transit_buffer == 0)
+		return;
+
+	assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+	/* NB: strictly signaling progress both ways would be prone to
+	 * deadlocks, so instead we wait for signals from the client side
+	 * when delivered_so_far so far is updated, but in case the fetch
+	 * thread was not waiting at the time of the signal, we will see
+	 * updates to delivered_so_far after timing out.
+	 */
+	while (!(oc->flags & OC_F_CANCEL) && oc->boc->fetched_so_far >
+	    oc->boc->delivered_so_far + oc->boc->transit_buffer)
+		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
+}
+
 void
 ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 {
@@ -223,14 +243,14 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
-	(void)final;
+	AN(om->objextend);
 	assert(l >= 0);
 
 	Lck_Lock(&oc->boc->mtx);
-	AN(om->objextend);
 	if (l > 0) {
+		obj_extend_condwait(oc);
 		om->objextend(wrk, oc, l);
-		oc->boc->len_so_far += l;
+		oc->boc->fetched_so_far += l;
 		AZ(pthread_cond_broadcast(&oc->boc->cond));
 	}
 	Lck_Unlock(&oc->boc->mtx);
@@ -253,13 +273,19 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	Lck_Lock(&oc->boc->mtx);
 	while (1) {
-		rv = oc->boc->len_so_far;
+		rv = oc->boc->fetched_so_far;
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
+		if (oc->boc->transit_buffer > 0) {
+			assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+			/* Signal the new client position */
+			oc->boc->delivered_so_far = l;
+			AZ(pthread_cond_signal(&oc->boc->cond));
+		}
 		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
 	}
-	rv = oc->boc->len_so_far;
+	rv = oc->boc->fetched_so_far;
 	Lck_Unlock(&oc->boc->mtx);
 	return (rv);
 }
@@ -304,6 +330,9 @@ ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
 	Lck_Lock(&oc->boc->mtx);
+	/* wake up obj_extend_condwait() */
+	if (oc->flags & OC_F_CANCEL)
+		AZ(pthread_cond_signal(&oc->boc->cond));
 	while (1) {
 		if (oc->boc->state >= want)
 			break;
@@ -507,12 +536,23 @@ ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
 	return (0);
 }
 
-unsigned
+int
+ObjSetXID(struct worker *wrk, struct objcore *oc, vxid_t xid)
+{
+	uint64_t u;
+
+	u = VXID(xid);
+	AZ(ObjSetU64(wrk, oc, OA_VXID, u));
+	return (0);
+}
+
+
+vxid_t
 ObjGetXID(struct worker *wrk, struct objcore *oc)
 {
-	uint32_t u;
+	vxid_t u;
 
-	AZ(ObjGetU32(wrk, oc, OA_VXID, &u));
+	AZ(ObjGetU64(wrk, oc, OA_VXID, &u.vxid));
 	return (u);
 }
 
@@ -584,32 +624,6 @@ ObjGetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t *d)
 		return (-1);
 	if (d != NULL)
 		*d = vbe64dec(vp);
-	return (0);
-}
-
-int
-ObjSetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t t)
-{
-	void *vp;
-
-	vp = ObjSetAttr(wrk, oc, a, sizeof t, NULL);
-	if (vp == NULL)
-		return (-1);
-	vbe32enc(vp, t);
-	return (0);
-}
-
-int
-ObjGetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t *d)
-{
-	const void *vp;
-	ssize_t l;
-
-	vp = ObjGetAttr(wrk, oc, a, &l);
-	if (vp == NULL || l != sizeof *d)
-		return (-1);
-	if (d != NULL)
-		*d = vbe32dec(vp);
 	return (0);
 }
 

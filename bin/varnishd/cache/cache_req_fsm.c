@@ -44,11 +44,11 @@
 #include "cache_filter.h"
 #include "cache_objhead.h"
 #include "cache_transport.h"
+#include "vcc_interface.h"
 
 #include "hash/hash_slinger.h"
 #include "http1/cache_http1.h"
 #include "storage/storage.h"
-#include "common/heritage.h"
 #include "vcl.h"
 #include "vct.h"
 #include "vsha256.h"
@@ -152,10 +152,10 @@ Resp_Setup_Deliver(struct req *req)
 	http_ForceField(h, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->is_hit)
-		http_PrintfHeader(h, "X-Varnish: %u %u", VXID(req->vsl->wid),
-		    ObjGetXID(req->wrk, oc));
+		http_PrintfHeader(h, "X-Varnish: %ju %ju", VXID(req->vsl->wid),
+		    VXID(ObjGetXID(req->wrk, oc)));
 	else
-		http_PrintfHeader(h, "X-Varnish: %u", VXID(req->vsl->wid));
+		http_PrintfHeader(h, "X-Varnish: %ju", VXID(req->vsl->wid));
 
 	/*
 	 * We base Age calculation upon the last timestamp taken during client
@@ -167,7 +167,7 @@ Resp_Setup_Deliver(struct req *req)
 	http_PrintfHeader(h, "Age: %.0f",
 	    floor(fmax(0., req->t_prev - oc->t_origin)));
 
-	http_SetHeader(h, "Via: 1.1 varnish (Varnish/7.0)");
+	http_AppendHeader(h, H_Via, http_ViaHeader());
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, oc, OF_GZIPED) &&
@@ -192,7 +192,7 @@ Resp_Setup_Synth(struct req *req)
 
 	http_TimeHeader(h, "Date: ", W_TIM_real(req->wrk));
 	http_SetHeader(h, "Server: Varnish");
-	http_PrintfHeader(h, "X-Varnish: %u", VXID(req->vsl->wid));
+	http_PrintfHeader(h, "X-Varnish: %ju", VXID(req->vsl->wid));
 
 	/*
 	 * For late 100-continue, we suggest to VCL to close the connection to
@@ -238,12 +238,12 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(req->restarts <= cache_param->max_restarts);
 
-	if (wrk->handling != VCL_RET_DELIVER) {
+	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
 		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 		http_Teardown(req->resp);
 
-		switch (wrk->handling) {
+		switch (wrk->vpi->handling) {
 		case VCL_RET_RESTART:
 			req->req_step = R_STP_RESTART;
 			break;
@@ -260,7 +260,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	if (IS_TOPREQ(req) && RFC2616_Do_Cond(req))
 		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
@@ -333,7 +333,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
-	if (wrk->handling == VCL_RET_FAIL) {
+	if (wrk->vpi->handling == VCL_RET_FAIL) {
 		VSB_destroy(&synth_body);
 		(void)VRB_Ignore(req);
 		(void)req->transport->minimal_response(req, 500);
@@ -343,11 +343,11 @@ cnt_synth(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	if (wrk->handling == VCL_RET_RESTART &&
+	if (wrk->vpi->handling == VCL_RET_RESTART &&
 	    req->restarts > cache_param->max_restarts)
-		wrk->handling = VCL_RET_DELIVER;
+		wrk->vpi->handling = VCL_RET_DELIVER;
 
-	if (wrk->handling == VCL_RET_RESTART) {
+	if (wrk->vpi->handling == VCL_RET_RESTART) {
 		/*
 		 * XXX: Should we reset req->doclose = SC_VCL_FAILURE
 		 * XXX: If so, to what ?
@@ -357,7 +357,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	http_Unset(req->resp, H_Content_Length);
 	http_PrintfHeader(req->resp, "Content-Length: %zd",
@@ -488,13 +488,14 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	HSH_Cancel(wrk, req->objcore, boc);
-
 	if (req->doclose == SC_NULL && (req->objcore->flags & OC_F_FAILED)) {
 		/* The object we delivered failed due to a streaming error.
 		 * Fail the request. */
 		req->doclose = SC_TX_ERROR;
 	}
+
+	if (req->doclose != SC_NULL)
+		req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 
 	if (boc != NULL)
 		HSH_DerefBoc(wrk, req->objcore);
@@ -617,7 +618,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	VCL_hit_method(req->vcl, wrk, req, NULL, NULL);
 
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_DELIVER:
 		if (busy != NULL) {
 			AZ(oc->flags & OC_F_HFM);
@@ -679,7 +680,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	CHECK_OBJ_ORNULL(req->stale_oc, OBJCORE_MAGIC);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, NULL);
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats->cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, req->stale_oc, VBF_NORMAL);
@@ -724,7 +725,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	AZ(req->stale_oc);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, NULL);
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_FAIL:
 		req->req_step = R_STP_VCLFAIL;
 		break;
@@ -766,8 +767,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	wrk->stats->s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", VXID(req->vsl->wid));
-	VSLb(req->vsl, SLT_Link, "bereq %u pipe", VXID(bo->vsl->wid));
+	VSLb(bo->vsl, SLT_Begin, "bereq %ju pipe", VXID(req->vsl->wid));
+	VSLb(req->vsl, SLT_Link, "bereq %ju pipe", VXID(bo->vsl->wid));
 	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
 	THR_SetBusyobj(bo);
 	bo->sp = req->sp;
@@ -775,7 +776,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(bo->bereq, req->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
-	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
+	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(req->vsl->wid));
 	http_ForceHeader(bo->bereq, H_Connection, "close");
 
 	if (req->want100cont) {
@@ -785,11 +786,11 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	bo->wrk = wrk;
 	if (WS_Overflowed(req->ws))
-		wrk->handling = VCL_RET_FAIL;
+		wrk->vpi->handling = VCL_RET_FAIL;
 	else
 		VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
 		nxt = REQ_FSM_MORE;
@@ -860,27 +861,20 @@ cnt_restart(struct worker *wrk, struct req *req)
  *
  * TODO
  * - make restarts == 0 bit re-usable for rollback
- * - remove duplicatation with Req_Cleanup()
+ * - remove duplication with Req_Cleanup()
  */
 
 static void v_matchproto_(req_state_f)
 cnt_recv_prep(struct req *req, const char *ci)
 {
-	const char *xff;
 
 	if (req->restarts == 0) {
 		/*
 		 * This really should be done earlier, but we want to capture
 		 * it in the VSL log.
 		 */
-		http_CollectHdr(req->http, H_X_Forwarded_For);
-		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
-			http_Unset(req->http, H_X_Forwarded_For);
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",
-			    xff, ci);
-		} else {
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s", ci);
-		}
+		http_AppendHeader(req->http, H_X_Forwarded_For, ci);
+		http_AppendHeader(req->http, H_Via, http_ViaHeader());
 		http_CollectHdr(req->http, H_Cache_Control);
 
 		/* By default we use the first backend */
@@ -895,6 +889,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->hash_ignore_vary = 0;
 		req->client_identity = NULL;
 		req->storage = NULL;
+		req->trace = FEATURE(FEATURE_TRACE);
 	}
 
 	req->is_hit = 0;
@@ -915,7 +910,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct VSHA256Context sha256ctx;
-	const char *ci, *cp, *endpname;
+	const char *ci;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -928,13 +923,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(isnan(req->t_prev));
 	AZ(isnan(req->t_req));
 
-	ci = SES_Get_String_Attr(req->sp, SA_CLIENT_IP);
-	cp = SES_Get_String_Attr(req->sp, SA_CLIENT_PORT);
-	CHECK_OBJ_NOTNULL(req->sp->listen_sock, LISTEN_SOCK_MAGIC);
-	endpname = req->sp->listen_sock->name;
-	AN(endpname);
-	VSLb(req->vsl, SLT_ReqStart, "%s %s %s", ci, cp, endpname);
-
+	ci = Req_LogStart(wrk, req);
 	http_VSL_log(req->http);
 
 	if (http_CountHdr(req->http0, H_Host) > 1) {
@@ -960,12 +949,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
-	if (wrk->handling == VCL_RET_FAIL) {
+	if (wrk->vpi->handling == VCL_RET_FAIL) {
 		req->req_step = R_STP_VCLFAIL;
 		return (REQ_FSM_MORE);
 	}
 
-	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
+	if (wrk->vpi->handling == VCL_RET_VCL && req->restarts == 0) {
 		// Req_Rollback has happened in VPI_vcl_select
 		assert(WS_Snapshot(req->ws) == req->ws_req);
 		cnt_recv_prep(req, ci);
@@ -986,7 +975,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	recv_handling = wrk->handling;
+	recv_handling = wrk->vpi->handling;
 
 	/* We wash the A-E header here for the sake of VRY */
 	if (cache_param->http_gzip_support &&
@@ -1001,10 +990,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VSHA256_Init(&sha256ctx);
 	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
-	if (wrk->handling == VCL_RET_FAIL)
-		recv_handling = wrk->handling;
+	if (wrk->vpi->handling == VCL_RET_FAIL)
+		recv_handling = wrk->vpi->handling;
 	else
-		assert(wrk->handling == VCL_RET_LOOKUP);
+		assert(wrk->vpi->handling == VCL_RET_LOOKUP);
 	VSHA256_Final(req->digest, &sha256ctx);
 
 	switch (recv_handling) {
@@ -1089,7 +1078,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(HSH_DerefObjCore(wrk, &boc, 1));
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, NULL);
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
 		break;
@@ -1118,8 +1107,8 @@ cnt_diag(struct req *req, const char *state)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	VSLb(req->vsl,  SLT_Debug, "vxid %u STP_%s sp %p vcl %p",
-	    req->vsl->wid, state, req->sp, req->vcl);
+	VSLb(req->vsl,  SLT_Debug, "vxid %ju STP_%s sp %p vcl %p",
+	    VXID(req->vsl->wid), state, req->sp, req->vcl);
 	VSL_Flush(req->vsl, 0);
 }
 
@@ -1137,7 +1126,7 @@ CNT_Embark(struct worker *wrk, struct req *req)
 		VCL_Refresh(&wrk->wpriv->vcl);
 		req->vcl = wrk->wpriv->vcl;
 		wrk->wpriv->vcl = NULL;
-		VSLb(req->vsl, SLT_VCL_use, "%s", VCL_Name(req->vcl));
+		VSLbs(req->vsl, SLT_VCL_use, TOSTRAND(VCL_Name(req->vcl)));
 	}
 
 	AN(req->vcl);
@@ -1166,7 +1155,7 @@ CNT_Request(struct req *req)
 	    req->req_step == R_STP_LOOKUP ||
 	    req->req_step == R_STP_TRANSPORT);
 
-	AN(req->vsl->wid & VSL_CLIENTMARKER);
+	AN(VXID_TAG(req->vsl->wid) & VSL_CLIENTMARKER);
 	AN(req->vcl);
 
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
@@ -1198,7 +1187,7 @@ CNT_Request(struct req *req)
 				VCL_Recache(wrk, &req->top->vcl0);
 		}
 		VCL_TaskLeave(ctx, req->privs);
-		AN(req->vsl->wid);
+		assert(!IS_NO_VXID(req->vsl->wid));
 		VRB_Free(req);
 		VRT_Assign_Backend(&req->director_hint, NULL);
 		req->wrk = NULL;

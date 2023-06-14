@@ -86,7 +86,7 @@ sharddir_log(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
 	if (vsl != NULL)
 		VSLbv(vsl, tag, fmt, ap);
 	else
-		VSLv(tag, 0, fmt, ap);
+		VSLv(tag, NO_VXID, fmt, ap);
 	va_end(ap);
 }
 
@@ -202,6 +202,13 @@ sharddir_set_param(struct sharddir *shardd,
 {
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	shardd->param = param;
+}
+
+void
+sharddir_release(struct sharddir *shardd)
+{
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+	shardcfg_backend_clear(shardd);
 }
 
 void

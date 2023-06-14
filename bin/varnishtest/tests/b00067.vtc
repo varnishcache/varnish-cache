@@ -1,6 +1,6 @@
 varnishtest "Check timeout_idle"
 
-varnish v1 -arg "-p timeout_idle=1"	\
+varnish v1 -arg "-p timeout_idle=2"	\
 	   -arg "-a ${listen_addr}"	\
 	   -arg "-a ${tmpdir}/v1.sock"	\
 	   -vcl {
@@ -8,7 +8,7 @@ varnish v1 -arg "-p timeout_idle=1"	\
 
 	sub vcl_deliver {
 		if (req.url == "/sess") {
-			set sess.timeout_idle = 2s;
+			set sess.timeout_idle = 4s;
 		}
 	}
 	sub vcl_backend_error {
@@ -23,7 +23,6 @@ client c1 {
 	delay 0.2
 	txreq
 	rxresp
-	delay 1.2
 	expect_close
 } -start
 
@@ -33,17 +32,15 @@ client c2 {
 	delay 1.2
 	txreq
 	rxresp
-	delay 2.2
 	expect_close
 } -start
 
 client c3 {
 	loop 3 {
 		# send a periodic CRLF
-		delay 0.3
+		delay 0.5
 		sendhex 0d0a
 	}
-	delay 0.3
 	expect_close
 } -start
 
@@ -52,12 +49,16 @@ client c4 {
 	rxresp
 	loop 3 {
 		# send a periodic CRLF
-		delay 0.3
+		delay 0.5
 		sendhex 0d0a
 	}
-	delay 0.3
 	expect_close
 } -start
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
 
 client c1u -connect "${tmpdir}/v1.sock" {
 	txreq
@@ -65,7 +66,6 @@ client c1u -connect "${tmpdir}/v1.sock" {
 	delay 0.2
 	txreq
 	rxresp
-	delay 1.2
 	expect_close
 } -start
 
@@ -75,17 +75,15 @@ client c2u -connect "${tmpdir}/v1.sock" {
 	delay 1.2
 	txreq
 	rxresp
-	delay 2.2
 	expect_close
 } -start
 
 client c3u -connect "${tmpdir}/v1.sock" {
 	loop 3 {
 		# send a periodic CRLF
-		delay 0.2
+		delay 0.5
 		sendhex 0d0a
 	}
-	delay 0.4
 	expect_close
 } -start
 
@@ -94,17 +92,12 @@ client c4u -connect "${tmpdir}/v1.sock" {
 	rxresp
 	loop 3 {
 		# send a periodic CRLF
-		delay 0.2
+		delay 0.5
 		sendhex 0d0a
 	}
-	delay 0.4
 	expect_close
 } -start
 
-client c1 -wait
-client c2 -wait
-client c3 -wait
-client c4 -wait
 client c1u -wait
 client c2u -wait
 client c3u -wait

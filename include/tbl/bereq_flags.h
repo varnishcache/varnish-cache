@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2014-2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -27,18 +26,17 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
  */
 
-#include "config.h"
+/*lint -save -e525 -e539 */
 
-#include <stdio.h>
+/* lower, vcl_r, vcl_w, doc */
+BEREQ_FLAG(uncacheable,	0, 0, "")	// also beresp
+BEREQ_FLAG(is_bgfetch,	1, 0, "")
+#define REQ_BEREQ_FLAG(lower, vcl_r, vcl_w, doc) \
+	BEREQ_FLAG(lower, vcl_r, vcl_w, doc)
+#include "tbl/req_bereq_flags.h"
+#undef BEREQ_FLAG
 
-#include "mgt/mgt.h"
-#include "mgt/mgt_param.h"
-
-struct parspec mgt_parspec[] = {
-#define PARAM_ALL
-#define PARAM(typ, fld, nm, ...) { #nm, __VA_ARGS__ },
-#include "tbl/params.h"
-	{ NULL, NULL, NULL }
-};
+/*lint -restore */

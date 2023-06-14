@@ -196,7 +196,7 @@ HSH_AddString(struct req *req, void *ctx, const char *str)
 	AN(ctx);
 	if (str != NULL) {
 		VSHA256_Update(ctx, str, strlen(str));
-		VSLb(req->vsl, SLT_Hash, "%s", str);
+		VSLbs(req->vsl, SLT_Hash, TOSTRAND(str));
 	} else
 		VSHA256_Update(ctx, &str, 1);
 }
@@ -499,7 +499,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		(void)req->vcf->func(req, &oc, &exp_oc, 1);
 
 	if (oc != NULL && oc->flags & OC_F_HFP) {
-		xid = ObjGetXID(wrk, oc);
+		xid = VXID(ObjGetXID(wrk, oc));
 		dttl = EXP_Dttl(req, oc);
 		AN(hsh_deref_objhead_unlock(wrk, &oh, HSH_RUSH_POLICY));
 		wrk->stats->cache_hitpass++;
@@ -511,7 +511,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		*ocp = oc;
 		oc->refcnt++;
 		if (oc->flags & OC_F_HFM) {
-			xid = ObjGetXID(wrk, oc);
+			xid = VXID(ObjGetXID(wrk, oc));
 			dttl = EXP_Dttl(req, oc);
 			*bocp = hsh_insert_busyobj(wrk, oh);
 			Lck_Unlock(&oh->mtx);
@@ -520,7 +520,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			return (HSH_HITMISS);
 		}
 		oc->hits++;
-		boc_progress = oc->boc == NULL ? -1 : oc->boc->len_so_far;
+		boc_progress = oc->boc == NULL ? -1 : oc->boc->fetched_so_far;
 		AN(hsh_deref_objhead_unlock(wrk, &oh, HSH_RUSH_POLICY));
 		Req_LogHit(wrk, req, oc, boc_progress);
 		return (HSH_HIT);
@@ -533,7 +533,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		 * XXX should HFM objects actually have grace/keep ?
 		 * XXX also:  why isn't *ocp = exp_oc ?
 		 */
-		xid = ObjGetXID(wrk, exp_oc);
+		xid = VXID(ObjGetXID(wrk, exp_oc));
 		dttl = EXP_Dttl(req, exp_oc);
 		*bocp = hsh_insert_busyobj(wrk, oh);
 		Lck_Unlock(&oh->mtx);
@@ -543,7 +543,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	}
 
 	if (exp_oc != NULL && exp_oc->boc != NULL)
-		boc_progress = exp_oc->boc->len_so_far;
+		boc_progress = exp_oc->boc->fetched_so_far;
 	else
 		boc_progress = -1;
 
@@ -861,6 +861,8 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 	INIT_OBJ(&rush, RUSH_MAGIC);

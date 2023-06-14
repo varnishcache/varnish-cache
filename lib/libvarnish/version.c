@@ -57,6 +57,8 @@ VCS_String(const char *which)
 		return (PACKAGE_TARNAME);
 	case 'P':
 		return (PACKAGE_VERSION);
+	case 'B':
+		return (PACKAGE_BRANCH);
 	case 'R':
 		return (VCS_Version);
 	case 'V':
@@ -74,7 +76,7 @@ VCS_String(const char *which)
 		    ")"
 		    "\n"
 		    "Copyright (c) 2006 Verdens Gang AS\n"
-		    "Copyright (c) 2006-2021 Varnish Software\n"
+		    "Copyright (c) 2006-2023 Varnish Software\n"
 		);
 	default:
 		WRONG("Wrong argument to VCS_String");

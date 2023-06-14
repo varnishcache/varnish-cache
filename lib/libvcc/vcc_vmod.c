@@ -26,11 +26,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * Parse `import`, check metadata and versioning.
+ *
  */
 
 #include "config.h"
 
-#include <dlfcn.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,274 +44,387 @@
 #include "vmod_abi.h"
 #include "vsb.h"
 
-struct vmod_open {
-	unsigned		magic;
-#define VMOD_OPEN_MAGIC		0x9995b1f3
-	void			*hdl;
-	const char		*err;
+#include "vcc_vmod.h"
+
+struct vmod_import {
+	unsigned			magic;
+#define VMOD_IMPORT_MAGIC		0x31803a5d
+	const char			*err;
+	struct vsb			*json;
+	char				*path;
+	VTAILQ_ENTRY(vmod_import)	list;
+	int				from_vext;
+	int				unimported_vext;
+
+	// From $VMOD
+	double				vmod_syntax;
+	char				*name;
+	char				*func_name;
+	char				*file_id;
+	char				*abi;
+	unsigned			major;
+	unsigned			minor;
+
+	struct symbol			*sym;
+	const struct token		*t_mod;
+	struct vjsn			*vj;
+#define STANZA(UU, ll, ss)		int n_##ll;
+	STANZA_TBL
+#undef STANZA
 };
 
-struct vmod_obj {
-	unsigned		magic;
-#define VMOD_OBJ_MAGIC		0x349885f8
-	char			*name;
-	struct type		type[1];
-	VTAILQ_ENTRY(vmod_obj)	list;
-};
+static VTAILQ_HEAD(,vmod_import) imports = VTAILQ_HEAD_INITIALIZER(imports);
+
+typedef void vcc_do_stanza_f(struct vcc *tl, const struct vmod_import *vim,
+    const struct vjsn_val *vv);
 
 static int
-vcc_path_dlopen(void *priv, const char *fn)
+vcc_Extract_JSON(struct vmod_import *vim, const char *filename)
 {
-	struct vmod_open *vop;
+	const char *magic = "VMOD_JSON_SPEC\x02", *p;
+	int c;
+	FILE *f;
 
-	CAST_OBJ_NOTNULL(vop, priv, VMOD_OPEN_MAGIC);
-	AN(fn);
+	CHECK_OBJ_NOTNULL(vim, VMOD_IMPORT_MAGIC);
+	AN(filename);
 
-	vop->hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-	if (vop->hdl == NULL) {
-		vop->err = dlerror();
+	f = fopen(filename, "rb");
+	if (f == NULL) {
+		vim->err = strerror(errno);
 		return (-1);
 	}
+
+	p = magic;
+	vim->err = "No VMOD JSON found";
+	while (1) {
+		c = getc(f);
+		if (c == EOF) {
+			AZ(fclose(f));
+			vim->err = "No VMOD JSON found";
+			return (-1);
+		}
+		if (c != *p) {
+			p = magic;
+			continue;
+		}
+		p++;
+		if (*p == '\0')
+			break;
+	}
+
+	vim->json = VSB_new_auto();
+	AN(vim->json);
+
+	while (1) {
+		c = getc(f);
+		if (c == EOF) {
+			AZ(fclose(f));
+			vim->err = "Truncated VMOD JSON";
+			VSB_destroy(&vim->json);
+			return (-1);
+		}
+		if (c == '\x03')
+			break;
+		VSB_putc(vim->json, c);
+	}
+	AZ(fclose(f));
+	AZ(VSB_finish(vim->json));
 	return (0);
 }
 
-static void vcc_VmodObject(struct vcc *tl, struct symbol *sym);
-static void vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym);
-
-static void
-func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
-    const struct vjsn_val *v)
+static const char *
+vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
 {
-	struct symbol *sym;
-	struct vsb *buf;
+	const struct vjsn_val *vv, *vv2, *vv3;
+	const char *err;
+	char *p;
 
-	buf = VSB_new_auto();
-	AN(buf);
+	vim->vj = vjsn_parse(jsn, &err);
+	if (err != NULL)
+		return (err);
+	AN(vim->vj);
 
-	VSB_clear(buf);
-	VCC_SymName(buf, psym);
-	VSB_printf(buf, ".%s", v->value);
-	AZ(VSB_finish(buf));
-	sym = VCC_MkSym(tl, VSB_data(buf), SYM_MAIN, kind, VCL_LOW, VCL_HIGH);
-	AN(sym);
-	VSB_destroy(&buf);
+	vv = vim->vj->value;
+	if (!vjsn_is_array(vv))
+		return ("Not array[0]");
 
-	if (kind == SYM_OBJECT) {
-		sym->eval_priv = v;
-		sym->vmod_name = psym->vmod_name;
-		sym->r_methods = VCL_MET_INIT;
-		vcc_VmodObject(tl, sym);
-		vcc_VmodSymbols(tl, sym);
-		return;
-	}
+	vv2 = VTAILQ_FIRST(&vv->children);
+	AN(vv2);
+	if (!vjsn_is_array(vv2))
+		return ("Not array[1]");
+	vv3 = VTAILQ_FIRST(&vv2->children);
+	AN(vv3);
+	if (!vjsn_is_string(vv3))
+		return ("Not string[2]");
+	if (strcmp(vv3->value, "$VMOD"))
+		return ("Not $VMOD[3]");
 
-	if (kind == SYM_METHOD)
-		sym->extra = psym->rname;
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->vmod_syntax = strtod(vv3->value, NULL);
+	assert (vim->vmod_syntax == 1.0);
 
-	v = VTAILQ_NEXT(v, list);
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->name = vv3->value;
 
-	assert(vjsn_is_array(v));
-	sym->action = vcc_Act_Call;
-	sym->vmod_name = psym->vmod_name;
-	sym->eval = vcc_Eval_SymFunc;
-	sym->eval_priv = v;
-	v = VTAILQ_FIRST(&v->children);
-	assert(vjsn_is_array(v));
-	v = VTAILQ_FIRST(&v->children);
-	assert(vjsn_is_string(v));
-	sym->type = VCC_Type(v->value);
-	AN(sym->type);
-	sym->r_methods = VCL_MET_TASK_ALL;
-}
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->func_name = vv3->value;
 
-static void
-vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
-{
-	struct inifin *ifp;
-	const struct vjsn_val *vv, *vv2;
-	double vmod_syntax = 0.0;
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->file_id = vv3->value;
 
-	AN(vj);
-	AN(vmod_name);
-	ifp = NULL;
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->abi = vv3->value;
 
-	VTAILQ_FOREACH(vv, &vj->value->children, list) {
-		assert(vjsn_is_array(vv));
-		vv2 = VTAILQ_FIRST(&vv->children);
-		assert(vjsn_is_string(vv2));
-		if (!strcmp(vv2->value, "$VMOD")) {
-			vmod_syntax =
-			    strtod(VTAILQ_NEXT(vv2, list)->value, NULL);
-			continue;
-		}
-		assert (vmod_syntax == 1.0);
-		if (!strcmp(vv2->value, "$EVENT")) {
-			/* XXX: What about the rest of the events ? */
-			if (ifp == NULL)
-				ifp = New_IniFin(tl);
-			vv2 = VTAILQ_NEXT(vv2, list);
-			VSB_printf(ifp->ini,
-			    "\tif (%s(ctx, &vmod_priv_%s, VCL_EVENT_LOAD))\n"
-			    "\t\treturn(1);",
-			    vv2->value, vmod_name);
-			VSB_printf(ifp->fin,
-			    "\t\t(void)%s(ctx, &vmod_priv_%s,\n"
-			    "\t\t\t    VCL_EVENT_DISCARD);",
-			    vv2->value, vmod_name);
-			VSB_printf(ifp->event, "%s(ctx, &vmod_priv_%s, ev)",
-			    vv2->value, vmod_name);
-		} else if (!strcmp(vv2->value, "$FUNC")) {
-		} else if (!strcmp(vv2->value, "$OBJ")) {
-		} else {
-			VTAILQ_FOREACH(vv2, &vv->children, list)
-				fprintf(stderr, "\tt %s n %s v %s\n",
-				    vv2->type, vv2->name, vv2->value);
-			WRONG("Vmod JSON syntax error");
-		}
-	}
-}
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->major = strtoul(vv3->value, &p, 10);
+	assert(p == NULL || *p == '\0' || *p == 'U');
 
-static const struct vmod_data *
-vcc_VmodSanity(struct vcc *tl, void *hdl, const struct token *mod, char *fnp)
-{
-	char buf[256];
-	const struct vmod_data *vmd;
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->minor = strtoul(vv3->value, &p, 10);
+	assert(p == NULL || *p == '\0' || *p == 'U');
 
-	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
-	vmd = dlsym(hdl, buf);
-	if (vmd == NULL) {
-		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_cat(tl->sb, "\t(no Vmod_Data symbol)\n");
-		vcc_ErrWhere(tl, mod);
-		return (NULL);
-	}
-	if (vmd->vrt_major == 0 && vmd->vrt_minor == 0 &&
-	    (vmd->abi == NULL || strcmp(vmd->abi, VMOD_ABI_Version) != 0)) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
+
+	if (vim->major == 0 && vim->minor == 0 &&
+	    strcmp(vim->abi, VMOD_ABI_Version)) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(vim->t_mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
 		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
-			   VMOD_ABI_Version, vmd->abi);
-		vcc_ErrWhere(tl, mod);
-		return (NULL);
+			   VMOD_ABI_Version, vim->abi);
+		return ("");
 	}
-	if (vmd->vrt_major != 0 && (vmd->vrt_major != VRT_MAJOR_VERSION ||
-	    vmd->vrt_minor > VRT_MINOR_VERSION)) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
+	if (vim->major != 0 &&
+	    (vim->major != VRT_MAJOR_VERSION ||
+	    vim->minor > VRT_MINOR_VERSION)) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(vim->t_mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
 		VSB_printf(tl->sb, "\tVMOD wants ABI version %u.%u\n",
-		    vmd->vrt_major, vmd->vrt_minor);
+		    vim->major, vim->minor);
 		VSB_printf(tl->sb, "\tvarnishd provides ABI version %u.%u\n",
 		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
-		vcc_ErrWhere(tl, mod);
-		return (NULL);
+		return ("");
 	}
-	if (vmd->name == NULL ||
-	    vmd->func == NULL ||
-	    vmd->func_len <= 0 ||
-	    vmd->proto == NULL ||
-	    vmd->abi == NULL) {
-		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_cat(tl->sb, "\tInconsistent metadata\n");
-		vcc_ErrWhere(tl, mod);
-		return (NULL);
+
+
+	VTAILQ_FOREACH(vv2, &vv->children, list) {
+		assert (vjsn_is_array(vv2));
+		vv3 = VTAILQ_FIRST(&vv2->children);
+		assert(vjsn_is_string(vv3));
+		assert(vv3->value[0] == '$');
+#define STANZA(UU, ll, ss) \
+    if (!strcmp(vv3->value, "$" #UU)) {vim->n_##ll++; continue;}
+		STANZA_TBL
+#undef STANZA
+		return ("Unknown metadata stanza.");
 	}
-	if (!vcc_IdIs(mod, vmd->name)) {
-		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
-		vcc_ErrWhere(tl, mod);
-		return (NULL);
-	}
-	return (vmd);
+	if (vim->n_cproto != 1)
+		return ("Bad cproto stanza(s)");
+	if (vim->n_vmod != 1)
+		return ("Bad vmod stanza(s)");
+	return (NULL);
 }
 
-static vcc_kind_t
-vcc_vmod_kind(const char *type)
-{
+/*
+ * Load and check the metadata from the objectfile containing the vmod
+ */
 
-#define VMOD_KIND(str, kind)		\
-	do {				\
-		if (!strcmp(str, type))	\
-			return (kind);	\
-	} while (0)
-	VMOD_KIND("$OBJ", SYM_OBJECT);
-	VMOD_KIND("$METHOD", SYM_METHOD);
-	VMOD_KIND("$FUNC", SYM_FUNC);
-#undef VMOD_KIND
-	return (SYM_NONE);
+static int
+vcc_VmodLoad(struct vcc *tl, struct vmod_import *vim)
+{
+	static const char *err;
+	struct vmod_import *vim2;
+
+	CHECK_OBJ_NOTNULL(vim, VMOD_IMPORT_MAGIC);
+
+	err = vcc_ParseJSON(tl, VSB_data(vim->json), vim);
+	if (err != NULL && *err != '\0') {
+		VSB_printf(tl->sb,
+		    "VMOD %.*s: bad metadata\n", PF(vim->t_mod));
+		VSB_printf(tl->sb, "\t(%s)\n", err);
+		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
+	}
+
+	if (err != NULL)
+		return (-1);
+
+	VTAILQ_FOREACH(vim2, &imports, list) {
+		if (strcmp(vim->name, vim2->name))
+			continue;
+		if (!strcmp(vim->file_id, vim2->file_id)) {
+			// (Truly) duplicate imports are OK
+			return (0);
+		}
+		VSB_printf(tl->sb,
+		    "Different version of VMOD %.*s already loaded\n",
+		    PF(vim->t_mod));
+		vcc_ErrWhere(tl, vim->t_mod);
+		VSB_cat(tl->sb, "Previous import at:\n");
+		vcc_ErrWhere(tl, vim2->t_mod);
+		vcc_Warn(tl);
+		break;
+	}
+	VTAILQ_INSERT_TAIL(&imports, vim, list);
+
+	return (0);
+}
+
+static void v_matchproto_(vcc_do_stanza_f)
+vcc_do_event(struct vcc *tl, const struct vmod_import *vim,
+    const struct vjsn_val *vv)
+{
+	struct inifin *ifp;
+
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->ini,
+	    "\tif (%s(ctx, &vmod_priv_%s, VCL_EVENT_LOAD))\n"
+	    "\t\treturn(1);",
+	    vv->value, vim->sym->vmod_name);
+	VSB_printf(ifp->fin,
+	    "\t\t(void)%s(ctx, &vmod_priv_%s,\n"
+	    "\t\t\t    VCL_EVENT_DISCARD);",
+	    vv->value, vim->sym->vmod_name);
+	VSB_printf(ifp->event, "%s(ctx, &vmod_priv_%s, ev)",
+	    vv->value, vim->sym->vmod_name);
+}
+
+static void v_matchproto_(vcc_do_stanza_f)
+vcc_do_cproto(struct vcc *tl, const struct vmod_import *vim,
+    const struct vjsn_val *vv)
+{
+	(void)vim;
+	do {
+		assert (vjsn_is_string(vv));
+		Fh(tl, 0, "%s\n", vv->value);
+		vv = VTAILQ_NEXT(vv, list);
+	} while(vv != NULL);
 }
 
 static void
-vcc_VmodObject(struct vcc *tl, struct symbol *sym)
+vcc_vj_foreach(struct vcc *tl, const struct vmod_import *vim,
+    const char *stanza, vcc_do_stanza_f *func)
 {
-	struct vmod_obj *obj;
-	struct vsb *buf;
+	const struct vjsn_val *vv, *vv2, *vv3;
 
-	buf = VSB_new_auto();
-	AN(buf);
-
-	VSB_printf(buf, "%s.%s", sym->vmod_name, sym->name);
-	AZ(VSB_finish(buf));
-
-	ALLOC_OBJ(obj, VMOD_OBJ_MAGIC);
-	AN(obj);
-	REPLACE(obj->name, VSB_data(buf));
-
-	INIT_OBJ(obj->type, TYPE_MAGIC);
-	obj->type->name = obj->name;
-	sym->type = obj->type;
-	VTAILQ_INSERT_TAIL(&tl->vmod_objects, obj, list);
-	VSB_destroy(&buf);
+	vv = vim->vj->value;
+	assert (vjsn_is_array(vv));
+	VTAILQ_FOREACH(vv2, &vv->children, list) {
+		assert (vjsn_is_array(vv2));
+		vv3 = VTAILQ_FIRST(&vv2->children);
+		assert (vjsn_is_string(vv3));
+		if (!strcmp(vv3->value, stanza))
+			func(tl, vim, VTAILQ_NEXT(vv3, list));
+	}
 }
 
 static void
-vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym)
+vcc_emit_setup(struct vcc *tl, const struct vmod_import *vim)
 {
-	const struct vjsn *vj;
-	const struct vjsn_val *vv, *vv1, *vv2;
-	vcc_kind_t kind;
+	struct inifin *ifp;
+	const struct token *mod = vim->t_mod;
 
-	if (sym->kind == SYM_VMOD) {
-		CAST_OBJ_NOTNULL(vj, sym->eval_priv, VJSN_MAGIC);
-		vv = VTAILQ_FIRST(&vj->value->children);
-	} else if (sym->kind == SYM_OBJECT) {
-		CAST_OBJ_NOTNULL(vv, sym->eval_priv, VJSN_VAL_MAGIC);
+	ifp = New_IniFin(tl);
+
+	VSB_cat(ifp->ini, "\tif (VPI_Vmod_Init(ctx,\n");
+	VSB_printf(ifp->ini, "\t    &VGC_vmod_%.*s,\n", PF(mod));
+	VSB_printf(ifp->ini, "\t    %u,\n", tl->vmod_count++);
+	VSB_printf(ifp->ini, "\t    &%s,\n", vim->func_name);
+	VSB_printf(ifp->ini, "\t    sizeof(%s),\n", vim->func_name);
+	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
+	VSB_cat(ifp->ini, "\t    ");
+	VSB_quote(ifp->ini, vim->path, -1, VSB_QUOTE_CSTR);
+	VSB_cat(ifp->ini, ",\n");
+	AN(vim->file_id);
+	VSB_printf(ifp->ini, "\t    \"%s\",\n", vim->file_id);
+	if (vim->from_vext) {
+		VSB_cat(ifp->ini, "\t    ");
+		VSB_quote(ifp->ini, vim->path, -1, VSB_QUOTE_CSTR);
+		VSB_cat(ifp->ini, "\n");
 	} else {
-		WRONG("symbol kind");
+		VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",
+		    PF(mod), vim->file_id);
 	}
+	VSB_cat(ifp->ini, "\t    ))\n");
+	VSB_cat(ifp->ini, "\t\treturn(1);");
 
-	for (; vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
-		if (!vjsn_is_array(vv))
-			continue;
-		vv1 = VTAILQ_FIRST(&vv->children);
-		assert(vjsn_is_string(vv1));
-		vv2 = VTAILQ_NEXT(vv1, list);
-		if (!vjsn_is_string(vv2))
-			continue;
+	VSB_cat(tl->symtab, ",\n    {\n");
+	VSB_cat(tl->symtab, "\t\"dir\": \"import\",\n");
+	VSB_cat(tl->symtab, "\t\"type\": \"$VMOD\",\n");
+	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
+	if (vim->from_vext)
+		VSB_cat(tl->symtab, "\t\"vext\": true,\n");
+	else
+		VSB_cat(tl->symtab, "\t\"vext\": false,\n");
+	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", vim->path);
+	VSB_printf(tl->symtab, "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
+	    PF(mod), vim->file_id);
+	VSB_cat(tl->symtab, "    }");
 
-		kind = vcc_vmod_kind(vv1->value);
-		if (kind == SYM_NONE)
-			continue;
+	/* XXX: zero the function pointer structure ?*/
+	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(ctx, &vmod_priv_%.*s);",
+	    PF(mod));
+	VSB_printf(ifp->final, "\t\tVPI_Vmod_Unload(ctx, &VGC_vmod_%.*s);",
+	    PF(mod));
 
-		func_sym(tl, kind, sym, vv2);
-	}
+	vcc_vj_foreach(tl, vim, "$EVENT", vcc_do_event);
+
+	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
+	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
+	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
+
+	vcc_vj_foreach(tl, vim, "$CPROTO", vcc_do_cproto);
+
+	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
+}
+
+static void
+vcc_vim_destroy(struct vmod_import **vimp)
+{
+	struct vmod_import *vim;
+
+	TAKE_OBJ_NOTNULL(vim, vimp, VMOD_IMPORT_MAGIC);
+	if (vim->path)
+		free(vim->path);
+	if (vim->vj)
+		vjsn_delete(&vim->vj);
+	if (vim->json)
+		VSB_destroy(&vim->json);
+	FREE_OBJ(vim);
+}
+
+static int
+vcc_path_open(void *priv, const char *fn)
+{
+	struct vmod_import *vim;
+
+	CAST_OBJ_NOTNULL(vim, priv, VMOD_IMPORT_MAGIC);
+	AN(fn);
+
+	return (vcc_Extract_JSON(vim, fn));
 }
 
 void
 vcc_ParseImport(struct vcc *tl)
 {
-	char fn[1024], *fnpx;
+	char fn[1024];
 	const char *p;
 	struct token *mod, *tmod, *t1;
-	struct inifin *ifp;
 	struct symbol *msym, *vsym;
-	const struct vmod_data *vmd;
-	struct vjsn *vj;
-	struct vmod_open vop[1];
+	struct vmod_import *vim = NULL;
+	const struct vmod_import *vimold;
 
-	INIT_OBJ(vop, VMOD_OPEN_MAGIC);
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
 
@@ -328,6 +443,7 @@ vcc_ParseImport(struct vcc *tl)
 	ERRCHK(tl);
 	AN(msym);
 
+	bprintf(fn, "libvmod_%.*s.so", PF(mod));
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
 			VSB_cat(tl->sb, "Expected 'from path ...'\n");
@@ -350,36 +466,64 @@ vcc_ParseImport(struct vcc *tl)
 			bprintf(fn, "%s", tl->t->dec);
 		vcc_NextToken(tl);
 	} else {
-		bprintf(fn, "libvmod_%.*s.so", PF(mod));
+		VTAILQ_FOREACH(vim, &imports, list) {
+			if (!vcc_IdIs(mod, vim->name))
+				continue;
+			if (!vim->unimported_vext)
+				continue;
+			fprintf(stderr, "IMPORT %s from VEXT\n", vim->name);
+			vim->unimported_vext = 0;
+			vim->t_mod = mod;
+			vim->sym = msym;
+			break;
+		}
 	}
 
 	SkipToken(tl, ';');
 
-	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, vop, fn, &fnpx)) {
-		if (vop->err == NULL) {
-			VSB_printf(tl->sb,
-			    "Could not find VMOD %.*s\n", PF(mod));
-		} else {
-			VSB_printf(tl->sb,
-			    "Could not open VMOD %.*s\n", PF(mod));
-			VSB_printf(tl->sb, "\tFile name: %s\n",
-			    fnpx != NULL ? fnpx : fn);
-			VSB_printf(tl->sb, "\tdlerror: %s\n", vop->err);
+	if (vim == NULL) {
+		ALLOC_OBJ(vim, VMOD_IMPORT_MAGIC);
+		AN(vim);
+		vim->t_mod = mod;
+		vim->sym = msym;
+
+		if (VFIL_searchpath(tl->vmod_path, vcc_path_open, vim, fn, &vim->path)) {
+			if (vim->err == NULL) {
+				VSB_printf(tl->sb,
+				    "Could not find VMOD %.*s\n", PF(mod));
+			} else {
+				VSB_printf(tl->sb,
+				    "Could not open VMOD %.*s\n", PF(mod));
+				VSB_printf(tl->sb, "\tFile name: %s\n",
+				    vim->path != NULL ? vim->path : fn);
+				VSB_printf(tl->sb, "\tError: %s\n", vim->err);
+			}
+			vcc_ErrWhere(tl, mod);
+			vcc_vim_destroy(&vim);
+			return;
 		}
-		vcc_ErrWhere(tl, mod);
-		free(fnpx);
+
+		if (vcc_VmodLoad(tl, vim) < 0 || tl->err) {
+			vcc_ErrWhere(tl, vim->t_mod);
+			vcc_vim_destroy(&vim);
+			return;
+		}
+	}
+
+	if (!vcc_IdIs(vim->t_mod, vim->name)) {
+		vcc_ErrWhere(tl, vim->t_mod);
+		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n",
+		    PF(vim->t_mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
+		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vim->name);
+		vcc_vim_destroy(&vim);
 		return;
 	}
 
-	vmd = vcc_VmodSanity(tl, vop->hdl, mod, fnpx);
-	if (vmd == NULL || tl->err) {
-		AZ(dlclose(vop->hdl));
-		free(fnpx);
-		return;
-	}
-
-	if (msym->extra != NULL) {
-		if (!strcmp(msym->extra, vmd->file_id)) {
+	vimold = msym->import;
+	if (vimold != NULL) {
+		CHECK_OBJ(vimold, VMOD_IMPORT_MAGIC);
+		if (!strcmp(vimold->file_id, vim->file_id)) {
 			/* Identical import is OK */
 		} else {
 			VSB_printf(tl->sb,
@@ -387,8 +531,7 @@ vcc_ParseImport(struct vcc *tl)
 			    PF(tmod));
 			vcc_ErrWhere2(tl, t1, tl->t);
 		}
-		AZ(dlclose(vop->hdl));
-		free(fnpx);
+		vcc_vim_destroy(&vim);
 		return;
 	}
 	msym->def_b = t1;
@@ -396,147 +539,54 @@ vcc_ParseImport(struct vcc *tl)
 
 	VTAILQ_FOREACH(vsym, &tl->sym_vmods, sideways) {
 		assert(vsym->kind == SYM_VMOD);
-		if (!strcmp(vsym->extra, vmd->file_id)) {
+		vimold = vsym->import;
+		CHECK_OBJ_NOTNULL(vimold, VMOD_IMPORT_MAGIC);
+		if (!strcmp(vimold->file_id, vim->file_id)) {
 			/* Already loaded under different name */
 			msym->eval_priv = vsym->eval_priv;
-			msym->extra = vsym->extra;
+			msym->import = vsym->import;
 			msym->vmod_name = vsym->vmod_name;
 			vcc_VmodSymbols(tl, msym);
-			AZ(dlclose(vop->hdl));
-			free(fnpx);
+			AZ(tl->err);
+			// XXX: insert msym in sideways ?
+			vcc_vim_destroy(&vim);
 			return;
 		}
 	}
 
 	VTAILQ_INSERT_TAIL(&tl->sym_vmods, msym, sideways);
 
-	ifp = New_IniFin(tl);
-
-	VSB_cat(ifp->ini, "\tif (VPI_Vmod_Init(ctx,\n");
-	VSB_printf(ifp->ini, "\t    &VGC_vmod_%.*s,\n", PF(mod));
-	VSB_printf(ifp->ini, "\t    %u,\n", tl->vmod_count++);
-	VSB_printf(ifp->ini, "\t    &%s,\n", vmd->func_name);
-	VSB_printf(ifp->ini, "\t    sizeof(%s),\n", vmd->func_name);
-	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
-	VSB_cat(ifp->ini, "\t    ");
-	VSB_quote(ifp->ini, fnpx, -1, VSB_QUOTE_CSTR);
-	VSB_cat(ifp->ini, ",\n");
-	AN(vmd);
-	AN(vmd->file_id);
-	VSB_printf(ifp->ini, "\t    \"%s\",\n", vmd->file_id);
-	VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",
-	    PF(mod), vmd->file_id);
-	VSB_cat(ifp->ini, "\t    ))\n");
-	VSB_cat(ifp->ini, "\t\treturn(1);");
-
-	VSB_cat(tl->symtab, ",\n    {\n");
-	VSB_cat(tl->symtab, "\t\"dir\": \"import\",\n");
-	VSB_cat(tl->symtab, "\t\"type\": \"$VMOD\",\n");
-	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
-	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", fnpx);
-	VSB_printf(tl->symtab, "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
-	    PF(mod), vmd->file_id);
-	VSB_cat(tl->symtab, "    }");
-
-	/* XXX: zero the function pointer structure ?*/
-	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(ctx, &vmod_priv_%.*s);", PF(mod));
-	VSB_printf(ifp->final, "\t\tVPI_Vmod_Unload(ctx, &VGC_vmod_%.*s);", PF(mod));
-
-	vj = vjsn_parse(vmd->json, &p);
-	XXXAZ(p);
-	AN(vj);
-	msym->eval_priv = vj;
-	msym->extra = TlDup(tl, vmd->file_id);
-	msym->vmod_name = TlDup(tl, vmd->name);
+	msym->eval_priv = vim->vj;
+	msym->import = vim;
+	msym->vmod_name = TlDup(tl, vim->name);
 	vcc_VmodSymbols(tl, msym);
+	ERRCHK(tl);
 
-	vcc_json_always(tl, vj, msym->vmod_name);
-
-	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
-	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
-	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
-	Fh(tl, 0, "\n%s\n", vmd->proto);
-	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
-	free(fnpx);
+	vcc_emit_setup(tl, vim);
 }
 
-void v_matchproto_(sym_act_f)
-vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
+void
+vcc_ImportVext(struct vcc *tl, const char *filename)
 {
-	struct symbol *isym, *osym;
-	struct inifin *ifp;
-	struct vsb *buf;
-	const struct vjsn_val *vv, *vf;
-	int null_ok = 0;
+	struct vmod_import *vim;
 
-	(void)sym;
-	(void)t;
+	ALLOC_OBJ(vim, VMOD_IMPORT_MAGIC);
+	AN(vim);
 
-	ExpectErr(tl, ID);
-	vcc_ExpectVid(tl, "VCL object");
-	ERRCHK(tl);
-	isym = VCC_HandleSymbol(tl, INSTANCE);
-	ERRCHK(tl);
-	AN(isym);
-	isym->noref = 1;
-	isym->action = vcc_Act_Obj;
-
-	SkipToken(tl, '=');
-	ExpectErr(tl, ID);
-	osym = VCC_SymbolGet(tl, SYM_MAIN, SYM_OBJECT, SYMTAB_EXISTING,
-	    XREF_NONE);
-	ERRCHK(tl);
-	AN(osym);
-
-	/* Scratch the generic INSTANCE type */
-	isym->type = osym->type;
-
-	CAST_OBJ_NOTNULL(vv, osym->eval_priv, VJSN_VAL_MAGIC);
-	// vv = object name
-
-	isym->vmod_name = osym->vmod_name;
-	isym->eval_priv = vv;
-
-	vv = VTAILQ_NEXT(vv, list);
-	// vv = flags
-	assert(vjsn_is_object(vv));
-	VTAILQ_FOREACH(vf, &vv->children, list)
-		if (!strcmp(vf->name, "NULL_OK") && vjsn_is_true(vf))
-			null_ok = 1;
-	if (!null_ok)
-		VTAILQ_INSERT_TAIL(&tl->sym_objects, isym, sideways);
-
-	vv = VTAILQ_NEXT(vv, list);
-	// vv = struct name
-
-	Fh(tl, 0, "static %s *%s;\n\n", vv->value, isym->rname);
-	vv = VTAILQ_NEXT(vv, list);
-
-	vf = VTAILQ_FIRST(&vv->children);
-	vv = VTAILQ_NEXT(vv, list);
-	assert(vjsn_is_string(vf));
-	assert(!strcmp(vf->value, "$INIT"));
-
-	vf = VTAILQ_NEXT(vf, list);
-
-	buf = VSB_new_auto();
-	AN(buf);
-	VSB_printf(buf, "&%s, \"%s\"", isym->rname, isym->name);
-	AZ(VSB_finish(buf));
-	vcc_Eval_Func(tl, vf, VSB_data(buf), osym);
-	VSB_destroy(&buf);
-	ERRCHK(tl);
-	SkipToken(tl, ';');
-	isym->def_e = tl->t;
-
-	vf = VTAILQ_FIRST(&vv->children);
-	assert(vjsn_is_string(vf));
-	assert(!strcmp(vf->value, "$FINI"));
-
-	vf = VTAILQ_NEXT(vf, list);
-	vf = VTAILQ_FIRST(&vf->children);
-	vf = VTAILQ_NEXT(vf, list);
-	ifp = New_IniFin(tl);
-	VSB_printf(ifp->fin, "\t\tif (%s)\n", isym->rname);
-	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, isym->rname);
+	if (vcc_Extract_JSON(vim, filename)) {
+		FREE_OBJ(vim);
+		return;
+	}
+	fprintf(stderr, "FOUND VMOD in VEXT %s\n", filename);
+	if (vcc_VmodLoad(tl, vim) < 0 || tl->err) {
+		// vcc_ErrWhere(tl, vim->t_mod);
+		vcc_vim_destroy(&vim);
+		return;
+	}
+	vim->from_vext = 1;
+	vim->unimported_vext = 1;
+	vim->path = strdup(filename);
+	vim->path += 1;
+	AN(vim->path);
+	fprintf(stderr, "GOOD VMOD %s in VEXT %s\n", vim->name, filename);
 }

@@ -201,6 +201,7 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 		vp = vfe->closed;
 	}
 	vc->vfp_nxt = vfe;
+	assert(vp != VFP_NULL);
 	return (vp);
 }
 

@@ -454,8 +454,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	CAST_OBJ_NOTNULL(sp, wp->priv1, SESS_MAGIC);
-	CAST_OBJ_NOTNULL(xp, (const void*)wp->priv2, TRANSPORT_MAGIC);
-	AN(wp->priv2);
+	CAST_OBJ_NOTNULL(xp, wp->priv2, TRANSPORT_MAGIC);
 	assert(WS_Reservation(sp->ws) == wp);
 	FINI_OBJ(wp);
 
@@ -526,7 +525,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	INIT_OBJ(wp, WAITED_MAGIC);
 	wp->fd = sp->fd;
 	wp->priv1 = sp;
-	wp->priv2 = (uintptr_t)xp;
+	wp->priv2 = xp;
 	wp->idle = sp->t_idle;
 	wp->func = ses_handle;
 	wp->tmo = SESS_TMO(sp, timeout_idle);

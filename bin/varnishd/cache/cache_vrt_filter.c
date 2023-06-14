@@ -103,7 +103,7 @@ vrt_addfilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 	err = is_dup_filter(hd, vfp, vdp, name);
 	if (err != NULL) {
 		if (ctx != NULL)
-			VRT_fail(ctx, "%s (global)", err);
+			VRT_fail(ctx, "%s: %s (global)", name, err);
 		return (err);
 	}
 	if (ctx != NULL) {
@@ -112,7 +112,7 @@ vrt_addfilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 		hd = &ctx->vcl->filters;
 		err = is_dup_filter(hd, vfp, vdp, name);
 		if (err != NULL) {
-			VRT_fail(ctx, "%s (per-vcl)", err);
+			VRT_fail(ctx, "%s: %s (per-vcl)", name, err);
 			return (err);
 		}
 	}
@@ -124,7 +124,7 @@ vrt_addfilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 	vp->name = name;
 	vp->nlen = strlen(name);
 	VTAILQ_INSERT_TAIL(hd, vp, list);
-	return(err);
+	return (err);
 }
 
 const char *
@@ -240,7 +240,7 @@ VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 	const struct vfilter *vp;
 
 	AN(fl);
-	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
+	VSLbs(vc->wrk->vsl, SLT_Filters, TOSTRAND(fl));
 
 	while (1) {
 		vp = vcl_filter_list_iter(1, &vrt_filters, &vcl->filters, &fl);
@@ -260,7 +260,7 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 	struct vrt_ctx ctx[1];
 
 	AN(fl);
-	VSLb(req->vsl, SLT_Filters, "%s", fl);
+	VSLbs(req->vsl, SLT_Filters, TOSTRAND(fl));
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Req2Ctx(ctx, req);
 

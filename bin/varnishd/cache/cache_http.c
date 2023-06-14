@@ -35,6 +35,9 @@
 
 #include "cache_varnishd.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+#include "common/heritage.h"
 
 #include "vct.h"
 #include "vend.h"
@@ -58,6 +61,8 @@ const char H__Status[]	= "\010:status:";
 const char H__Proto[]	= "\007:proto:";
 const char H__Reason[]	= "\010:reason:";
 
+static char * via_hdr;
+
 /*--------------------------------------------------------------------
  * Perfect hash to rapidly recognize headers from tbl/http_headers.h
  * which have non-zero flags.
@@ -65,73 +70,113 @@ const char H__Reason[]	= "\010:reason:";
  * A suitable algorithm can be found with `gperf`:
  *
  *	tr '" ,' '   ' < include/tbl/http_headers.h |
- *		awk '$1 == "H(" && $4 != "0" {print$2}' |
+ *		awk '$1 == "H(" {print $2}' |
  *		gperf --ignore-case
  *
  */
 
+#define GPERF_MIN_WORD_LENGTH 2
+#define GPERF_MAX_WORD_LENGTH 19
+#define GPERF_MAX_HASH_VALUE 79
+
 static const unsigned char http_asso_values[256] = {
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 25, 39,  0, 20,  5, 39, 39, 39, 15,  0, 39,
-	10, 39,  0, 39, 15, 10, 39, 39,  0, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 25, 39,  0, 20,  5, 39, 39, 39, 15,  0, 39,
-	10, 39,  0, 39, 15, 10, 39, 39,  0, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80,  0, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80,  5, 80, 20,  0,  0,
+	5, 10,  5,  5, 80,  0, 15,  0, 20, 80,
+	40, 80,  0, 35, 10, 20, 55, 45,  0,  0,
+	80, 80, 80, 80, 80, 80, 80,  5, 80, 20,
+	0,  0,  5, 10,  5,  5, 80,  0, 15,  0,
+	20, 80, 40, 80,  0, 35, 10, 20, 55, 45,
+	0,  0, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80
 };
 
 static struct http_hdrflg {
 	char		*hdr;
 	unsigned	flag;
-} http_hdrflg[38 + 1] = {			// MAX_HASH_VALUE
-	{ NULL },
-	{ NULL },
-	{ H_TE },
-	{ H_Age },
-	{ NULL },
+} http_hdrflg[GPERF_MAX_HASH_VALUE + 1] = {
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ H_Date },
 	{ H_Range },
 	{ NULL },
-	{ H_Upgrade },
-	{ H_If_Range },
-	{ NULL },
-	{ H_Connection },
-	{ NULL },
-	{ H_Trailer },
-	{ H_If_None_Match },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ H_Transfer_Encoding },
-	{ H_Proxy_Authenticate },
-	{ H_Proxy_Authorization },
+	{ H_Referer },
+	{ H_Age },
+	{ H_From },
 	{ H_Keep_Alive },
-	{ NULL },
-	{ NULL },
+	{ H_Retry_After },
+	{ H_TE },
+	{ H_If_Range },
+	{ H_ETag },
+	{ H_X_Forwarded_For },
+	{ H_Expect },
+	{ H_Trailer },
 	{ H_If_Match },
-	{ H_HTTP2_Settings },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ H_Content_Range },
+	{ H_Host },
+	{ H_Accept_Language },
+	{ H_Accept },
+	{ H_If_Modified_Since },
+	{ H_If_None_Match },
 	{ H_If_Unmodified_Since },
 	{ NULL },
+	{ H_Cookie },
+	{ H_Upgrade },
+	{ H_Last_Modified },
+	{ H_Accept_Charset },
+	{ H_Accept_Encoding },
+	{ H_Content_MD5 },
+	{ H_Content_Type },
+	{ H_Content_Range },
+	{ NULL }, { NULL },
+	{ H_Content_Language },
+	{ H_Transfer_Encoding },
+	{ H_Authorization },
+	{ H_Content_Length },
+	{ H_User_Agent },
+	{ H_Server },
+	{ H_Expires },
+	{ H_Location },
 	{ NULL },
-	{ H_If_Modified_Since },
+	{ H_Set_Cookie },
+	{ H_Content_Encoding },
+	{ H_Max_Forwards },
 	{ H_Cache_Control },
 	{ NULL },
+	{ H_Connection },
+	{ H_Pragma },
 	{ NULL },
+	{ H_Accept_Ranges },
+	{ H_HTTP2_Settings },
+	{ H_Allow },
+	{ H_Content_Location },
 	{ NULL },
+	{ H_Proxy_Authenticate },
+	{ H_Vary },
 	{ NULL },
-	{ H_Accept_Ranges }
+	{ H_WWW_Authenticate },
+	{ H_Warning },
+	{ H_Via },
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ NULL }, { NULL }, { NULL },
+	{ H_Proxy_Authorization }
 };
 
 static struct http_hdrflg *
@@ -140,23 +185,23 @@ http_hdr_flags(const char *b, const char *e)
 	unsigned u;
 	struct http_hdrflg *retval;
 
-	if (e == NULL)
-		return(NULL);
-	assert(e > b);
+	if (b == NULL || e == NULL)
+		return (NULL);
+	assert(b <= e);
 	u = (unsigned)(e - b);
 	assert(b + u == e);
-	if (u < 2 || u > 19)		// MIN_WORD_LENGTH & MAX_WORD_LENGTH
-		return(NULL);
-	if (u > 3)
-		u += http_asso_values[((const uint8_t*)b)[3]];
-	if (u > 38)			// MAX_HASH_VALUE
-		return(NULL);
+	if (u < GPERF_MIN_WORD_LENGTH || u > GPERF_MAX_WORD_LENGTH)
+		return (NULL);
+	u += http_asso_values[(uint8_t)(e[-1])] +
+	     http_asso_values[(uint8_t)(b[0])];
+	if (u > GPERF_MAX_HASH_VALUE)
+		return (NULL);
 	retval = &http_hdrflg[u];
 	if (retval->hdr == NULL)
-		return(NULL);
+		return (NULL);
 	if (!http_hdr_at(retval->hdr + 1, b, e - b))
-		return(NULL);
-	return(retval);
+		return (NULL);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
@@ -168,19 +213,26 @@ http_init_hdr(char *hdr, int flg)
 
 	hdr[0] = strlen(hdr + 1);
 	f = http_hdr_flags(hdr + 1, hdr + hdr[0]);
-	if (flg) {
-		AN(f);
-		assert(f->hdr == hdr);
-		f->flag = flg;
-	}
+	AN(f);
+	assert(f->hdr == hdr);
+	f->flag = flg;
 }
 
 void
 HTTP_Init(void)
 {
+	struct vsb *vsb;
 
 #define HTTPH(a, b, c) http_init_hdr(b, c);
 #include "tbl/http_headers.h"
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "1.1 %s (Varnish/" PACKAGE_BRANCH ")",
+	    heritage.identity);
+	AZ(VSB_finish(vsb));
+	REPLACE(via_hdr, VSB_data(vsb));
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------
@@ -197,7 +249,7 @@ http_VSLH(const struct http *hp, unsigned hdr)
 	int i;
 
 	if (hp->vsl != NULL) {
-		AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
+		assert(VXID_TAG(hp->vsl->wid));
 		i = hdr;
 		if (i > HTTP_HDR_FIRST)
 			i = HTTP_HDR_FIRST;
@@ -214,7 +266,7 @@ http_VSLH_del(const struct http *hp, unsigned hdr)
 	if (hp->vsl != NULL) {
 		/* We don't support unsetting stuff in the first line */
 		assert (hdr >= HTTP_HDR_FIRST);
-		AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
+		assert(VXID_TAG(hp->vsl->wid));
 		i = (HTTP_HDR_UNSET - HTTP_HDR_METHOD);
 		i += hp->logtag;
 		VSLbt(hp->vsl, (enum VSL_tag_e)i, hp->hd[hdr]);
@@ -337,7 +389,7 @@ http_Teardown(struct http *hp)
  */
 
 void
-HTTP_Dup(struct http *to, const struct http * const fm)
+HTTP_Dup(struct http *to, const struct http * fm)
 {
 
 	assert(fm->nhd <= to->shd);
@@ -415,7 +467,7 @@ http_PutField(struct http *to, int field, const char *string)
 	p = WS_Copy(to->ws, string, -1);
 	if (p == NULL) {
 		http_fail(to);
-		VSLb(to->vsl, SLT_LostHeader, "%s", string);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(string));
 		return;
 	}
 	http_SetH(to, field, p);
@@ -535,7 +587,8 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 			x = Tlen(hp->hd[f]);
 			if (b + x >= e) {
 				http_fail(hp);
-				VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
+				VSLbs(hp->vsl, SLT_LostHeader,
+				    TOSTRAND(hdr + 1));
 				WS_Release(hp->ws, 0);
 				return;
 			}
@@ -557,7 +610,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 
 		if (b + lsep + x >= e) {
 			http_fail(hp);
-			VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
+			VSLbs(hp->vsl, SLT_LostHeader, TOSTRAND(hdr + 1));
 			WS_Release(hp->ws, 0);
 			return;
 		}
@@ -905,17 +958,17 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 }
 
 const char *
-http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
+http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi, ssize_t len)
 {
-	ssize_t tmp;
+	ssize_t tmp_lo, tmp_hi;
 	const char *b, *t;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	if (lo == NULL)
-		lo = &tmp;
+		lo = &tmp_lo;
 	if (hi == NULL)
-		hi = &tmp;
+		hi = &tmp_hi;
 
 	*lo = *hi = -1;
 
@@ -950,6 +1003,26 @@ http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 		b++;
 	if (*b != '\0')
 		return ("Trailing stuff");
+
+	assert(*lo >= -1);
+	assert(*hi >= -1);
+
+	if (len <= 0)
+		return (NULL);			// Allow 200 response
+
+	if (*lo < 0) {
+		assert(*hi > 0);
+		*lo = len - *hi;
+		if (*lo < 0)
+			*lo = 0;
+		*hi = len - 1;
+	} else if (len >= 0 && (*hi >= len || *hi < 0)) {
+		*hi = len - 1;
+	}
+
+	if (*lo >= len)
+		return ("low range beyond object");
+
 	return (NULL);
 }
 
@@ -1132,6 +1205,8 @@ http_isfiltered(const struct http *fm, unsigned u, unsigned how)
 
 	if (fm->hdf[u] & HDF_FILTER)
 		return (1);
+	if (u < HTTP_HDR_FIRST)
+		return (0);
 	e = strchr(fm->hd[u].b, ':');
 	if (e == NULL)
 		return (0);
@@ -1441,7 +1516,7 @@ http_CopyHome(const struct http *hp)
 		p = WS_Copy(hp->ws, hp->hd[u].b, l + 1L);
 		if (p == NULL) {
 			http_fail(hp);
-			VSLb(hp->vsl, SLT_LostHeader, "%s", hp->hd[u].b);
+			VSLbs(hp->vsl, SLT_LostHeader, TOSTRAND(hp->hd[u].b));
 			return;
 		}
 		hp->hd[u].b = p;
@@ -1457,7 +1532,7 @@ http_SetHeader(struct http *to, const char *header)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
-		VSLb(to->vsl, SLT_LostHeader, "%s", header);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(header));
 		http_fail(to);
 		return;
 	}
@@ -1475,6 +1550,20 @@ http_ForceHeader(struct http *to, hdr_t hdr, const char *val)
 		return;
 	http_Unset(to, hdr);
 	http_PrintfHeader(to, "%s %s", hdr + 1, val);
+}
+
+void
+http_AppendHeader(struct http *to, hdr_t hdr, const char *val)
+{
+	const char *old;
+
+	http_CollectHdr(to, hdr);
+	if (http_GetHdr(to, hdr, &old)) {
+		http_Unset(to, hdr);
+		http_PrintfHeader(to, "%s %s, %s", hdr + 1, old, val);
+	} else {
+		http_PrintfHeader(to, "%s %s", hdr + 1, val);
+	}
 }
 
 void
@@ -1511,19 +1600,26 @@ http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
-		VSLb(to->vsl, SLT_LostHeader, "%s", fmt);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(fmt));
 		http_fail(to);
 		return;
 	}
 	p = WS_Alloc(to->ws, strlen(fmt) + VTIM_FORMAT_SIZE);
 	if (p == NULL) {
 		http_fail(to);
-		VSLb(to->vsl, SLT_LostHeader, "%s", fmt);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(fmt));
 		return;
 	}
 	strcpy(p, fmt);
 	VTIM_format(now, strchr(p, '\0'));
 	http_SetH(to, to->nhd++, p);
+}
+
+const char *
+http_ViaHeader(void)
+{
+
+	return (via_hdr);
 }
 
 /*--------------------------------------------------------------------*/

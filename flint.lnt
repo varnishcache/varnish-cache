@@ -9,6 +9,9 @@
 //d__flexelint_v9__=1
 +fan
 
+// No automatic custody
+-ffc
+
 -hm4
 
 ///////////////////////////////////////////////////////////////////////
@@ -213,6 +216,12 @@
 -emacro(527, VRBT_*)		// unreachable code
 -emacro(740, VRBT_*)		// unusual pointer cast
 -emacro(438, VRBT_*)		// last value assigned not used
+-emacro(613, VRBT_*)	// Possible use of null pointer 'child' in left argument to
+-emacro(838, VRBT_*)	// Previously assigned value to variable 'child' has not been used
+-emacro(50, VRBT_GENERATE_*) // Attempted to take the address of a non-lvalue
+-emacro(506, VRBT_GENERATE_*) // Constant value Boolean
+-emacro(845, VRBT_GENERATE_*) // The left argument to operator '&&' is certain to be 0
+-emacro(774, VRBT_GENERATE_*) // Boolean within 'if' always evaluates to False
 -esym(534, *_VRBT_REMOVE)	// ignore retval
 -esym(534, *_VRBT_INSERT)	// ignore retval
 
@@ -243,6 +252,10 @@
 -emacro(527, NEEDLESS)	// unreachable code
 -emacro(160, _vtake)	// The sequence '( {' is non standard
 +rw( __typeof__ )
+
+///////////////////////////////////////////////////////////////////////
+// <vrt.h>
+-emacro(446, TOSTRAND, TOSTRANDS)	// side effect in initializer
 
 ///////////////////////////////////////////////////////////////////////
 // <libvarnishapi>

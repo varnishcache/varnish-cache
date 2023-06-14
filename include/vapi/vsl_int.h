@@ -50,10 +50,20 @@
  * The log member points to an array of 32bit unsigned integers containing
  * log records.
  *
- * Each logrecord consist of:
- *	[n]		= ((type & 0xff) << 24) | (length & 0xffff)
- *	[n + 1]		= ((marker & 0x03) << 30) | (identifier & 0x3fffffff)
- *	[n + 2] ... [m]	= content (NUL-terminated)
+ * Each logrecord consist of four or more 32 bit words, stored in
+ * native endiansess:
+ *
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   |     TAG       |  unused   |ver|          length               |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   |                   32 lower bits of VXID                       |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   |B|C|    unused (zero)    |        19 upper bits of VXID        |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   | content ... (NUL-terminated)                                  |
+ *   +-+-+                                                       +-+-+
+ *   | ...							     |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *
  * Logrecords are NUL-terminated so that string functions can be run
  * directly on the shmlog data.
@@ -62,21 +72,29 @@
  * changing corresponding magic numbers in varnishd/cache/cache_shmlog.c
  */
 
-#define VSL_CLIENTMARKER	(1U<<30)
-#define VSL_BACKENDMARKER	(1U<<31)
-#define VSL_IDENTMASK		(~(3U<<30))
+#define VSL_CLIENTMARKER	(1ULL<<62)
+#define VSL_BACKENDMARKER	(1ULL<<63)
+#define VSL_IDENTMASK		((1ULL<<51)-1)
 
 #define VSL_LENMASK		0xffff
-#define VSL_OVERHEAD		2
+#define VSL_VERMASK		0x3
+#define VSL_VERSHIFT		16
+#define VSL_IDMASK		0xff
+#define VSL_IDSHIFT		24
+#define VSL_OVERHEAD		3
+#define VSL_VERSION_2		0x0
+#define VSL_VERSION_3		0x1
 #define VSL_WORDS(len)		(((len) + 3) / 4)
 #define VSL_BYTES(words)	((words) * 4)
 #define VSL_END(ptr, len)	((ptr) + VSL_OVERHEAD + VSL_WORDS(len))
 #define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
 #define VSL_LEN(ptr)		((ptr)[0] & VSL_LENMASK)
-#define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> 24))
-#define VSL_ID(ptr)		(((ptr)[1]) & VSL_IDENTMASK)
-#define VSL_CLIENT(ptr)		(((ptr)[1]) & VSL_CLIENTMARKER)
-#define VSL_BACKEND(ptr)	(((ptr)[1]) & VSL_BACKENDMARKER)
+#define VSL_VER(ptr)		(((ptr)[0] & VSL_VERMASK) >> VSL_VERSHIFT)
+#define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> VSL_IDSHIFT))
+#define VSL_ID64(ptr)		(((uint64_t)((ptr)[2])<<32) | ((ptr)[1]))
+#define VSL_ID(ptr)		(VSL_ID64(ptr) & VSL_IDENTMASK)
+#define VSL_CLIENT(ptr)		(((ptr)[2]) & (VSL_CLIENTMARKER >> 32))
+#define VSL_BACKEND(ptr)	(((ptr)[2]) & (VSL_BACKENDMARKER >> 32))
 #define VSL_DATA(ptr)		((char*)((ptr)+VSL_OVERHEAD))
 #define VSL_CDATA(ptr)		((const char*)((ptr)+VSL_OVERHEAD))
 #define VSL_BATCHLEN(ptr)	((ptr)[1])
@@ -86,7 +104,7 @@
 #define VSL_WRAPMARKER	(((uint32_t)SLT__Reserved << 24) | 0x575757) /* "WWW" */
 
 /*
- * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
+ * The identifiers in shmlogtag are "SLT_" + VSL tag.  A script may be run
  * on this file to extract the table rather than handcode it
  */
 #define SLT__MAX 256

@@ -122,10 +122,15 @@ mgt_vcl_import_vmod(struct vclprog *vp, const struct vjsn_val *vv)
 	const char *v_name;
 	const char *v_file;
 	const char *v_dst;
+	const struct vjsn_val *jv;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
 	AN(vv);
 
+	jv = vjsn_child(vv, "vext");
+	if (vjsn_is_true(jv))
+		return;
+	AN(jv);
 	v_name = mgt_vcl_symtab_val(vv, "name");
 	v_file = mgt_vcl_symtab_val(vv, "file");
 	v_dst = mgt_vcl_symtab_val(vv, "dst");

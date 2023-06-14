@@ -209,9 +209,9 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 		ObjSendEvent(wrk, oc, OEV_EXPIRE);
 		tmpoc = oc;
 		assert(oc->refcnt >= 2); /* Silence coverity */
-		(void)HSH_DerefObjCore(wrk, &tmpoc, 0);
-		AZ(tmpoc);
-		assert(oc->refcnt >= 1); /* Silence coverity */
+		(void)HSH_DerefObjCore(wrk, &oc, 0);
+		AZ(oc);
+		assert(tmpoc->refcnt >= 1); /* Silence coverity */
 	}
 }
 
@@ -241,7 +241,7 @@ EXP_Rearm(struct objcore *oc, vtim_real now,
 
 	when = EXP_WHEN(oc);
 
-	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.6f e=%.6f f=0x%x", oc,
+	VSL(SLT_ExpKill, NO_VXID, "EXP_Rearm p=%p E=%.6f e=%.6f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
 	if (when < oc->t_origin || when < oc->timer_when) {
@@ -354,8 +354,8 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 		assert(oc->timer_idx == VBH_NOIDX);
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
-		    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired xid=%ju t=%.0f",
+		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
 		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
 	}

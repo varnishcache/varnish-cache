@@ -48,12 +48,7 @@
 VCL_BACKEND
 VPFX(lookup)(VRT_CTX, VCL_STRING name)
 {
-	if ((ctx->method & VCL_MET_TASK_H) == 0) {
-		VRT_fail(ctx,
-		    "lookup() may only be called from vcl_init / vcl_fini");
-		return (NULL);
-	}
-
+	AN(ctx->method & VCL_MET_TASK_H);
 	return (VRT_LookupDirector(ctx, name));
 }
 
@@ -93,16 +88,26 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
 }
 
 void
+vdir_release(struct vdir *vd)
+{
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+
+	for (u = 0; u < vd->n_backend; u++)
+		VRT_Assign_Backend(&vd->backend[u], NULL);
+	vd->n_backend = 0;
+}
+
+void
 vdir_delete(struct vdir **vdp)
 {
 	struct vdir *vd;
-	unsigned u;
 
 	TAKE_OBJ_NOTNULL(vd, vdp, VDIR_MAGIC);
 
 	AZ(vd->dir);
-	for (u = 0; u < vd->n_backend; u++)
-		VRT_Assign_Backend(&vd->backend[u], NULL);
+	AZ(vd->n_backend);
 	free(vd->backend);
 	free(vd->weight);
 	AZ(pthread_rwlock_destroy(&vd->mtx));

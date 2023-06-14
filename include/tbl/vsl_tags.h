@@ -119,18 +119,6 @@ SLTM(BackendOpen, 0, "Backend connection opened",
 	"\n"
 )
 
-SLTM(BackendReuse, 0, "Backend connection put up for reuse",
-	"Logged when a backend connection is put up for reuse by a later"
-	" connection.\n\n"
-	"The format is::\n\n"
-	"\t%d %s\n"
-	"\t|  |\n"
-	"\t|  +- Backend display name\n"
-	"\t+---- Connection file descriptor\n"
-	"\n"
-	NOSUP_NOTICE
-)
-
 SLTM(BackendClose, 0, "Backend connection closed",
 	"Logged when a backend connection is closed.\n\n"
 	"The format is::\n\n"
@@ -164,19 +152,6 @@ SLTM(Proxy, 0, "PROXY protocol information",
 
 SLTM(ProxyGarbage, 0, "Unparseable PROXY request",
 	"A PROXY protocol header was unparseable.\n\n"
-)
-
-SLTM(Backend, 0, "Backend selected",
-	"Logged when a connection is selected for handling a backend"
-	" request.\n\n"
-	"The format is::\n\n"
-	"\t%d %s %s\n"
-	"\t|  |  |\n"
-	"\t|  |  +- Backend display name\n"
-	"\t|  +---- VCL name\n"
-	"\t+------- Connection file descriptor\n"
-	"\n"
-	NOSUP_NOTICE
 )
 
 SLTM(Length, 0, "Size of object body",
@@ -291,7 +266,7 @@ SLTM(VCL_acl, 0, "VCL ACL check results",
 	"The format is::\n\n"
 	"\t%s %s [%s [fixed: %s]]\n"
 	"\t|  |   |          |\n"
-	"\t|  |   |          +- Fixed entry (see vcc_acl_pedantic parameter)\n"
+	"\t|  |   |          +- Fixed entry (see acl +pedantic flag)\n"
 	"\t|  |   +------------ Matching entry (only for MATCH)\n"
 	"\t|  +---------------- Name of the ACL\n"
 	"\t+-------------------- MATCH or NO_MATCH\n"
@@ -506,22 +481,24 @@ SLTM(Gzip, 0, "G(un)zip performed on object",
 SLTM(Link, 0, "Links to a child VXID",
 	"Links this VXID to any child VXID it initiates.\n\n"
 	"The format is::\n\n"
-	"\t%s %d %s\n"
-	"\t|  |  |\n"
-	"\t|  |  +- Reason\n"
-	"\t|  +---- Child vxid\n"
-	"\t+------- Child type (\"req\" or \"bereq\")\n"
+	"\t%s %d %s [%u]\n"
+	"\t|  |  |   |\n"
+	"\t|  |  |   +- Child task sub-level\n"
+	"\t|  |  +----- Reason\n"
+	"\t|  +-------- Child vxid\n"
+	"\t+----------- Child type (\"sess\", \"req\" or \"bereq\")\n"
 	"\n"
 )
 
 SLTM(Begin, 0, "Marks the start of a VXID",
 	"The first record of a VXID transaction.\n\n"
 	"The format is::\n\n"
-	"\t%s %d %s\n"
-	"\t|  |  |\n"
-	"\t|  |  +- Reason\n"
-	"\t|  +---- Parent vxid\n"
-	"\t+------- Type (\"sess\", \"req\" or \"bereq\")\n"
+	"\t%s %d %s [%u]\n"
+	"\t|  |  |   |\n"
+	"\t|  |  |   +- Task sub-level\n"
+	"\t|  |  +----- Reason\n"
+	"\t|  +-------- Parent vxid\n"
+	"\t+----------- Type (\"sess\", \"req\" or \"bereq\")\n"
 	"\n"
 )
 
@@ -619,18 +596,6 @@ SLTM(VfpAcct, 0, "Fetch filter accounting",
 
 SLTM(Witness, 0, "Lock order witness records",
 	"Diagnostic recording of locking order.\n"
-)
-
-SLTM(BackendStart, 0, "Backend request start",
-	"Start of backend processing. Logs the backend IP address and port"
-	" number.\n\n"
-	"The format is::\n\n"
-	"\t%s %s\n"
-	"\t|  |\n"
-	"\t|  +- Backend Port number\n"
-	"\t+---- Backend IP4/6 address\n"
-	"\n"
-	NOSUP_NOTICE
 )
 
 SLTM(H2RxHdr, SLT_F_BINARY, "Received HTTP2 frame header",

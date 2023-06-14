@@ -175,6 +175,16 @@ vmod_fallback_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (be);
 }
 
+static void v_matchproto_(vdi_release_f)
+vmod_fallback_release(VCL_BACKEND dir)
+{
+	struct vmod_directors_fallback *fallback;
+
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(fallback, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	vdir_release(fallback->vd);
+}
+
 static void v_matchproto_(vdi_destroy_f)
 vmod_fallback_destroy(VCL_BACKEND dir)
 {
@@ -191,6 +201,7 @@ static const struct vdi_methods vmod_fallback_methods[1] = {{
 	.type =			"fallback",
 	.healthy =		vmod_fallback_healthy,
 	.resolve =		vmod_fallback_resolve,
+	.release =		vmod_fallback_release,
 	.destroy =		vmod_fallback_destroy,
 	.list =			vmod_fallback_list
 }};

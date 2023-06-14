@@ -53,6 +53,8 @@ varnish v1 -expect MAIN.n_lru_nuked == 0
 barrier b1 sync
 client c1 -wait
 
+varnish v1 -vsl_catchup
+
 varnish v1 -expect SM?.rxbuf.g_bytes == 0
 varnish v1 -expect SM?.Transient.g_bytes == 0
 varnish v1 -expect MAIN.n_lru_nuked == 0
@@ -64,11 +66,13 @@ client c2 {
 	expect resp.bodylen == 1048000
 } -run
 
+varnish v1 -vsl_catchup
+
 varnish v1 -expect SM?.rxbuf.g_bytes >= 1048000
 varnish v1 -expect MAIN.n_lru_nuked == 0
 
 logexpect l1 -v v1 -g raw -q "Expkill ~ LRU" {
-	expect * * Expkill x=1005
+	expect * * Expkill xid=1005
 } -start
 
 client c3 {
@@ -89,6 +93,8 @@ varnish v1 -expect MAIN.n_lru_nuked == 1
 
 barrier b1 sync
 client c3 -wait
+
+varnish v1 -vsl_catchup
 
 varnish v1 -expect SM?.rxbuf.g_bytes == 0
 varnish v1 -expect SM?.Transient.g_bytes == 0

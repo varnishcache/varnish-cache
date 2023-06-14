@@ -31,7 +31,7 @@
  *
  * This is the public API for the VSM access.
  *
- * The VSM "class" acts as parent class for the VSL and VSC subclasses.
+ * The VSM category acts as parent category for the VSL and VSC sub-categories.
  *
  */
 
@@ -49,7 +49,7 @@ struct vsm_fantom {
 	uintptr_t		priv2;		/* VSM private */
 	void			*b;		/* first byte of payload */
 	void			*e;		/* first byte past payload */
-	char			*class;
+	char			*category;
 	char			*ident;
 };
 
@@ -73,7 +73,7 @@ struct vsm *VSM_New(void);
 void VSM_Destroy(struct vsm **vd);
 	/*
 	 * Close and deallocate all storage and mappings.
-	 * (including any VSC and VSL "sub-classes" XXX?)
+	 * (including any VSC and VSL "sub-category" XXX?)
 	 */
 
 const char *VSM_Error(const struct vsm *vd);
@@ -173,14 +173,14 @@ const struct vsm_valid *VSM_StillValid(const struct vsm *, const struct vsm_fant
 	 */
 
 int VSM_Get(struct vsm *, struct vsm_fantom *vf,
-    const char *class, const char *ident);
+    const char *category, const char *ident);
 	/*
 	 * Find a chunk, produce fantom for it.
 	 * Returns zero on failure.
-	 * class is mandatory, ident optional.
+	 * category is mandatory, ident optional.
 	 */
 
-char *VSM_Dup(struct vsm*, const char *class, const char *ident);
+char *VSM_Dup(struct vsm*, const char *category, const char *ident);
 	/*
 	 * Returns a malloc'ed copy of the fanton.
 	 *

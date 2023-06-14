@@ -171,36 +171,113 @@ static const struct vdp xyzzy_vdp_rot13 = {
 };
 
 /**********************************************************************
- * assert that we see a VDP_END
+ * pendantic tests of the VDP API:
+ * - assert that we see a VDP_END
+ * - assert that _fini gets called before the task ends
  *
  * note:
  * we could lookup our own vdpe in _fini and check for vdpe->end == VDP_END
  * yet that would cross the API
  */
 
-static void * end_marker = &end_marker;
+enum vdp_state_e {
+	VDPS_NULL = 0,
+	VDPS_INIT,	// _init called
+	VDPS_BYTES,	// _bytes called act != VDP_END
+	VDPS_END,	// _bytes called act == VDP_END
+	VDPS_FINI	// _fini called
+};
+
+struct vdp_state_s {
+	unsigned		magic;
+#define VDP_STATE_MAGIC	0x57c8d309
+	enum vdp_state_e	state;
+};
+
+static void v_matchproto_(vmod_priv_fini_f)
+priv_pedantic_fini(VRT_CTX, void *priv)
+{
+	struct vdp_state_s *vdps;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CAST_OBJ_NOTNULL(vdps, priv, VDP_STATE_MAGIC);
+
+	assert(vdps->state == VDPS_FINI);
+}
+
+static const struct vmod_priv_methods priv_pedantic_methods[1] = {{
+	.magic = VMOD_PRIV_METHODS_MAGIC,
+	.type = "debug_vdp_pedantic",
+	.fini = priv_pedantic_fini
+}};
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdx, void **priv,
+    struct objcore *oc)
+{
+	struct vdp_state_s *vdps;
+	struct vmod_priv *p;
+
+	(void)oc;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WS_TASK_ALLOC_OBJ(ctx, vdps, VDP_STATE_MAGIC);
+	if (vdps == NULL)
+		return (-1);
+	assert(vdps->state == VDPS_NULL);
+
+	p = VRT_priv_task(ctx, (void *)vdx);
+	if (p == NULL)
+		return (-1);
+	p->priv = vdps;
+	p->methods = priv_pedantic_methods;
+
+	AN(priv);
+	*priv = vdps;
+
+	vdps->state = VDPS_INIT;
+
+	return (0);
+}
 
 static int v_matchproto_(vdp_bytes_f)
 xyzzy_pedantic_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
-	AZ(*priv);
+	struct vdp_state_s *vdps;
+
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_STATE_MAGIC);
+	assert(vdps->state >= VDPS_INIT);
+	assert(vdps->state < VDPS_END);
+
 	if (act == VDP_END)
-		*priv = end_marker;
+		vdps->state = VDPS_END;
+	else
+		vdps->state = VDPS_BYTES;
+
 	return (VDP_bytes(vdx, act, ptr, len));
 }
 
 static int v_matchproto_(vdp_fini_f)
-xyzzy_pedantic_fini(struct vdp_ctx *vdc, void **priv)
+xyzzy_pedantic_fini(struct vdp_ctx *vdx, void **priv)
 {
-	(void) vdc;
-	assert (*priv == end_marker);
+	struct vdp_state_s *vdps;
+
+	(void) vdx;
+	AN(priv);
+	if (*priv == NULL)
+		return (0);
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_STATE_MAGIC);
+	assert(vdps->state == VDPS_INIT || vdps->state == VDPS_END);
+	vdps->state = VDPS_FINI;
+
 	*priv = NULL;
 	return (0);
 }
 
 static const struct vdp xyzzy_vdp_pedantic = {
 	.name  = "debug.pedantic",
+	.init  = xyzzy_pedantic_init,
 	.bytes = xyzzy_pedantic_bytes,
 	.fini  = xyzzy_pedantic_fini,
 };
@@ -332,6 +409,15 @@ xyzzy_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 	assert(!strcmp(priv_vcl->foo, "FOO"));
 }
 
+VCL_VOID v_matchproto_(td_debug_rot104)
+xyzzy_rot104(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	// This should fail
+	AN(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
+}
+
 VCL_VOID v_matchproto_(td_debug_rot52)
 xyzzy_rot52(VRT_CTX, VCL_HTTP hp)
 {
@@ -377,7 +463,7 @@ obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 	}
 
 	/* We cannot trust %p to be 0x... format as expected by m00021.vtc */
-	VSL(SLT_Debug, 0, "Object Event: %s 0x%jx", what,
+	VSL(SLT_Debug, NO_VXID, "Object Event: %s 0x%jx", what,
 	    (intmax_t)(uintptr_t)oc);
 }
 
@@ -391,7 +477,7 @@ xyzzy_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 	AZ(priv_vcl->obj_cb);
 	priv_vcl->obj_cb = ObjSubscribeEvents(obj_cb, priv_vcl,
 		OEV_INSERT|OEV_EXPIRE);
-	VSL(SLT_Debug, 0, "Subscribed to Object Events");
+	VSL(SLT_Debug, NO_VXID, "Subscribed to Object Events");
 }
 
 VCL_VOID v_matchproto_(td_debug_fail)
@@ -453,20 +539,8 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->priv = priv_vcl;
 	priv->methods = priv_vcl_methods;
 
-	VRT_AddVFP(ctx, &xyzzy_vfp_rot13);
-	VRT_AddVDP(ctx, &xyzzy_vdp_rot13);
-
-	// This should fail
-	AN(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
-	// Reset the error, we know what we're doing.
-	*ctx->handling = 0;
-
-	VRT_RemoveVFP(ctx, &xyzzy_vfp_rot13);
-	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
-
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
-
-	VRT_AddVDP(ctx, &xyzzy_vdp_pedantic);
+	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic));
 	return (0);
 }
 
@@ -532,7 +606,7 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 	const char *vcl_name = VCL_Name(ctx->vcl);
 
 	// Using VSLs for coverage
-	VSLs(SLT_Debug, 0, TOSTRANDS(2, vcl_name, ": VCL_EVENT_WARM"));
+	VSLs(SLT_Debug, NO_VXID, TOSTRANDS(2, vcl_name, ": VCL_EVENT_WARM"));
 
 	AN(ctx->msg);
 	if (cache_param->max_esi_depth == 42) {
@@ -580,7 +654,7 @@ create_cold_backend(VRT_CTX)
 	INIT_OBJ(be, VRT_BACKEND_MAGIC);
 	be->endpoint = vep;
 	be->vcl_name = "doomed";
-	return (VRT_new_backend(ctx, be));
+	return (VRT_new_backend(ctx, be, NULL));
 }
 
 static int
@@ -593,7 +667,7 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 
-	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
+	VSL(SLT_Debug, NO_VXID, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
 
 	VRT_DelDirector(&priv_vcl->be);
 
@@ -629,7 +703,7 @@ event_discard(VRT_CTX, void *priv)
 	AZ(ctx->msg);
 
 	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
-	VRT_RemoveVDP(ctx, &xyzzy_vdp_pedantic);
+	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_pedantic);
 
 	if (--loads)
 		return (0);
@@ -816,7 +890,8 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 	} else {
 		b = VRT_StrandsWS(hp->ws, hdr->what + 1, s);
 		if (b == NULL) {
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hdr->what + 1);
+			VSLbs(ctx->vsl, SLT_LostHeader,
+			    TOSTRAND(hdr->what + 1));
 		} else {
 			if (*b != '\0')
 				AN(WS_Allocated(hp->ws, b, strlen(b) + 1));
@@ -835,7 +910,7 @@ mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
 	if (vsl != NULL)
 		VSLbv(vsl, tag, fmt, ap);
 	else
-		VSLv(tag, 0, fmt, ap);
+		VSLv(tag, NO_VXID, fmt, ap);
 	va_end(ap);
 }
 
@@ -886,6 +961,13 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	VSLbs(ctx->vsl, SLT_Debug, strand);
 	return (strand);
+}
+
+VCL_VOID
+xyzzy_vsl_flush(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	VSL_Flush(ctx->vsl, 0);
 }
 
 /*---------------------------------------------------------------------*/
@@ -945,12 +1027,9 @@ xyzzy_catflap(VRT_CTX, VCL_ENUM type)
 	req = ctx->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	XXXAZ(req->vcf);
-	req->vcf = WS_Alloc(req->ws, sizeof *req->vcf);
-	if (req->vcf == NULL) {
-		VRT_fail(ctx, "WS_Alloc failed in debug.catflap()");
+	WS_TASK_ALLOC_OBJ(ctx, req->vcf, VCF_MAGIC);
+	if (req->vcf == NULL)
 		return;
-	}
-	INIT_OBJ(req->vcf, VCF_MAGIC);
 	if (type == VENUM(first) || type == VENUM(miss)) {
 		req->vcf->func = xyzzy_catflap_simple;
 		req->vcf->priv = TRUST_ME(type);
@@ -1057,55 +1136,6 @@ xyzzy_get_ip(VRT_CTX)
 	assert(VSA_Sane(ip));
 	return (ip);
 }
-
-/**********************************************************************
- * For testing import code on bad vmod files (m00003.vtc)
- */
-
-//lint -save -e9075 external symbol '...' defined without a prior declaration
-
-extern const struct vmod_data Vmod_wrong0_Data;
-const struct vmod_data Vmod_wrong0_Data = {
-	.vrt_major =	0,
-	.vrt_minor =	0,
-};
-
-//lint -save -e835 A zero has been given as left argument to operatorp'+'
-extern const struct vmod_data Vmod_wrong1_Data;
-const struct vmod_data Vmod_wrong1_Data = {
-	.vrt_major =	VRT_MAJOR_VERSION,
-	.vrt_minor =	VRT_MINOR_VERSION + 1,
-};
-//lint -restore
-
-static const struct foo {
-	int bar;
-} foo_struct[1];
-
-extern const struct vmod_data Vmod_wrong2_Data;
-const struct vmod_data Vmod_wrong2_Data = {
-	.vrt_major =	VRT_MAJOR_VERSION,
-	.vrt_minor =	VRT_MINOR_VERSION,
-	.name =		"wrongN",
-	.func =		foo_struct,
-	.func_len =	sizeof foo_struct,
-	.func_name =	"foo_struct",
-	.proto =	"blablabla",
-};
-
-extern const struct vmod_data Vmod_wrong3_Data;
-const struct vmod_data Vmod_wrong3_Data = {
-	.vrt_major =	VRT_MAJOR_VERSION,
-	.vrt_minor =	VRT_MINOR_VERSION,
-	.name =		"wrongN",
-	.func =		foo_struct,
-	.func_len =	sizeof foo_struct,
-	.func_name =	"foo_struct",
-	.proto =	"blablabla",
-	.abi =		"abiblabla",
-};
-
-//lint -restore
 
 /*---------------------------------------------------------------------*/
 

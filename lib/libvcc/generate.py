@@ -83,75 +83,40 @@ tokens = {
 #######################################################################
 # Our methods and actions
 
-returns = (
-    ###############################################################
-    # Client side
+returns = []
 
-    ('recv',
-     "C",
-     ('fail', 'synth', 'restart', 'pass', 'pipe', 'hash', 'purge', 'vcl')
-    ),
-    ('pipe',
-     "C",
-     ('fail', 'synth', 'pipe',)
-    ),
-    ('pass',
-     "C",
-     ('fail', 'synth', 'restart', 'fetch',)
-    ),
-    ('hash',
-     "C",
-     ('fail', 'lookup',)
-    ),
-    ('purge',
-     "C",
-     ('fail', 'synth', 'restart',)
-    ),
-    ('miss',
-     "C",
-     ('fail', 'synth', 'restart', 'pass', 'fetch',)
-    ),
-    ('hit',
-     "C",
-     ('fail', 'synth', 'restart', 'pass', 'deliver',)
-    ),
-    ('deliver',
-     "C",
-     ('fail', 'synth', 'restart', 'deliver',)
-    ),
-    ('synth',
-     "C",
-     ('fail', 'restart', 'deliver',)
-    ),
+def parse_subs(ln, c):
+    ctx = ['C', 'B', 'H']
+    rets = []
+    for i in ln[2:]:
+        if (len(i) > 4 and i.startswith('  | ``') and i.endswith('``')):
+            rets.append(i[6:-2].split('(')[0])
+    returns.append((ln[0][4:], ctx[c], rets))
 
-    ###############################################################
-    # Backend-fetch
+def parse_subs_doc(fn):
+    l = []
+    j = -1
+    start = False
+    for i in open(fn):
+        if i.startswith('##########'):
+            j += 1
+            l.append([])
+            start = True
+            continue
+        if start:
+            l[j].append(i.rstrip())
+    for i in range(0, len(l)):
+        for n in range(0, len(l[i])):
+            if len(l[i][n]) < 5 or not l[i][n].startswith("~~~~~"):
+                continue
+            m = n + 1
+            while m < len(l[i]) and (len(l[i][m]) < 5 or not l[i][m].startswith("~~~~~")):
+                m += 1
+            if m != len(l[i]):
+                m -= 2
+            parse_subs(l[i][n-1:m], i)
 
-    ('backend_fetch',
-     "B",
-     ('fail', 'fetch', 'abandon', 'error')
-    ),
-    ('backend_response',
-     "B",
-     ('fail', 'deliver', 'retry', 'abandon', 'pass', 'error')
-    ),
-    ('backend_error',
-     "B",
-     ('fail', 'deliver', 'retry', 'abandon')
-    ),
-
-    ###############################################################
-    # Housekeeping
-
-    ('init',
-     "H",
-     ('ok', 'fail')
-    ),
-    ('fini',
-     "H",
-     ('ok',)
-    ),
-)
+parse_subs_doc(join(srcroot, "doc/sphinx/reference/vcl_step.rst"))
 
 #######################################################################
 # Variables available in sessions
@@ -169,18 +134,22 @@ def varproto(s):
         varprotos[s] = True
 
 class vardef(object):
-    def __init__(self, nam, typ, rd, wr, wu, vlo, vhi):
+    def __init__(self, nam, typ, rd, wr, wu, al, vlo, vhi):
         self.nam = nam
         self.typ = typ
         self.rd = rd
         self.wr = wr
         self.uns = wu
+        self.al = al
         self.vlo = vlo
         self.vhi = vhi
 
-        self.emit()
+        if al is None:
+            self.emit_var()
+        else:
+            self.emit_alias()
 
-    def emit(self):
+    def emit_var(self):
         fh.write("\n")
         fo.write("\n")
         cnam = self.nam.replace(".", "_")
@@ -234,6 +203,11 @@ class vardef(object):
         restrict(fo, self.uns)
         fo.write(";\n")
 
+    def emit_alias(self):
+        var_aliases.append("\tsym = VCC_MkSymAlias(tl, \"%s\", \"%s\");\n" %
+                (self.nam, self.al))
+        var_aliases.append("\tAN(sym);\n")
+
 def parse_vcl(x):
     vlo, vhi = (0, 99)
     x = x.split()
@@ -260,6 +234,7 @@ def parse_var(ln):
     vr = []
     vw = []
     vu = []
+    va = None
     while True:
         l = ln.pop(0)
         if l == "":
@@ -281,9 +256,12 @@ def parse_var(ln):
             for i in j[2:]:
                 vu.append(i.strip(",."))
             continue
+        if j[0] == "Alias" and j[1] == "of:":
+            va = j[2]
+            continue
         break
     if vn[:8] != "storage.":
-        vardef(vn, vt, vr, vw, vu, vlo, vhi)
+        vardef(vn, vt, vr, vw, vu, va, vlo, vhi)
 
 def parse_var_doc(fn):
     l = []
@@ -676,7 +654,7 @@ struct VCL_conf {
 	unsigned		nref;
 	const struct vpi_ref	*ref;
 
-	int			nsrc;
+	unsigned		nsrc;
 	unsigned		nsub;
 	const char		**srcname;
 	const char		**srcbody;
@@ -695,6 +673,22 @@ fo.close()
 
 #######################################################################
 
+fo = open(join(buildroot, "include/tbl/vcl_context.h"), "w")
+file_header(fo)
+
+fo.write("/*lint -save -e525 -e539 */\n")
+for i in returns:
+    fo.write("\nVCL_CTX(vcl_%s,%s)" % (i[0],i[0].upper()))
+fo.write("\nVCL_CTX(backend, TASK_B)")
+fo.write("\nVCL_CTX(client, TASK_C)")
+fo.write("\nVCL_CTX(housekeeping, TASK_H)")
+fo.write("/*lint -restore */\n")
+fo.write("\n")
+fo.write("\n#undef VCL_CTX")
+fo.write("\n")
+fo.close()
+
+#######################################################################
 
 def restrict(fo, spec):
     d = dict()
@@ -755,7 +749,10 @@ vcc_Var_Init(struct vcc *tl)
     struct symbol *sym;
 """)
 
+var_aliases = []
 parse_var_doc(join(srcroot, "doc/sphinx/reference/vcl_var.rst"))
+for al in var_aliases:
+    fo.write(al)
 fo.write("}\n")
 
 for i in stv_variables:

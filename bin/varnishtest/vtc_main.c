@@ -49,8 +49,8 @@
 #include "vfil.h"
 #include "vnum.h"
 #include "vrnd.h"
-#include "vss.h"
 #include "vsa.h"
+#include "vss.h"
 #include "vsub.h"
 #include "vtcp.h"
 #include "vtim.h"
@@ -94,7 +94,7 @@ struct vtc_job {
 
 
 int iflg = 0;
-unsigned vtc_maxdur = 60;
+vtim_dur vtc_maxdur = 60;
 static unsigned vtc_bufsiz = 1024 * 1024;
 
 static VTAILQ_HEAD(, vtc_tst) tst_head = VTAILQ_HEAD_INITIALIZER(tst_head);
@@ -467,17 +467,53 @@ start_test(void)
  *
  */
 
+static char *
+top_dir(const char *makefile, const char *top_var)
+{
+	const char *b, *e;
+	char *var;
+
+	AN(makefile);
+	AN(top_var);
+	assert(*top_var == '\n');
+
+	b = strstr(makefile, top_var);
+	top_var++;
+
+	if (b == NULL) {
+		fprintf(stderr, "could not find '%s' in Makefile\n", top_var);
+		return (NULL);
+	}
+
+	e = strchr(b + 1, '\n');
+	if (e == NULL) {
+		fprintf(stderr, "No NL after '%s' in Makefile\n", top_var);
+		return (NULL);
+	}
+
+	b = memchr(b, '/', e - b);
+	if (b == NULL) {
+		fprintf(stderr, "No '/' after '%s' in Makefile\n", top_var);
+		return (NULL);
+	}
+	var = strndup(b, e - b);
+	AN(var);
+	return (var);
+}
+
 static void
-build_path(const char *topbuilddir, const char *subdir,
+build_path(const char *topdir, const char *subdir,
     const char *pfx, const char *sfx, struct vsb *vsb)
 {
 	char buf[PATH_MAX];
 	DIR *dir;
 	struct dirent *de;
 	struct stat st;
-	const char *sep = "";
+	const char *topsep = "", *sep = "";
 
-	bprintf(buf, "%s/%s/", topbuilddir, subdir);
+	if (*subdir != '\0')
+		topsep = "/";
+	bprintf(buf, "%s%s%s/", topdir, topsep, subdir);
 	dir = opendir(buf);
 	XXXAN(dir);
 	while (1) {
@@ -486,7 +522,7 @@ build_path(const char *topbuilddir, const char *subdir,
 			break;
 		if (strncmp(de->d_name, pfx, strlen(pfx)))
 			continue;
-		bprintf(buf, "%s/%s/%s", topbuilddir, subdir, de->d_name);
+		bprintf(buf, "%s%s%s/%s", topdir, topsep, subdir, de->d_name);
 		if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
 			VSB_cat(vsb, sep);
 			VSB_cat(vsb, buf);
@@ -501,8 +537,7 @@ static void
 i_mode(void)
 {
 	struct vsb *vsb;
-	char *p, *q;
-	char *topbuild;
+	char *p, *topbuild, *topsrc;
 
 	/*
 	 * This code has a rather intimate knowledge of auto* generated
@@ -512,39 +547,22 @@ i_mode(void)
 	vsb = VSB_new_auto();
 	AN(vsb);
 
-	q = p = VFIL_readfile(NULL, "Makefile", NULL);
+	p = VFIL_readfile(NULL, "Makefile", NULL);
 	if (p == NULL) {
 		fprintf(stderr, "No Makefile to search for -i flag.\n");
-		VSB_printf(vsb, "%s/../..", cwd);
-		AZ(VSB_finish(vsb));
-		topbuild = strdup(VSB_data(vsb));
-		VSB_clear(vsb);
-	} else {
-		p = strstr(p, "\nabs_top_builddir");
-		if (p == NULL) {
-			fprintf(stderr,
-			    "could not find 'abs_top_builddir' in Makefile\n");
-			exit(2);
-		}
-		topbuild = strchr(p + 1, '\n');
-		if (topbuild == NULL) {
-			fprintf(stderr,
-			    "No NL after 'abs_top_builddir' in Makefile\n");
-			exit(2);
-		}
-		*topbuild = '\0';
-		topbuild = strchr(p, '/');
-		if (topbuild == NULL) {
-			fprintf(stderr,
-			    "No '/' after 'abs_top_builddir' in Makefile\n");
-			exit(2);
-		}
-		topbuild = strdup(topbuild);
-		free(q);
-
+		exit(2);
 	}
-	AN(topbuild);
+
+	topbuild = top_dir(p, "\nabs_top_builddir");
+	topsrc = top_dir(p, "\nabs_top_srcdir");
+	free(p);
+	if (topbuild == NULL || topsrc == NULL) {
+		free(topbuild);
+		free(topsrc);
+		exit(2);
+	}
 	extmacro_def("topbuild", NULL, "%s", topbuild);
+	extmacro_def("topsrc", NULL, "%s", topsrc);
 
 	/*
 	 * Build $PATH which can find all programs in the build tree
@@ -552,6 +570,10 @@ i_mode(void)
 	VSB_clear(vsb);
 	VSB_cat(vsb, "PATH=");
 	build_path(topbuild, "bin", "varnish", "", vsb);
+#ifdef WITH_CONTRIB
+	VSB_putc(vsb, ':');
+	build_path(topsrc, "", "contrib", "", vsb);
+#endif
 	VSB_printf(vsb, ":%s", getenv("PATH"));
 	AZ(VSB_finish(vsb));
 	AZ(putenv(strdup(VSB_data(vsb))));
@@ -567,6 +589,7 @@ i_mode(void)
 	AN(vmod_path);
 
 	free(topbuild);
+	free(topsrc);
 	VSB_destroy(&vsb);
 
 	/*
@@ -582,7 +605,7 @@ i_mode(void)
 static void
 ip_magic(void)
 {
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
 	char *s;
@@ -598,7 +621,7 @@ ip_magic(void)
 	AN(sa);
 	bad_backend_fd = VTCP_bind(sa, NULL);
 	if (bad_backend_fd < 0) {
-		free(sa);
+		VSA_free(&sa);
 		sa = VSS_ResolveFirst(NULL, "localhost", "0", 0, SOCK_STREAM, 0);
 		AN(sa);
 		bad_backend_fd = VTCP_bind(sa, NULL);
@@ -634,7 +657,7 @@ ip_magic(void)
 	extmacro_def("listen_addr", NULL, "%s", abuf);
 	default_listen_addr = strdup(abuf);
 	AN(default_listen_addr);
-	free(sa);
+	VSA_free(&sa);
 
 	/*
 	 * We need an IP number which will not repond, ever, and that is a
@@ -807,6 +830,9 @@ main(int argc, char * const *argv)
 		tmppath = strdup(getenv("TMPDIR"));
 	else
 		tmppath = strdup("/tmp");
+
+	extmacro_def("pkg_version", NULL, PACKAGE_VERSION);
+	extmacro_def("pkg_branch", NULL, PACKAGE_BRANCH);
 
 	cwd = getcwd(buf, sizeof buf);
 	extmacro_def("pwd", NULL, "%s", cwd);

@@ -77,10 +77,16 @@ static VTAILQ_HEAD(,listen_arg) listen_args =
     VTAILQ_HEAD_INITIALIZER(listen_args);
 
 static int
+mac_vus_bind(void *priv, const struct sockaddr_un *uds)
+{
+	return (VUS_bind(uds, priv));
+}
+
+static int
 mac_opensocket(struct listen_sock *ls)
 {
 	int fail;
-	struct sockaddr_un uds;
+	const char *err;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 	if (ls->sock > 0) {
@@ -89,11 +95,8 @@ mac_opensocket(struct listen_sock *ls)
 	}
 	if (!ls->uds)
 		ls->sock = VTCP_bind(ls->addr, NULL);
-	else {
-		uds.sun_family = PF_UNIX;
-		bprintf(uds.sun_path, "%s", ls->endpoint);
-		ls->sock = VUS_bind(&uds, NULL);
-	}
+	else
+		ls->sock = VUS_resolver(ls->endpoint, mac_vus_bind, NULL, &err);
 	fail = errno;
 	if (ls->sock < 0) {
 		AN(fail);
@@ -155,13 +158,12 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 	ls->name = la->name;
 	ls->transport = la->transport;
 	ls->perms = la->perms;
-	if (*la->endpoint == '/')
-		ls->uds = 1;
+	ls->uds = VUS_is(la->endpoint);
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls);
 	VJ_master(JAIL_MASTER_LOW);
 	if (fail) {
-		free(ls->addr);
+		VSA_free(&ls->addr);
 		free(ls->endpoint);
 		FREE_OBJ(ls);
 		if (fail != EAFNOSUPPORT)
@@ -197,7 +199,7 @@ mac_tcp(void *priv, const struct suckaddr *sa)
 		 * port number this VTCP_bind() found us, as if
 		 * it was specified by the argv.
 		 */
-		free(ls->addr);
+		VSA_free(&ls->addr);
 		ls->addr = VTCP_my_suckaddr(ls->sock);
 		VTCP_myname(ls->sock, abuf, sizeof abuf,
 		    pbuf, sizeof pbuf);
@@ -219,9 +221,10 @@ mac_uds(void *priv, const struct sockaddr_un *uds)
 	struct listen_sock *ls;
 
 	CAST_OBJ_NOTNULL(la, priv, LISTEN_ARG_MAGIC);
+	(void) uds;
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->uds && strcmp(uds->sun_path, ls->endpoint) == 0)
+		if (ls->uds && strcmp(ls->endpoint, la->endpoint) == 0)
 			ARGV_ERR("-a arguments %s and %s have same address\n",
 			    ls->endpoint, la->endpoint);
 	}
@@ -270,7 +273,7 @@ MAC_Arg(const char *spec)
 		ARGV_ERR("Unix domain socket addresses must be"
 		    " absolute paths in -a (%s)\n", la->endpoint);
 
-	if (*la->endpoint == '/' && heritage.min_vcl_version < 41)
+	if (VUS_is(la->endpoint) && heritage.min_vcl_version < 41)
 		heritage.min_vcl_version = 41;
 
 	for (int i = 2; av[i] != NULL; i++) {
@@ -287,7 +290,7 @@ MAC_Arg(const char *spec)
 			continue;
 		}
 		if (la->endpoint[0] != '/')
-			ARGV_ERR("Invalid sub-arg %s for IP addresses"
+			ARGV_ERR("Invalid sub-arg %s"
 			    " in -a\n", av[i]);
 
 		val = eq + 1;
@@ -365,10 +368,10 @@ MAC_Arg(const char *spec)
 	else
 		AZ(la->perms);
 
-	if (*la->endpoint != '/')
-		error = VSS_resolver(av[1], "80", mac_tcp, la, &err);
-	else
+	if (VUS_is(la->endpoint))
 		error = VUS_resolver(av[1], mac_uds, la, &err);
+	else
+		error = VSS_resolver(av[1], "80", mac_tcp, la, &err);
 
 	if (VTAILQ_EMPTY(&la->socks) || error)
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);

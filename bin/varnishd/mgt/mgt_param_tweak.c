@@ -36,6 +36,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -45,6 +46,7 @@
 #include "storage/storage.h"
 #include "vav.h"
 #include "vnum.h"
+#include "vsl_priv.h"
 
 const char * const JSON_FMT = (const char *)&JSON_FMT;
 
@@ -52,45 +54,58 @@ const char * const JSON_FMT = (const char *)&JSON_FMT;
  * Generic handling of double typed parameters
  */
 
+typedef double parse_double_f(const char *, const char **);
+
+static double
+parse_decimal(const char *p, const char **err)
+{
+	double v;
+
+	v = SF_Parse_Decimal(&p, 0, err);
+	if (errno == 0 && *p != '\0') {
+		errno = EINVAL;
+		*err = "Invalid number";
+	}
+	return (v);
+}
+
 static int
-tweak_generic_double(struct vsb *vsb, volatile double *dest,
-    const char *arg, const char *min, const char *max, const char *fmt)
+tweak_generic_double(struct vsb *vsb, const char *arg, const struct parspec *pp,
+    parse_double_f parse, const char *fmt)
 {
 	volatile double u, minv = VRT_DECIMAL_MIN, maxv = VRT_DECIMAL_MAX;
-	const char *p, *err;
+	volatile double *dest = pp->priv;
+	const char *err;
 
 	if (arg != NULL && arg != JSON_FMT) {
-		if (min != NULL) {
-			p = min;
-			minv = SF_Parse_Decimal(&p, 0, &err);
+		if (pp->min != NULL) {
+			minv = parse(pp->min, &err);
 			if (errno) {
-				VSB_printf(vsb, "Min: %s (%s)\n", err, min);
+				VSB_printf(vsb, "Min: %s (%s)\n", err, pp->min);
 				return (-1);
 			}
 		}
-		if (max != NULL) {
-			p = max;
-			maxv = SF_Parse_Decimal(&p, 0, &err);
+		if (pp->max != NULL) {
+			maxv = parse(pp->max, &err);
 			if (errno) {
-				VSB_printf(vsb, "Max: %s (%s)\n", err, max);
+				VSB_printf(vsb, "Max: %s (%s)\n", err, pp->max);
 				return (-1);
 			}
 		}
 
-		p = arg;
-		u = SF_Parse_Decimal(&p, 0, &err);
+		u = parse(arg, &err);
 		if (errno) {
 			VSB_printf(vsb, "%s (%s)\n", err, arg);
 			return (-1);
 		}
 		if (u < minv) {
 			VSB_printf(vsb,
-			    "Must be greater or equal to %s\n", min);
+			    "Must be greater or equal to %s\n", pp->min);
 			return (-1);
 		}
 		if (u > maxv) {
 			VSB_printf(vsb,
-			    "Must be less than or equal to %s\n", max);
+			    "Must be less than or equal to %s\n", pp->max);
 			return (-1);
 		}
 		*dest = u;
@@ -102,14 +117,29 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
 
 /*--------------------------------------------------------------------*/
 
+static double
+parse_duration(const char *p, const char **err)
+{
+	double v, r;
+
+	v = SF_Parse_Decimal(&p, 0, err);
+	if (*p == '\0')
+		return (v);
+
+	r = VNUM_duration_unit(v, p, NULL);
+	if (isnan(r)) {
+		errno = EINVAL;
+		*err = "Invalid duration unit";
+	}
+
+	return (r);
+}
+
 int v_matchproto_(tweak_t)
 tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	volatile double *dest;
 
-	dest = par->priv;
-	return (tweak_generic_double(vsb, dest, arg,
-	    par->min, par->max, "%.3f"));
+	return (tweak_generic_double(vsb, arg, par, parse_duration, "%.3f"));
 }
 
 /*--------------------------------------------------------------------*/
@@ -117,41 +147,49 @@ tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 int v_matchproto_(tweak_t)
 tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	volatile double *dest;
 
-	dest = par->priv;
-	return (tweak_generic_double(vsb, dest, arg, par->min, par->max, "%g"));
+	return (tweak_generic_double(vsb, arg, par, parse_decimal, "%g"));
 }
 
 /*--------------------------------------------------------------------*/
+
+static int
+parse_boolean(struct vsb *vsb, const char *arg)
+{
+
+	if (!strcasecmp(arg, "off"))
+		return (0);
+	if (!strcasecmp(arg, "disable"))
+		return (0);
+	if (!strcasecmp(arg, "no"))
+		return (0);
+	if (!strcasecmp(arg, "false"))
+		return (0);
+	if (!strcasecmp(arg, "on"))
+		return (1);
+	if (!strcasecmp(arg, "enable"))
+		return (1);
+	if (!strcasecmp(arg, "yes"))
+		return (1);
+	if (!strcasecmp(arg, "true"))
+		return (1);
+
+	VSB_cat(vsb, "use \"on\" or \"off\"\n");
+	return (-1);
+}
 
 int v_matchproto_(tweak_t)
 tweak_boolean(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
+	int val;
 
 	dest = par->priv;
 	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcasecmp(arg, "off"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "disable"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "no"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "false"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "on"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "enable"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "yes"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "true"))
-			*dest = 1;
-		else {
-			VSB_cat(vsb, "use \"on\" or \"off\"\n");
+		val = parse_boolean(vsb, arg);
+		if (val < 0)
 			return (-1);
-		}
+		*dest = val;
 	} else if (arg == JSON_FMT) {
 		VSB_printf(vsb, "%s", *dest ? "true" : "false");
 	} else {
@@ -396,6 +434,7 @@ int v_matchproto_(tweak_t)
 tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
+	struct parspec pt;
 	char **av;
 	int retval = 0;
 
@@ -437,8 +476,11 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 			    par->dyn_max_reason);
 			if (retval)
 				break;
-			retval = tweak_generic_double(vsb,
-			    &px.max_age, av[3], "0", "1000000", "%.0f");
+			pt.priv = &px.max_age;
+			pt.min = "0";
+			pt.max = "1000000";
+			retval = tweak_generic_double(vsb, av[3], &pt,
+			    parse_decimal, "%.0f");
 			if (retval)
 				break;
 			if (px.min_pool > px.max_pool) {
@@ -534,7 +576,221 @@ tweak_storage(struct vsb *vsb, const struct parspec *par, const char *arg)
 int v_matchproto_(tweak_t)
 tweak_alias(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
+	const struct parspec *orig;
+	struct parspec alias[1];
 
-	par = TRUST_ME(par->priv);
-	return (par->func(vsb, par, arg));
+	orig = TRUST_ME(par->priv);
+	AN(orig);
+	memcpy(alias, orig, sizeof *orig);
+	alias->name = par->name;
+	alias->priv = TRUST_ME(orig);
+	return (alias->func(vsb, alias, arg));
+}
+
+/*--------------------------------------------------------------------
+ * Tweak bits
+ */
+
+enum bit_do {BSET, BCLR, BTST};
+
+static int
+bit(uint8_t *p, unsigned no, enum bit_do act)
+{
+	uint8_t b;
+
+	p += (no >> 3);
+	b = (0x80 >> (no & 7));
+	if (act == BSET)
+		*p |= b;
+	else if (act == BCLR)
+		*p &= ~b;
+	return (*p & b);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static int
+bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
+    const char * const *tags, const char *desc, char sign)
+{
+	int i, n;
+	unsigned j;
+	char **av;
+	const char *s;
+
+	av = VAV_Parse(arg, &n, ARGV_COMMA);
+	if (av[0] != NULL) {
+		VSB_printf(vsb, "Cannot parse: %s\n", av[0]);
+		VAV_Free(av);
+		return (-1);
+	}
+	for (i = 1; av[i] != NULL; i++) {
+		s = av[i];
+		if (*s != '-' && *s != '+') {
+			VSB_printf(vsb, "Missing '+' or '-' (%s)\n", s);
+			VAV_Free(av);
+			return (-1);
+		}
+		for (j = 0; j < l; j++) {
+			if (tags[j] != NULL && !strcasecmp(s + 1, tags[j]))
+				break;
+		}
+		if (tags[j] == NULL) {
+			VSB_printf(vsb, "Unknown %s (%s)\n", desc, s);
+			VAV_Free(av);
+			return (-1);
+		}
+		assert(j < l);
+		if (s[0] == sign)
+			(void)bit(p, j, BSET);
+		else
+			(void)bit(p, j, BCLR);
+	}
+	VAV_Free(av);
+	return (0);
+}
+
+
+/*--------------------------------------------------------------------
+ */
+
+static int
+tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
+    uint8_t *p, unsigned l, const char * const *tags, const char *desc,
+    char sign)
+{
+	const char *s;
+	unsigned j;
+
+	if (arg != NULL && !strcmp(arg, "default") &&
+	    strcmp(par->def, "none")) {
+		memset(p, 0, l >> 3);
+		return (tweak_generic_bits(vsb, par, par->def, p, l, tags,
+		    desc, sign));
+	}
+
+	if (arg != NULL && arg != JSON_FMT) {
+		if (sign == '+' && !strcmp(arg, "none"))
+			memset(p, 0, l >> 3);
+		else
+			return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
+	} else {
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
+		s = "";
+		for (j = 0; j < l; j++) {
+			if (bit(p, j, BTST)) {
+				VSB_printf(vsb, "%s%c%s", s, sign, tags[j]);
+				s = ",";
+			}
+		}
+		if (*s == '\0')
+			VSB_cat(vsb, sign == '+' ? "none" : "(all enabled)");
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * The vsl_mask parameter
+ */
+
+static const char * const VSL_tags[256] = {
+#  define SLTM(foo,flags,sdesc,ldesc) [SLT_##foo] = #foo,
+#  include "tbl/vsl_tags.h"
+};
+
+int v_matchproto_(tweak_t)
+tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.vsl_mask,
+	    SLT__Reserved, VSL_tags, "VSL tag", '-'));
+}
+
+/*--------------------------------------------------------------------
+ * The debug parameter
+ */
+
+static const char * const debug_tags[] = {
+#  define DEBUG_BIT(U, l, d) [DBG_##U] = #l,
+#  include "tbl/debug_bits.h"
+       NULL
+};
+
+int v_matchproto_(tweak_t)
+tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.debug_bits,
+	    DBG_Reserved, debug_tags, "debug bit", '+'));
+}
+
+/*--------------------------------------------------------------------
+ * The experimental parameter
+ */
+
+static const char * const experimental_tags[] = {
+#  define EXPERIMENTAL_BIT(U, l, d) [EXPERIMENT_##U] = #l,
+#  include "tbl/experimental_bits.h"
+       NULL
+};
+
+int v_matchproto_(tweak_t)
+tweak_experimental(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.experimental_bits,
+	    EXPERIMENT_Reserved, experimental_tags, "experimental bit", '+'));
+}
+
+/*--------------------------------------------------------------------
+ * The feature parameter
+ */
+
+static const char * const feature_tags[] = {
+#  define FEATURE_BIT(U, l, d) [FEATURE_##U] = #l,
+#  include "tbl/feature_bits.h"
+       NULL
+};
+
+int v_matchproto_(tweak_t)
+tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.feature_bits,
+	    FEATURE_Reserved, feature_tags, "feature bit", '+'));
+}
+
+/*--------------------------------------------------------------------
+ * The vcc_feature parameter
+ */
+
+static const char * const vcc_feature_tags[] = {
+#  define VCC_FEATURE_BIT(U, l, d) [VCC_FEATURE_##U] = #l,
+#  include "tbl/vcc_feature_bits.h"
+       NULL
+};
+
+int v_matchproto_(tweak_t)
+tweak_vcc_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	const struct parspec *orig;
+	char buf[32];
+	int val;
+
+	if (arg != NULL && arg != JSON_FMT &&
+	    strcmp(par->name, "vcc_feature")) {
+		orig = TRUST_ME(par->priv);
+		val = parse_boolean(vsb, arg);
+		if (val < 0)
+			return (-1);
+		bprintf(buf, "%c%s", val ? '+' : '-',
+		    par->name + strlen("vcc_"));
+		return (tweak_vcc_feature(vsb, orig, buf));
+	}
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.vcc_feature_bits,
+	    VCC_FEATURE_Reserved, vcc_feature_tags, "vcc_feature bit", '+'));
 }

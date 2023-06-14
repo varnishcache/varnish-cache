@@ -359,7 +359,7 @@ syslog_bind(struct syslog_srv *s)
 	char aaddr[VTCP_ADDRBUFSIZE];
 	char aport[VTCP_PORTBUFSIZE];
 	char buf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const struct suckaddr *sua;
 
 	CHECK_OBJ_NOTNULL(s, SYSLOG_SRV_MAGIC);
 

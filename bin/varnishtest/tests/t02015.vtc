@@ -6,11 +6,16 @@ server s1 {
 } -start
 
 varnish v1 -cliok "param.set feature +http2"
-varnish v1 -vcl+backend "" -start
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		# make ReqAcct deterministic
+		unset resp.http.via;
+	}
+} -start
 
 logexpect l1 -v v1 -g raw -q ReqAcct {
-	expect ? 1001	ReqAcct "46 0 46 97 12345 12442"
-	expect ? 1003	ReqAcct "46 0 46 102 1000 1102"
+	expect ? 1001	ReqAcct "46 0 46 69 12345 12414"
+	expect ? 1003	ReqAcct "46 0 46 74 1000 1074"
 } -start
 
 client c1 {

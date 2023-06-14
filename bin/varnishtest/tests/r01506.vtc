@@ -2,7 +2,7 @@ varnishtest "range requests on streamed response"
 
 barrier b1 cond 2 -cyclic
 
-server s1 -repeat 4 {
+server s0 {
 	rxreq
 	txresp -nolen \
 	    -hdr "Transfer-Encoding: chunked" \
@@ -18,26 +18,19 @@ server s1 -repeat 4 {
 	send "11\r\n7_23456789abcdef\n"
 	chunkedlen 0
 
-} -start
+} -dispatch
 
 varnish v1 -vcl+backend {} -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
 
-logexpect l1 -v v1 -g session {
-	expect 0 1000	Begin		sess
-	expect * =	SessClose	RANGE_SHORT
-} -start
-
 client c1 {
 	txreq -url /1 -hdr "Range: bytes=17-101"
 	rxresphdrs
 	expect resp.status == 206
-	expect resp.http.content-length == 85
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 85
-	delay .1
 
 	# We cannot do tail-ranges when streaming
 	txreq -url /2 -hdr "Range: bytes=-10"
@@ -47,7 +40,6 @@ client c1 {
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 136
-	delay .1
 
 	# We cannot do open-ranges when streaming
 	txreq -url /3 -hdr "Range: bytes=17-"
@@ -57,18 +49,22 @@ client c1 {
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 136
-	delay .1
 
-	# Invalid range
+	# Handles out of bounds range
 	txreq -url /4 -hdr "Range: bytes=102-200"
 	rxresphdrs
 	expect resp.status == 206
-	expect resp.http.content-length == 99
 	barrier b1 sync
-	recv 34
-	delay .3
-	expect_close
+	rxrespbody
+	expect resp.bodylen == 34
+
+	# Keeps working after short response
+	txreq -url /5 -hdr "Range: bytes=17-101"
+	rxresphdrs
+	expect resp.status == 206
+	barrier b1 sync
+	rxrespbody
+	expect resp.bodylen == 85
 } -run
 
-varnish v1 -expect sc_range_short == 1
-logexpect l1 -wait
+varnish v1 -expect sc_range_short == 0

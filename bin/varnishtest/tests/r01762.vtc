@@ -1,5 +1,7 @@
 varnishtest "test vsl api handling of incomplete vtxes combined with bad vxids"
 
+feature cmd false
+
 server s1 {
 	rxreq
 	txresp
@@ -36,7 +38,7 @@ varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "debug.xid 1073741823"
 
 logexpect l1 -v v1 -g request -T 2 {
-	expect 0 1	Begin		"req 0"
+	expect 0 1	Begin		"req 107374182"
 	expect * =	ReqStart
 	expect 0 =	ReqMethod	GET
 	expect 0 =	ReqURL		/
@@ -80,7 +82,7 @@ varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "debug.xid 1073741823"
 
 logexpect l1 -v v1 -g request {
-	expect 0 1	Begin		"req 0"
+	expect 0 1	Begin		"req 1073741823"
 	expect * =	ReqStart
 	expect 0 =	ReqMethod	GET
 	expect 0 =	ReqURL		/

@@ -65,6 +65,7 @@ struct ecx {
 	ssize_t		l;
 	int		isgzip;
 	int		woken;
+	int		incl_cont;
 
 	struct req	*preq;
 	struct ecx	*pecx;
@@ -124,24 +125,28 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	if (preq->esi_level >= cache_param->max_esi_depth) {
 		VSLb(preq->vsl, SLT_VCL_Error,
-		    "ESI depth limit reach (param max_esi_depth = %u)",
+		    "ESI depth limit reached (param max_esi_depth = %u)",
 		    cache_param->max_esi_depth);
+		if (!ecx->incl_cont)
+			preq->top->topreq->vdc->retval = -1;
 		return;
 	}
 
 	req = Req_New(sp);
 	AN(req);
 	THR_SetRequest(req);
-	AZ(req->vsl->wid);
+	assert(IS_NO_VXID(req->vsl->wid));
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
-
-	VSLb(req->vsl, SLT_Begin, "req %u esi", VXID(preq->vsl->wid));
-	VSLb(preq->vsl, SLT_Link, "req %u esi", VXID(req->vsl->wid));
-
-	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
 
 	wrk->stats->esi_req++;
 	req->esi_level = preq->esi_level + 1;
+
+	VSLb(req->vsl, SLT_Begin, "req %ju esi %u",
+	    (uintmax_t)VXID(preq->vsl->wid), req->esi_level);
+	VSLb(preq->vsl, SLT_Link, "req %ju esi %u",
+	    (uintmax_t)VXID(req->vsl->wid), req->esi_level);
+
+	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
 
 	memset(req->top, 0, sizeof *req->top);
 	req->top = preq->top;
@@ -173,6 +178,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	/* Client content already taken care of */
 	http_Unset(req->http, H_Content_Length);
+	http_Unset(req->http, H_Transfer_Encoding);
 	req->req_body_status = BS_NONE;
 
 	AZ(req->vcl);
@@ -306,7 +312,7 @@ static int v_matchproto_(vdp_bytes_f)
 ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
-	uint8_t *q, *r;
+	const uint8_t *q, *r;
 	ssize_t l = 0;
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
@@ -378,7 +384,11 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				Debug("SKIP1(%d)\n", (int)ecx->l);
 				ecx->state = 4;
 				break;
-			case VEC_INCL:
+			case VEC_IC:
+				ecx->incl_cont =
+				    FEATURE(FEATURE_ESI_INCLUDE_ONERROR);
+				/* FALLTHROUGH */
+			case VEC_IA:
 				ecx->p++;
 				q = (void*)strchr((const char*)ecx->p, '\0');
 				AN(q);
@@ -535,6 +545,10 @@ ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	ecx->crc = crc32(ecx->crc, p, l);
 	ecx->l_crc += l;
 
+	/*
+	 * buf1 can safely be emitted multiple times for objects longer
+	 * than 64K-1 bytes.
+	 */
 	lx = 65535;
 	buf1[0] = 0;
 	vle16enc(buf1 + 1, lx);
@@ -558,7 +572,7 @@ ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		l -= lx;
 		p += lx;
 	}
-	/* buf1 & buf2 is local, have to flush */
+	/* buf1 & buf2 are local, so we have to flush */
 	return (ved_bytes(ecx, VDP_FLUSH, NULL, 0));
 }
 
@@ -589,7 +603,7 @@ struct ved_foo {
 	uint8_t			tailbuf[8];
 };
 
-static int v_matchproto_(vdp_fini_f)
+static int v_matchproto_(vdp_init_f)
 ved_gzgz_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	ssize_t l;
@@ -633,7 +647,7 @@ ved_gzgz_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
  * in VDP_bytes(), but ved_bytes() covers it.
  *
  * To avoid unnecessary chunks downstream, it would be nice to re-structure the
- * code to intendify the last block, send VDP_END/VDP_FLUSH for that one and
+ * code to identify the last block, send VDP_END/VDP_FLUSH for that one and
  * VDP_NULL for anything before it.
  */
 
@@ -857,6 +871,14 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (wantbody == 0)
 		return;
 
+	if (!ecx->incl_cont &&
+	    req->resp->status != 200 &&
+	    req->resp->status != 204) {
+		req->top->topreq->vdc->retval = -1;
+		req->top->topreq->doclose = req->doclose;
+		return;
+	}
+
 	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0)
 		return;
 
@@ -904,5 +926,10 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	req->acct.resp_bodybytes += VDP_Close(req->vdc);
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
+
+	if (i && !ecx->incl_cont) {
+		req->top->topreq->vdc->retval = -1;
+		req->top->topreq->doclose = req->doclose;
+	}
 }

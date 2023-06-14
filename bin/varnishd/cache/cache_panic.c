@@ -99,6 +99,19 @@ pan_stream_close(struct vsb *vsb, stream_close_t sc)
 
 /*--------------------------------------------------------------------*/
 
+static void
+pan_storage(struct vsb *vsb, const char *n, const struct stevedore *stv)
+{
+
+	if (stv != NULL && stv->magic == STEVEDORE_MAGIC)
+		VSB_printf(vsb, "%s = %s(%s,%s),\n",
+		    n, stv->name, stv->ident, stv->vclname);
+	else
+		VSB_printf(vsb, "%s = %p,\n", n, stv);
+}
+
+/*--------------------------------------------------------------------*/
+
 #define N_ALREADY 256
 static const void *already_list[N_ALREADY];
 static int already_idx;
@@ -159,9 +172,9 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 		return;
 	if (htc->rfd != NULL)
 		VSB_printf(vsb, "fd = %d (@%p),\n", *htc->rfd, htc->rfd);
-	VSB_printf(vsb, "doclose = ");
+	VSB_cat(vsb, "doclose = ");
 	pan_stream_close(vsb, htc->doclose);
-	VSB_printf(vsb, "\n");
+	VSB_cat(vsb, "\n");
 	WS_Panic(vsb, htc->ws);
 	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
 	    htc->rxbuf_b, htc->rxbuf_e);
@@ -296,11 +309,6 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 	else
 		VSB_printf(vsb, "0x%x,\n", m);
 
-	hand = VCL_Return_Name(wrk->handling);
-	if (hand != NULL)
-		VSB_printf(vsb, "VCL::return = %s,\n", hand);
-	else
-		VSB_printf(vsb, "VCL::return = 0x%x,\n", wrk->handling);
 	VSB_cat(vsb, "VCL::methods = {");
 	m = wrk->seen_methods;
 	p = "";
@@ -354,6 +362,7 @@ static void
 pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 {
 	const char *p;
+	const struct worker *wrk;
 
 	if (PAN_dump_struct(vsb, bo, BUSYOBJ_MAGIC, "busyobj"))
 		return;
@@ -364,8 +373,9 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 		pan_req(vsb, bo->req);
 	if (bo->sp != NULL)
 		pan_sess(vsb, bo->sp);
-	if (bo->wrk != NULL)
-		pan_wrk(vsb, bo->wrk);
+	wrk = bo->wrk;
+	if (wrk != NULL)
+		pan_wrk(vsb, wrk);
 
 	if (bo->vfc != NULL)
 		pan_vfp(vsb, bo->vfc);
@@ -393,20 +403,26 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_cat(vsb, "flags = {");
 	p = "";
 /*lint -save -esym(438,p) -e539 */
-#define BO_FLAG(l, r, rr, rw, f, d)				\
+#define BERESP_FLAG(l, r, w, f, d)				\
 	if (bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
-#include "tbl/bo_flags.h"
+#define BEREQ_FLAG(l, r, w, d) BERESP_FLAG(l, r, w, 0, d)
+#include "tbl/bereq_flags.h"
+#include "tbl/beresp_flags.h"
 /*lint -restore */
 	VSB_cat(vsb, "},\n");
 
 	// timeouts/timers/acct/storage left out
 
+	pan_storage(vsb, "storage", bo->storage);
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
 		VSB_cat(vsb, "director_resp = director_req,\n");
 	else
 		VDI_Panic(bo->director_resp, vsb, "director_resp");
 	VCL_Panic(vsb, "vcl", bo->vcl);
+	if (wrk != NULL)
+		VPI_Panic(vsb, wrk->vpi, bo->vcl);
+
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }
@@ -431,11 +447,12 @@ static void
 pan_req(struct vsb *vsb, const struct req *req)
 {
 	const struct transport *xp;
+	const struct worker *wrk;
 
 	if (PAN_dump_struct(vsb, req, REQ_MAGIC, "req"))
 		return;
 	xp = req->transport;
-	VSB_printf(vsb, "vxid = %u, transport = %s", VXID(req->vsl->wid),
+	VSB_printf(vsb, "vxid = %ju, transport = %s", VXID(req->vsl->wid),
 	    xp == NULL ? "NULL" : xp->name);
 
 	if (xp != NULL && xp->req_panic != NULL) {
@@ -462,11 +479,22 @@ pan_req(struct vsb *vsb, const struct req *req)
 	VSB_printf(vsb, "restarts = %u, esi_level = %u,\n",
 	    req->restarts, req->esi_level);
 
+	VSB_printf(vsb, "vary_b = %p, vary_e = %p,\n",
+	    req->vary_b, req->vary_e);
+
+	VSB_printf(vsb, "d_ttl = %f, d_grace = %f,\n",
+	    req->d_ttl, req->d_grace);
+
+	pan_storage(vsb, "storage", req->storage);
+
+	VDI_Panic(req->director_hint, vsb, "director_hint");
+
 	if (req->sp != NULL)
 		pan_sess(vsb, req->sp);
 
-	if (req->wrk != NULL)
-		pan_wrk(vsb, req->wrk);
+	wrk = req->wrk;
+	if (wrk != NULL)
+		pan_wrk(vsb, wrk);
 
 	WS_Panic(vsb, req->ws);
 	if (VALID_OBJ(req->htc, HTTP_CONN_MAGIC))
@@ -478,6 +506,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 		VDP_Panic(vsb, req->vdc);
 
 	VCL_Panic(vsb, "vcl", req->vcl);
+	if (wrk != NULL)
+		VPI_Panic(vsb, wrk->vpi, req->vcl);
 
 	if (req->body_oc != NULL)
 		pan_objcore(vsb, "BODY", req->body_oc);
@@ -523,7 +553,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 
 	if (PAN_dump_struct(vsb, sp, SESS_MAGIC, "sess"))
 		return;
-	VSB_printf(vsb, "fd = %d, vxid = %u,\n",
+	VSB_printf(vsb, "fd = %d, vxid = %ju,\n",
 	    sp->fd, VXID(sp->vxid));
 	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
 	VSB_printf(vsb, "t_idle = %f,\n", sp->t_idle);
@@ -616,7 +646,7 @@ pan_backtrace(struct vsb *vsb)
 
 #else /* WITH_UNWIND */
 
-#if ENABLE_SANITIZER
+#if defined(ENABLE_SANITIZER)
 #  define BACKTRACE_LEVELS	20
 #else
 #  define BACKTRACE_LEVELS	10
@@ -726,7 +756,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	if (pthread_mutex_lock(&panicstr_mtx)) {
 		/* Reentrant panic */
-		VSB_printf(pan_vsb,"\n\nPANIC REENTRANCY\n\n");
+		VSB_cat(pan_vsb, "\n\nPANIC REENTRANCY\n\n");
 		abort();
 	}
 	panicy = pthread_self();

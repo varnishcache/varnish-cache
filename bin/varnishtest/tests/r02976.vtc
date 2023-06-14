@@ -9,7 +9,7 @@ server s1 -repeat 5 { # probe requests
 	txresp
 } -start
 
-varnish v1 -cliok {param.set vcc_err_unref off}
+varnish v1 -cliok {param.set vcc_feature -err_unref}
 
 varnish v1 -vcl {
 	backend b1 {

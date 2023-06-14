@@ -2,13 +2,13 @@ varnishtest "Backend close retry"
 
 server s1 -repeat 1 {
 	rxreq
-	txresp -bodylen 5
+	txresp -nodate -bodylen 5
 
 	rxreq
 	accept
 
 	rxreq
-	txresp -bodylen 6
+	txresp -nodate -bodylen 6
 
 } -start
 
@@ -33,11 +33,11 @@ logexpect l1 -v v1 -q "vxid == 1004" {
 	expect 0 1004 BackendOpen     {^\d+ s1}
 
 	expect 0 1004 Timestamp       {^Bereq:}
-	expect 0 1004 Timestamp       {^Beresp:}
 	expect 0 1004 BerespProtocol  {^HTTP/1.1}
 	expect 0 1004 BerespStatus    {^200}
 	expect 0 1004 BerespReason    {^OK}
 	expect 0 1004 BerespHeader    {^Content-Length: 6}
+	expect 0 1004 Timestamp       {^Beresp:}
 } -start
 
 client c1 {

@@ -87,8 +87,6 @@ varnish v1 -syntax 4.1 -vcl+backend {
 	}
 }
 
-# Note on Range requests: The range VDP is active, but as it cannot
-# reliably determine the size of the response, it falls back to a 200
 client c1 {
 	txreq -url /top2
 	rxresp
@@ -106,11 +104,10 @@ client c1 {
 	expect resp.http.filter0 == "esi"
 	expect resp.http.filters == "esi"
 
-	# see Note on Range above
 	txreq -url "/esi" -hdr "Range: bytes=1-2"
 	rxresp
-	expect resp.bodylen == 76
-	expect resp.status == 200
+	expect resp.bodylen == 2
+	expect resp.status == 206
 	expect resp.http.was == true
 	expect resp.http.filters == "esi range"
 
@@ -121,11 +118,10 @@ client c1 {
 	expect resp.http.was == true
 	expect resp.http.filters == "esi gunzip"
 
-	# see Note on Range above
 	txreq -url "/recurse" -hdr "Range: bytes=1-2"
 	rxresp
-	expect resp.bodylen == 120
-	expect resp.status == 200
+	expect resp.bodylen == 2
+	expect resp.status == 206
 	expect resp.http.was == true
 	expect resp.http.filters == "esi gunzip range"
 
@@ -136,4 +132,4 @@ client c1 {
 } -run
 
 varnish v1 -expect esi_errors == 0
-varnish v1 -expect MAIN.s_resp_bodybytes == 865
+varnish v1 -expect MAIN.s_resp_bodybytes == 673

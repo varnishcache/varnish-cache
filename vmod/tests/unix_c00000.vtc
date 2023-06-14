@@ -58,7 +58,7 @@ logexpect l1 -v v1 -d 1 -c {
 } -run
 
 
-varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+varnish v1 -errvcl {Not available in subroutine 'vcl_init'} {
 	import unix;
 	import std;
 	backend b None;
@@ -68,7 +68,7 @@ varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini
 	}
 }
 
-varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+varnish v1 -errvcl {Not available in subroutine 'vcl_init'} {
 	import unix;
 	import std;
 	backend b None;
@@ -78,7 +78,7 @@ varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini
 	}
 }
 
-varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+varnish v1 -errvcl {Not available in subroutine 'vcl_init'} {
 	import unix;
 	import std;
 	backend b None;
@@ -88,7 +88,7 @@ varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini
 	}
 }
 
-varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+varnish v1 -errvcl {Not available in subroutine 'vcl_init'} {
 	import unix;
 	import std;
 	backend b None;

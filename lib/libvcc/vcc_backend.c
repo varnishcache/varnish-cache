@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 
 #include "vcc_compile.h"
+#include "vus.h"
 
 const char *
 vcc_default_probe(struct vcc *tl)
@@ -87,25 +88,54 @@ Emit_Sockaddr(struct vcc *tl, struct vsb *vsb1, const struct token *t_host,
 }
 
 /*
- * For UDS, we do not create a VSA. Check if it's an absolute path, can
- * be accessed, and is a socket. If so, just emit the path field and set
- * the IP suckaddrs to NULL.
+ * For UDS, we do not create a VSA. We run the VUS_resolver() checks and, if
+ * it's a path, can be accessed, and is a socket. If so, just emit the path
+ * field and set the IP suckaddrs to NULL.
  */
+
+static int
+uds_resolved(void *priv, const struct sockaddr_un *uds)
+{
+	(void) priv;
+	(void) uds;
+	return (42);
+}
+
+static void
+emit_path(struct vsb *vsb1, char *path)
+{
+	VSB_printf(vsb1, "\t.uds_path = \"%s\",\n", path);
+	VSB_cat(vsb1, "\t.ipv4 = (void *) 0,\n");
+	VSB_cat(vsb1, "\t.ipv6 = (void *) 0,\n");
+}
+
 static void
 Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
     const struct token *t_path, const char *errid)
 {
 	struct stat st;
+	const char *vus_err;
 
 	AN(t_path);
 	AN(t_path->dec);
 
-	if (*t_path->dec != '/') {
+	if (! VUS_is(t_path->dec)) {
 		VSB_printf(tl->sb,
-			   "%s: Must be an absolute path:\n", errid);
+			   "%s: Must be a valid path or abstract socket:\n",
+			   errid);
 		vcc_ErrWhere(tl, t_path);
 		return;
 	}
+	if (VUS_resolver(t_path->dec, uds_resolved, NULL, &vus_err) != 42) {
+		VSB_printf(tl->sb, "%s: %s\n", errid, vus_err);
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
+	if (*t_path->dec == '@') {
+		emit_path(vsb1, t_path->dec);
+		return;
+	}
+	assert(*t_path->dec == '/');
 	errno = 0;
 	if (stat(t_path->dec, &st) != 0) {
 		int err = errno;
@@ -121,9 +151,7 @@ Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
 		vcc_ErrWhere(tl, t_path);
 		return;
 	}
-	VSB_printf(vsb1, "\t.uds_path = \"%s\",\n", t_path->dec);
-	VSB_cat(vsb1, "\t.ipv4 = (void *) 0,\n");
-	VSB_cat(vsb1, "\t.ipv6 = (void *) 0,\n");
+	emit_path(vsb1, t_path->dec);
 }
 
 /*--------------------------------------------------------------------
@@ -155,7 +183,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 	const struct token *t_field;
 	const struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
 	struct token *t_initial = NULL;
-	unsigned window, threshold, initial, status;
+	unsigned window, threshold, initial, status, exp_close;
 	char buf[32];
 	const char *name;
 	double t;
@@ -169,6 +197,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 	    "?window",
 	    "?threshold",
 	    "?initial",
+	    "?expect_close",
 	    NULL);
 
 	SkipToken(tl, '{');
@@ -188,6 +217,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 	threshold = 0;
 	initial = 0;
 	status = 0;
+	exp_close = 1;
 	while (tl->t->tok != '}') {
 
 		vcc_IsField(tl, &t_field, fs);
@@ -245,6 +275,9 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 			t_threshold = tl->t;
 			threshold = vcc_UintVal(tl);
 			ERRCHK(tl);
+		} else if (vcc_IdIs(t_field, "expect_close")) {
+			exp_close = vcc_BoolVal(tl);
+			ERRCHK(tl);
 		} else {
 			vcc_ErrToken(tl, t_field);
 			vcc_ErrWhere(tl, t_field);
@@ -293,6 +326,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 		Fh(tl, 0, "\t.initial = ~0U,\n");
 	if (status > 0)
 		Fh(tl, 0, "\t.exp_status = %u,\n", status);
+	Fh(tl, 0, "\t.exp_close = %u,\n", exp_close);
 	Fh(tl, 0, "}};\n");
 	SkipToken(tl, '}');
 }
@@ -330,7 +364,8 @@ vcc_ParseProbe(struct vcc *tl)
  */
 
 static void
-vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
+vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
+    const struct token *t_be, const char *vgcname)
 {
 	const struct token *t_field;
 	const struct token *t_val;
@@ -338,12 +373,14 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	const struct token *t_port = NULL;
 	const struct token *t_path = NULL;
 	const struct token *t_hosthdr = NULL;
+	const struct token *t_authority = NULL;
 	const struct token *t_did = NULL;
 	const struct token *t_preamble = NULL;
 	struct symbol *pb;
 	struct fld_spec *fs;
 	struct inifin *ifp;
 	struct vsb *vsb1;
+	struct symbol *via = NULL;
 	char *p;
 	unsigned u;
 	double t;
@@ -384,6 +421,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?max_connections",
 	    "?proxy_header",
 	    "?preamble",
+	    "?via",
+	    "?authority",
 	    NULL);
 
 	tl->fb = VSB_new_auto();
@@ -504,6 +543,32 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			t_preamble = tl->t;
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "via")) {
+			via = VCC_SymbolGet(tl, SYM_MAIN, SYM_BACKEND,
+			    SYMTAB_EXISTING, XREF_REF);
+			ERRCHK(tl);
+			AN(via);
+			AN(via->rname);
+
+			if (via->extra != NULL) {
+				AZ(strcmp(via->extra, "via"));
+				VSB_cat(tl->sb,
+					"Can not stack .via backends at\n");
+				vcc_ErrWhere(tl, tl->t);
+				VSB_destroy(&tl->fb);
+				return;
+			}
+
+			AN(sym);
+			AZ(sym->extra);
+			sym->extra = "via";
+			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "authority")) {
+			ExpectErr(tl, CSTR);
+			assert(tl->t->dec != NULL);
+			t_authority = tl->t;
+			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else {
 			ErrInternal(tl);
 			VSB_destroy(&tl->fb);
@@ -524,6 +589,15 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		VSB_destroy(&tl->fb);
 		return;
 	}
+
+	if (via != NULL && t_path != NULL) {
+		VSB_printf(tl->sb, "Cannot set both .via and .path.\n");
+		vcc_ErrWhere(tl, t_be);
+		return;
+	}
+
+	if (via != NULL)
+		AZ(via->extra);
 
 	vsb1 = VSB_new_auto();
 	AN(vsb1);
@@ -560,6 +634,28 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		Fb(tl, 0, "\"0.0.0.0\"");
 	Fb(tl, 0, ",\n");
 
+	/*
+	 * Emit the authority field, falling back to hosthdr, then host.
+	 *
+	 * When authority is "", sending the TLV is disabled.
+	 *
+	 * Falling back to host may result in an IP address in authority,
+	 * which is an illegal SNI HostName (RFC 4366 ch. 3.1). But we
+	 * document the potential error, rather than try to find out
+	 * whether or not Emit_Sockaddr() had to look up a name.
+	 */
+	if (via != NULL) {
+		AN(t_host);
+		Fb(tl, 0, "\t.authority = ");
+		if (t_authority != NULL)
+			EncToken(tl->fb, t_authority);
+		else if (t_hosthdr != NULL)
+			EncToken(tl->fb, t_hosthdr);
+		else
+			EncToken(tl->fb, t_host);
+		Fb(tl, 0, ",\n");
+	}
+
 	/* Close the struct */
 	Fb(tl, 0, "};\n");
 
@@ -572,8 +668,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
 	    "\t%s =\n\t    VRT_new_backend_clustered(ctx, vsc_cluster,\n"
-	    "\t\t&vgc_dir_priv_%s);\n",
-	    vgcname, vgcname);
+	    "\t\t&vgc_dir_priv_%s, %s);\n",
+	    vgcname, vgcname, via ? via->rname : "NULL");
 	VSB_printf(ifp->ini,
 	    "\tif (%s)\n\t\tVRT_StaticDirector(%s);", vgcname, vgcname);
 	VSB_printf(ifp->fin, "\t\tVRT_delete_backend(ctx, &%s);", vgcname);
@@ -587,7 +683,7 @@ void
 vcc_ParseBackend(struct vcc *tl)
 {
 	struct token *t_first, *t_be;
-	struct symbol *sym;
+	struct symbol *sym = NULL;
 	const char *dn;
 
 	tl->ndirector++;
@@ -625,7 +721,7 @@ vcc_ParseBackend(struct vcc *tl)
 		}
 	}
 	Fh(tl, 0, "\nstatic VCL_BACKEND %s;\n", dn);
-	vcc_ParseHostDef(tl, t_be, dn);
+	vcc_ParseHostDef(tl, sym, t_be, dn);
 	if (tl->err) {
 		VSB_printf(tl->sb,
 		    "\nIn %.*s specification starting at:\n", PF(t_first));

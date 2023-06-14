@@ -139,7 +139,7 @@ vss_resolve(const char *addr, const char *def_port, int family, int socktype,
 	return (ret);
 }
 
-static struct suckaddr *
+static const struct suckaddr *
 vss_alloc_suckaddr(void *dst, const struct addrinfo *ai)
 {
 
@@ -162,7 +162,7 @@ VSS_resolver_socktype(const char *addr, const char *def_port,
     vss_resolved_f *func, void *priv, const char **errp, int socktype)
 {
 	struct addrinfo *res0 = NULL, *res;
-	struct suckaddr *vsa;
+	const struct suckaddr *vsa;
 	int ret;
 
 	AN(addr);
@@ -178,7 +178,7 @@ VSS_resolver_socktype(const char *addr, const char *def_port,
 		vsa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
 		if (vsa != NULL) {
 			ret = func(priv, vsa);
-			free(vsa);
+			VSA_free(&vsa);
 			if (ret)
 				break;
 		}
@@ -195,12 +195,12 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 	    addr, def_port, func, priv, errp, SOCK_STREAM));
 }
 
-struct suckaddr *
+const struct suckaddr *
 VSS_ResolveOne(void *dst, const char *addr, const char *def_port,
     int family, int socktype, int flags)
 {
 	struct addrinfo *res = NULL;
-	struct suckaddr *retval = NULL;
+	const struct suckaddr *retval = NULL;
 	const char *err;
 	int ret;
 
@@ -215,12 +215,12 @@ VSS_ResolveOne(void *dst, const char *addr, const char *def_port,
 	return (retval);
 }
 
-struct suckaddr *
+const struct suckaddr *
 VSS_ResolveFirst(void *dst, const char *addr, const char *def_port,
     int family, int socktype, int flags)
 {
 	struct addrinfo *res0 = NULL, *res;
-	struct suckaddr *retval = NULL;
+	const struct suckaddr *retval = NULL;
 	const char *err;
 	int ret;
 

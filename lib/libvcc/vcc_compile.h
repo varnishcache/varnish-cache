@@ -194,6 +194,9 @@ struct symbol {
 
 	const char			*extra;
 
+	/* vcc_vmod.c */
+	const struct vmod_import	*import;
+
 	/* SYM_VAR */
 	const char			*rname;
 	unsigned			r_methods;
@@ -250,8 +253,8 @@ struct vcc {
 	char			*builtin_vcl;
 	struct vfil_path	*vcl_path;
 	struct vfil_path	*vmod_path;
-#define MGT_VCC(t, n, cc) t n;
-#include <tbl/mgt_vcc.h>
+#define VCC_FEATURE_BIT(U, l, d) unsigned l;
+#include <tbl/vcc_feature_bits.h>
 
 	struct symtab		*syms[VCC_NAMESPACE__MAX];
 
@@ -384,6 +387,7 @@ vcc_kind_t VCC_HandleKind(vcc_type_t fmt);
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t, vcc_kind_t,
     int, int);
+struct symbol *VCC_MkSymAlias(struct vcc *tl, const char *, const char *);
 
 struct symxref { const char *name; };
 extern const struct symxref XREF_NONE[1];
@@ -444,6 +448,7 @@ double vcc_DurationUnit(struct vcc *);
 void vcc_ByteVal(struct vcc *, VCL_INT *);
 void vcc_Duration(struct vcc *tl, double *);
 uint64_t vcc_UintVal(struct vcc *tl);
+uint8_t vcc_BoolVal(struct vcc *tl);
 int vcc_IsFlag(struct vcc *tl);
 int vcc_IsFlagRaw(struct vcc *, const struct token *, const struct token *);
 char *vcc_Dup_be(const char *b, const char *e);
@@ -454,6 +459,7 @@ sym_wildcard_t vcc_Var_Wildcard;
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);
+void vcc_ImportVext(struct vcc *tl, const char *filename);
 sym_act_f vcc_Act_New;
 
 /* vcc_xref.c */

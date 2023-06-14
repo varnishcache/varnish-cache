@@ -57,10 +57,17 @@ one IPv4 and one IPv6 address::
 
     .host = "example.com:8081";
 
-The TCP port number can be specified as part of ``.host`` as above
-or separately using the ``.port`` attribute::
+    .host = "example.com:http";
 
-    .port = 8081;
+Attribute ``.port``
+-------------------
+
+The TCP port number or service name can be specified as part of
+``.host`` as above or separately using the ``.port`` attribute::
+
+    .port = "8081";
+
+    .port = "http";
 
 Attribute ``.path``
 -------------------
@@ -68,6 +75,11 @@ Attribute ``.path``
 The absolute path to a Unix(4) domain socket of a local backend::
 
     .path = "/var/run/http.sock";
+
+or, where available, ``@`` followed by the name of an abstract socket
+of a local backend::
+
+    .path = "@mybackend";
 
 A warning will be issued if the uds-socket does not exist when the
 VCL is loaded.  This makes it possible to start the UDS-listening peer,
@@ -129,6 +141,60 @@ Attribute ``.preamble``
 Send a BLOB on all newly opened connections to the backend::
 
     .preamble = :SGVsbG8gV29ybGRcbgo=:;
+
+.. _backend_definition_via:
+
+Attribute ``.via``
+------------------
+
+.. _PROXY2: https://raw.githubusercontent.com/haproxy/haproxy/master/doc/proxy-protocol.txt
+
+Name of another *proxy* backend through which to make the connection
+to the *destination* backend using the `PROXY2`_ protocol, for example::
+
+  backend proxy {
+    .path = "/path/to/proxy2_endpoint";
+  }
+  backend destination {
+    .host = "1.2.3.4";
+    .via = proxy;
+  }
+
+The *proxy* backend can also use a ``.host``\ /\ ``.port`` definition
+rather than ``.path``.
+
+Use of the ``.path`` attribute for the *destination* backend is not
+supported.
+
+The ``.via`` attribute is unrelated to ``.proxy_header``. If both are
+used, a second header is sent as per ``.proxy_header`` specification.
+
+As of this release, the *proxy* backend used with ``.via`` can not be
+a director, it can not itself use ``.via`` (error: *Can not stack .via
+backends*) and the protocol is fixed to `PROXY2`_.
+
+Implementation detail:
+
+If ``.via = <proxy>`` is used, a `PROXY2`_ preamble is created with
+the *destination* backend's address information as ``dst_addr``\ /\
+``dst_port`` and, optionally, other TLV attributes. The connection is
+then made to the *proxy* backend's endpoint (``path`` or ``host``\ /\
+``port``). This is technically equivalent to specifying a ``backend
+destination_via_proxy`` with a ``.preamble`` attribute containing the
+appropriate `PROXY2`_ preamble for the *destination* backend.
+
+Attribute ``.authority``
+------------------------
+
+The HTTP authority to use when connecting to this backend. If unset,
+``.host_header`` or ``.host`` are used.
+
+``.authority = ""`` disables sending an authority.
+
+As of this release, the attribute is only used by ``.via`` connections
+as a ``PP2_TYPE_AUTHORITY`` Type-Length-Value (TLV) in the `PROXY2`_
+preamble.
+
 
 Attribute ``.probe``
 --------------------

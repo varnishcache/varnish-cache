@@ -9,53 +9,19 @@ varnish v1 -cliok "param.set thread_pools 1"
 varnish v1 -cliok "param.set vsl_mask +ExpKill"
 varnish v1 -vcl+backend {
 	import purge;
-	import vtc;
 
-	sub vcl_recv {
-		if (req.url == "recv") { purge.hard(); }
-		if (req.url == "pass") { return (pass); }
-		if (req.url == "purge") { return (purge); }
-		if (req.url == "synth") { return (synth(200)); }
-	}
-	sub vcl_hash {
-		if (req.url == "hash") { purge.hard(); }
-	}
 	sub vcl_miss {
 		if (req.url == "miss") { purge.hard(); }
 	}
 	sub vcl_hit {
 		if (req.url == "hit") { purge.hard(); }
 	}
-	sub vcl_purge {
-		if (req.url == "purge") { purge.hard(); }
-	}
-	sub vcl_pass {
-		if (req.url == "pass") { purge.hard(); }
-	}
-	sub vcl_deliver {
-		if (req.url == "deliver") { purge.hard(); }
-	}
-	sub vcl_synth {
-		if (req.url == "synth") { purge.hard(); }
-	}
-	sub vcl_backend_fetch {
-		if (bereq.url == "fetch") { purge.hard(); }
-		if (bereq.url == "error") {
-			set bereq.backend = vtc.no_backend();
-		}
-	}
-	sub vcl_backend_error {
-		if (bereq.url == "error") { purge.hard(); }
-	}
-	sub vcl_backend_response {
-		if (bereq.url == "response") { purge.hard(); }
-	}
 } -start
 
 varnish v1 -cliok "param.set timeout_idle 2"
 
 logexpect l0 -v v1 -g raw {
-	expect * 0 ExpKill	"EXP_Expired x=1002"
+	expect * 0 ExpKill	"EXP_Expired xid=1002"
 } -start
 
 logexpect l2 -v v1 -g raw {
@@ -70,34 +36,6 @@ logexpect l1 -v v1 {
 	expect * 1004	VCL_call	MISS
 	expect 0 =	VCL_return	fetch
 
-	expect * 1007	VCL_call	RECV
-	expect 0 =	VCL_Error	purge
-	expect 0 =	VCL_return	fail
-
-	expect * 1009	VCL_call	HASH
-	expect 0 =	VCL_Error	purge
-	expect 0 =	VCL_return	fail
-
-	expect * 1011	VCL_call	PURGE
-	expect 0 =	VCL_Error	purge
-
-	expect * 1013	VCL_call	PASS
-	expect 0 =	VCL_Error	purge
-
-	expect * 1015	VCL_call	DELIVER
-	expect 0 =	VCL_Error	purge
-
-	expect * 1018	VCL_call	SYNTH
-	expect 0 =	VCL_Error	purge
-
-	expect * 1021	VCL_call	BACKEND_FETCH
-	expect 0 =	VCL_Error	purge
-
-	expect * 1024	VCL_call	BACKEND_ERROR
-	expect 0 =	VCL_Error	purge
-
-	expect * 1027	VCL_call	BACKEND_RESPONSE
-	expect 0 =	VCL_Error	purge
 } -start
 
 client c1 {
@@ -117,67 +55,58 @@ client c1 {
 logexpect l0 -wait
 logexpect l2 -wait
 
-client c1 {
-	txreq -url recv
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+varnish v1 -errvcl "Not available in subroutine 'vcl_purge'" {
+	import purge;
 
-client c1 {
-	txreq -url hash
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+	sub vcl_purge {
+		if (req.url == "purge") { purge.hard(); }
+	}
+}
 
-client c1 {
-	txreq -url purge
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+varnish v1 -errvcl "Not available in subroutine 'vcl_pass'" {
+	import purge;
 
-client c1 {
-	txreq -url pass
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+	sub vcl_pass {
+		if (req.url == "pass") { purge.hard(); }
+	}
+}
 
-client c1 {
-	txreq -url deliver
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+varnish v1 -errvcl "Not available in subroutine 'vcl_deliver'" {
+	import purge;
 
-client c1 {
-	txreq -url synth
-	rxresp
-	expect resp.status == 500
-	expect_close
-} -run
+	sub vcl_deliver {
+		if (req.url == "deliver") { purge.hard(); }
+	}
+}
 
-client c1 {
-	txreq -url fetch
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+varnish v1 -errvcl "Not available in subroutine 'vcl_synth'" {
+	import purge;
 
-client c1 {
-	txreq -url error
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+	sub vcl_synth {
+		if (req.url == "synth") { purge.hard(); }
+	}
+}
 
-client c1 {
-	txreq -url response
-	rxresp
-	expect resp.status == 503
-	expect_close
-} -run
+varnish v1 -errvcl "Not available in subroutine 'vcl_backend_fetch'" {
+	import purge;
 
-logexpect l1 -wait
+	sub vcl_backend_fetch {
+		if (bereq.url == "fetch") { purge.hard(); }
+	}
+}
+
+varnish v1 -errvcl "Not available in subroutine 'vcl_backend_error'" {
+	import purge;
+
+	sub vcl_backend_error {
+		if (bereq.url == "error") { purge.hard(); }
+	}
+}
+
+varnish v1 -errvcl "Not available in subroutine 'vcl_backend_response'" {
+	import purge;
+
+	sub vcl_backend_response {
+		if (bereq.url == "response") { purge.hard(); }
+	}
+}

@@ -49,7 +49,19 @@ enum debug_bits {
 static inline int
 COM_DO_DEBUG(const volatile uint8_t *p, enum debug_bits x)
 {
-	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
+}
+
+enum experimental_bits {
+#define EXPERIMENTAL_BIT(U, l, d) EXPERIMENT_##U,
+#include "tbl/experimental_bits.h"
+       EXPERIMENT_Reserved
+};
+
+static inline int
+COM_EXPERIMENT(const volatile uint8_t *p, enum experimental_bits x)
+{
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
 }
 
 enum feature_bits {
@@ -61,9 +73,20 @@ enum feature_bits {
 static inline int
 COM_FEATURE(const volatile uint8_t *p, enum feature_bits x)
 {
-	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
 }
 
+enum vcc_feature_bits {
+#define VCC_FEATURE_BIT(U, l, d) VCC_FEATURE_##U,
+#include "tbl/vcc_feature_bits.h"
+       VCC_FEATURE_Reserved
+};
+
+static inline int
+COM_VCC_FEATURE(const volatile uint8_t *p, enum vcc_feature_bits x)
+{
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
+}
 
 struct poolparam {
 	unsigned		min_pool;
@@ -71,23 +94,32 @@ struct poolparam {
 	vtim_dur		max_age;
 };
 
+#define PARAM_BITMAP(name, len) typedef uint8_t name[(len + 7)>>3]
 
-typedef uint8_t vsl_mask_t[256>>3];
-typedef uint8_t debug_t[(DBG_Reserved+7)>>3];
-typedef uint8_t feature_t[(FEATURE_Reserved+7)>>3];
+PARAM_BITMAP(vsl_mask_t,	256);
+PARAM_BITMAP(debug_t,		DBG_Reserved);
+PARAM_BITMAP(experimental_t,	EXPERIMENT_Reserved);
+PARAM_BITMAP(feature_t,		FEATURE_Reserved);
+PARAM_BITMAP(vcc_feature_t,	VCC_FEATURE_Reserved);
+#undef PARAM_BITMAP
 
 struct params {
 
 #define ptyp_boolean		unsigned
 #define ptyp_bytes		ssize_t
 #define ptyp_bytes_u		unsigned
+#define ptyp_debug		debug_t
 #define ptyp_double		double
+#define ptyp_experimental	experimental_t
+#define ptyp_feature		feature_t
 #define ptyp_poolparam		struct poolparam
 #define ptyp_thread_pool_max	unsigned
 #define ptyp_thread_pool_min	unsigned
 #define ptyp_timeout		vtim_dur
 #define ptyp_uint		unsigned
+#define ptyp_vcc_feature	vcc_feature_t
 #define ptyp_vsl_buffer		unsigned
+#define ptyp_vsl_mask		vsl_mask_t
 #define ptyp_vsl_reclen		unsigned
 #define PARAM(typ, fld, nm, ...)		\
 	ptyp_##typ		fld;
@@ -95,22 +127,18 @@ struct params {
 #undef ptyp_boolean
 #undef ptyp_bytes
 #undef ptyp_bytes_u
+#undef ptyp_debug
 #undef ptyp_double
+#undef ptyp_experimental
+#undef ptyp_feature
 #undef ptyp_poolparam
 #undef ptyp_thread_pool_max
 #undef ptyp_thread_pool_min
 #undef ptyp_timeout
 #undef ptyp_uint
 #undef ptyp_vsl_buffer
+#undef ptyp_vsl_mask
 #undef ptyp_vsl_reclen
 
-	/* Unprivileged user / group */
-	uid_t			uid;
-	gid_t			gid;
-
 	struct vre_limits	vre_limits;
-
-	vsl_mask_t		vsl_mask;
-	debug_t			debug_bits;
-	feature_t		feature_bits;
 };

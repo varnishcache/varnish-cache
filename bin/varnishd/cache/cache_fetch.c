@@ -38,6 +38,7 @@
 #include "storage/storage.h"
 #include "vcl.h"
 #include "vtim.h"
+#include "vcc_interface.h"
 
 #define FETCH_STEPS \
 	FETCH_STEP(mkbereq,           MKBEREQ) \
@@ -217,7 +218,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		VSB_destroy(&vary);
 	}
 
-	AZ(ObjSetU32(bo->wrk, oc, OA_VXID, VXID(bo->vsl->wid)));
+	AZ(ObjSetXID(bo->wrk, oc, bo->vsl->wid));
 
 	/* for HTTP_Encode() VSLH call */
 	bo->beresp->logtag = SLT_ObjMethod;
@@ -273,7 +274,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
 	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
 		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
-		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_Last_Modified);
+		q = RFC2616_Strong_LM(NULL, wrk, bo->stale_oc);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", q);
@@ -403,14 +404,16 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->retries > 0)
 		http_Unset(bo->bereq, "\012X-Varnish:");
 
-	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
+	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(bo->vsl->wid));
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL)
+	if (wrk->vpi->handling == VCL_RET_ABANDON ||
+	    wrk->vpi->handling == VCL_RET_FAIL)
 		return (F_STP_FAIL);
 
-	assert (wrk->handling == VCL_RET_FETCH || wrk->handling == VCL_RET_ERROR);
+	assert (wrk->vpi->handling == VCL_RET_FETCH ||
+	    wrk->vpi->handling == VCL_RET_ERROR);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
@@ -423,7 +426,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->resp = bo->beresp;
 	bo->vfc->req = bo->bereq;
 
-	if (wrk->handling == VCL_RET_ERROR)
+	if (wrk->vpi->handling == VCL_RET_ERROR)
 		return (F_STP_ERROR);
 
 	VSLb_ts_busyobj(bo, "Fetch", W_TIM_real(wrk));
@@ -439,9 +442,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	http_VSL_log(bo->beresp);
-
-	if (bo->htc->body_status == BS_ERROR) {
+	if (bo->htc != NULL && bo->htc->body_status == BS_ERROR) {
 		bo->htc->doclose = SC_RX_BODY;
 		vbf_cleanup(bo);
 		VSLb(bo->vsl, SLT_Error, "Body cannot be fetched");
@@ -485,7 +486,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (http_IsStatus(bo->beresp, 304) && vbf_304_logic(bo) < 0)
 		return (F_STP_ERROR);
 
-	if (bo->htc->doclose == SC_NULL &&
+	if (bo->htc != NULL && bo->htc->doclose == SC_NULL &&
 	    http_GetHdrField(bo->bereq, H_Connection, "close", NULL))
 		bo->htc->doclose = SC_REQ_CLOSE;
 
@@ -500,24 +501,25 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
-	    wrk->handling == VCL_RET_ERROR) {
+	if (wrk->vpi->handling == VCL_RET_ABANDON ||
+	    wrk->vpi->handling == VCL_RET_FAIL ||
+	    wrk->vpi->handling == VCL_RET_ERROR) {
 		/* do not count deliberately ending the backend connection as
 		 * fetch failure
 		 */
-		handling = wrk->handling;
+		handling = wrk->vpi->handling;
 		if (bo->htc)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
-		wrk->handling = handling;
+		wrk->vpi->handling = handling;
 
-		if (wrk->handling == VCL_RET_ERROR)
+		if (wrk->vpi->handling == VCL_RET_ERROR)
 			return (F_STP_ERROR);
 		else
 			return (F_STP_FAIL);
 	}
 
-	if (wrk->handling == VCL_RET_RETRY) {
+	if (wrk->vpi->handling == VCL_RET_RETRY) {
 		if (bo->htc && bo->htc->body_status != BS_NONE)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
@@ -540,15 +542,17 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
-	if (wrk->handling == VCL_RET_PASS) {
+	if (wrk->vpi->handling == VCL_RET_PASS) {
 		oc->flags |= OC_F_HFP;
 		bo->uncacheable = 1;
-		wrk->handling = VCL_RET_DELIVER;
+		wrk->vpi->handling = VCL_RET_DELIVER;
 	}
+	if (!bo->uncacheable || !bo->do_stream)
+		oc->boc->transit_buffer = 0;
 	if (bo->uncacheable)
 		oc->flags |= OC_F_HFM;
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	return (bo->was_304 ? F_STP_CONDFETCH : F_STP_FETCH);
 }
@@ -593,6 +597,9 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 		AZ(vfc->failed);
 		l = est;
+		oc = bo->fetch_objcore;
+		if (oc->boc->transit_buffer > 0)
+			l = vmin_t(ssize_t, l, oc->boc->transit_buffer);
 		assert(l >= 0);
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
 			bo->htc->doclose = SC_RX_BODY;
@@ -638,7 +645,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	oc = bo->fetch_objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	if (bo->htc == NULL) {
 		(void)VFP_Error(bo->vfc, "No backend connection (rollback?)");
@@ -666,7 +673,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (oc->flags & OC_F_PRIVATE)
 		AN(bo->uncacheable);
 
-	oc->boc->len_so_far = 0;
+	oc->boc->fetched_so_far = 0;
 
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Bo2Ctx(ctx, bo);
@@ -691,7 +698,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (!(oc->flags & OC_F_HFM) &&
 	    http_IsStatus(bo->beresp, 200) && (
-	      http_GetHdr(bo->beresp, H_Last_Modified, NULL) ||
+	      RFC2616_Strong_LM(bo->beresp, NULL, NULL) != NULL ||
 	      http_GetHdr(bo->beresp, H_ETag, NULL)))
 		ObjSetFlag(bo->wrk, oc, OF_IMSCAND, 1);
 
@@ -734,7 +741,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 	   give predictable backend reuse behavior for varnishtest */
 	vbf_cleanup(bo);
 
-	AZ(ObjSetU64(wrk, oc, OA_LEN, oc->boc->len_so_far));
+	AZ(ObjSetU64(wrk, oc, OA_LEN, oc->boc->fetched_so_far));
 
 	if (bo->do_stream)
 		assert(oc->boc->state == BOS_STREAM);
@@ -755,7 +762,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
  */
 
 static int v_matchproto_(objiterate_f)
-vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
+vbf_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
 	struct busyobj *bo;
 	ssize_t l;
@@ -843,7 +850,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetState(wrk, oc, BOS_STREAM);
 	}
 
-	if (ObjIterate(wrk, stale_oc, bo, vbf_objiterator, 0))
+	if (ObjIterate(wrk, stale_oc, bo, vbf_objiterate, 0))
 		(void)VFP_Error(bo->vfc, "Template object failed");
 
 	if (bo->vfc->failed) {
@@ -887,14 +894,14 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	AN(oc->flags & OC_F_BUSY);
 	assert(bo->director_state == DIR_S_NULL);
 
-	if (wrk->handling != VCL_RET_ERROR)
+	if (wrk->vpi->handling != VCL_RET_ERROR)
 		wrk->stats->fetch_failed++;
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
 
 	if (oc->stobj->stevedore != NULL) {
-		oc->boc->len_so_far = 0;
+		oc->boc->fetched_so_far = 0;
 		ObjFreeObj(bo->wrk, oc);
 	}
 
@@ -941,12 +948,12 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	AZ(VSB_finish(synth_body));
 
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
+	if (wrk->vpi->handling == VCL_RET_ABANDON || wrk->vpi->handling == VCL_RET_FAIL) {
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
 
-	if (wrk->handling == VCL_RET_RETRY) {
+	if (wrk->vpi->handling == VCL_RET_RETRY) {
 		VSB_destroy(&synth_body);
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
@@ -954,7 +961,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_FAIL);
 	}
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	assert(bo->vfc->wrk == bo->wrk);
 	assert(bo->vfc->oc == oc);
@@ -965,6 +972,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
+
+	oc->boc->transit_buffer = 0;
 
 	ll = VSB_len(synth_body);
 	o = 0;
@@ -1105,6 +1114,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 {
 	struct boc *boc;
 	struct busyobj *bo;
+	enum task_prio prio;
 	const char *how;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -1122,13 +1132,16 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	switch (mode) {
 	case VBF_PASS:
+		prio = TASK_QUEUE_BO;
 		how = "pass";
 		bo->uncacheable = 1;
 		break;
 	case VBF_NORMAL:
+		prio = TASK_QUEUE_BO;
 		how = "fetch";
 		break;
 	case VBF_BACKGROUND:
+		prio = TASK_QUEUE_BG;
 		how = "bgfetch";
 		bo->is_bgfetch = 1;
 		break;
@@ -1136,12 +1149,12 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		WRONG("Wrong fetch mode");
 	}
 
-	bo->is_hitpass = req->is_hitpass;
-	bo->is_hitmiss = req->is_hitmiss;
+#define REQ_BEREQ_FLAG(l, r, w, d) bo->l = req->l;
+#include "tbl/req_bereq_flags.h"
 
-	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
-	VSLb(bo->vsl, SLT_VCL_use, "%s", VCL_Name(bo->vcl));
-	VSLb(req->vsl, SLT_Link, "bereq %u %s", VXID(bo->vsl->wid), how);
+	VSLb(bo->vsl, SLT_Begin, "bereq %ju %s", VXID(req->vsl->wid), how);
+	VSLbs(bo->vsl, SLT_VCL_use, TOSTRAND(VCL_Name(bo->vcl)));
+	VSLb(req->vsl, SLT_Link, "bereq %ju %s", VXID(bo->vsl->wid), how);
 
 	THR_SetBusyobj(bo);
 
@@ -1168,15 +1181,17 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->fetch_task->priv = bo;
 	bo->fetch_task->func = vbf_fetch_thread;
 
-	if (Pool_Task(wrk->pool, bo->fetch_task, TASK_QUEUE_BO)) {
-		wrk->stats->fetch_no_thread++;
+	if (Pool_Task(wrk->pool, bo->fetch_task, prio)) {
+		wrk->stats->bgfetch_no_thread++;
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
 		HSH_DerefBoc(wrk, oc);
 		SES_Rel(bo->sp);
+		THR_SetBusyobj(NULL);
 		VBO_ReleaseBusyObj(wrk, &bo);
 	} else {
+		THR_SetBusyobj(NULL);
 		bo = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {
 			ObjWaitState(oc, BOS_REQ_DONE);
@@ -1196,5 +1211,4 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	HSH_DerefBoc(wrk, oc);
 	if (mode == VBF_BACKGROUND)
 		(void)HSH_DerefObjCore(wrk, &oc, HSH_RUSH_POLICY);
-	THR_SetBusyobj(NULL);
 }

@@ -48,32 +48,41 @@
 
 /*--------------------------------------------------------------------*/
 
-void
-vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
+static void
+vcc_cstrcat(struct vcc *tl, struct vsb *vsb)
 {
-	struct vsb *pattern;
-	char buf[BUFSIZ];
-	vre_t *t;
-	int error, erroroffset;
 	struct token *t1;
-	struct inifin *ifp;
-
-	pattern = VSB_new_auto();
-	AN(pattern);
 
 	assert(tl->t->tok == CSTR);
-	VSB_cat(pattern, tl->t->dec);
+	VSB_cat(vsb, tl->t->dec);
 
 	t1 = vcc_PeekToken(tl);
 	AN(t1);
+
 	while (t1->tok == '+') {
 		vcc_NextToken(tl);
 		SkipToken(tl, '+');
 		ExpectErr(tl, CSTR);
-		VSB_cat(pattern, tl->t->dec);
+		VSB_cat(vsb, tl->t->dec);
 		t1 = vcc_PeekToken(tl);
 		AN(t1);
 	}
+}
+
+void
+vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
+{
+	struct vsb *pattern;
+	struct token *t0;
+	char buf[BUFSIZ];
+	vre_t *t;
+	int error, erroroffset;
+	struct inifin *ifp;
+
+	t0 = tl->t;
+	pattern = VSB_new_auto();
+	AN(pattern);
+	vcc_cstrcat(tl, pattern);
 	AZ(VSB_finish(pattern));
 
 	t = VRE_compile(VSB_data(pattern), 0, &error, &erroroffset, 0);
@@ -81,7 +90,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 		VSB_cat(tl->sb, "Regexp compilation error:\n\n");
 		AZ(VRE_error(tl->sb, error));
 		VSB_cat(tl->sb, "\n\n");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere2(tl, t0, tl->t);
 		VSB_destroy(&pattern);
 		return;
 	}
@@ -164,8 +173,8 @@ struct rss {
 	unsigned		magic;
 #define RSS_MAGIC		0x11e966ab
 
-	struct suckaddr		*vsa4;
-	struct suckaddr		*vsa6;
+	const struct suckaddr	*vsa4;
+	const struct suckaddr	*vsa6;
 	struct vsb		*vsb;
 	int			retval;
 	int			wrong;
@@ -237,8 +246,10 @@ Resolve_Sockaddr(struct vcc *tl,
 		    "(Sorry if that error message is gibberish.)\n",
 		    errid, PF(t_err), err);
 		vcc_ErrWhere(tl, t_err);
-		free(rss->vsa4);
-		free(rss->vsa6);
+		if (rss->vsa4 != NULL)
+			VSA_free(&rss->vsa4);
+		if (rss->vsa6 != NULL)
+			VSA_free(&rss->vsa6);
 		VSB_destroy(&rss->vsb);
 		ZERO_OBJ(rss, sizeof rss);
 		return;
@@ -246,11 +257,11 @@ Resolve_Sockaddr(struct vcc *tl,
 	AZ(error);
 	if (rss->vsa4 != NULL) {
 		vcc_suckaddr(tl, host, rss->vsa4, ipv4, ipv4_ascii, p_ascii);
-		free(rss->vsa4);
+		VSA_free(&rss->vsa4);
 	}
 	if (rss->vsa6 != NULL) {
 		vcc_suckaddr(tl, host, rss->vsa6, ipv6, ipv6_ascii, p_ascii);
-		free(rss->vsa6);
+		VSA_free(&rss->vsa6);
 	}
 	if (rss->retval == 0) {
 		VSB_printf(tl->sb,
@@ -272,6 +283,29 @@ Resolve_Sockaddr(struct vcc *tl,
 	}
 	VSB_destroy(&rss->vsb);
 	ZERO_OBJ(rss, sizeof rss);
+}
+
+/*--------------------------------------------------------------------
+* Recognize boolean const "true" or "false"
+*/
+
+uint8_t
+vcc_BoolVal(struct vcc *tl)
+{
+	struct symbol* sym;
+
+	if (tl->t->tok != ID) {
+		VSB_cat(tl->sb, "Expected \"true\" or \"false\"\n");
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
+	if (sym == NULL || sym->type != BOOL) {
+		VSB_cat(tl->sb, "Expected \"true\" or \"false\"\n");
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
+	return (sym->eval_priv != NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -312,7 +346,7 @@ vcc_UintVal(struct vcc *tl)
 	}
 	retval = (int64_t)round(tl->t->num);
 	if (retval < 0) {
-		VSB_printf(tl->sb, "UINT cannot be negative\n");
+		VSB_cat(tl->sb, "UINT cannot be negative\n");
 		vcc_ErrWhere(tl, tl->t);
 		return (0);
 	}

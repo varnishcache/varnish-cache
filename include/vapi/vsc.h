@@ -30,7 +30,7 @@
  *
  * This is the public API for the VSC access.
  *
- * VSC is a "subclass" of VSM.
+ * VSC is a sub-category of VSM.
  *
  */
 

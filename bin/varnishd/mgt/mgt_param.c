@@ -248,7 +248,7 @@ static void v_matchproto_(cli_func_t)
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct plist *pl;
-	const struct parspec *pp;
+	const struct parspec *pp, *pa;
 	int n, lfmt = 0, chg = 0;
 	struct vsb *vsb;
 	const char *show = NULL;
@@ -316,6 +316,11 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		}
 		VCLI_Out(cli, "\n");
 
+		if (lfmt && pp->func == tweak_alias) {
+			pa = TRUST_ME(pp->priv);
+			VCLI_Out(cli, "%-*sAlias of: %s\n",
+			    margin1, " ", pa->name);
+		}
 		if (lfmt && pp->flags & NOT_IMPLEMENTED) {
 			VCLI_Out(cli, "\n");
 			mcf_wrap(cli, NOT_IMPLEMENTED_TEXT);
@@ -373,7 +378,7 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 {
 	int n, comma = 0, chg = 0;
 	struct plist *pl;
-	const struct parspec *pp;
+	const struct parspec *pp, *pa;
 	struct vsb *vsb, *def;
 	const char *show = NULL, *sep;
 
@@ -432,6 +437,10 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "{\n");
 		VSB_indent(cli->sb, 2);
 		mcf_json_key_valstr(cli, "name", pp->name);
+		if (pp->func == tweak_alias) {
+			pa = TRUST_ME(pp->priv);
+			mcf_json_key_valstr(cli, "alias", pa->name);
+		}
 		if (pp->flags & NOT_IMPLEMENTED) {
 			VCLI_Out(cli, "\"implemented\": false\n");
 			VSB_indent(cli->sb, -2);
@@ -601,16 +610,25 @@ mcf_param_reset(struct cli *cli, const char * const *av, void *priv)
 }
 
 /*--------------------------------------------------------------------
- * Add a group of parameters to the global set and sort by name.
+ * Initialize parameters and sort by name.
  */
 
-void
-MCF_AddParams(struct parspec *ps)
+static struct parspec mgt_parspec[] = {
+#define PARAM_ALL
+#define PARAM_PRE {
+#define PARAM(typ, fld, nm, ...) #nm, __VA_ARGS__
+#define PARAM_POST },
+#include "tbl/params.h"
+	{ NULL, NULL, NULL }
+};
+
+static void
+mcf_init_params(void)
 {
 	struct parspec *pp;
 	const char *s;
 
-	for (pp = ps; pp->name != NULL; pp++) {
+	for (pp = mgt_parspec; pp->name != NULL; pp++) {
 		AN(pp->func);
 		s = strchr(pp->descr, '\0');
 		if (isspace(s[-1])) {
@@ -711,9 +729,7 @@ MCF_InitParams(struct cli *cli)
 	struct vsb *vsb;
 	ssize_t def, low;
 
-	MCF_AddParams(mgt_parspec);
-	MCF_AddParams(VSL_parspec);
-
+	mcf_init_params();
 	MCF_TcpParams();
 
 	def = 80 * 1024;

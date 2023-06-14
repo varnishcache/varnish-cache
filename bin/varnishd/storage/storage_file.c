@@ -113,7 +113,7 @@ struct smf_sc {
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void v_matchproto_(storage_init_f)
 smf_init(struct stevedore *parent, int ac, char * const *av)
 {
 	const char *size, *fn, *r;
@@ -504,65 +504,3 @@ const struct stevedore smf_stevedore = {
 	.allocbuf	=	SML_AllocBuf,
 	.freebuf	=	SML_FreeBuf,
 };
-
-#ifdef INCLUDE_TEST_DRIVER
-
-void vca_flush(struct sess *sp) {}
-
-#define N	100
-#define M	(128*1024)
-
-struct storage *s[N];
-
-static void
-dumpit(void)
-{
-	struct smf_sc *sc = smf_stevedore.priv;
-	struct smf *s;
-
-	return (0);
-	printf("----------------\n");
-	printf("Order:\n");
-	VTAILQ_FOREACH(s, &sc->order, order) {
-		printf("%10p %12ju %12ju %12ju\n",
-		    s, s->offset, s->size, s->offset + s->size);
-	}
-	printf("Used:\n");
-	VTAILQ_FOREACH(s, &sc->used, status) {
-		printf("%10p %12ju %12ju %12ju\n",
-		    s, s->offset, s->size, s->offset + s->size);
-	}
-	printf("Free:\n");
-	VTAILQ_FOREACH(s, &sc->free, status) {
-		printf("%10p %12ju %12ju %12ju\n",
-		    s, s->offset, s->size, s->offset + s->size);
-	}
-	printf("================\n");
-}
-
-int
-main(int argc, char **argv)
-{
-	int i, j;
-
-	setbuf(stdout, NULL);
-	smf_init(&smf_stevedore, "");
-	smf_open(&smf_stevedore);
-	while (1) {
-		dumpit();
-		i = random() % N;
-		do
-			j = random() % M;
-		while (j == 0);
-		if (s[i] == NULL) {
-			s[i] = smf_alloc(&smf_stevedore, j);
-			printf("A %10p %12d\n", s[i], j);
-		} else {
-			smf_free(s[i]);
-			printf("D %10p\n", s[i]);
-			s[i] = NULL;
-		}
-	}
-}
-
-#endif /* INCLUDE_TEST_DRIVER */

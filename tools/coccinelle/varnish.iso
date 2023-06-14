@@ -5,31 +5,26 @@
  * It can be used directly by semantic patches from the same directory
  * with the following syntax:
  *
- *     using "varnish.iso"
+ *     @using "varnish.iso"@
+ *     <decl>
+ *     @@
+ *
+ *     <semantic-diff>
  *
  * XXX: way incomplete.
- * XXX: consider autogeneration.
+ * XXX: consider autogeneration?
  */
 
 /* This section contains VCL types used by VMODs */
 
 Type
-@ vrt_ctx @
-type VRT_CTX;
-@@
-
-VRT_CTX <=> const struct vrt_ctx *
-
-Type
 @ vcl_void @
-type VCL_VOID;
+typedef VCL_VOID;
 @@
-
-void <=> VCL_VOID
+VCL_VOID <=> void
 
 Type
 @ vcl_bool @
-type VCL_BOOL;
+typedef VCL_BOOL;
 @@
-
-unsigned <=> VCL_BOOL
+VCL_BOOL <=> unsigned

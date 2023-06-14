@@ -358,7 +358,7 @@ varnish v1 -errvcl {Not available in subroutine 'vcl_pipe'} {
 # We would want to remove req from vcl_pipe, but that could break
 # vmods, so we fail specifically at runtime
 
-varnish v1 -vcl {
+varnish v1 -errvcl {Not available in subroutine 'vcl_pipe'} {
 	import std;
 
 	backend proforma None;
@@ -371,9 +371,3 @@ varnish v1 -vcl {
 	}
 }
 
-client c7 {
-	txreq -url /
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-} -run

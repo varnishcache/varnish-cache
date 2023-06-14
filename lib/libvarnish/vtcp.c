@@ -134,7 +134,7 @@ void
 VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	char buf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const struct suckaddr *sua;
 
 	sua = VSA_getpeername(sock, buf, sizeof buf);
 	if (sua != NULL)

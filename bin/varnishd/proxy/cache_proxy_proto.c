@@ -286,7 +286,7 @@ vpx_tlv_itern(struct vpx_tlv_iter *vpi)
 		(vpi->e == NULL) && vpx_tlv_itern(itv);)
 
 int
-VPX_tlv(const struct req *req, int typ, void **dst, int *len)
+VPX_tlv(const struct req *req, int typ, const void **dst, int *len)
 {
 	struct vpx_tlv *tlv;
 	struct vpx_tlv_iter vpi[1], vpi2[1];
@@ -765,7 +765,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	VSB_quote(vsb2, VSB_data(vsb), VSB_len(vsb),
 	    version == 2 ? VSB_QUOTE_HEX : 0);
 	AZ(VSB_finish(vsb2));
-	VSL(SLT_Debug, 999, "PROXY_HDR %s", VSB_data(vsb2));
+	VSL(SLT_Debug, NO_VXID, "PROXY_HDR %s", VSB_data(vsb2));
 	VSB_destroy(&vsb2);
 	VSB_fini(vsb);
 	return (r);

@@ -46,7 +46,15 @@
 
 #include "storage/storage.h"
 
-static VTAILQ_HEAD(, stevedore) stevedores =
+VTAILQ_HEAD(stevedore_head, stevedore);
+
+static struct stevedore_head proto_stevedores =
+    VTAILQ_HEAD_INITIALIZER(proto_stevedores);
+
+static struct stevedore_head pre_stevedores =
+    VTAILQ_HEAD_INITIALIZER(pre_stevedores);
+
+static struct stevedore_head stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
 
 /* Name of transient storage */
@@ -66,8 +74,10 @@ STV__iter(struct stevedore ** const pp)
 	CHECK_OBJ_ORNULL(*pp, STEVEDORE_MAGIC);
 	if (*pp != NULL)
 		*pp = VTAILQ_NEXT(*pp, list);
-	else
+	else if (!VTAILQ_EMPTY(&stevedores))
 		*pp = VTAILQ_FIRST(&stevedores);
+	else
+		*pp = VTAILQ_FIRST(&pre_stevedores);
 	return (*pp != NULL);
 }
 
@@ -139,52 +149,56 @@ smp_fake_init(struct stevedore *parent, int ac, char * const *av)
 
 static const struct stevedore smp_fake_stevedore = {
 	.magic = STEVEDORE_MAGIC,
-	.name = "deprecated_persistent",
+	.name = "persistent",
 	.init = smp_fake_init,
 };
 #endif
 
 /*--------------------------------------------------------------------
- * Parse a stevedore argument on the form:
- *	[ name '=' ] strategy [ ',' arg ] *
+ * Register a stevedore implementation by name.
+ * VEXTs get to do this first, and since the list is searched front to
+ * back a VEXT stevedore which inadvisably wants to steal "default" or
+ * the name of another stevedore implementation can do so.
  */
 
-static const struct choice STV_choice[] = {
-	{ "file",			&smf_stevedore },
-	{ "malloc",			&sma_stevedore },
-	{ "debug",			&smd_stevedore },
-#ifdef WITH_PERSISTENT_STORAGE
-	{ "deprecated_persistent",	&smp_stevedore },
-	{ "persistent",			&smp_fake_stevedore },
-#endif
-#if defined(HAVE_UMEM_H)
-	{ "umem",			&smu_stevedore },
-	{ "default",			&smu_stevedore },
-#else
-	{ "default",			&sma_stevedore },
-#endif
-	{ NULL,		NULL }
-};
-
-static void
-stv_check_ident(const char *spec, const char *ident)
+void
+STV_Register(const struct stevedore *cstv, const char *altname)
 {
 	struct stevedore *stv;
-	unsigned found = 0;
 
-	if (!strcmp(ident, TRANSIENT_STORAGE))
-		found = (stv_transient != NULL);
-	else {
-		STV_Foreach(stv)
-			if (!strcmp(stv->ident, ident)) {
-				found = 1;
-				break;
-			}
-	}
-
-	if (found)
-		ARGV_ERR("(-s %s) '%s' is already defined\n", spec, ident);
+	CHECK_OBJ_NOTNULL(cstv, STEVEDORE_MAGIC);
+	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
+	AN(stv);
+	*stv = *cstv;
+	if (altname != NULL)
+		stv->ident = altname;
+	else
+		stv->ident = stv->name;
+	VTAILQ_INSERT_TAIL(&proto_stevedores, stv, list);
 }
+
+static void
+STV_Register_The_Usual_Suspects(void)
+{
+	STV_Register(&smf_stevedore, NULL);
+	STV_Register(&sma_stevedore, NULL);
+	STV_Register(&smd_stevedore, NULL);
+#ifdef WITH_PERSISTENT_STORAGE
+	STV_Register(&smp_stevedore, NULL);
+	STV_Register(&smp_fake_stevedore, NULL);
+#endif
+#if defined(HAVE_UMEM_H)
+	STV_Register(&smu_stevedore, NULL);
+	STV_Register(&smu_stevedore, "default");
+#else
+	STV_Register(&sma_stevedore, "default");
+#endif
+}
+
+/*--------------------------------------------------------------------
+ * Parse a stevedore argument on the form:
+ *     [ name '=' ] strategy [ ',' arg ] *
+ */
 
 void
 STV_Config(const char *spec)
@@ -192,8 +206,6 @@ STV_Config(const char *spec)
 	char **av, buf[8];
 	const char *ident;
 	struct stevedore *stv;
-	const struct stevedore *stv2;
-	int ac;
 	static unsigned seq = 0;
 
 	av = MGT_NamedArg(spec, &ident, "-s");
@@ -202,59 +214,98 @@ STV_Config(const char *spec)
 	if (av[1] == NULL)
 		ARGV_ERR("-s argument lacks strategy {malloc, file, ...}\n");
 
-	for (ac = 0; av[ac + 2] != NULL; ac++)
-		continue;
-
-	stv2 = MGT_Pick(STV_choice, av[1], "storage");
-	AN(stv2);
-
 	/* Append strategy to ident string */
 	VSB_printf(vident, ",-s%s", av[1]);
 
-	av += 2;
+	if (ident == NULL) {
+		bprintf(buf, "s%u", seq++);
+		ident = strdup(buf);
+	}
 
-	CHECK_OBJ_NOTNULL(stv2, STEVEDORE_MAGIC);
+	VTAILQ_FOREACH(stv, &pre_stevedores, list)
+		if (!strcmp(stv->ident, ident))
+			ARGV_ERR("(-s %s) '%s' is already defined\n",
+			    spec, ident);
+
 	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
 	AN(stv);
-
-	*stv = *stv2;
-	AN(stv->name);
-
-	if (ident) {
-		stv->ident = ident;
-	} else {
-		bprintf(buf, "s%u", seq++);
-		stv->ident = strdup(buf);
-	}
-	AN(stv->ident);
-	stv_check_ident(spec, stv->ident);
-
-	if (stv->init != NULL)
-		stv->init(stv, ac, av);
-	else if (ac != 0)
-		ARGV_ERR("(-s %s) too many arguments\n", stv->name);
-
-	AN(stv->allocobj);
-	AN(stv->methods);
-
-	if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
-		AZ(stv_transient);
-		stv_transient = stv;
-	} else
-		VTAILQ_INSERT_TAIL(&stevedores, stv, list);
-	/* NB: Do not free av, stevedore gets to keep it */
+	stv->av = av;
+	stv->ident = ident;
+	stv->name = av[1];
+	VTAILQ_INSERT_TAIL(&pre_stevedores, stv, list);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-STV_Config_Transient(void)
+STV_Config_Final(void)
 {
+	struct stevedore *stv;
 	ASSERT_MGT();
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
-	if (stv_transient == NULL)
-		STV_Config(TRANSIENT_STORAGE "=default");
+	STV_Foreach(stv)
+		if (!strcmp(stv->ident, TRANSIENT_STORAGE))
+			return;
+	STV_Config(TRANSIENT_STORAGE "=default");
+}
+
+/*--------------------------------------------------------------------
+ * Initialize configured stevedores in the worker process
+ */
+
+void
+STV_Init(void)
+{
+	char **av;
+	const char *ident;
+	struct stevedore *stv;
+	const struct stevedore *stv2;
+	int ac;
+
+	STV_Register_The_Usual_Suspects();
+	while (!VTAILQ_EMPTY(&pre_stevedores)) {
+		stv = VTAILQ_FIRST(&pre_stevedores);
+		VTAILQ_REMOVE(&pre_stevedores, stv, list);
+		CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+		AN(stv->av);
+		av = stv->av;
+		AN(stv->ident);
+		ident = stv->ident;
+
+		for (ac = 0; av[ac + 2] != NULL; ac++)
+			continue;
+
+		VTAILQ_FOREACH(stv2, &proto_stevedores, list)
+			if (!strcmp(stv2->ident, av[1]))
+				break;
+		if (stv2 == NULL)
+			ARGV_ERR("Unknown stevedore method \"%s\"\n", av[1]);
+
+		CHECK_OBJ_NOTNULL(stv2, STEVEDORE_MAGIC);
+		*stv = *stv2;
+		AN(stv->name);
+
+		av += 2;
+
+		stv->ident = ident;
+		stv->av = av;
+
+		if (stv->init != NULL)
+			stv->init(stv, ac, av);
+		else if (ac != 0)
+			ARGV_ERR("(-s %s) too many arguments\n", stv->name);
+
+		AN(stv->allocobj);
+		AN(stv->methods);
+
+		if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
+			AZ(stv_transient);
+			stv_transient = stv;
+		} else
+			VTAILQ_INSERT_TAIL(&stevedores, stv, list);
+		/* NB: Do not free av, stevedore gets to keep it */
+	}
 	AN(stv_transient);
 	VTAILQ_INSERT_TAIL(&stevedores, stv_transient, list);
 }

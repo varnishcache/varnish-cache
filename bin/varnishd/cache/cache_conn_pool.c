@@ -37,7 +37,6 @@
 
 #include "cache_varnishd.h"
 
-#include "vend.h"
 #include "vsa.h"
 #include "vsha256.h"
 #include "vtcp.h"

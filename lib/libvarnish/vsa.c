@@ -36,8 +36,10 @@
 #include "config.h"
 
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 
@@ -229,11 +231,14 @@ VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 static inline
 socklen_t sua_len(const struct sockaddr *sa)
 {
+
 	switch (sa->sa_family) {
 	case PF_INET:
 		return (sizeof(struct sockaddr_in));
 	case PF_INET6:
 		return (sizeof(struct sockaddr_in6));
+	case AF_UNIX:
+		return (sizeof(struct sockaddr_un));
 	default:
 		return (0);
 	}
@@ -243,13 +248,15 @@ socklen_t sua_len(const struct sockaddr *sa)
  * Malloc a suckaddr from a sockaddr of some kind.
  */
 
-struct suckaddr *
+const struct suckaddr *
 VSA_Malloc(const void *s, unsigned  sal)
 {
-	return (VSA_Build(malloc(vsa_suckaddr_len), s, sal));
+
+	return (VSA_Build(NULL, s, sal));
 }
 
-/* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
+/*
+ * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
  *
  * fam: address family
  * a / al : address and length
@@ -258,7 +265,7 @@ VSA_Malloc(const void *s, unsigned  sal)
  * NULL or 0 length argument are ignored.
  * argument of the wrong length are an error (NULL return value, EINVAL)
  */
-struct suckaddr *
+const struct suckaddr *
 VSA_BuildFAP(void *d, sa_family_t fam, const void *a, unsigned al,
 	    const void *p, unsigned pl)
 {
@@ -302,19 +309,22 @@ VSA_BuildFAP(void *d, sa_family_t fam, const void *a, unsigned al,
 	return (NULL);
 }
 
-/* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage */
-struct suckaddr *
+const struct suckaddr *
 VSA_Build(void *d, const void *s, unsigned sal)
 {
 	struct suckaddr *sua;
 	const struct sockaddr *sa = s;
 	unsigned l;	// for flexelint
 
-	AN(d);
 	AN(s);
 	l = sua_len(sa);
 	if (l == 0 || l != sal)
 		return (NULL);
+
+	if (d == NULL) {
+		d = malloc(vsa_suckaddr_len);
+		AN(d);
+	}
 
 	sua = d;
 
@@ -395,7 +405,7 @@ VSA_Compare_IP(const struct suckaddr *sua1, const struct suckaddr *sua2)
 	NEEDLESS(return (-1));
 }
 
-struct suckaddr *
+const struct suckaddr *
 VSA_Clone(const struct suckaddr *sua)
 {
 	struct suckaddr *sua2;
@@ -423,7 +433,7 @@ VSA_Port(const struct suckaddr *sua)
 }
 
 #define VSA_getname(which)				\
-struct suckaddr *					\
+const struct suckaddr *					\
 VSA_get ## which ## name(int fd, void *d, size_t l)	\
 {							\
 	struct suckaddr *sua;				\
@@ -448,3 +458,12 @@ VSA_get ## which ## name(int fd, void *d, size_t l)	\
 VSA_getname(sock)
 VSA_getname(peer)
 #undef VSA_getname
+
+void
+VSA_free(const struct suckaddr **vsap)
+{
+	const struct suckaddr *vsa;
+
+	TAKE_OBJ_NOTNULL(vsa, vsap, SUCKADDR_MAGIC);
+	free(TRUST_ME(vsa));
+}

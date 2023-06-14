@@ -66,7 +66,7 @@ extern const struct req_step R_STP_TRANSPORT[1];
 extern const struct req_step R_STP_RECV[1];
 
 struct vxid_pool {
-	uint32_t		next;
+	uint64_t		next;
 	uint32_t		count;
 };
 
@@ -191,7 +191,7 @@ void VDI_Init(void);
 /* cache_deliver_proc.c */
 void VDP_Init(struct vdp_ctx *vdx, struct worker *wrk, struct vsl_log *vsl,
     struct req *req);
-uint64_t VDP_Close(struct vdp_ctx *);
+uint64_t VDP_Close(struct vdp_ctx *, struct objcore *, struct boc *);
 void VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc);
 int VDP_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
     void *priv);
@@ -243,7 +243,6 @@ void EXP_Rearm(struct objcore *oc, vtim_real now,
     vtim_dur ttl, vtim_dur grace, vtim_dur keep);
 
 /* From cache_main.c */
-extern int cache_shutdown;
 void BAN_Init(void);
 void BAN_Compile(void);
 void BAN_Shutdown(void);
@@ -303,6 +302,9 @@ uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 /* cache_main.c */
+vxid_t VXID_Get(const struct worker *, uint64_t marker);
+extern pthread_key_t witness_key;
+
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
 void THR_SetBusyobj(const struct busyobj *);
@@ -345,8 +347,8 @@ int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
 void ObjBocDone(struct worker *, struct objcore *, struct boc **);
 
 int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
-int ObjSetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t);
 int ObjSetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t);
+int ObjSetXID(struct worker *, struct objcore *, vxid_t);
 
 void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
 
@@ -405,6 +407,7 @@ void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, stream_close_t reason);
 void Req_AcctLogCharge(struct VSC_main_wrk *, struct req *);
 void Req_LogHit(struct worker *, struct req *, struct objcore *, intmax_t);
+const char *Req_LogStart(const struct worker *, struct req *);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
@@ -450,7 +453,7 @@ extern struct VSC_main *VSC_C_main;
 void VSM_Init(void);
 void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);
 void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
-    uint32_t vxid);
+    vxid_t vxid);
 void VSL_End(struct vsl_log *vsl);
 void VSL_Flush(struct vsl_log *, int overflow);
 
@@ -463,7 +466,7 @@ void VCP_Panic(struct vsb *, struct conn_pool *);
 
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);
-int VRY_Match(struct req *, const uint8_t *vary);
+int VRY_Match(const struct req *, const uint8_t *vary);
 void VRY_Prep(struct req *);
 void VRY_Clear(struct req *);
 enum vry_finish_flag { KEEP, DISCARD };
@@ -525,6 +528,11 @@ void WRK_Init(void);
 void WRK_AddStat(const struct worker *);
 void WRK_Log(enum VSL_tag_e, const char *, ...);
 
+/* cache_vpi.c */
+extern const size_t vpi_wrk_len;
+void VPI_wrk_init(struct worker *, void *, size_t);
+void VPI_Panic(struct vsb *, const struct wrk_vpi *, const struct vcl *);
+
 /* cache_ws.c */
 void WS_Panic(struct vsb *, const struct ws *);
 static inline int
@@ -570,6 +578,7 @@ void SMP_Ready(void);
 #endif
 
 #define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
+#define EXPERIMENT(x)	COM_EXPERIMENT(cache_param->experimental_bits, x)
 #define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
 
 #define DSL(debug_bit, id, ...)					\

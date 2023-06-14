@@ -34,5 +34,6 @@ Naming scheme
 	id ~ ^t02	--> HTTP2
 	id ~ ^u		--> Utilities and background processes
 	id ~ ^v		--> VCL tests: execute VRT functions
+	id ~ ^x		--> VEXT tests
 
 	Coverage for individual VMODs is in "${top_srcdir}vmod/tests".

@@ -256,11 +256,11 @@
 
 	beresp fetch failed.
 
-.. varnish_vsc:: fetch_no_thread
+.. varnish_vsc:: bgfetch_no_thread
 	:group: wrk
-	:oneliner:	Fetch failed (no thread)
+	:oneliner:	Background fetch failed (no thread)
 
-	beresp fetch failed, no thread available.
+	A bgfetch triggered by a grace hit failed, no thread available.
 
 .. varnish_vsc:: pools
 	:type:	gauge
@@ -670,25 +670,45 @@
 	:level:	diag
 	:oneliner:	SHM records
 
+	Number of log records written to the shared memory log.
+
 
 .. varnish_vsc:: shm_writes
 	:level:	diag
 	:oneliner:	SHM writes
+
+	Number of individual writes to the shared memory log. A single
+	write may batch multiple records for bufferred tasks.
 
 
 .. varnish_vsc:: shm_flushes
 	:level:	diag
 	:oneliner:	SHM flushes due to overflow
 
+	Number of writes performed before the end of a bufferred task
+	because adding a record to a batch would exceed vsl_buffer.
 
 .. varnish_vsc:: shm_cont
 	:level:	diag
-	:oneliner:	SHM MTX contention
+	:oneliner:	SHM lock contention
+
+	Number of times a write had to wait for the lock.
 
 
 .. varnish_vsc:: shm_cycles
 	:level:	diag
-	:oneliner:	SHM cycles through buffer
+	:oneliner:	SHM cycles through VSL space
+
+	Number of times a write of log records would reach past the end
+	of the shared memory log, cycling back to the beginning.
+
+
+.. varnish_vsc:: shm_bytes
+	:level:	diag
+	:format: bytes
+	:oneliner:	SHM bytes
+
+	Number of bytes written to the shared memory log.
 
 
 .. varnish_vsc:: backend_req
@@ -921,5 +941,16 @@
 	Those operations occur when Varnish receives a compressed object
 	from a backend. They are done to verify the gzip stream while it's
 	inserted in storage.
+
+
+.. varnish_vsc:: http1_iovs_flush
+	:oneliner:	Premature iovec flushes
+
+	Number of additional writes performed on HTTP1 connections
+	because the number of IO vectors was too small to submit all
+	possible IO in one go. This number is configured through the
+	``http1_iovs`` parameter for client connections and implicitly
+	defined by the amount of free workspace for backend
+	connections.
 
 .. varnish_vsc_end::	main

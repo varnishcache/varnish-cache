@@ -119,6 +119,8 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->deadline = deadline;
 	v1l->vsl = vsl;
 	v1l->werr = SC_NULL;
+
+	AZ(wrk->v1l);
 	wrk->v1l = v1l;
 
 	WS_Release(ws, u * sizeof(struct iovec));
@@ -172,6 +174,7 @@ stream_close_t
 V1L_Flush(const struct worker *wrk)
 {
 	ssize_t i;
+	int err;
 	struct v1l *v1l;
 	char cbuf[32];
 
@@ -202,6 +205,7 @@ V1L_Flush(const struct worker *wrk)
 		}
 
 		i = 0;
+		err = 0;
 		do {
 			if (VTIM_real() > v1l->deadline) {
 				VSLb(v1l->vsl, SLT_Debug,
@@ -226,7 +230,9 @@ V1L_Flush(const struct worker *wrk)
 			 * prevent slowloris attacks
 			 */
 
-			if (errno == EWOULDBLOCK) {
+			err = errno;
+
+			if (err == EWOULDBLOCK) {
 				VSLb(v1l->vsl, SLT_Debug,
 				    "Hit idle send timeout, "
 				    "wrote = %zd/%zd; retrying",
@@ -235,14 +241,14 @@ V1L_Flush(const struct worker *wrk)
 
 			if (i > 0)
 				v1l_prune(v1l, i);
-		} while (i > 0 || errno == EWOULDBLOCK);
+		} while (i > 0 || err == EWOULDBLOCK);
 
 		if (i <= 0) {
 			VSLb(v1l->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
-			    i, v1l->liov, VAS_errtxt(errno));
+			    i, v1l->liov, VAS_errtxt(err));
 			assert(v1l->werr == SC_NULL);
-			if (errno == EPIPE)
+			if (err == EPIPE)
 				v1l->werr = SC_REM_CLOSE;
 			else
 				v1l->werr = SC_TX_ERROR;
@@ -276,8 +282,10 @@ V1L_Write(const struct worker *wrk, const void *ptr, ssize_t len)
 	v1l->liov += len;
 	v1l->niov++;
 	v1l->cliov += len;
-	if (v1l->niov >= v1l->siov)
+	if (v1l->niov >= v1l->siov) {
 		(void)V1L_Flush(wrk);
+		VSC_C_main->http1_iovs_flush++;
+	}
 	return (len);
 }
 
@@ -296,8 +304,10 @@ V1L_Chunked(const struct worker *wrk)
 	 * If there is no space for chunked header, a chunk of data and
 	 * a chunk tail, we might as well flush right away.
 	 */
-	if (v1l->niov + 3 >= v1l->siov)
+	if (v1l->niov + 3 >= v1l->siov) {
 		(void)V1L_Flush(wrk);
+		VSC_C_main->http1_iovs_flush++;
+	}
 	v1l->siov--;
 	v1l->ciov = v1l->niov++;
 	v1l->cliov = 0;

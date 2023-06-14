@@ -5,7 +5,7 @@ varnishtest "VMOD blob workspace overflow conditions"
 # Since not all of them may be called by all VCLs we also need to ensure this
 # will not result in a compilation failure.
 
-varnish v1 -cliok "param.set vcc_err_unref off"
+varnish v1 -cliok "param.set vcc_feature -err_unref"
 varnish v1 -cliok "param.set debug +syncvsl"
 
 shell {

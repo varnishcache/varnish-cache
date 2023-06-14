@@ -35,11 +35,10 @@
 
 #include "config.h"
 
-#include "cache/cache_varnishd.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cache/cache_varnishd.h"
 #include "cache/cache_objhead.h"
 #include "cache/cache_transport.h"
 #include "cache_http1.h"
@@ -199,7 +198,7 @@ http1_minimal_response(struct req *req, uint16_t status)
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
 	VSLb(req->vsl, SLT_RespStatus, "%03d", status);
-	VSLb(req->vsl, SLT_RespReason, "%s", reason);
+	VSLbs(req->vsl, SLT_RespReason, TOSTRAND(reason));
 
 	if (status >= 400)
 		req->err_code = status;
@@ -251,11 +250,11 @@ http1_dissect(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 
 	/* Allocate a new vxid now that we know we'll need it. */
-	AZ(req->vsl->wid);
+	assert(IS_NO_VXID(req->vsl->wid));
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 
-	VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
-	VSL(SLT_Link, req->sp->vxid, "req %u rxreq", VXID(req->vsl->wid));
+	VSLb(req->vsl, SLT_Begin, "req %ju rxreq", VXID(req->sp->vxid));
+	VSL(SLT_Link, req->sp->vxid, "req %ju rxreq", VXID(req->vsl->wid));
 	AZ(isnan(req->t_first)); /* First byte timestamp set by http1_wait */
 	AZ(isnan(req->t_req));	 /* Complete req rcvd set by http1_wait */
 	req->t_prev = req->t_first;
@@ -271,6 +270,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 		    (int)(req->htc->rxbuf_e - req->htc->rxbuf_b),
 		    req->htc->rxbuf_b);
 		wrk->stats->client_req_400++;
+
+		(void)Req_LogStart(wrk, req);
+
 		req->doclose = SC_RX_JUNK;
 		http1_abort(req, 400);
 		return (-1);
@@ -386,10 +388,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		} else if (st == H1PROC) {
 			req->task->func = http1_req;
 			req->task->priv = req;
-			wrk->stats->client_req++;
 			CNT_Embark(wrk, req);
 			if (CNT_Request(req) == REQ_FSM_DISEMBARK)
 				return;
+			wrk->stats->client_req++;
 			AZ(req->top->vcl0);
 			req->task->func = NULL;
 			req->task->priv = NULL;

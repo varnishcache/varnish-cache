@@ -63,13 +63,16 @@ struct vcc_priv {
 	struct vsb	*symfile;
 };
 
+enum vcc_fini_e {
+	VCC_SUCCESS,
+	VCC_FAILED,
+};
+
 char *mgt_cc_cmd;
 char *mgt_cc_cmd_def;
 char *mgt_cc_warn;
 const char *mgt_vcl_path;
 const char *mgt_vmod_path;
-#define MGT_VCC(t, n, cc) t mgt_vcc_ ## n;
-#include <tbl/mgt_vcc.h>
 
 #define VGC_SRC		"vgc.c"
 #define VGC_LIB		"vgc.so"
@@ -86,6 +89,21 @@ mgt_DumpBuiltin(void)
 /*--------------------------------------------------------------------
  * Invoke system VCC compiler in a sub-process
  */
+
+static void
+vcc_vext_iter_func(const char *filename, void *priv)
+{
+	struct vsb *sb;
+
+	/* VCC runs in the per-VCL subdir */
+	sb = VSB_new_auto();
+	AN(sb);
+	VSB_cat(sb, "../");
+	VSB_cat(sb, filename);
+	AZ(VSB_finish(sb));
+	VCC_VEXT(priv, VSB_data(sb));
+	VSB_destroy(&sb);
+}
 
 static void v_noreturn_ v_matchproto_(vsub_func_f)
 run_vcc(void *priv)
@@ -108,9 +126,11 @@ run_vcc(void *priv)
 	VCC_VCL_path(vcc, mgt_vcl_path);
 	VCC_VMOD_path(vcc, mgt_vmod_path);
 
-#define MGT_VCC(type, name, camelcase)			\
-	VCC_ ## camelcase (vcc, mgt_vcc_ ## name);
-#include "tbl/mgt_vcc.h"
+#define VCC_FEATURE_BIT(U, l, d)			\
+	VCC_Opt_ ## l(vcc, MGT_VCC_FEATURE(VCC_FEATURE_ ## U));
+#include "tbl/vcc_feature_bits.h"
+
+	vext_iter(vcc_vext_iter_func, vcc);
 
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);
@@ -241,13 +261,10 @@ mgt_vcc_touchfile(const char *fn, struct vsb *sb)
 
 	i = open(fn, O_WRONLY|O_CREAT|O_TRUNC, 0640);
 	if (i < 0) {
-		VSB_printf(sb, "Failed to create %s: %s", fn, VAS_errtxt(errno));
+		VSB_printf(sb, "Failed to create %s: %s\n",
+		    fn, VAS_errtxt(errno));
 		return (2);
 	}
-	if (fchown(i, mgt_param.uid, mgt_param.gid) != 0)
-		if (geteuid() == 0)
-			VSB_printf(sb, "Failed to change owner on %s: %s\n",
-			    fn, VAS_errtxt(errno));
 	closefd(&i);
 	return (0);
 }
@@ -318,13 +335,15 @@ mgt_vcc_init_vp(struct vcc_priv *vp)
 }
 
 static void
-mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
+mgt_vcc_fini_vp(struct vcc_priv *vp, enum vcc_fini_e vcc_status)
 {
+	int ignore_enoent = (vcc_status == VCC_FAILED);
+
 	if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
-		VJ_unlink(VSB_data(vp->csrcfile));
-		VJ_unlink(VSB_data(vp->symfile));
-		if (!leave_lib) {
-			VJ_unlink(VSB_data(vp->libfile));
+		VJ_unlink(VSB_data(vp->csrcfile), ignore_enoent);
+		VJ_unlink(VSB_data(vp->symfile), ignore_enoent);
+		if (vcc_status != VCC_SUCCESS) {
+			VJ_unlink(VSB_data(vp->libfile), ignore_enoent);
 			VJ_rmdir(VSB_data(vp->dir));
 		}
 	}
@@ -398,7 +417,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	AZ(VSB_finish(vp->symfile));
 
 	if (VJ_make_subdir(VSB_data(vp->dir), "VCL", cli->sb)) {
-		mgt_vcc_fini_vp(vp, 0);
+		mgt_vcc_fini_vp(vp, VCC_FAILED);
 		VSB_destroy(&sb);
 		VCLI_Out(cli, "VCL compilation failed");
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -412,7 +431,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	VSB_destroy(&sb);
 
 	if (status || C_flag) {
-		mgt_vcc_fini_vp(vp, 0);
+		mgt_vcc_fini_vp(vp, VCC_FAILED);
 		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -425,6 +444,6 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	mgt_vcl_symtab(vcl, p);
 
 	REPLACE(p, VSB_data(vp->libfile));
-	mgt_vcc_fini_vp(vp, 1);
+	mgt_vcc_fini_vp(vp, VCC_SUCCESS);
 	return (p);
 }

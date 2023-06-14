@@ -1,0 +1,77 @@
+varnishtest "Keep-Alive is a hop-by-hop header"
+
+server s1 {
+	rxreq
+	expect req.http.req-keep-alive == "true"
+	expect req.http.bereq-keep-alive == "false"
+	expect req.http.Keep-Alive == <undef>
+	txresp -hdr "Keep-Alive: 1"
+
+	rxreq
+	expect req.http.req-keep-alive == "true"
+	expect req.http.bereq-keep-alive == "false"
+	expect req.http.Keep-Alive == <undef>
+	txresp -hdr "Connection: Keep-Alive" -hdr "Keep-Alive: 2"
+
+	rxreq
+	expect req.http.req-keep-alive == "true"
+	expect req.http.bereq-keep-alive == "false"
+	expect req.http.Keep-Alive == <undef>
+	expect req.http.Cookie == "3"
+	txresp -hdr "Keep-Alive: 3"
+
+	rxreq
+	expect req.http.req-keep-alive == "true"
+	expect req.http.bereq-keep-alive == "false"
+	expect req.http.Keep-Alive == <undef>
+	expect req.http.Cookie == "4"
+	txresp -hdr "Connection: Keep-Alive" -hdr "Keep-Alive: 4"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.http.req-keep-alive = !(!req.http.Keep-Alive);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.http.bereq-keep-alive = !(!bereq.http.Keep-Alive);
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.beresp-keep-alive = !(!beresp.http.Keep-Alive);
+	}
+
+	sub vcl_deliver {
+		set resp.http.resp-keep-alive = !(!resp.http.Keep-Alive);
+	}
+} -start
+
+client c1 {
+	txreq -url "/1" -hdr "Keep-Alive: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.beresp-keep-alive == "true"
+	expect resp.http.resp-keep-alive == "false"
+	expect resp.http.Keep-Alive == <undef>
+
+	txreq -url "/2" -hdr "Connection: Keep-Alive" -hdr "Keep-Alive: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.beresp-keep-alive == "true"
+	expect resp.http.resp-keep-alive == "false"
+	expect req.http.Keep-Alive == <undef>
+
+	txreq -url "/3" -hdr "Keep-Alive: 3" -hdr "Cookie: 3"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.beresp-keep-alive == "true"
+	expect resp.http.resp-keep-alive == "false"
+	expect resp.http.Keep-Alive == <undef>
+
+	txreq -url "/4" -hdr "Connection: Keep-Alive" -hdr "Keep-Alive: 4" -hdr "Cookie: 4"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.beresp-keep-alive == "true"
+	expect resp.http.resp-keep-alive == "false"
+	expect req.http.Keep-Alive == <undef>
+} -run

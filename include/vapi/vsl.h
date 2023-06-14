@@ -112,8 +112,8 @@ enum VSL_reason_e {
 
 struct VSL_transaction {
 	int			level;
-	uint32_t		vxid;
-	uint32_t		vxid_parent;
+	int64_t			vxid;
+	int64_t			vxid_parent;
 	enum VSL_transaction_e	type;
 	enum VSL_reason_e	reason;
 	struct VSL_cursor	*c;

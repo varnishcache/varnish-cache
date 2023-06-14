@@ -54,8 +54,6 @@
 
 #include "hash/hash_slinger.h"
 
-int cache_shutdown = 0;
-
 volatile struct params		*cache_param;
 static pthread_mutex_t		cache_vrnd_mtx;
 static vtim_dur			shutdown_delay = 0;
@@ -181,31 +179,35 @@ THR_Init(void)
  * zero vxid, in order to reserve that for "unassociated" VSL records.
  */
 
-static uint32_t vxid_base;
+static uint64_t vxid_base = 1;
 static uint32_t vxid_chunk = 32768;
 static struct lock vxid_lock;
 
-uint32_t
-VXID_Get(const struct worker *wrk, uint32_t mask)
+vxid_t
+VXID_Get(const struct worker *wrk, uint64_t mask)
 {
 	struct vxid_pool *v;
+	vxid_t retval;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	v = wrk->wpriv->vxid_pool;
-	AZ(VXID(mask));
-	do {
-		if (v->count == 0) {
-			Lck_Lock(&vxid_lock);
-			v->next = vxid_base;
-			v->count = vxid_chunk;
-			vxid_base = (vxid_base + v->count) & VSL_IDENTMASK;
-			Lck_Unlock(&vxid_lock);
-		}
-		v->count--;
-		v->next++;
-	} while (v->next == 0);
-	return (v->next | mask);
+	AZ(mask & VSL_IDENTMASK);
+	while (v->count == 0 || v->next >= VRT_INTEGER_MAX) {
+		Lck_Lock(&vxid_lock);
+		v->next = vxid_base;
+		v->count = vxid_chunk;
+		vxid_base += v->count;
+		if (vxid_base >= VRT_INTEGER_MAX)
+			vxid_base = 1;
+		Lck_Unlock(&vxid_lock);
+	}
+	v->count--;
+	assert(v->next > 0);
+	assert(v->next < VSL_CLIENTMARKER);
+	retval.vxid = v->next | mask;
+	v->next++;
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
@@ -221,10 +223,14 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
 	if (av[2] != NULL) {
-		vxid_base = strtoul(av[2], NULL, 0);
-		vxid_chunk = 1;
+		vxid_base = strtoull(av[2], NULL, 0);
+		vxid_chunk = 0;
+		if (av[3] != NULL)
+			vxid_chunk = strtoul(av[3], NULL, 0);
+		if (vxid_chunk == 0)
+			vxid_chunk = 1;
 	}
-	VCLI_Out(cli, "XID is %u", vxid_base);
+	VCLI_Out(cli, "XID is %ju chunk %u", (uintmax_t)vxid_base, vxid_chunk);
 }
 
 /*
@@ -270,7 +276,7 @@ static struct cli_proto debug_cmds[] = {
 static void
 child_malloc_fail(void *p, const char *s)
 {
-	VSL(SLT_Error, 0, "MALLOC ERROR: %s (%p)", s, p);
+	VSL(SLT_Error, NO_VXID, "MALLOC ERROR: %s (%p)", s, p);
 	fprintf(stderr, "MALLOC ERROR: %s (%p)\n", s, p);
 	WRONG("Malloc Error");
 }
@@ -324,7 +330,7 @@ child_signal_handler(int s, siginfo_t *si, void *c)
 }
 
 /*=====================================================================
- * Magic for panicing properly on signals
+ * Magic for panicking properly on signals
  */
 
 static void
@@ -357,6 +363,17 @@ child_sigmagic(size_t altstksz)
 	(void)sigaction(SIGSEGV, &sa, NULL);
 }
 
+static void
+cli_quit(int sig)
+{
+
+	if (!IS_CLI()) {
+		AZ(pthread_kill(cli_thread, sig));
+		return;
+	}
+
+	WRONG("It's time for the big quit");
+}
 
 /*=====================================================================
  * Run the child process
@@ -370,10 +387,8 @@ child_main(int sigmagic, size_t altstksz)
 		child_sigmagic(altstksz);
 	(void)signal(SIGINT, SIG_DFL);
 	(void)signal(SIGTERM, SIG_DFL);
+	(void)signal(SIGQUIT, cli_quit);
 
-	setbuf(stdout, NULL);
-	setbuf(stderr, NULL);
-	printf("Child starts\n");
 #if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 	malloc_message = child_malloc_fail;
 #endif
@@ -448,8 +463,6 @@ child_main(int sigmagic, size_t altstksz)
 #endif
 
 	CLI_Run();
-
-	cache_shutdown = 1;
 
 	if (shutdown_delay > 0)
 		VTIM_sleep(shutdown_delay);

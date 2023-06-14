@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #ifdef HAVE_SYS_PERSONALITY_H
@@ -50,8 +51,10 @@
 #include "vnum.h"
 #include "vre.h"
 #include "vtcp.h"
+#include "vsa.h"
 #include "vss.h"
 #include "vtim.h"
+#include "vus.h"
 
 /* SECTION: vtest vtest
  *
@@ -246,6 +249,41 @@ cmd_shell(CMD_ARGS)
 	cmd_shell_engine(vl, ok, av[n], expect, re);
 }
 
+/* SECTION: filewrite filewrite
+ *
+ * Write strings to file
+ *
+ *         filewrite [-a] /somefile "Hello" " " "World\n"
+ *
+ * The -a flag opens the file in append mode.
+ *
+ */
+
+void v_matchproto_(cmd_f)
+cmd_filewrite(CMD_ARGS)
+{
+	FILE *fo;
+	int n;
+	const char *mode = "w";
+
+	(void)priv;
+
+	if (av == NULL)
+		return;
+	if (av[1] != NULL && !strcmp(av[1], "-a")) {
+		av++;
+		mode = "a";
+	}
+	if (av[1] == NULL)
+		vtc_fatal(vl, "Need filename");
+	fo = fopen(av[1], mode);
+	if (fo == NULL)
+		vtc_fatal(vl, "Cannot open %s: %s", av[1], strerror(errno));
+	for (n = 2; av[n] != NULL; n++)
+		(void)fputs(av[n], fo);
+	AZ(fclose(fo));
+}
+
 /* SECTION: setenv setenv
  *
  * Set or change an environment variable::
@@ -319,7 +357,7 @@ cmd_delay(CMD_ARGS)
 static int
 dns_works(void)
 {
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
 
@@ -328,7 +366,7 @@ dns_works(void)
 	if (sa == NULL)
 		return (0);
 	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
-	free(sa);
+	VSA_free(&sa);
 	if (strcmp(abuf, "192.0.2.255"))
 		return (0);
 
@@ -336,7 +374,7 @@ dns_works(void)
 	    AF_INET6, SOCK_STREAM, 0);
 	if (sa == NULL)
 		return (1); /* the canary is ipv4 only */
-	free(sa);
+	VSA_free(&sa);
 	return (0);
 }
 
@@ -347,14 +385,14 @@ dns_works(void)
 static int
 ipvx_works(const char *target)
 {
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	int fd;
 
 	sa = VSS_ResolveOne(NULL, target, "0", 0, SOCK_STREAM, 0);
 	if (sa == NULL)
 		return (0);
 	fd = VTCP_bind(sa, NULL);
-	free(sa);
+	VSA_free(&sa);
 	if (fd >= 0) {
 		VTCP_close(&fd);
 		return (1);
@@ -374,6 +412,27 @@ addr_no_randomize_works(void)
 	r = personality(r | ADDR_NO_RANDOMIZE);
 #endif
 	return (r >= 0);
+}
+
+/**********************************************************************/
+
+static int
+uds_socket(void *priv, const struct sockaddr_un *uds)
+{
+
+	return (VUS_bind(uds, priv));
+}
+static int
+abstract_uds_works(void)
+{
+	const char *err;
+	int fd;
+
+	fd = VUS_resolver("@vtc.feature.abstract_uds", uds_socket, NULL, &err);
+	if (fd < 0)
+		return (0);
+	AZ(close(fd));
+	return (1);
 }
 
 /* SECTION: feature feature
@@ -421,6 +480,8 @@ addr_no_randomize_works(void)
  *        Varnish was built with a sanitizer.
  * workspace_emulator
  *        Varnish was built with its workspace emulator.
+ * abstract_uds
+ *        Creation of an abstract unix domain socket succeeded
  *
  * A feature name can be prefixed with an exclamation mark (!) to skip a
  * test if the feature is present.
@@ -531,6 +592,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("ubsan", ubsan);
 		FEATURE("sanitizer", sanitizer);
 		FEATURE("workspace_emulator", workspace_emulator);
+		FEATURE("abstract_uds", abstract_uds_works());
 
 		if (!strcmp(feat, "cmd")) {
 			good = 1;

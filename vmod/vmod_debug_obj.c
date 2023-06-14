@@ -60,6 +60,10 @@ xyzzy_obj__init(VRT_CTX, struct xyzzy_debug_obj **op,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(op);
 	AZ(*op);
+
+	if (! strcmp(s, "fail")) {
+		VRT_fail(ctx, "failing as requested");
+	}
 	ALLOC_OBJ(o, VMOD_DEBUG_OBJ_MAGIC);
 	AN(o);
 	*op = o;

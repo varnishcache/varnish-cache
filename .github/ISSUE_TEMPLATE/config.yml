@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Getting Help
+    url: https://varnish-cache.org/support/index.html
+    about: If you have questions or need help, please click here.
+  - name: Report a security vulnerability
+    url: https://varnish-cache.org/security/index.html#i-have-found-a-security-hole
+    about: Report a security vulnerability.

@@ -356,3 +356,37 @@ RFC2616_Vary_AE(struct http *hp)
 		http_SetHeader(hp, "Vary: Accept-Encoding");
 	}
 }
+
+/*--------------------------------------------------------------------*/
+
+const char *
+RFC2616_Strong_LM(const struct http *hp, struct worker *wrk,
+    struct objcore *oc)
+{
+	const char *p = NULL, *e = NULL;
+	vtim_real lm, d;
+
+	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(hp, HTTP_MAGIC);
+
+	if (hp != NULL) {
+		(void)http_GetHdr(hp, H_Last_Modified, &p);
+		(void)http_GetHdr(hp, H_Date, &e);
+	} else if (wrk != NULL && oc != NULL) {
+		p = HTTP_GetHdrPack(wrk, oc, H_Last_Modified);
+		e = HTTP_GetHdrPack(wrk, oc, H_Date);
+	}
+
+	if (p == NULL || e == NULL)
+		return (NULL);
+
+	lm = VTIM_parse(p);
+	d = VTIM_parse(e);
+
+	/* The cache entry includes a Date value which is at least one second
+	 * after the Last-Modified value.
+	 * [RFC9110 8.8.2.2-6.2]
+	 */
+	return ((lm && d && lm + 1 <= d) ? p : NULL);
+}

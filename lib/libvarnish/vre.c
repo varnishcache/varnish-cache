@@ -276,7 +276,7 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 	txt groups[10];
 	size_t count;
 	int i, offset = 0;
-	const char *s;
+	const char *s, *e;
 	unsigned x;
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
@@ -301,21 +301,21 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 		/* Copy prefix to match */
 		s = subject + offset;
 		VSB_bcat(vsb, s, pdiff(s, groups[0].b));
-		for (s = replacement; *s != '\0'; s++ ) {
-			if (*s != '\\' || s[1] == '\0') {
-				VSB_putc(vsb, *s);
+		for (s = e = replacement; *e != '\0'; e++ ) {
+			if (*e != '\\' || e[1] == '\0')
 				continue;
-			}
-			s++;
-			if (isdigit(*s)) {
-				x = *s - '0';
+			VSB_bcat(vsb, s, pdiff(s, e));
+			s = ++e;
+			if (isdigit(*e)) {
+				s++;
+				x = *e - '0';
 				if (x >= count)
 					continue;
 				VSB_bcat(vsb, groups[x].b, Tlen(groups[x]));
 				continue;
 			}
-			VSB_putc(vsb, *s);
 		}
+		VSB_bcat(vsb, s, pdiff(s, e));
 		offset = pdiff(subject, groups[0].e);
 		if (!all)
 			break;

@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include "cache_varnishd.h"
+#include "cache_objhead.h"
 #include "cache_transport.h"
 #include "common/heritage.h"
 
@@ -181,7 +182,7 @@ VRT_r_obj_reason(VRT_CTX)
 }
 
 /*--------------------------------------------------------------------
- * bool-fields (.do_*)
+ * beresp bool-fields
  */
 
 static inline int
@@ -217,7 +218,6 @@ VRT_l_beresp_##field(VRT_CTX, VCL_BOOL a)				\
 		return (0);			\
 	} while(0)
 
-#define VBERESPR0(field, str, fltchk)
 #define VBERESPR1(field, str, fltchk)					\
 VCL_BOOL								\
 VRT_r_beresp_##field(VRT_CTX)						\
@@ -228,21 +228,10 @@ VRT_r_beresp_##field(VRT_CTX)						\
 	return (ctx->bo->field);					\
 }
 
-#define VBEREQR0(field, str, fltchk)
-#define VBEREQR1(field, str, fltchk)					\
-VCL_BOOL								\
-VRT_r_bereq_##field(VRT_CTX)						\
-{									\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
-	return (ctx->bo->field);					\
-}
-
-#define BO_FLAG(l, r, rr, rw, f, d)		\
-	VBEREQR##r(l, #l, f)			\
-	VBERESPR##rr(l, #l, f)			\
-	VBERESPW##rw(l, #l, f)
-#include "tbl/bo_flags.h"
+#define BERESP_FLAG(l, r, w, f, d)		\
+	VBERESPR##r(l, #l, f)			\
+	VBERESPW##w(l, #l, f)
+#include "tbl/beresp_flags.h"
 
 #undef VBERESPWF0
 #undef VBERESPWF1
@@ -251,8 +240,28 @@ VRT_r_bereq_##field(VRT_CTX)						\
 
 #undef VBERESPRF0
 #undef VBERESPRF1
-#undef VBERESPR0
 #undef VBERESPR1
+
+/*--------------------------------------------------------------------
+ * bereq bool-fields
+ */
+
+#define VBEREQR0(field, str)
+#define VBEREQR1(field, str)						\
+VCL_BOOL								\
+VRT_r_bereq_##field(VRT_CTX)						\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
+	return (ctx->bo->field);					\
+}
+
+#define BEREQ_FLAG(l, r, w, d)		\
+	VBEREQR##r(l, #l)
+#include "tbl/bereq_flags.h"
+
+#undef VBEREQR0
+#undef VBEREQR1
 /*--------------------------------------------------------------------*/
 
 VCL_BOOL
@@ -291,6 +300,53 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	return (ctx->bo->uncacheable);
+}
+
+VCL_VOID
+VRT_l_req_trace(VRT_CTX, VCL_BOOL a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	ctx->req->trace = a;
+	VRT_trace(ctx, a);
+}
+VCL_VOID
+VRT_l_bereq_trace(VRT_CTX, VCL_BOOL a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	ctx->bo->trace = a;
+	VRT_trace(ctx, a);
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_BYTES
+VRT_r_beresp_transit_buffer(VRT_CTX)
+{
+    struct objcore *oc;
+
+    CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+    CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+    oc = ctx->bo->fetch_objcore;
+    CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+    return oc->boc->transit_buffer;
+}
+
+VCL_VOID
+VRT_l_beresp_transit_buffer(VRT_CTX, VCL_BYTES value)
+{
+    struct objcore *oc;
+
+    CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+    CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+    oc = ctx->bo->fetch_objcore;
+    CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+    oc->boc->transit_buffer = value;
 }
 
 /*--------------------------------------------------------------------*/
@@ -557,6 +613,11 @@ VRT_u_bereq_body(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	if (ctx->bo->bereq_body != NULL) {
+		(void)HSH_DerefObjCore(ctx->bo->wrk, &ctx->bo->bereq_body, 0);
+		http_Unset(ctx->bo->bereq, H_Content_Length);
+	}
+
 	if (ctx->bo->req != NULL) {
 		CHECK_OBJ(ctx->bo->req, REQ_MAGIC);
 		ctx->bo->req = NULL;
@@ -759,7 +820,7 @@ VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore)
  * [[be]req|sess].xid
  */
 
-VCL_STRING
+VCL_INT
 VRT_r_req_xid(VRT_CTX)
 {
 
@@ -767,12 +828,10 @@ VRT_r_req_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->http, HTTP_MAGIC);
 	AN(ctx->req->vsl);
-
-	return (WS_Printf(ctx->req->http->ws, "%u",
-	    VXID(ctx->req->vsl->wid)));
+	return (VXID(ctx->req->vsl->wid));
 }
 
-VCL_STRING
+VCL_INT
 VRT_r_bereq_xid(VRT_CTX)
 {
 
@@ -780,10 +839,10 @@ VRT_r_bereq_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	AN(ctx->bo->vsl);
 
-	return (WS_Printf(ctx->ws, "%u", VXID(ctx->bo->vsl->wid)));
+	return (VXID(ctx->bo->vsl->wid));
 }
 
-VCL_STRING
+VCL_INT
 VRT_r_sess_xid(VRT_CTX)
 {
 	struct sess *sp;
@@ -799,7 +858,7 @@ VRT_r_sess_xid(VRT_CTX)
 	}
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (WS_Printf(ctx->ws, "%u", VXID(sp->vxid)));
+	return (VXID(sp->vxid));
 }
 
 /*--------------------------------------------------------------------

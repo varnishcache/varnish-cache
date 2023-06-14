@@ -51,6 +51,8 @@
 
 /*--------------------------------------------------------------------*/
 
+const char			vsl_file_id[] = {'V', 'S', 'L', '2'};
+
 const char * const VSL_tags[SLT__MAX] = {
 #  define SLTM(foo,flags,sdesc,ldesc)       [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
@@ -190,10 +192,12 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	tag = VSL_TAG(c->rec.ptr);
 	if (tag <= SLT__Bogus || tag >= SLT__Reserved)
 		return (0);
-	if (vsl->c_opt && !VSL_CLIENT(c->rec.ptr))
-		return (0);
-	if (vsl->b_opt && !VSL_BACKEND(c->rec.ptr))
-		return (0);
+	if (!vsl->c_opt || !vsl->b_opt) {
+		if (vsl->c_opt && !VSL_CLIENT(c->rec.ptr))
+			return (0);
+		if (vsl->b_opt && !VSL_BACKEND(c->rec.ptr))
+			return (0);
+	}
 	if (!VTAILQ_EMPTY(&vsl->vslf_select) &&
 	    vsl_match_IX(vsl, &vsl->vslf_select, c))
 		return (1);
@@ -259,7 +263,7 @@ vsl_print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo,
     int terse)
 {
 	enum VSL_tag_e tag;
-	uint32_t vxid;
+	uint64_t vxid;
 	unsigned len;
 	const char *data;
 	int type;
@@ -277,7 +281,7 @@ vsl_print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo,
 	data = VSL_CDATA(c->rec.ptr);
 
 	if (!terse)
-		VSL_PRINT(fo, "%10u ", vxid);
+		VSL_PRINT(fo, "%10ju ", (uintmax_t)vxid);
 	VSL_PRINT(fo, "%-14s ", VSL_tags[tag]);
 	if (!terse)
 		VSL_PRINT(fo, "%c ", type);
@@ -371,11 +375,11 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			else
 				VSL_PRINT(fo, "%-3.*s ",
 				    (int)(t->level), "***");
-			VSL_PRINT(fo, "%*.s%-14s %*.s%-10u\n",
+			VSL_PRINT(fo, "%*.s%-14s %*.s%-10ju\n",
 			    verbose ? 10 + 1 : 0, " ",
 			    VSL_transactions[t->type],
 			    verbose ? 1 + 1 : 0, " ",
-			    t->vxid);
+			    (uintmax_t)t->vxid);
 			delim = 1;
 		}
 
@@ -411,8 +415,8 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 FILE*
 VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
 {
-	const char head[] = VSL_FILE_ID;
 	FILE* f;
+
 	if (!strcmp(name, "-"))
 		f = stdout;
 	else
@@ -424,7 +428,8 @@ VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
 	if (unbuf)
 		setbuf(f, NULL);
 	if (ftell(f) == 0 || f == stdout) {
-		if (fwrite(head, 1, sizeof head, f) != sizeof head) {
+		if (fwrite(VSL_FILE_ID, 1, sizeof VSL_FILE_ID, f) !=
+		    sizeof VSL_FILE_ID) {
 			vsl_diag(vsl, "%s", strerror(errno));
 			(void)fclose(f);
 			return (NULL);

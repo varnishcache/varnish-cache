@@ -4,11 +4,13 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	expect req.http.test == "yes"
-	txresp -body "fdsa"
+	txresp -nodate -body "fdsa"
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
+		# make PipeAcct deterministic
+		unset req.http.via;
 		return (pipe);
 	}
 

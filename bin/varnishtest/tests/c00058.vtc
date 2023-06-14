@@ -36,7 +36,8 @@ client c1 {
 
 	# But bg fetch was kicked off
 	barrier b1 sync
-	delay .2
+
+	delay .5
 
 	# And now we get the new object
 	txreq

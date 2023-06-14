@@ -96,7 +96,11 @@ client c1 {
 	rxresp
 	expect resp.body == "xiuFi3Pe"
 	expect resp.http.backend == "vd"
+} -run
 
+varnish v1 -vsl_catchup
+
+client c1 {
 	txreq -url /1 -hdr "pipe: true"
 	rxresp
 	expect resp.body == "ech3Ooj"

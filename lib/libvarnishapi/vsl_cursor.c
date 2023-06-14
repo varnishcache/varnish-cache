@@ -362,13 +362,13 @@ vslc_file_next(const struct VSL_cursor *cursor)
 	do {
 		c->cursor.rec.ptr = NULL;
 		assert(c->buflen >= 2);
-		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(2));
+		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(VSL_OVERHEAD));
 		if (i < 0)
 			return (vsl_e_io);
 		if (i == 0)
 			return (vsl_e_eof);
-		assert(i == VSL_BYTES(2));
-		l = 2 + VSL_WORDS(VSL_LEN(c->buf));
+		assert(i == VSL_BYTES(VSL_OVERHEAD));
+		l = VSL_OVERHEAD + VSL_WORDS(VSL_LEN(c->buf));
 		if (c->buflen < l) {
 			while (c->buflen < l)
 				c->buflen = 2 * l;
@@ -376,13 +376,13 @@ vslc_file_next(const struct VSL_cursor *cursor)
 			AN(c->buf);
 		}
 		if (l > 2) {
-			i = vslc_file_readn(c->fd, c->buf + 2,
-			    VSL_BYTES(l - 2));
+			i = vslc_file_readn(c->fd, c->buf + VSL_OVERHEAD,
+			    VSL_BYTES(l - VSL_OVERHEAD));
 			if (i < 0)
 				return (vsl_e_io);
 			if (i == 0)
 				return (vsl_e_eof);
-			assert(i == VSL_BYTES(l - 2));
+			assert(i == VSL_BYTES(l - VSL_OVERHEAD));
 		}
 		c->cursor.rec.ptr = c->buf;
 	} while (VSL_TAG(c->cursor.rec.ptr) == SLT__Batch);
@@ -409,6 +409,7 @@ struct vslc_mmap {
 	unsigned			magic;
 #define VSLC_MMAP_MAGIC			0x7de15f61
 	int				fd;
+	int				close_fd;
 	char				*b;
 	char				*e;
 	struct VSL_cursor		cursor;
@@ -424,6 +425,8 @@ vslc_mmap_delete(const struct VSL_cursor *cursor)
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
 	assert(&c->cursor == cursor);
 	AZ(munmap(c->b, c->e - c->b));
+	if (c->close_fd)
+		(void)close(c->fd);
 	FREE_OBJ(c);
 }
 
@@ -480,7 +483,7 @@ static const struct vslc_tbl vslc_mmap_tbl = {
 };
 
 static struct VSL_cursor *
-vsl_cursor_mmap(struct VSL_data *vsl, int fd)
+vsl_cursor_mmap(struct VSL_data *vsl, int fd, int close_fd)
 {
 	struct vslc_mmap *c;
 	struct stat st[1];
@@ -500,7 +503,8 @@ vsl_cursor_mmap(struct VSL_data *vsl, int fd)
 	ALLOC_OBJ(c, VSLC_MMAP_MAGIC);
 	if (c == NULL) {
 		(void)munmap(p, st->st_size);
-		(void)close(fd);
+		if (close_fd)
+			(void)close(fd);
 		vsl_diag(vsl, "Out of memory");
 		return (NULL);
 	}
@@ -508,6 +512,7 @@ vsl_cursor_mmap(struct VSL_data *vsl, int fd)
 	c->cursor.priv_data = c;
 
 	c->fd = fd;
+	c->close_fd = close_fd;
 	c->b = p;
 	c->e = c->b + st->st_size;
 	c->next.ptr = TRUST_ME(c->b + sizeof VSL_FILE_ID);
@@ -522,7 +527,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 	struct vslc_file *c;
 	int fd;
 	int close_fd = 0;
-	char buf[] = VSL_FILE_ID;
+	char buf[sizeof VSL_FILE_ID];
 	ssize_t i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
@@ -557,7 +562,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 		return (NULL);
 	}
 
-	mc = vsl_cursor_mmap(vsl, fd);
+	mc = vsl_cursor_mmap(vsl, fd, close_fd);
 	if (mc == NULL)
 		return (NULL);
 	if (mc != MAP_FAILED)

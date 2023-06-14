@@ -75,9 +75,9 @@ cli_cb_before(const struct cli *cli)
 {
 
 	ASSERT_CLI();
-	VSL(SLT_CLI, 0, "Rd %s", VSB_data(cli->cmd));
-	VCL_Poll();
+	VSL(SLT_CLI, NO_VXID, "Rd %s", VSB_data(cli->cmd));
 	Lck_Lock(&cli_mtx);
+	VCL_Poll();
 }
 
 static void
@@ -86,7 +86,7 @@ cli_cb_after(const struct cli *cli)
 
 	ASSERT_CLI();
 	Lck_Unlock(&cli_mtx);
-	VSL(SLT_CLI, 0, "Wr %03u %zd %s",
+	VSL(SLT_CLI, NO_VXID, "Wr %03u %zd %s",
 	    cli->result, VSB_len(cli->sb), VSB_data(cli->sb));
 }
 
@@ -98,6 +98,9 @@ CLI_Run(void)
 
 	add_check = 1;
 
+	/* Tell waiting MGT that we are ready to speak CLI */
+	AZ(VCLI_WriteResult(heritage.cli_out, CLIS_OK, "Ready"));
+
 	cli = VCLS_AddFd(cache_cls,
 	    heritage.cli_in, heritage.cli_out, NULL, NULL);
 	AN(cli);
@@ -106,7 +109,7 @@ CLI_Run(void)
 	do {
 		i = VCLS_Poll(cache_cls, cli, -1);
 	} while (i == 0);
-	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
+	VSL(SLT_CLI, NO_VXID, "EOF on CLI connection, worker stops");
 }
 
 /*--------------------------------------------------------------------*/

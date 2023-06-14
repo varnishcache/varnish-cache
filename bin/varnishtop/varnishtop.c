@@ -111,6 +111,7 @@ cmp_order(const struct top *a, const struct top *b)
 }
 
 VRBT_GENERATE_INSERT_COLOR(t_order, top, e_order, static)
+VRBT_GENERATE_INSERT_FINISH(t_order, top, e_order, static)
 VRBT_GENERATE_INSERT(t_order, top, e_order, cmp_order, static)
 VRBT_GENERATE_REMOVE_COLOR(t_order, top, e_order, static)
 VRBT_GENERATE_MINMAX(t_order, top, e_order, static)
@@ -119,6 +120,7 @@ VRBT_GENERATE_REMOVE(t_order, top, e_order, static)
 
 VRBT_GENERATE_INSERT_COLOR(t_key, top, e_key, static)
 VRBT_GENERATE_REMOVE_COLOR(t_key, top, e_key, static)
+VRBT_GENERATE_INSERT_FINISH(t_key, top, e_key, static)
 VRBT_GENERATE_INSERT(t_key, top, e_key, cmp_key, static)
 VRBT_GENERATE_REMOVE(t_key, top, e_key, static)
 VRBT_GENERATE_FIND(t_key, top, e_key, cmp_key, static)

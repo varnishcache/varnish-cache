@@ -97,14 +97,13 @@ wrk_bgthread(void *arg)
 	INIT_OBJ(&wrk, WORKER_MAGIC);
 	INIT_OBJ(wpriv, WORKER_PRIV_MAGIC);
 	wrk.wpriv = wpriv;
+	// bgthreads do not have a vpi member
 	memset(&ds, 0, sizeof ds);
 	wrk.stats = &ds;
 
 	r = bt->func(&wrk, bt->priv);
-
-	if (! cache_shutdown)
-		WRONG("BgThread terminated");
-
+	HSH_Cleanup(&wrk);
+	Pool_Sumstat(&wrk);
 	return (r);
 }
 
@@ -132,6 +131,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	struct VSC_main_wrk ds;
 	unsigned char ws[thread_workspace];
 	struct worker_priv wpriv[1];
+	unsigned char vpi[vpi_wrk_len];
 
 	AN(qp);
 	AN(stacksize);
@@ -149,13 +149,15 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);
+	VPI_wrk_init(w, vpi, sizeof vpi);
+	AN(w->vpi);
 
-	VSL(SLT_WorkThread, 0, "%p start", w);
+	VSL(SLT_WorkThread, NO_VXID, "%p start", w);
 
 	Pool_Work_Thread(qp, w);
 	AZ(w->pool);
 
-	VSL(SLT_WorkThread, 0, "%p end", w);
+	VSL(SLT_WorkThread, NO_VXID, "%p end", w);
 	if (w->wpriv->vcl != NULL)
 		VCL_Rel(&w->wpriv->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
@@ -218,8 +220,8 @@ pool_reserve(void)
 		if (cache_param->wthread_reserve < lim)
 			lim = cache_param->wthread_reserve;
 	}
-	if (lim < TASK_QUEUE__END)
-		return (TASK_QUEUE__END);
+	if (lim < TASK_QUEUE_RESERVE)
+		return (TASK_QUEUE_RESERVE);
 	return (lim);
 }
 
@@ -233,7 +235,7 @@ pool_getidleworker(struct pool *pp, enum task_prio prio)
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
-	if (pp->nidle > (pool_reserve() * prio / TASK_QUEUE__END)) {
+	if (pp->nidle > (pool_reserve() * prio / TASK_QUEUE_RESERVE)) {
 		pt = VTAILQ_FIRST(&pp->idle_queue);
 		if (pt == NULL)
 			AZ(pp->nidle);
@@ -311,7 +313,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 		retval = reqpoolfail & 1;
 		reqpoolfail >>= 1;
 		if (retval) {
-			VSL(SLT_Debug, 0,
+			VSL(SLT_Debug, NO_VXID,
 			    "Failing due to reqpoolfail (next= 0x%jx)",
 			    reqpoolfail);
 			return (retval);
@@ -333,11 +335,12 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 		return (0);
 	}
 
-	/*
-	 * queue limits only apply to client threads - all other
-	 * work is vital and needs do be done at the earliest
+	/* Vital work is always queued. Only priority classes that can
+	 * fit under the reserve capacity are eligible to queuing.
 	 */
-	if (!TASK_QUEUE_CLIENT(prio) ||
+	if (prio >= TASK_QUEUE_RESERVE) {
+		retval = -1;
+	} else if (!TASK_QUEUE_LIMITED(prio) ||
 	    pp->lqueue + pp->nthr < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit) {
 		pp->nqueued++;
@@ -391,8 +394,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		Lck_Lock(&pp->mtx);
 		reserve = pool_reserve();
 
-		for (i = 0; i < TASK_QUEUE__END; i++) {
-			if (pp->nidle < (reserve * i / TASK_QUEUE__END))
+		for (i = 0; i < TASK_QUEUE_RESERVE; i++) {
+			if (pp->nidle < (reserve * i / TASK_QUEUE_RESERVE))
 				break;
 			tp = VTAILQ_FIRST(&pp->queues[i]);
 			if (tp != NULL) {
@@ -546,7 +549,7 @@ pool_breed(struct pool *qp)
 	errno = pthread_create(&tp, &tp_attr, pool_thread, pi);
 	if (errno) {
 		FREE_OBJ(pi);
-		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
+		VSL(SLT_Debug, NO_VXID, "Create worker thread failed %d %s",
 		    errno, VAS_errtxt(errno));
 		Lck_Lock(&pool_mtx);
 		VSC_C_main->threads_failed++;
@@ -623,10 +626,11 @@ pool_herder(void *priv)
 			dq = pp->ndequeued;
 			dqt = VTIM_mono();
 		} else if (VTIM_mono() - dqt > cache_param->wthread_watchdog) {
-			VSL(SLT_Error, 0,
+			VSL(SLT_Error, NO_VXID,
 			    "Pool Herder: Queue does not move ql=%u dt=%f",
 			    pp->lqueue, VTIM_mono() - dqt);
-			WRONG("Worker Pool Queue does not move");
+			WRONG("Worker Pool Queue does not move"
+			      " - see thread_pool_watchdog parameter");
 		}
 		wthread_min = cache_param->wthread_min;
 		if (pp->die)
@@ -753,7 +757,7 @@ WRK_Log(enum VSL_tag_e tag, const char *fmt, ...)
 	if (wrk != NULL && wrk->vsl != NULL)
 		VSLbv(wrk->vsl, tag, fmt, ap);
 	else
-		VSLv(tag, 0, fmt, ap);
+		VSLv(tag, NO_VXID, fmt, ap);
 	va_end(ap);
 }
 
@@ -764,6 +768,6 @@ WRK_Log(enum VSL_tag_e tag, const char *fmt, ...)
 void
 WRK_Init(void)
 {
-	assert(cache_param->wthread_min >= TASK_QUEUE__END);
+	assert(cache_param->wthread_min >= TASK_QUEUE_RESERVE);
 	CLI_AddFuncs(debug_cmds);
 }

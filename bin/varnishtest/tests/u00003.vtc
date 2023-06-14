@@ -45,7 +45,7 @@ delay 1
 shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
 shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
 
-client c1 {
+client c2 {
 	txreq -url /2
 	rxresp
 } -run
@@ -167,5 +167,19 @@ process p2 {varnishncsa -t 5 -n nonexistent} -start
 delay 1
 process p2 -expect-exit 1 -kill INT -wait
 shell {grep -q "VSM: Attach interrupted" ${p2_err}}
+
+# IP address for bad requests
+
+client c3 {
+	txreq -url "/bad path"
+	rxresp
+	expect resp.status == 400
+} -run
+
+varnish v1 -vsl_catchup
+
+shell -expect ${localhost} {
+	varnishncsa -n ${v1_name} -d -q 'RespStatus == 400'
+}
 
 # ESI coverage in e00003.vtc

@@ -110,6 +110,7 @@ vsl_sanity(const struct vsl_log *vsl)
 	AN(vsl->wlp);
 	AN(vsl->wlb);
 	AN(vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 }
 
 /*--------------------------------------------------------------------
@@ -129,12 +130,18 @@ vsl_tag_is_masked(enum VSL_tag_e tag)
 	return (*bm & b);
 }
 
+int
+VSL_tag_is_masked(enum VSL_tag_e tag)
+{
+	return (vsl_tag_is_masked(tag));
+}
+
 /*--------------------------------------------------------------------
  * Lay down a header fields, and return pointer to the next record
  */
 
 static inline uint32_t *
-vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
+vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, vxid_t vxid)
 {
 
 	AZ((uintptr_t)p & 0x3);
@@ -142,9 +149,32 @@ vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
 	assert(tag < SLT__Reserved);
 	AZ(len & ~VSL_LENMASK);
 
-	p[1] = vxid;
-	p[0] = ((((unsigned)tag & 0xff) << 24) | len);
+	p[2] = vxid.vxid >> 32;
+	p[1] = vxid.vxid;
+	p[0] = (((unsigned)tag & VSL_IDMASK) << VSL_IDSHIFT) |
+	     (VSL_VERSION_3 << VSL_VERSHIFT) |
+	     len;
 	return (VSL_END(p, len));
+}
+
+/*--------------------------------------------------------------------
+ * Space available in a VSL buffer when accounting for overhead
+ */
+
+static unsigned
+vsl_space(const struct vsl_log *vsl)
+{
+	ptrdiff_t mlen;
+
+	mlen = vsl->wle - vsl->wlp;
+	assert(mlen >= 0);
+	if (mlen < VSL_OVERHEAD + 1)
+		return (0);
+	mlen -= VSL_OVERHEAD;
+	mlen *= sizeof *vsl->wlp;
+	if (mlen > cache_param->vsl_reclen)
+		mlen = cache_param->vsl_reclen;
+	return(mlen);
 }
 
 /*--------------------------------------------------------------------
@@ -193,6 +223,8 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 	VSC_C_main->shm_writes++;
 	VSC_C_main->shm_flushes += flushes;
 	VSC_C_main->shm_records += records;
+	VSC_C_main->shm_bytes +=
+	    VSL_BYTES(VSL_OVERHEAD + VSL_WORDS((uint64_t)len));
 
 	/* Wrap if necessary */
 	if (VSL_END(vsl_ptr, len) >= vsl_end)
@@ -225,7 +257,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
  */
 
 static void
-vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
+vslr(enum VSL_tag_e tag, vxid_t vxid, const char *b, unsigned len)
 {
 	uint32_t *p;
 	unsigned mlen;
@@ -238,13 +270,15 @@ vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
 
 	p = vsl_get(len, 1, 0);
 
-	memcpy(p + 2, b, len);
+	memcpy(p + VSL_OVERHEAD, b, len);
 
 	/*
-	 * vsl_hdr() writes p[1] again, but we want to make sure it
-	 * has hit memory because we work on the live buffer here.
+	 * the vxid needs to be written before the barrier to
+	 * ensure it is valid when vsl_hdr() marks the record
+	 * ready by writing p[0]
 	 */
-	p[1] = vxid;
+	p[2] = vxid.vxid >> 32;
+	p[1] = vxid.vxid;
 	VWMB();
 	(void)vsl_hdr(tag, p, len, vxid);
 }
@@ -257,7 +291,7 @@ vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
  */
 
 void
-VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
+VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list ap)
 {
 	unsigned n, mlen = cache_param->vsl_reclen;
 	char buf[mlen];
@@ -278,7 +312,7 @@ VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
 }
 
 void
-VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s)
+VSLs(enum VSL_tag_e tag, vxid_t vxid, const struct strands *s)
 {
 	unsigned n, mlen = cache_param->vsl_reclen;
 	char buf[mlen];
@@ -292,7 +326,7 @@ VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s)
 }
 
 void
-VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+VSL(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -318,12 +352,58 @@ VSL_Flush(struct vsl_log *vsl, int overflow)
 
 	p = vsl_get(l, vsl->wlr, overflow);
 
-	memcpy(p + 2, vsl->wlb, l);
+	memcpy(p + VSL_OVERHEAD, vsl->wlb, l);
 	p[1] = l;
 	VWMB();
-	p[0] = ((((unsigned)SLT__Batch & 0xff) << 24));
+	p[0] = ((((unsigned)SLT__Batch & 0xff) << VSL_IDSHIFT));
 	vsl->wlp = vsl->wlb;
 	vsl->wlr = 0;
+}
+
+/*--------------------------------------------------------------------
+ * Buffered VSLs
+ */
+
+static char *
+vslb_get(struct vsl_log *vsl, enum VSL_tag_e tag, unsigned *length)
+{
+	unsigned mlen = cache_param->vsl_reclen;
+	char *retval;
+
+	vsl_sanity(vsl);
+	if (*length < mlen)
+		mlen = *length;
+
+	if (VSL_END(vsl->wlp, mlen) > vsl->wle)
+		VSL_Flush(vsl, 1);
+
+	retval = VSL_DATA(vsl->wlp);
+
+	/* If it still doesn't fit, truncate */
+	if (VSL_END(vsl->wlp, mlen) > vsl->wle)
+		mlen = vsl_space(vsl);
+
+	vsl->wlp = vsl_hdr(tag, vsl->wlp, mlen, vsl->wid);
+	vsl->wlr++;
+	*length = mlen;
+	return (retval);
+}
+
+static void
+vslb_simple(struct vsl_log *vsl, enum VSL_tag_e tag,
+    unsigned length, const char *str)
+{
+	char *p;
+
+	if (length == 0)
+		length = strlen(str);
+	length += 1; // NUL
+	p = vslb_get(vsl, tag, &length);
+	memcpy(p, str, length - 1);
+	p[length - 1] = '\0';
+
+	if (DO_DEBUG(DBG_SYNCVSL))
+		VSL_Flush(vsl, 0);
 }
 
 /*--------------------------------------------------------------------
@@ -333,35 +413,12 @@ VSL_Flush(struct vsl_log *vsl, int overflow)
 void
 VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 {
-	unsigned l, mlen;
-	char *p;
 
-	vsl_sanity(vsl);
 	Tcheck(t);
 	if (vsl_tag_is_masked(tag))
 		return;
-	mlen = cache_param->vsl_reclen;
 
-	/* Truncate */
-	l = Tlen(t);
-	if (l > mlen - 1)
-		l = mlen - 1;
-
-	assert(vsl->wlp <= vsl->wle);
-
-	/* Flush if necessary */
-	if (VSL_END(vsl->wlp, l + 1) > vsl->wle)
-		VSL_Flush(vsl, 1);
-	assert(VSL_END(vsl->wlp, l + 1) <= vsl->wle);
-	p = VSL_DATA(vsl->wlp);
-	memcpy(p, t.b, l);
-	p[l++] = '\0';		/* NUL-terminated */
-	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
-	assert(vsl->wlp <= vsl->wle);
-	vsl->wlr++;
-
-	if (DO_DEBUG(DBG_SYNCVSL))
-		VSL_Flush(vsl, 0);
+	vslb_simple(vsl, tag, Tlen(t), t.b);
 }
 
 /*--------------------------------------------------------------------
@@ -370,29 +427,16 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 void
 VSLbs(struct vsl_log *vsl, enum VSL_tag_e tag, const struct strands *s)
 {
-	unsigned l, mlen;
+	unsigned l;
+	char *p;
 
-	vsl_sanity(vsl);
 	if (vsl_tag_is_masked(tag))
 		return;
-	mlen = cache_param->vsl_reclen;
 
-	/* including NUL */
-	l = vmin_t(unsigned, strands_len(s) + 1, mlen);
+	l = strands_len(s) + 1;
+	p = vslb_get(vsl, tag, &l);
 
-	assert(vsl->wlp < vsl->wle);
-
-	/* Flush if necessary */
-	if (VSL_END(vsl->wlp, l) >= vsl->wle)
-		VSL_Flush(vsl, 1);
-	assert(VSL_END(vsl->wlp, l) < vsl->wle);
-
-	mlen = strands_cat(VSL_DATA(vsl->wlp), l, s);
-	assert(l == mlen);
-
-	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
-	assert(vsl->wlp < vsl->wle);
-	vsl->wlr++;
+	(void)strands_cat(p, l, s);
 
 	if (DO_DEBUG(DBG_SYNCVSL))
 		VSL_Flush(vsl, 0);
@@ -405,14 +449,10 @@ VSLbs(struct vsl_log *vsl, enum VSL_tag_e tag, const struct strands *s)
 void
 VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 {
-	char *p;
-	const char *u, *f;
-	unsigned n, mlen;
-	txt t;
+	char *p, *p1;
+	unsigned n = 0, mlen;
 	va_list ap2;
-	int first;
 
-	vsl_sanity(vsl);
 	AN(fmt);
 	if (vsl_tag_is_masked(tag))
 		return;
@@ -420,63 +460,42 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 	/*
 	 * If there are no printf-expansions, don't waste time expanding them
 	 */
-	f = NULL;
-	for (u = fmt; *u != '\0'; u++)
-		if (*u == '%')
-			f = u;
-	if (f == NULL) {
-		t.b = TRUST_ME(fmt);
-		t.e = TRUST_ME(u);
-		VSLbt(vsl, tag, t);
+	if (strchr(fmt, '%') == NULL) {
+		vslb_simple(vsl, tag, 0, fmt);
 		return;
 	}
 
+	/*
+	 * If the format is trivial, deal with it directly
+	 */
 	if (!strcmp(fmt, "%s")) {
-		p = va_arg(ap, char *);
-		t.b = p;
-		t.e = strchr(p, '\0');
-		VSLbt(vsl, tag, t);
+		p1 = va_arg(ap, char *);
+		vslb_simple(vsl, tag, 0, p1);
 		return;
 	}
 
-	assert(vsl->wlp <= vsl->wle);
+	vsl_sanity(vsl);
 
-	/* Flush if we can't fit any bytes */
-	if (vsl->wle - vsl->wlp <= VSL_OVERHEAD)
-		VSL_Flush(vsl, 1);
+	mlen = vsl_space(vsl);
 
-	/* Do the vsnprintf formatting in one or two stages. If the first
-	   stage shows that we overflowed, and the available space to work
-	   with was less than vsl_reclen, flush and do the formatting
-	   again. */
-	first = 1;
-	while (1) {
-		assert(vsl->wle - vsl->wlp > VSL_OVERHEAD);
-		mlen = VSL_BYTES((vsl->wle - vsl->wlp) - VSL_OVERHEAD);
-		if (mlen > cache_param->vsl_reclen)
-			mlen = cache_param->vsl_reclen;
-		assert(mlen > 0);
-		assert(VSL_END(vsl->wlp, mlen) <= vsl->wle);
+	// First attempt, only if any space at all
+	if (mlen > 0) {
 		p = VSL_DATA(vsl->wlp);
 		va_copy(ap2, ap);
 		n = vsnprintf(p, mlen, fmt, ap2);
 		va_end(ap2);
-
-		if (first && n >= mlen && mlen < cache_param->vsl_reclen) {
-			first = 0;
-			VSL_Flush(vsl, 1);
-			continue;
-		}
-
-		break;
 	}
 
-	if (n > mlen - 1)
-		n = mlen - 1;	/* we truncate long fields */
-	p[n++] = '\0';		/* NUL-terminated */
-	vsl->wlp = vsl_hdr(tag, vsl->wlp, n, vsl->wid);
-	assert(vsl->wlp <= vsl->wle);
-	vsl->wlr++;
+	// Second attempt, if a flush might help
+	if (mlen == 0 || (n + 1 > mlen && n + 1 <= cache_param->vsl_reclen)) {
+		VSL_Flush(vsl, 1);
+		mlen = vsl_space(vsl);
+		p = VSL_DATA(vsl->wlp);
+		n = vsnprintf(p, mlen, fmt, ap);
+	}
+	if (n + 1 < mlen)
+		mlen = n + 1;
+	(void)vslb_get(vsl, tag, &mlen);
 
 	if (DO_DEBUG(DBG_SYNCVSL))
 		VSL_Flush(vsl, 0);
@@ -565,23 +584,23 @@ VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
 	vsl->wle = ptr;
 	vsl->wle += len / sizeof(*vsl->wle);
 	vsl->wlr = 0;
-	vsl->wid = 0;
+	vsl->wid = NO_VXID;
 	vsl_sanity(vsl);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why, uint32_t vxid)
+VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why, vxid_t vxid)
 {
-	uint32_t ovxid;
+	vxid_t ovxid;
 
 	vsl_sanity(vsl);
 	ovxid = vsl->wid;
-	VSLb(vsl, SLT_Link, "%s %u %s", typ, VXID(vxid), why);
+	VSLb(vsl, SLT_Link, "%s %ju %s", typ, VXID(vxid), why);
 	VSL_End(vsl);
 	vsl->wid = vxid;
-	VSLb(vsl, SLT_Begin, "%s %u %s", typ, VXID(ovxid), why);
+	VSLb(vsl, SLT_Begin, "%s %ju %s", typ, VXID(ovxid), why);
 }
 
 /*--------------------------------------------------------------------*/
@@ -593,12 +612,12 @@ VSL_End(struct vsl_log *vsl)
 	char p[] = "";
 
 	vsl_sanity(vsl);
-	AN(vsl->wid);
+	assert(!IS_NO_VXID(vsl->wid));
 	t.b = p;
 	t.e = p;
 	VSLbt(vsl, SLT_End, t);
 	VSL_Flush(vsl, 0);
-	vsl->wid = 0;
+	vsl->wid = NO_VXID;
 }
 
 static void v_matchproto_(vsm_lock_f)

@@ -44,7 +44,7 @@ client c1 {
 	expect resp.status == 503
 } -run
 
-varnish v1 -cliok "param.set vcc_err_unref off"
+varnish v1 -cliok "param.set vcc_feature -err_unref"
 varnish v1 -vcl {
 	backend bad { .host = "${bad_backend}"; }
 	backend nil none;

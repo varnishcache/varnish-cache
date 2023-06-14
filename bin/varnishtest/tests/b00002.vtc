@@ -3,7 +3,7 @@ varnishtest "Check that a pass transaction works"
 server s1 {
 	rxreq
 	expect req.proto == HTTP/1.1
-	txresp -hdr "Cache-Control: max-age=120" -hdr "Connection: close" -body "012345\n"
+	txresp -hdr "Cache-Control: max-age=120" -hdr "Connection: close" -nodate -body "012345\n"
 } -start
 
 varnish v1 -arg "-sTransient=default,1m" -vcl+backend {

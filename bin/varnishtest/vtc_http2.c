@@ -70,10 +70,14 @@ static const char * const h2_settings[] = {
 	NULL
 };
 
-#define SETTINGS_MAX (sizeof(h2_settings)/sizeof(h2_settings[0]) - 1U)
+enum h2_settings_e {
+#define H2_SETTING(U,l,v,...) SETTINGS_##U = v,
+#include <tbl/h2_settings.h>
+	SETTINGS_MAX
+};
 
 
-enum h2_type {
+enum h2_type_e {
 #define H2_FRAME(l,u,t,f,...) TYPE_##u = t,
 #include <tbl/h2_frames.h>
 	TYPE_MAX
@@ -102,7 +106,8 @@ struct stream {
 	struct frame		*frame;
 	pthread_t		tp;
 	struct http		*hp;
-	int64_t			ws;
+	int64_t			win_self;
+	int64_t			win_peer;
 	int			wf;
 
 	VTAILQ_HEAD(, frame)   fq;
@@ -176,12 +181,12 @@ get_bytes(const struct http *hp, char *buf, int n)
 		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, hp->timeout);
+		i = poll(pfd, 1, (int)(hp->timeout * 1000));
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
 			vtc_log(hp->vl, 3,
-			    "HTTP2 rx timeout (fd:%d %u ms)",
+			    "HTTP2 rx timeout (fd:%d %.3fs)",
 			    hp->sess->fd, hp->timeout);
 		if (i < 0)
 			vtc_log(hp->vl, 3,
@@ -317,7 +322,7 @@ clean_frame(struct frame **fp)
 }
 
 static void
-write_frame(const struct stream *sp, const struct frame *f, const unsigned lock)
+write_frame(struct stream *sp, const struct frame *f, const unsigned lock)
 {
 	struct http *hp;
 	ssize_t l;
@@ -335,6 +340,11 @@ write_frame(const struct stream *sp, const struct frame *f, const unsigned lock)
 	    f->stid,
 	    f->type < TYPE_MAX ? h2_types[f->type] : "?",
 	    f->type, f->flags, f->size);
+
+	if (f->type == TYPE_DATA) {
+		sp->win_peer -= f->size;
+		hp->h2_win_peer->size -= f->size;
+	}
 
 	if (lock)
 		AZ(pthread_mutex_lock(&hp->mtx));
@@ -418,9 +428,9 @@ parse_data(struct stream *s, struct frame *f)
 	}
 
 	if (s->id)
-		s->ws -= size;
+		s->win_self -= size;
 
-	s->hp->ws -= size;
+	s->hp->h2_win_self->size -= size;
 
 	if (!size) {
 		AZ(data);
@@ -602,6 +612,10 @@ parse_settings(const struct stream *s, struct frame *f)
 	if (f->size % 6)
 		vtc_fatal(s->vl,
 		    "Size should be a multiple of 6, but isn't (%d)", f->size);
+
+	if (s->id != 0)
+		vtc_fatal(s->vl,
+		    "Setting frames should only be on stream 0, but received on stream: %d", s->id);
 
 	for (u = 0; u <= SETTINGS_MAX; u++)
 		f->md.settings[u] = NAN;
@@ -1026,9 +1040,9 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			return (buf);
 		}
 		if (!strcmp(spec, "push")) {
-			if (isnan(f->md.settings[2]))
+			if (isnan(f->md.settings[SETTINGS_ENABLE_PUSH]))
 				return (NULL);
-			else if (f->md.settings[2] == 1)
+			else if (f->md.settings[SETTINGS_ENABLE_PUSH] == 1)
 				snprintf(buf, 20, "true");
 			else
 				snprintf(buf, 20, "false");
@@ -1110,7 +1124,11 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	/* SECTION: stream.spec.zexpect.zstream Stream
 	 *
 	 * stream.window
-	 *	The current window size of the stream, or, if on stream 0,
+	 *	The current local window size of the stream, or, if on stream 0,
+	 *	of the connection.
+	 *
+	 * stream.peer_window
+	 *	The current peer window size of the stream, or, if on stream 0,
 	 *	of the connection.
 	 *
 	 * stream.weight
@@ -1121,7 +1139,12 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 */
 	if (!strcmp(spec, "stream.window")) {
 		snprintf(buf, 20, "%jd",
-		    (intmax_t)(s->id ? s->ws : s->hp->ws));
+		    (intmax_t)(s->id ? s->win_self : s->hp->h2_win_self->size));
+		return (buf);
+	}
+	if (!strcmp(spec, "stream.peer_window")) {
+		snprintf(buf, 20, "%jd",
+		    (intmax_t)(s->id ? s->win_peer : s->hp->h2_win_peer->size));
 		return (buf);
 	}
 	if (!strcmp(spec, "stream.weight")) {
@@ -1404,6 +1427,7 @@ static void
 cmd_tx11obj(CMD_ARGS)
 {
 	struct stream *s;
+	int i;
 	int status_done = 1;
 	int method_done = 1;
 	int path_done = 1;
@@ -1420,7 +1444,7 @@ cmd_tx11obj(CMD_ARGS)
 	/*XXX: do we need a better api? yes we do */
 	struct hpk_hdr hdr;
 	char *cmd_str = *av;
-	char *b, *p;
+	char *p;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	INIT_FRAME(f, CONTINUATION, 0, s->id, END_HEADERS);
@@ -1574,23 +1598,15 @@ cmd_tx11obj(CMD_ARGS)
 				f.flags &= ~END_STREAM;
 				av++;
 			}
-			else if (!strcmp(*av, "-gzipbody")) {
-				AZ(body);
-				vtc_gzip(s->hp, av[1], &body, &bodylen);
-				AN(body);
-				ENC(hdr, ":content-encoding", "gzip");
-				f.flags &= ~END_STREAM;
-				av++;
-			}
-			else if (!strcmp(*av, "-gziplen")) {
-				AZ(body);
-				b = synth_body(av[1], 1);
-				vtc_gzip(s->hp, b, &body, &bodylen);
-				AN(body);
-				free(b);
-				ENC(hdr, ":content-encoding", "gzip");
-				f.flags &= ~END_STREAM;
-				av++;
+			else if (!strncmp(*av, "-gzip", 5)) {
+				i = vtc_gzip_cmd(s->hp, av, &body, &bodylen);
+				if (i == 0)
+					break;
+				av += i;
+				if (i > 1) {
+					ENC(hdr, ":content-encoding", "gzip");
+					f.flags &= ~END_STREAM;
+				}
 			}
 			else if (AV_IS("-dep")) {
 				STRTOU32_CHECK(stid, av, p, vl, "-dep", 0);
@@ -1890,7 +1906,7 @@ cmd_txprio(CMD_ARGS)
 static void
 cmd_txsettings(CMD_ARGS)
 {
-	struct stream *s, *_s;
+	struct stream *s, *s2;
 	struct http *hp;
 	char *p;
 	uint32_t val = 0;
@@ -1930,9 +1946,9 @@ cmd_txsettings(CMD_ARGS)
 			PUT_KV(av, vl, maxstreams, val, 0x3);
 		else if (!strcmp(*av, "-winsize"))	{
 			PUT_KV(av, vl, winsize, val, 0x4);
-			VTAILQ_FOREACH(_s, &hp->streams, list)
-				_s->ws += (val - hp->iws);
-			hp->iws = val;
+			VTAILQ_FOREACH(s2, &hp->streams, list)
+				s2->win_self += (val - hp->h2_win_self->init);
+			hp->h2_win_self->init = val;
 		}
 		else if (!strcmp(*av, "-framesize"))
 			PUT_KV(av, vl, framesize, val, 0x5);
@@ -2098,8 +2114,8 @@ cmd_txwinup(CMD_ARGS)
 
 	AZ(pthread_mutex_lock(&hp->mtx));
 	if (s->id == 0)
-		hp->ws += size;
-	s->ws += size;
+		hp->h2_win_self->size += size;
+	s->win_self += size;
 	AZ(pthread_mutex_unlock(&hp->mtx));
 
 	size = htonl(size);
@@ -2165,7 +2181,7 @@ cmd_rxhdrs(CMD_ARGS)
 	int loop = 0;
 	unsigned long int times = 1;
 	unsigned rcv = 0;
-	enum h2_type expect = TYPE_HEADERS;
+	enum h2_type_e expect = TYPE_HEADERS;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
@@ -2361,7 +2377,7 @@ cmd_rxpush(CMD_ARGS)
 	int loop = 0;
 	unsigned long int times = 1;
 	unsigned rcv = 0;
-	enum h2_type expect = TYPE_PUSH_PROMISE;
+	enum h2_type_e expect = TYPE_PUSH_PROMISE;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
@@ -2388,6 +2404,50 @@ cmd_rxpush(CMD_ARGS)
 		expect = TYPE_CONTINUATION;
 	} while (rcv < times || (loop && !(f->flags & END_HEADERS)));
 	s->frame = f;
+}
+
+/* SECTION: stream.spec.winup_rxwinup rxwinup
+ *
+ * Receive a WINDOW_UPDATE frame.
+ */
+static void
+cmd_rxwinup(CMD_ARGS)
+{
+	struct stream *s;
+	struct frame *f;
+
+	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
+	s->frame = rxstuff(s);
+	CAST_OBJ_NOTNULL(f, s->frame, FRAME_MAGIC);
+	CHKFRAME(f->type, TYPE_WINDOW_UPDATE, 0, *av);
+	if (s->id == 0)
+		s->hp->h2_win_peer->size += s->frame->md.winup_size;
+	s->win_peer += s->frame->md.winup_size;
+}
+
+/* SECTION: stream.spec.settings_rxsettings rxsettings
+ *
+ * Receive a SETTINGS frame.
+ */
+static void
+cmd_rxsettings(CMD_ARGS)
+{
+	struct stream *s, *s2;
+	uint32_t val = 0;
+	struct http *hp;
+	struct frame *f;
+
+	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
+	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);
+	s->frame = rxstuff(s);
+	CAST_OBJ_NOTNULL(f, s->frame, FRAME_MAGIC);
+	CHKFRAME(f->type, TYPE_SETTINGS, 0, *av);
+	if (! isnan(f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE])) {
+		val = (uint32_t)f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE];
+		VTAILQ_FOREACH(s2, &hp->streams, list)
+			s2->win_peer += (val - hp->h2_win_peer->init);
+		hp->h2_win_peer->init = val;
+	}
 }
 
 #define RXFUNC(lctype, upctype) \
@@ -2417,12 +2477,6 @@ RXFUNC(prio,	PRIORITY)
  */
 RXFUNC(rst,	RST_STREAM)
 
-/* SECTION: stream.spec.settings_rxsettings rxsettings
- *
- * Receive a SETTINGS frame.
- */
-RXFUNC(settings,SETTINGS)
-
 /* SECTION: stream.spec.ping_rxping rxping
  *
  * Receive a PING frame.
@@ -2434,12 +2488,6 @@ RXFUNC(ping,	PING)
  * Receive a GOAWAY frame.
  */
 RXFUNC(goaway,	GOAWAY)
-
-/* SECTION: stream.spec.winup_rxwinup rxwinup
- *
- * Receive a WINDOW_UPDATE frame.
- */
-RXFUNC(winup,	WINDOW_UPDATE)
 
 /* SECTION: stream.spec.frame_rxframe
  *
@@ -2593,7 +2641,8 @@ stream_new(const char *name, struct http *h)
 	REPLACE(s->name, name);
 	AN(s->name);
 	VTAILQ_INIT(&s->fq);
-	s->ws = h->iws;
+	s->win_self = h->h2_win_self->init;
+	s->win_peer = h->h2_win_peer->init;
 	s->vl = vtc_logopen("%s.%s", h->sess->name, name);
 	vtc_log_set_cmd(s->vl, stream_cmds);
 
@@ -2840,9 +2889,10 @@ start_h2(struct http *hp)
 	AZ(pthread_mutex_init(&hp->mtx, NULL));
 	AZ(pthread_cond_init(&hp->cond, NULL));
 	VTAILQ_INIT(&hp->streams);
-	hp->iws = 0xffff;
-	hp->ws = 0xffff;
-
+	hp->h2_win_self->init = 0xffff;
+	hp->h2_win_self->size = 0xffff;
+	hp->h2_win_peer->init = 0xffff;
+	hp->h2_win_peer->size = 0xffff;
 	hp->h2 = 1;
 
 	hp->decctx = HPK_NewCtx(4096);

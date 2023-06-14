@@ -94,6 +94,8 @@ Example::
 
 	set req.http.purged = purge.hard();
 
+$Restrict vcl_hit vcl_miss
+
 $Function INT soft(DURATION ttl = 0, DURATION grace = -1, DURATION keep = -1)
 
 Sets the *ttl*, *grace* and *keep*.
@@ -101,9 +103,9 @@ Sets the *ttl*, *grace* and *keep*.
 By default, *ttl* is set to 0 with *grace* and *keep* periods left
 untouched. Setting a negative value for *grace* or *keep* periods
 leaves them untouched. Setting all three parameters to ``0`` is
-equivalent to a hard purge. It can only be called from ``vcl_hit{}``
-or ``vcl_miss{}``. It returns the number of soft-purged objects.
+equivalent to a hard purge. It returns the number of soft-purged objects.
 
+$Restrict vcl_hit vcl_miss
 SEE ALSO
 ========
 

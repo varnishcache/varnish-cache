@@ -979,8 +979,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 
 	while (tl->t->tok == '*' || tl->t->tok == '/' || tl->t->tok == '%') {
 		if (tl->t->tok == '%' && ((*e)->fmt != INT)) {
-			VSB_printf(tl->sb,
-			    "Operator %% only possible on INT.\n");
+			VSB_cat(tl->sb, "Operator % only possible on INT.\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -1418,8 +1417,6 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	else
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
-
-	assert((*e)->fmt != BODY);
 
 	if ((*e)->fmt == fmt)
 		return;

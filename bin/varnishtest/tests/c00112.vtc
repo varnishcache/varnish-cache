@@ -1,0 +1,41 @@
+varnishtest "Transit buffering deadlock test"
+
+server s1 {
+	rxreq
+	txresp -status 404
+} -start
+
+server s2 {
+	non_fatal
+	rxreq
+	txresp -bodylen 2000000
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.backend_hint = s2;
+		if (req.restarts == 1) {
+			set req.backend_hint = s1;
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.transit_buffer = 1k;
+	}
+	sub vcl_deliver {
+		if (req.restarts < 1) {
+			return (restart);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -method POST
+	rxresp
+	expect resp.bodylen == 0
+	expect resp.status == 404
+} -run
+
+varnish v1 -expect VBE.vcl1.s1.conn == 0
+varnish v1 -expect VBE.vcl1.s1.busy == 0
+varnish v1 -expect VBE.vcl1.s2.conn == 0
+varnish v1 -expect VBE.vcl1.s2.busy == 0

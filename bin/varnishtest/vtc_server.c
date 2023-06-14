@@ -59,6 +59,7 @@ struct server {
 	int			depth;
 	int			sock;
 	int			fd;
+	unsigned		is_dispatch;
 	char			listen[256];
 	char			aaddr[VTCP_ADDRBUFSIZE];
 	char			aport[VTCP_PORTBUFSIZE];
@@ -185,7 +186,7 @@ static void
 server_listen_tcp(struct server *s, const char **errp)
 {
 	char buf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const struct suckaddr *sua;
 
 	s->sock = VTCP_listen_on(s->listen, "0", s->depth, errp);
 	if (*errp != NULL)
@@ -216,10 +217,10 @@ server_listen(struct server *s)
 
 	if (s->sock >= 0)
 		VTCP_close(&s->sock);
-	if (*s->listen != '/')
-		server_listen_tcp(s, &err);
-	else
+	if (VUS_is(s->listen))
 		server_listen_uds(s, &err);
+	else
+		server_listen_tcp(s, &err);
 	if (err != NULL)
 		vtc_fatal(s->vl,
 		    "Server listen address (%s) cannot be resolved: %s",
@@ -248,11 +249,12 @@ server_conn(void *priv, struct vtclog *vl)
 	fd = accept(s->sock, addr, &l);
 	if (fd < 0)
 		vtc_fatal(vl, "Accept failed: %s", strerror(errno));
-	if (*s->listen != '/') {
+	if (VUS_is(s->listen))
+		vtc_log(vl, 3, "accepted fd %d 0.0.0.0 0", fd);
+	else {
 		VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
-	} else
-		vtc_log(vl, 3, "accepted fd %d 0.0.0.0 0", fd);
+	}
 	return (fd);
 }
 
@@ -335,7 +337,8 @@ static void *
 server_dispatch_thread(void *priv)
 {
 	struct server *s, *s2;
-	int sn = 1, fd;
+	static int sn = 1;
+	int fd;
 	char snbuf[8];
 	struct vtclog *vl;
 	struct sockaddr_storage addr_s;
@@ -359,6 +362,7 @@ server_dispatch_thread(void *priv)
 		bprintf(snbuf, "s%d", sn++);
 		vtc_log(vl, 3, "dispatch fd %d -> %s", fd, snbuf);
 		s2 = server_new(snbuf, vl);
+		s2->is_dispatch = 1;
 		s2->spec = s->spec;
 		bstrcpy(s2->listen, s->listen);
 		s2->fd = fd;
@@ -428,15 +432,17 @@ cmd_server_gen_vcl(struct vsb *vsb)
 
 	AZ(pthread_mutex_lock(&server_mtx));
 	VTAILQ_FOREACH(s, &servers, list) {
-		if (*s->listen != '/')
+		if (s->is_dispatch)
+			continue;
+
+		if (VUS_is(s->listen))
 			VSB_printf(vsb,
-				   "backend %s { .host = \"%s\"; "
-				   ".port = \"%s\"; }\n",
-				   s->name, s->aaddr, s->aport);
+			   "backend %s { .path = \"%s\"; }\n",
+			   s->name, s->listen);
 		else
 			VSB_printf(vsb,
-				   "backend %s { .path = \"%s\"; }\n",
-				   s->name, s->listen);
+			   "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
+			   s->name, s->aaddr, s->aport);
 	}
 	AZ(pthread_mutex_unlock(&server_mtx));
 }
@@ -453,7 +459,7 @@ cmd_server_gen_haproxy_conf(struct vsb *vsb)
 
 	AZ(pthread_mutex_lock(&server_mtx));
 	VTAILQ_FOREACH(s, &servers, list) {
-		if (*s->listen != '/')
+		if (! VUS_is(s->listen))
 			VSB_printf(vsb,
 			   "\n    backend be%s\n"
 			   "\tserver srv%s %s:%s\n",
@@ -462,7 +468,7 @@ cmd_server_gen_haproxy_conf(struct vsb *vsb)
 			INCOMPL();
 	}
 	VTAILQ_FOREACH(s, &servers, list) {
-		if (*s->listen != '/')
+		if (! VUS_is(s->listen))
 			VSB_printf(vsb,
 			   "\n    frontend http%s\n"
 			   "\tuse_backend be%s\n"

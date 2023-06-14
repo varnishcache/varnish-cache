@@ -76,7 +76,7 @@ extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
 extern pthread_t	vtc_thread;
 extern int iflg;
-extern unsigned vtc_maxdur;
+extern vtim_dur vtc_maxdur;
 extern char *vmod_path;
 extern struct vsb *params_vsb;
 extern int leave_temp;
@@ -132,8 +132,8 @@ int exec_file(const char *fn, const char *script, const char *tmpdir,
 
 void macro_undef(struct vtclog *vl, const char *instance, const char *name);
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
-    const char *fmt, ...)
-    v_printflike_(4, 5);
+    const char *fmt, ...) v_printflike_(4, 5);
+unsigned macro_isdef(const char *instance, const char *name);
 void macro_cat(struct vtclog *, struct vsb *, const char *, const char *);
 struct vsb *macro_expand(struct vtclog *vl, const char *text);
 struct vsb *macro_expandf(struct vtclog *vl, const char *, ...)
@@ -150,8 +150,8 @@ void stop_h2(struct http *hp);
 void b64_settings(const struct http *hp, const char *s);
 
 /* vtc_gzip.c */
-void vtc_gzip(struct http *, const char *, char **, long *);
 void vtc_gunzip(struct http *, char *, long *);
+int vtc_gzip_cmd(struct http *hp, char * const *argv, char **body, long *bodylen);
 
 /* vtc_subr.c */
 struct vsb *vtc_hex_to_bin(struct vtclog *vl, const char *arg);

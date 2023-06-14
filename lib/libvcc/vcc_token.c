@@ -502,7 +502,7 @@ vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 	if (q - p > 13 || r - q > 3) {
 		VSB_cat(tl->sb, "Too many digits for real.\n");
 		vcc_ErrWhere(tl, tl->t);
-		return(NULL);
+		return (NULL);
 	}
 	tl->t->num = strtod(p, &s);
 	assert(s == tl->t->e);

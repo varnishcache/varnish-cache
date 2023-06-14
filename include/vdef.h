@@ -257,3 +257,7 @@ typedef struct {
 
 #define Tcheck(t)	do { (void)pdiff((t).b, (t).e); } while (0)
 #define Tlen(t)		(pdiff((t).b, (t).e))
+
+/* #3020 dummy definitions until PR is merged*/
+#define LIKELY(x)	(x)
+#define UNLIKELY(x)	(x)

@@ -1,5 +1,5 @@
 ..
-	Copyright (c) 2019-2021 Varnish Software AS
+	Copyright (c) 2019-2022 Varnish Software AS
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
@@ -9,10 +9,19 @@ maintenance.
 Each patch should, in a comment section, explain its purpose. They may be fit
 for both the in-tree code style or out-of-tree VMOD and VUT development.
 
+For in-tree usage, see the ``vcocci.sh`` script for convenience.
+
 Unless noted otherwise, all patches should work when invoked as::
 
 	spatch --macro-file tools/coccinelle/vdef.h \
 	       -I include/ -I bin/varnishd/ --dir . --in-place \
+	       --sp-file $COCCI
+
+To expand a patch and see the implicit rules that will be taken into account,
+it is possible to parse the file::
+
+	spatch --macro-file tools/coccinelle/vdef.h \
+	       -I include/ -I bin/varnishd/ --parse-cocci
 	       --sp-file $COCCI
 
 The ``archive/`` directory contains patches which we used once and

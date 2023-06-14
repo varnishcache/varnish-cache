@@ -70,6 +70,10 @@ FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom,
     "Ignore UTF-8 BOM in ESI bodies."
 )
 
+FEATURE_BIT(ESI_INCLUDE_ONERROR,	esi_include_onerror,
+    "Parse the onerror attribute of <esi:include> tags."
+)
+
 FEATURE_BIT(WAIT_SILO,			wait_silo,
     "Wait for persistent silos to completely load before serving requests."
 )
@@ -80,6 +84,11 @@ FEATURE_BIT(VALIDATE_HEADERS,		validate_headers,
 
 FEATURE_BIT(BUSY_STATS_RATE,	busy_stats_rate,
     "Make busy workers comply with thread_stats_rate."
+)
+
+FEATURE_BIT(TRACE,			trace,
+    "Enable VCL tracing by default (enable (be)req.trace). "
+    "Required for tracing vcl_init / vcl_fini"
 )
 
 #undef FEATURE_BIT

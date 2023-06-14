@@ -35,7 +35,7 @@ found in a subdirectory tree.
 Options:
 
     -g gcov-program
-        default:gcov6
+        default: "llvm-cov gcov"
 
     -o output-filename
         default: stdout
@@ -105,31 +105,36 @@ def run_gcov(prog, subdir):
             # if we find the .o file in a .../.libs the sources
             # must be found relative to the parent directory
 
-            if root[-6:] == "/.libs":
-                x = subprocess.check_output(
-                    ["cd " + root + "/.. && " +
-                     "exec " + prog + " .libs/" + fn],
-                    stderr=subprocess.STDOUT, shell=True,
-                    universal_newlines=True)
-                pf = ".."
+            if "varnishd" in root:
+                subdir = root.split("/")[-1]
+                cmd = ["cd " + root + "/.. && " + "exec " + prog + " " + subdir + "/" + fn]
+                rpath = "/../"
+            elif root[-6:] == "/.libs":
+                cmd = ["cd " + root + "/.. && " + "exec " + prog + " .libs/" + fn]
+                rpath = "/../"
             else:
-                x = subprocess.check_output(
-                    ["cd " + root + " && " +
-                     "exec " + prog + " " + fn],
+                cmd = ["cd " + root + " && " + "exec " + prog + " " + fn]
+                rpath = "/"
+
+            x = subprocess.check_output(
+                    cmd,
                     stderr=subprocess.STDOUT, shell=True,
                     universal_newlines=True)
-                pf = ""
+            pf = ""
 
             for ln in x.split("\n"):
+                if "such file" in ln:
+                    print("LN", ln)
+                    assert "such file" not in ln
                 ln = ln.split()
                 if not ln:
                     continue
                 if ln[0].find("reating") != -1:
-                    gn = ln[1].strip("'")
+                    gn = root + rpath + ln[1].strip("'")
+                    gn = os.path.normpath(gn)
                     assert gn[-5:] == ".gcov"
                     sn = gn[:-5]
-                    process_gcov(
-                        os.path.join(root, pf, gn), sn)
+                    process_gcov(gn, sn)
 
 def produce_output(fdo):
     """
@@ -182,7 +187,7 @@ if __name__ == "__main__":
     fo = sys.stdout
     gcovprog = os.environ.get('GCOVPROG')
     if gcovprog is None:
-        gcovprog = "gcov6 -r"
+        gcovprog = "llvm-cov gcov"
 
     for f, v in optlist:
         if f == '-o' and v == '-':

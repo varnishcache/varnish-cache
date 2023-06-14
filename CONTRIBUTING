@@ -9,7 +9,7 @@ These days we prefer patches as pull requests directly to that tree.
 
 Bugreports go there too.
 
-Our main project communication is through or developer IRC channel::
+Our main project communication is through our developer IRC channel::
 
 	#varnish-hacking on server irc.linpro.no
 

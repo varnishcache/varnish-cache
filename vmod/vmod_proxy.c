@@ -55,11 +55,11 @@ struct pp2_tlv_ssl {
 static VCL_BOOL
 tlv_ssl_flag(VRT_CTX, int flag)
 {
-	struct pp2_tlv_ssl *dst;
+	const struct pp2_tlv_ssl *dst;
 	int len;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (VPX_tlv(ctx->req, PP2_TYPE_SSL, (void **)&dst, &len))
+	if (VPX_tlv(ctx->req, PP2_TYPE_SSL, (const void **)&dst, &len))
 		return (0);
 
 	return ((dst->client & flag) == flag);
@@ -87,11 +87,11 @@ vmod_client_has_cert_conn(VRT_CTX)
 VCL_INT v_matchproto_(td_proxy_ssl_verify_result)
 vmod_ssl_verify_result(VRT_CTX)
 {
-	struct pp2_tlv_ssl *dst;
+	const struct pp2_tlv_ssl *dst;
 	int len;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (VPX_tlv(ctx->req, PP2_TYPE_SSL, (void **)&dst, &len))
+	if (VPX_tlv(ctx->req, PP2_TYPE_SSL, (const void **)&dst, &len))
 		return (0); /* X509_V_OK */
 
 	return (vbe32dec(&dst->verify));
@@ -100,19 +100,21 @@ vmod_ssl_verify_result(VRT_CTX)
 static VCL_STRING
 tlv_string(VRT_CTX, int tlv)
 {
-	char *dst, *d;
+	const char *ptr;
+	char *d;
 	int len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (VPX_tlv(ctx->req, tlv, (void **)&dst, &len))
+	if (VPX_tlv(ctx->req, tlv, (const void **)&ptr, &len))
 		return (NULL);
 	d = WS_Alloc(ctx->ws, len+1);
 	if (d == NULL) {
 		VRT_fail(ctx, "proxy.TLV: out of workspace");
 		return (NULL);
 	}
-	memcpy(d, dst, len);
+	AN(ptr);
+	memcpy(d, ptr, len);
 	d[len] = '\0';
 	return (d);
 }

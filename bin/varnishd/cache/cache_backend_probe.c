@@ -179,7 +179,8 @@ VBP_Update_Backend(struct vbp_target *vt)
 	vt->backend->sick = i;
 
 	AN(vt->backend->vcl_name);
-	VSL(SLT_Backend_health, 0, "%s %s %s %s %u %u %u %.6f %.6f \"%s\"",
+	VSL(SLT_Backend_health, NO_VXID,
+	    "%s %s %s %s %u %u %u %.6f %.6f \"%s\"",
 	    vt->backend->vcl_name, chg ? "Went" : "Still",
 	    i ? "sick" : "healthy", bits,
 	    vt->good, vt->threshold, vt->window,
@@ -246,7 +247,7 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 	char addr[VTCP_ADDRBUFSIZE];
 	char port[VTCP_PORTBUFSIZE];
 	char vsabuf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const struct suckaddr *sua;
 	int proto;
 	struct vsb vsb;
 
@@ -356,8 +357,11 @@ vbp_poke(struct vbp_target *vt)
 		}
 		i = poll(pfd, 1, tmo);
 		if (i <= 0) {
-			if (!i)
+			if (!i) {
+				if (!vt->exp_close)
+					break;
 				errno = ETIMEDOUT;
+			}
 			bprintf(vt->resp_buf, "Poll error %d (%s)",
 			    errno, VAS_errtxt(errno));
 			i = -1;

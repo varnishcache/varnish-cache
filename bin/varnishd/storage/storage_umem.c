@@ -289,7 +289,7 @@ smu_umem_loaded(void)
 	return (0);
 }
 
-static void
+static void v_matchproto_(storage_init_f)
 smu_init(struct stevedore *parent, int ac, char * const *av)
 {
 	static int inited = 0;
@@ -297,7 +297,6 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 	uintmax_t u;
 	struct smu_sc *sc;
 
-	ASSERT_MGT();
 	ALLOC_OBJ(sc, SMU_SC_MAGIC);
 	AN(sc);
 	sc->smu_max = VRT_INTEGER_MAX;

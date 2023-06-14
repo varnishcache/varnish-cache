@@ -27,8 +27,9 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
+# NB: We use this vmod to test "$ABI vrt" handling.
 
-$ABI strict
+$ABI vrt
 $Prefix xyzzy
 $Module debug 3 "Development, test and debug"
 $Synopsis auto
@@ -71,6 +72,8 @@ Test function for TOP private pointers
 $Object obj(STRING string="default", ENUM { one, two, three } number=one)
 
 Test object
+
+Fail for string="fail".
 
 .. NOTE: .enum before .foo as part of test r01332.vtc
 $Method VOID .enum(ENUM { phk, des, kristian, mithrandir, martin })
@@ -120,6 +123,13 @@ $Method STRING .test_priv_top(STRING s="")
 
 Test per-object priv_top via VRT_priv_top()
 
+$Restrict client
+
+$Function VOID rot104()
+
+Try to register the rot52 filter again. This should always fail
+the vcl.
+
 $Function VOID rot52(HTTP hdr)
 
 Encrypt the HTTP header with quad-ROT13 encryption,
@@ -144,7 +154,7 @@ $Function BOOL fail2()
 
 Function to fail vcl code. Always returns true.
 
-$Object dyn(STRING addr, STRING port, PROBE probe=0)
+$Object dyn(STRING addr, STRING port, PROBE probe=0, BACKEND via=0)
 
 Dynamically create a single-backend director, addr and port must not be empty.
 
@@ -152,7 +162,7 @@ $Method BACKEND .backend()
 
 Return the dynamic backend.
 
-$Method VOID .refresh(STRING addr, STRING port, PROBE probe=0)
+$Method VOID .refresh(STRING addr, STRING port, PROBE probe=0, BACKEND via=0)
 
 Dynamically refresh & (always!) replace the backend by a new one.
 
@@ -269,9 +279,15 @@ Test object method with all the fancy stuff.
 
 $Function STRANDS return_strands(STRANDS strand)
 
+$Function VOID vsl_flush()
+
+call VSL_Flush(ctx->cts, 0)
+
 $Function VOID catflap(ENUM {miss, first, last} type)
 
 Test the HSH_Lookup catflap
+
+$Restrict client
 
 $Function BYTES stk()
 
@@ -281,6 +297,8 @@ This function is by no means guaranteed to work cross platform and
 should now only be used for diagnostic purposes.
 
 0B is returned if no sensible value can be determined.
+
+$Restrict client
 
 $Function VOID vcl_prevent_cold(PRIV_VCL)
 
@@ -304,6 +322,8 @@ Set the client socket' send buffer size to *sndbuf*. The previous, desired
 and actual values appear in the logs. Not currently implemented for backend
 transactions.
 
+$Restrict client backend
+
 $Function VOID store_ip(IP)
 
 Store an IP address to be later found by ``debug.get_ip()`` in the same
@@ -324,9 +344,13 @@ $Function STRING client_ip()
 
 Get the stringified client ip from the session attr
 
+$Restrict client backend
+
 $Function STRING client_port()
 
 Get the stringified client port from the session attr
+
+$Restrict client backend
 
 $Function VOID fail_task_fini()
 
@@ -374,3 +398,10 @@ $Object caller(SUB)
 $Method VOID .call()
 
 $Method SUB .xsub()
+
+DEPRECATED
+==========
+
+$Alias .bar obj.foo
+
+Bar was wrong, it was definitely foo.

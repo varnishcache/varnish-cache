@@ -85,22 +85,8 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/params.rst
 
-COUNTERS = \
-	$(top_srcdir)/lib/libvsc/VSC_main.vsc \
-	$(top_srcdir)/lib/libvsc/VSC_mgt.vsc \
-	$(top_srcdir)/lib/libvsc/VSC_mempool.vsc \
-	$(top_srcdir)/lib/libvsc/VSC_sma.vsc \
-	$(top_srcdir)/lib/libvsc/VSC_smu.vsc \
-	$(top_srcdir)/lib/libvsc/VSC_smf.vsc \
-	$(top_srcdir)/lib/libvsc/VSC_vbe.vsc \
-	$(top_srcdir)/lib/libvsc/VSC_lck.vsc
-
-include/counters.rst: $(top_srcdir)/lib/libvsc/vsctool.py $(COUNTERS)
-	echo -n '' > ${@}_
-	for i in $(COUNTERS); do \
-		$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -r $$i >> ${@}_ ; \
-	done
-	mv -f ${@}_ ${@}
+include/counters.rst:
+	ln -s $(abs_top_builddir)/lib/libvsc/counters.rst $@
 BUILT_SOURCES += include/counters.rst
 
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
@@ -158,6 +144,7 @@ include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
 BUILT_SOURCES += include/vsl-tags.rst
 
 VTCSYN_SRC = \
+	$(top_srcdir)/bin/varnishtest/vtc.c \
 	$(top_srcdir)/bin/varnishtest/vtc_barrier.c \
 	$(top_srcdir)/bin/varnishtest/vtc_haproxy.c \
 	$(top_srcdir)/bin/varnishtest/vtc_http.c \
@@ -168,8 +155,8 @@ VTCSYN_SRC = \
 	$(top_srcdir)/bin/varnishtest/vtc_syslog.c \
 	$(top_srcdir)/bin/varnishtest/vtc_tunnel.c \
 	$(top_srcdir)/bin/varnishtest/vtc_varnish.c
-include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
-	$(AM_V_GEN) $(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
+include/vtc-syntax.rst: $(srcdir)/vtc-syntax.py $(VTCSYN_SRC)
+	$(AM_V_GEN) $(PYTHON) $(srcdir)/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
 	@mv -f ${@}_ ${@}
 BUILT_SOURCES += include/vtc-syntax.rst
 

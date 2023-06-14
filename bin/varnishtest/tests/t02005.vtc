@@ -22,11 +22,16 @@ varnish v1 -vcl+backend {
 			return (fail);
 		}
 	}
+
+	sub vcl_deliver {
+		# make ReqAcct deterministic
+		unset resp.http.via;
+	}
 } -cliok "param.set feature +http2" -start
 varnish v1 -cliok "param.set debug +syncvsl"
 
 logexpect l1 -v v1 -g raw {
-	expect	* 1001 ReqAcct	"80 7 87 106 8 114"
+	expect	* 1001 ReqAcct	"80 7 87 78 8 86"
 	expect	* 1000 ReqAcct	"45 8 53 54 20 74"
 } -start
 

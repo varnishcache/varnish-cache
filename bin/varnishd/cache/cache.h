@@ -57,6 +57,20 @@
 
 /*--------------------------------------------------------------------*/
 
+struct vxids {
+	uint64_t	vxid;
+};
+
+typedef struct vxids vxid_t;
+
+#define NO_VXID ((struct vxids){0})
+#define IS_NO_VXID(x) ((x).vxid == 0)
+#define VXID_TAG(x) ((uintmax_t)((x).vxid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER)))
+#define VXID(u) ((uintmax_t)((u.vxid) & VSL_IDENTMASK))
+#define IS_SAME_VXID(x, y) ((x).vxid == (y).vxid)
+
+/*--------------------------------------------------------------------*/
+
 struct body_status {
 	const char		*name;
 	int			nbr;
@@ -179,9 +193,9 @@ struct acct_bereq {
 /*--------------------------------------------------------------------*/
 
 struct vsl_log {
-	uint32_t                *wlb, *wlp, *wle;
-	unsigned                wlr;
-	unsigned                wid;
+	uint32_t		*wlb, *wlp, *wle;
+	unsigned		wlr;
+	vxid_t			wid;
 };
 
 /*--------------------------------------------------------------------*/
@@ -206,7 +220,7 @@ struct pool_task {
  * TASK_QUEUE_RUSH is req's returning from waiting list
  *
  * NOTE: When changing the number of classes, update places marked with
- * TASK_QUEUE__END in mgt_pool.c
+ * TASK_QUEUE_RESERVE in params.h
  */
 enum task_prio {
 	TASK_QUEUE_BO,
@@ -214,11 +228,13 @@ enum task_prio {
 	TASK_QUEUE_REQ,
 	TASK_QUEUE_STR,
 	TASK_QUEUE_VCA,
+	TASK_QUEUE_BG,
 	TASK_QUEUE__END
 };
 
 #define TASK_QUEUE_HIGHEST_PRIORITY TASK_QUEUE_BO
-#define TASK_QUEUE_CLIENT(prio) \
+#define TASK_QUEUE_RESERVE TASK_QUEUE_BG
+#define TASK_QUEUE_LIMITED(prio) \
 	(prio == TASK_QUEUE_REQ || prio == TASK_QUEUE_STR)
 
 /*--------------------------------------------------------------------*/
@@ -244,7 +260,8 @@ struct worker {
 
 	unsigned		cur_method;
 	unsigned		seen_methods;
-	unsigned		handling;
+
+	struct wrk_vpi		*vpi;
 };
 
 /* Stored object -----------------------------------------------------
@@ -254,7 +271,7 @@ struct worker {
 struct storeobj {
 	const struct stevedore	*stevedore;
 	void			*priv;
-	uintptr_t		priv2;
+	uint64_t		priv2;
 };
 
 /* Busy Objcore structure --------------------------------------------
@@ -278,7 +295,9 @@ struct boc {
 	void			*stevedore_priv;
 	enum boc_state_e	state;
 	uint8_t			*vary;
-	uint64_t		len_so_far;
+	uint64_t		fetched_so_far;
+	uint64_t		delivered_so_far;
+	uint64_t		transit_buffer;
 };
 
 /* Object core structure ---------------------------------------------
@@ -391,8 +410,10 @@ struct busyobj {
 
 	struct pool_task	fetch_task[1];
 
-#define BO_FLAG(l, r, rr, rw, f, d) unsigned	l:1;
-#include "tbl/bo_flags.h"
+#define BERESP_FLAG(l, r, w, f, d) unsigned	l:1;
+#define BEREQ_FLAG(l, r, w, d) BERESP_FLAG(l, r, w, 0, d)
+#include "tbl/bereq_flags.h"
+#include "tbl/beresp_flags.h"
 
 	/* Timeouts */
 	vtim_dur		connect_timeout;
@@ -472,9 +493,8 @@ struct req {
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
 
-	/* Built Vary string */
+	/* Built Vary string == workspace reservation */
 	uint8_t			*vary_b;
-	uint8_t			*vary_l;
 	uint8_t			*vary_e;
 
 	uint8_t			digest[DIGEST_LEN];
@@ -552,7 +572,7 @@ struct sess {
 	struct listen_sock	*listen_sock;
 	int			refcnt;
 	int			fd;
-	uint32_t		vxid;
+	vxid_t			vxid;
 
 	struct lock		mtx;
 
@@ -585,7 +605,8 @@ void BAN_Abandon(struct ban_proto *b);
 
 /* cache_cli.c [CLI] */
 extern pthread_t cli_thread;
-#define ASSERT_CLI() do {assert(pthread_equal(pthread_self(), cli_thread));} while (0)
+#define IS_CLI() (pthread_equal(pthread_self(), cli_thread))
+#define ASSERT_CLI() do {assert(IS_CLI());} while (0)
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
@@ -601,9 +622,11 @@ void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
 void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
 int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, hdr_t, const char *val);
+void http_AppendHeader(struct http *to, hdr_t, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     v_printflike_(2, 3);
 void http_TimeHeader(struct http *to, const char *fmt, vtim_real now);
+const char * http_ViaHeader(void);
 void http_Proto(struct http *to);
 void http_SetHeader(struct http *to, const char *header);
 void http_SetH(struct http *to, unsigned n, const char *header);
@@ -618,7 +641,8 @@ int http_GetHdrField(const struct http *hp, hdr_t,
 double http_GetHdrQ(const struct http *hp, hdr_t, const char *field);
 ssize_t http_GetContentLength(const struct http *hp);
 ssize_t http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi);
-const char * http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi);
+const char * http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi,
+    ssize_t len);
 uint16_t http_GetStatus(const struct http *hp);
 int http_IsStatus(const struct http *hp, int);
 void http_SetStatus(struct http *to, uint16_t status, const char *reason);
@@ -682,11 +706,6 @@ extern const char H__Reason[];
 // rfc7233,l,1207,1208
 #define http_range_at(str, tok, l)	http_tok_at(str, #tok, l)
 
-/* cache_main.c */
-#define VXID(u) ((u) & VSL_IDENTMASK)
-uint32_t VXID_Get(const struct worker *, uint32_t marker);
-extern pthread_key_t witness_key;
-
 /* cache_lck.c */
 
 /* Internal functions, call only through macros below */
@@ -734,10 +753,9 @@ typedef int objiterate_f(void *priv, unsigned flush,
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func, int final);
 
-unsigned ObjGetXID(struct worker *, struct objcore *);
+vxid_t ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *);
 int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
-int ObjGetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t *);
 int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
 
@@ -753,10 +771,10 @@ ssize_t VRB_Iterate(struct worker *, struct vsl_log *, struct req *,
 const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
 /* cache_shmlog.c */
-void VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list va);
-void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+void VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list va);
+void VSL(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, ...)
     v_printflike_(3, 4);
-void VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s);
+void VSLs(enum VSL_tag_e tag, vxid_t vxid, const struct strands *s);
 void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     v_printflike_(3, 4);
@@ -765,6 +783,7 @@ void VSLbs(struct vsl_log *, enum VSL_tag_e tag, const struct strands *s);
 void VSLb_ts(struct vsl_log *, const char *event, vtim_real first,
     vtim_real *pprev, vtim_real now);
 void VSLb_bin(struct vsl_log *, enum VSL_tag_e, ssize_t, const void*);
+int VSL_tag_is_masked(enum VSL_tag_e tag);
 
 static inline void
 VSLb_ts_req(struct req *req, const char *event, vtim_real now)
@@ -843,6 +862,15 @@ const char *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 
+/* WS utility */
+#define WS_TASK_ALLOC_OBJ(ctx, ptr, magic) do {			\
+	ptr = WS_Alloc((ctx)->ws, sizeof *(ptr));		\
+	if ((ptr) == NULL)					\
+		VRT_fail(ctx, "Out of workspace for " #magic);	\
+	else							\
+		INIT_OBJ(ptr, magic);				\
+} while(0)
+
 /* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, vtim_real now, vtim_real *t_origin,
     float *ttl, float *grace, float *keep);
@@ -850,6 +878,8 @@ unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
+const char * RFC2616_Strong_LM(const struct http *hp, struct worker *wrk,
+    struct objcore *oc);
 
 /*
  * We want to cache the most recent timestamp in wrk->lastused to avoid

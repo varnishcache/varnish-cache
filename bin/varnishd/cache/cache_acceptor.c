@@ -105,10 +105,12 @@ static struct sock_opt {
 
 	SOCK_OPT(IPPROTO_TCP, TCP_NODELAY, int)
 
-#ifdef HAVE_TCP_KEEP
+#if defined(HAVE_TCP_KEEP)
 	SOCK_OPT(IPPROTO_TCP, TCP_KEEPIDLE, int)
 	SOCK_OPT(IPPROTO_TCP, TCP_KEEPCNT, int)
 	SOCK_OPT(IPPROTO_TCP, TCP_KEEPINTVL, int)
+#elif defined(HAVE_TCP_KEEPALIVE)
+	SOCK_OPT(IPPROTO_TCP, TCP_KEEPALIVE, int)
 #endif
 
 #undef SOCK_OPT
@@ -206,13 +208,16 @@ vca_sock_opt_init(void)
 		NEW_VAL(SO_RCVTIMEO, so, tv,
 		    VTIM_timeval(cache_param->timeout_idle));
 		SET_VAL(TCP_NODELAY, so, i, enable_tcp_nodelay);
-#ifdef HAVE_TCP_KEEP
+#if defined(HAVE_TCP_KEEP)
 		NEW_VAL(TCP_KEEPIDLE, so, i,
 		    (int)cache_param->tcp_keepalive_time);
 		NEW_VAL(TCP_KEEPCNT, so, i,
 		    (int)cache_param->tcp_keepalive_probes);
 		NEW_VAL(TCP_KEEPINTVL, so, i,
 		    (int)cache_param->tcp_keepalive_intvl);
+#elif defined(HAVE_TCP_KEEPALIVE)
+		NEW_VAL(TCP_KEEPALIVE, so, i,
+		    (int)cache_param->tcp_keepalive_time);
 #endif
 	}
 	return (chg);
@@ -264,7 +269,7 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 {
 	struct conn_heritage *ch;
 	struct sock_opt *so;
-	unsigned vxid;
+	vxid_t vxid;
 	int n, sock;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
@@ -275,7 +280,7 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 		vxid = sp->vxid;
 	} else {
 		sock = ls->sock;
-		vxid = 0;
+		vxid = NO_VXID;
 	}
 
 	for (n = 0; n < n_sock_opts; n++) {
@@ -362,10 +367,11 @@ static void
 vca_mk_tcp(const struct wrk_accept *wa,
     struct sess *sp, char *laddr, char *lport, char *raddr, char *rport)
 {
-	struct suckaddr *sa;
+	struct suckaddr *sa = NULL;
 	ssize_t sz;
 
 	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
+	AN(sa);
 	assert(sz == vsa_suckaddr_len);
 	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
@@ -385,11 +391,12 @@ static void
 vca_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 	   char *raddr, char *rport)
 {
-	struct suckaddr *sa;
+	struct suckaddr *sa = NULL;
 	ssize_t sz;
 
 	(void) wa;
 	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
+	AN(sa);
 	assert(sz == vsa_suckaddr_len);
 	AZ(SES_Set_remote_addr(sp, bogo_ip));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
@@ -554,7 +561,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 				    lport, VTCP_PORTBUFSIZE);
 			}
 
-			VSL(SLT_SessError, 0, "%s %s %s %d %d \"%s\"",
+			VSL(SLT_SessError, NO_VXID, "%s %s %s %d %d \"%s\"",
 			    wa.acceptlsock->name, laddr, lport,
 			    ls->sock, i, VAS_errtxt(i));
 			(void)Pool_TrySumstat(wrk);
@@ -582,7 +589,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 
 	}
 
-	VSL(SLT_Debug, 0, "XXX Accept thread dies %p", ps);
+	VSL(SLT_Debug, NO_VXID, "XXX Accept thread dies %p", ps);
 	FREE_OBJ(ps);
 }
 
@@ -685,7 +692,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 		assert (ls->sock > 0);	// We know where stdin is
 		if (cache_param->tcp_fastopen &&
 		    VTCP_fastopen(ls->sock, cache_param->listen_depth))
-			VSL(SLT_Error, 0,
+			VSL(SLT_Error, NO_VXID,
 			    "Kernel TCP Fast Open: sock=%d, errno=%d %s",
 			    ls->sock, errno, VAS_errtxt(errno));
 		if (listen(ls->sock, cache_param->listen_depth)) {
@@ -701,7 +708,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 		ls->test_heritage = 1;
 		vca_sock_opt_set(ls, NULL);
 		if (cache_param->accept_filter && VTCP_filter_http(ls->sock))
-			VSL(SLT_Error, 0,
+			VSL(SLT_Error, NO_VXID,
 			    "Kernel filtering: sock=%d, errno=%d %s",
 			    ls->sock, errno, VAS_errtxt(errno));
 	}

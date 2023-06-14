@@ -91,7 +91,7 @@ CLI_CMD(VCL_INLINE,
 
 CLI_CMD(VCL_STATE,
 	"vcl.state",
-	"vcl.state <configname> [auto|cold|warm]",
+	"vcl.state <configname> auto|cold|warm",
 	"  Force the state of the named configuration.",
 	"",
 	2, 2
@@ -375,10 +375,10 @@ CLI_CMD(DEBUG_SHUTDOWN_DELAY,
 
 CLI_CMD(DEBUG_XID,
 	"debug.xid",
-	"debug.xid",
-	"Examine or set XID.",
+	"debug.xid [<xid> [<cachesize>]]",
+	"Examine or set XID. <cachesize> defaults to 1.",
 	"",
-	0, 1
+	0, 2
 )
 
 CLI_CMD(DEBUG_SRANDOM,

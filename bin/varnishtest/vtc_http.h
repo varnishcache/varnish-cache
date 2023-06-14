@@ -42,12 +42,17 @@ struct vtc_sess {
 	ssize_t			rcvbuf;
 };
 
+struct h2_window {
+	uint64_t		init;
+	int64_t			size;
+};
+
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x2f02169c
 	int			*sfd;
 	struct vtc_sess		*sess;
-	int			timeout;
+	vtim_dur		timeout;
 	struct vtclog		*vl;
 
 	struct vsb		*vsb;
@@ -85,8 +90,8 @@ struct http {
 	pthread_cond_t          cond;
 	struct hpk_ctx		*encctx;
 	struct hpk_ctx		*decctx;
-	uint64_t		iws;
-	int64_t			ws;
+	struct h2_window	h2_win_self[1];
+	struct h2_window	h2_win_peer[1];
 };
 
 int http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,

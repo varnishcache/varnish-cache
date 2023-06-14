@@ -120,7 +120,7 @@ vcc_include_glob_file(struct vcc *tl, const struct source *src_sp,
 		}
 		break;
 	case GLOB_NOMATCH:
-		VSB_printf(tl->sb, "glob pattern matched no files.\n");
+		VSB_cat(tl->sb, "glob pattern matched no files.\n");
 		tl->err = 1;
 		break;
 	default:
@@ -161,7 +161,7 @@ vcc_lex_include(struct vcc *tl, const struct source *src_sp, struct token *t)
 		} else {
 			VSB_cat(tl->sb, "Unknown include flag:\n");
 			vcc_ErrWhere(tl, t);
-			return(t);
+			return (t);
 		}
 		tok1 = VTAILQ_NEXT(t, src_list);
 		AN(tok1);
@@ -196,7 +196,7 @@ vcc_lex_include(struct vcc *tl, const struct source *src_sp, struct token *t)
 			    "include \"./xxxxx\"; needs absolute "
 			    "filename of including file.\n");
 			vcc_ErrWhere(tl, tok1);
-			return(t);
+			return (t);
 		}
 		vsb = VSB_new_auto();
 		AN(vsb);

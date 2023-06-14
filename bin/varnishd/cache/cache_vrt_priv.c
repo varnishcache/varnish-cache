@@ -38,6 +38,7 @@
 
 #include "cache_varnishd.h"
 #include "vcl.h"
+#include "vcc_interface.h"
 
 struct vrt_priv {
 	unsigned			magic;
@@ -54,6 +55,7 @@ static inline int vrt_priv_dyncmp(const struct vrt_priv *,
 
 VRBT_GENERATE_INSERT_COLOR(vrt_privs, vrt_priv, entry, static)
 VRBT_GENERATE_FIND(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp, static)
+VRBT_GENERATE_INSERT_FINISH(vrt_privs, vrt_priv, entry, static)
 VRBT_GENERATE_INSERT(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp, static)
 VRBT_GENERATE_MINMAX(vrt_privs, vrt_priv, entry, static)
 VRBT_GENERATE_NEXT(vrt_privs, vrt_priv, entry, static)
@@ -279,7 +281,7 @@ VRT_priv_fini(VRT_CTX, const struct vmod_priv *p)
 	VRT_CTX_Assert(ctx);
 
 	m->fini(ctx, p->priv);
-	assert(*ctx->handling == 0 || *ctx->handling == VCL_RET_FAIL);
+	assert(ctx->vpi->handling == 0 || ctx->vpi->handling == VCL_RET_FAIL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -297,8 +299,8 @@ VCL_TaskLeave(VRT_CTX, struct vrt_privs *privs)
 	struct vrt_priv *vp, *vp1;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	assert(*ctx->handling == 0 || *ctx->handling == VCL_RET_FAIL);
+	AN(ctx->vpi);
+	assert(ctx->vpi->handling == 0 || ctx->vpi->handling == VCL_RET_FAIL);
 
 	/*
 	 * NB: We don't bother removing entries as we finish them because it's

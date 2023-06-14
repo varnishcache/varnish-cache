@@ -150,6 +150,7 @@ vcl_acl_disjoint(const struct acl_e *ae1, const struct acl_e *ae2)
 }
 
 VRBT_GENERATE_INSERT_COLOR(acl_tree, acl_e, branch, static)
+VRBT_GENERATE_INSERT_FINISH(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_INSERT(acl_tree, acl_e, branch, vcl_acl_cmp, static)
 VRBT_GENERATE_MINMAX(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_NEXT(acl_tree, acl_e, branch, static)
@@ -164,7 +165,7 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	char t[VTCP_ADDRBUFSIZE + 10];
 	char s[vsa_suckaddr_len];
 	char *r = NULL;
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	unsigned m;
 	int ll, ret = 0;
 
@@ -544,7 +545,7 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 
 	func = VSB_new_auto();
 	AN(func);
-	VSB_printf(func, "match_acl_");
+	VSB_cat(func, "match_acl_");
 	VCC_PrintCName(func, sym->name, NULL);
 	AZ(VSB_finish(func));
 

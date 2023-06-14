@@ -1,0 +1,25 @@
+varnishtest "Test VMOD import from VEXT"
+
+feature topbuild
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 \
+	-arg "-pvmod_path=/nonexistent" \
+	-arg "-E${topbuild}/vmod/.libs/libvmod_std.so" \
+	-vcl+backend {
+		import std;
+
+		sub vcl_deliver {
+			set resp.http.foobar = std.random(10,99);
+		}
+	} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foobar ~ [0-9]
+} -run

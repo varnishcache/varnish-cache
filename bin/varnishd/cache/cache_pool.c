@@ -150,7 +150,7 @@ pool_mkpool(unsigned pool_no)
 
 	VTAILQ_INIT(&pp->idle_queue);
 	VTAILQ_INIT(&pp->poolsocks);
-	for (i = 0; i < TASK_QUEUE__END; i++)
+	for (i = 0; i < TASK_QUEUE_RESERVE; i++)
 		VTAILQ_INIT(&pp->queues[i]);
 	AZ(pthread_cond_init(&pp->herder_cond, NULL));
 	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
@@ -197,7 +197,7 @@ pool_poolherder(void *priv)
 				continue;
 			}
 		} else if (nwq > cache_param->wthread_pools &&
-				DO_DEBUG(DBG_DROP_POOLS)) {
+				EXPERIMENT(EXPERIMENT_DROP_POOLS)) {
 			Lck_Lock(&pool_mtx);
 			pp = VTAILQ_FIRST(&pools);
 			CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
@@ -207,7 +207,7 @@ pool_poolherder(void *priv)
 				nwq--;
 			Lck_Unlock(&pool_mtx);
 			if (!pp->die) {
-				VSL(SLT_Debug, 0, "XXX Kill Pool %p", pp);
+				VSL(SLT_Debug, NO_VXID, "XXX Kill Pool %p", pp);
 				pp->die = 1;
 				VCA_DestroyPool(pp);
 				AZ(pthread_cond_signal(&pp->herder_cond));

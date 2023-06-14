@@ -1,0 +1,107 @@
+varnishtest "test 64 bit vxid rollover"
+
+server s1 {
+	rxreq
+	txresp
+
+	accept
+	rxreq
+	delay 5
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/retry" &&
+		    bereq.retries == 0) {
+			return (retry);
+		}
+	}
+	sub vcl_deliver {
+		if (req.url == "/restart" &&
+		    req.restarts == 0) {
+			return (restart);
+		}
+	}
+
+} -start
+
+process p1 -winsz 100 200 {exec varnishlog -n ${v1_name} -g raw} -start
+process p1 -expect-text 0 0 CLI
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "debug.xid 999999999999998"
+
+logexpect l1 -v v1 -g request -T 2 {
+	expect 0 1	Begin		"req 999999999999998"
+	expect * =	ReqStart
+	expect 0 =	ReqMethod	GET
+	expect 0 =	ReqURL		/
+	expect 0 =	ReqProtocol	HTTP/1.1
+	expect * =	ReqHeader	"Foo: bar"
+	expect * =	Link		"bereq 2 fetch"
+	expect * =	VSL		"timeout"
+	expect * =	End		"synth"
+
+	expect 0 2	Begin		"bereq 1"
+	expect * 2	Link		"bereq 3 retry"
+	expect * =	End
+
+	expect 0 3	Begin		"bereq 2 retry"
+	expect * =	End
+} -start
+
+client c1 {
+	txreq -url "/retry" -hdr "Foo: bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -vsl_catchup
+
+logexpect l1 -wait
+process p1 -expect-text 0 1 "999999999999998 SessClose"
+process p1 -screen_dump
+
+
+################################################################################
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "debug.xid 999999999999997"
+
+logexpect l1 -v v1 -g request {
+	expect 0 999999999999998	Begin		"req 999999999999997"
+	expect * =	ReqStart
+	expect 0 =	ReqMethod	GET
+	expect 0 =	ReqURL		/
+	expect 0 =	ReqProtocol	HTTP/1.1
+	expect * =	ReqHeader	"Foo: bar"
+	expect * =	Link		"bereq 1 fetch"
+	expect * =	Link		"req 2 restart"
+	expect * =	End
+
+	expect 0 1	Begin		"bereq 999999999999998"
+	expect * =	End
+
+	expect 0 2	Begin		"req 999999999999998 restart"
+	expect * =	End
+} -start
+
+client c1 {
+	txreq -url "/restart" -hdr "Foo: bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -vsl_catchup
+logexpect l1 -wait
+
+process p1 -expect-text 0 1 "999999999999998 Link           c req 2 restart"
+process p1 -expect-text 0 1 "999999999999997 SessClose"
+process p1 -screen_dump
+process p1 -stop

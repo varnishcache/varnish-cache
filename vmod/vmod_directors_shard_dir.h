@@ -89,7 +89,7 @@ sharddir_backend(const struct sharddir *shardd, unsigned id)
 #define SHDBG(flag, shardd, ...)					\
 	do {								\
 		if ((shardd)->debug_flags & (flag))			\
-			VSL(SLT_Debug, 0, "vmod_directors: shard: "	\
+			VSL(SLT_Debug, NO_VXID, "vmod_directors: shard: " \
 			    __VA_ARGS__);				\
 	} while (0)
 
@@ -112,6 +112,7 @@ void sharddir_new(struct sharddir **sharddp, const char *vcl_name,
     const struct vmod_directors_shard_param *param);
 void sharddir_set_param(struct sharddir *shardd,
     const struct vmod_directors_shard_param *param);
+void sharddir_release(struct sharddir *shardd);
 void sharddir_delete(struct sharddir **sharddp);
 void sharddir_rdlock(struct sharddir *shardd);
 void sharddir_wrlock(struct sharddir *shardd);
@@ -121,5 +122,6 @@ VCL_BACKEND sharddir_pick_be(VRT_CTX, struct sharddir *, uint32_t, VCL_INT,
    VCL_REAL, VCL_BOOL, VCL_ENUM healthy);
 
 /* in shard_cfg.c */
+void shardcfg_backend_clear(struct sharddir *shardd);
 void shardcfg_delete(const struct sharddir *shardd);
 VCL_DURATION shardcfg_get_rampup(const struct sharddir *shardd, unsigned host);

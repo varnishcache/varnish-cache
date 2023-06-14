@@ -75,7 +75,7 @@ vwp_extend_pollspace(struct vwp *vwp)
 	else
 		inc = (1<<16);
 
-	VSL(SLT_Debug, 0, "Acceptor poll space increased by %zu to %zu",
+	VSL(SLT_Debug, NO_VXID, "Acceptor poll space increased by %zu to %zu",
 	    inc, vwp->npoll + inc);
 
 	vwp->pollfd = realloc(vwp->pollfd,
@@ -98,7 +98,7 @@ vwp_add(struct vwp *vwp, struct waited *wp)
 {
 
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	VSL(SLT_Debug, wp->fd, "ADD");
+	VSL(SLT_Debug, NO_VXID, "vwp: ADD %d", wp->fd);
 	CHECK_OBJ_NOTNULL(vwp, VWP_MAGIC);
 	if (vwp->hpoll == vwp->npoll)
 		vwp_extend_pollspace(vwp);

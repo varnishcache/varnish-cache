@@ -60,6 +60,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	enum vfp_status vfps = VFP_ERROR;
 	const struct stevedore *stv;
 	ssize_t req_bodybytes = 0;
+	unsigned hint;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -77,7 +78,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->storage = NULL;
 
-	if (STV_NewObject(req->wrk, req->body_oc, stv, 8) == 0) {
+	hint = maxsize > 0 ? maxsize : 1;
+	if (STV_NewObject(req->wrk, req->body_oc, stv, hint) == 0) {
 		req->req_body_status = BS_ERROR;
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
@@ -111,7 +113,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 			(void)VFP_Error(vfc, "Request body too big to cache");
 			break;
 		}
-		l = yet;
+		/* NB: only attempt a full allocation when caching. */
+		l = maxsize > 0 ? yet : 0;
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK)
 			break;
 		AZ(vfc->failed);
@@ -122,6 +125,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 			req_bodybytes += l;
 			if (yet >= l)
 				yet -= l;
+			else if (yet > 0)
+				yet = 0;
 			if (func != NULL) {
 				r = func(priv, 1, ptr, l);
 				if (r)
@@ -254,6 +259,8 @@ VRB_Ignore(struct req *req)
 	if (req->req_body_status->avail > 0)
 		(void)VRB_Iterate(req->wrk, req->vsl, req,
 		    httpq_req_body_discard, NULL);
+	if (req->req_body_status == BS_ERROR)
+		req->doclose = SC_RX_BODY;
 	return (0);
 }
 

@@ -1,5 +1,7 @@
 varnishtest "ESI include"
 
+feature cmd "command -v diff"
+
 server s1 {
 	rxreq
 	expect req.http.esi0 == "foo"
@@ -33,12 +35,15 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_deliver {
 		set resp.http.can_esi = obj.can_esi;
+
+		# make ReqAcct deterministic
+		unset resp.http.via;
 	}
 } -start
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001   Begin   "^req .* rxreq"
-	expect * =	ReqAcct	"^29 0 29 202 75 277$"
+	expect * =	ReqAcct	"^29 0 29 170 75 245$"
 	expect 0 =      End
 } -start
 
@@ -61,7 +66,7 @@ logexpect l4 -v v1 -g request {
 logexpect l5 -v v1 -g request {
 	expect * 1005   Begin   "^req .* rxreq"
 	# Header bytes is 5 larger than in l1 due to two item X-Varnish hdr
-	expect * =	ReqAcct	"^29 0 29 207 75 282$"
+	expect * =	ReqAcct	"^29 0 29 175 75 250$"
 	expect 0 =      End
 } -start
 

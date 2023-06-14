@@ -1,6 +1,6 @@
 AC_PREREQ(2.69)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
-Copyright (c) 2006-2021 Varnish Software])
+Copyright (c) 2006-2023 Varnish Software])
 AC_REVISION([$Id$])
 AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
@@ -8,6 +8,13 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_USE_SYSTEM_EXTENSIONS
+
+PACKAGE_BRANCH=${PACKAGE_VERSION%.*}
+AC_SUBST([PACKAGE_BRANCH])
+AC_DEFINE_UNQUOTED([PACKAGE_BRANCH], ["$PACKAGE_BRANCH"],
+	[Define the branch of this package.])
+
+CFLAGS="$CFLAGS -DZ_PREFIX"
 
 # save command line CFLAGS for use in VCC_CC (to pass through things like -m64)
 # and make distcheck configure
@@ -72,16 +79,9 @@ if test "x$RST2HTML" = "xno"; then
      [rst2html not found - (Weird, we found rst2man?!)])
 fi
 
-AC_ARG_WITH([dot],
-  AS_HELP_STRING([--with-dot=PATH],
-		 [Location of the dot tool from graphviz (auto)]),
-  [DOT="$withval"],
-  [AC_CHECK_PROGS(DOT, [dot], [no])
-   if test "x$DOT" = "xno"; then
-     AC_MSG_WARN(
-       [dot not found - build will fail if svg files are out of date.])
-   fi])
-AM_CONDITIONAL(HAVE_DOT,[test "x$DOT" != "xno"])
+AC_ARG_VAR([DOT], [The dot program from graphviz to build SVG graphics])
+AM_MISSING_PROG([DOT], [dot])
+AC_CHECK_PROGS([DOT], [dot])
 
 # Define VMOD flags
 _VARNISH_VMOD_LDFLAGS
@@ -242,34 +242,6 @@ LIBS="${save_LIBS}"
 
 AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
 
-# Support for visibility attribute
-save_CFLAGS="${CFLAGS}"
-if test "$SUNCC" = "yes" ; then
-	CFLAGS="${CFLAGS} -errwarn=%all,no%E_EMPTY_TRANSLATION_UNIT"
-else
-	CFLAGS="${CFLAGS} -Werror"
-fi
-
-AC_CACHE_CHECK([whether we have support for visibility attributes],
-	[ac_cv_have_viz],
-	[AC_RUN_IFELSE(
-		[AC_LANG_PROGRAM([[
-			#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33 || defined(__SUNPRO_C))
-			#  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
-			#else
-			#  define ZLIB_INTERNAL
-			#endif
-			int ZLIB_INTERNAL foo;
-		]],[])],
-	[ac_cv_have_viz=yes],
-	[ac_cv_have_viz=no])
-])
-if test "$ac_cv_have_viz" = no; then
-	libvgz_extra_cflags="-DNO_VIZ"
-	AC_SUBST(libvgz_extra_cflags)
-fi
-CFLAGS="${save_CFLAGS}"
-
 AC_ARG_ENABLE(ubsan,
 	AS_HELP_STRING([--enable-ubsan],
 		[enable undefined behavior sanitizer (default is NO)]),
@@ -316,7 +288,7 @@ if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
 	AC_DEFINE([ENABLE_SANITIZER], [1],
 		[Define to 1 if any sanitizer is enabled.])
 	SAN_FLAGS="$ASAN_FLAGS $UBSAN_FLAGS $TSAN_FLAGS $MSAN_FLAGS"
-	SAN_CFLAGS="$SAN_FLAGS -fPIC -fPIE -fno-omit-frame-pointer"
+	SAN_CFLAGS="$SAN_FLAGS -fPIC -fPIE -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"
 	SAN_LDFLAGS=
 	save_CFLAGS=$CFLAGS
 	CFLAGS="${CFLAGS} -Werror=unused-command-line-argument"
@@ -589,6 +561,32 @@ return (0);
   ])
 if test "$ac_cv_have_tcp_keep" = yes; then
    AC_DEFINE([HAVE_TCP_KEEP], [1], [Define if OS supports TCP_KEEP* socket options])
+else
+   # Check TCP_KEEPALIVE on macOs which uses seconds as idle time unit like TCP_KEEPIDLE
+   AC_CACHE_CHECK([for TCP_KEEPALIVE socket option],
+     [ac_cv_have_tcp_keepalive],
+     [AC_RUN_IFELSE(
+     [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <errno.h>
+    ]],[[
+int s = socket(AF_INET, SOCK_STREAM, 0);
+int i = 5;
+if (s < 0)
+  return (1);
+if (setsockopt(s, IPPROTO_TCP, TCP_KEEPALIVE, &i, sizeof i))
+  return (1);
+return 0;
+    ]])],
+    [ac_cv_have_tcp_keepalive=yes],
+    [ac_cv_have_tcp_keepalive=no])
+  ])
+  if test "$ac_cv_have_tcp_keepalive" = yes; then
+     AC_DEFINE([HAVE_TCP_KEEPALIVE], [1], [Define if OS supports TCP_KEEPALIVE socket option])
+  fi
 fi
 LIBS="${save_LIBS}"
 
@@ -639,7 +637,8 @@ AC_SUBST(pkgsysconfdir)
 
 # VMOD variables
 AC_SUBST(vmoddir, [$\(pkglibdir\)/vmods])
-AC_SUBST(vmodtool, [$\(top_srcdir\)/lib/libvcc/vmodtool.py])
+AC_SUBST(VMODTOOL, [$\(top_srcdir\)/lib/libvcc/vmodtool.py])
+AC_SUBST(VSCTOOL, [$\(top_srcdir\)/lib/libvsc/vsctool.py])
 
 # Check for linker script support
 gl_LD_VERSION_SCRIPT
@@ -694,6 +693,28 @@ DEVELOPER_CFLAGS=`$PYTHON $srcdir/wflags.py`
 if test $? -ne 0 ; then
   AC_MSG_ERROR([wflags.py failure])
 fi
+
+# zlib-specific flags
+AX_CHECK_COMPILE_FLAG([-Wno-error=strict-prototypes],
+	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=strict-prototypes"])
+
+dnl https://github.com/madler/zlib/issues/633
+AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-non-prototype],
+	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=deprecated-non-prototype"])
+
+AC_SUBST(VGZ_CFLAGS)
+
+# Support for visibility attribute (zlib)
+AC_CACHE_CHECK([whether we have support for visibility attributes],
+	[ac_cv_have_viz],
+	[AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([[
+			int __attribute__((visibility ("hidden"))) foo;
+		]],[])],
+	[AC_DEFINE([HAVE_HIDDEN], [1],
+		[Define to 1 if visibility attribute hidden is available.])
+	])
+])
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
@@ -803,22 +824,40 @@ if test "$ac_cv_env_VCC_CC_set" = "set"; then
 	VCC_CC="$ac_cv_env_VCC_CC_value"
 else
 	case $target in
+	*-*-darwin*)
+		VCC_CC="cc $OCFLAGS"
+		;;
+	*)
+		VCC_CC="$PTHREAD_CC $OCFLAGS"
+		;;
+	esac
+
+	save_CFLAGS="$CFLAGS"
+	save_CC="$CC"
+	CFLAGS=
+	CC="$VCC_CC"
+	AX_CHECK_COMPILE_FLAG(
+		[-fno-var-tracking-assignments],
+		[VCC_CC="$VCC_CC -fno-var-tracking-assignments"])
+	CFLAGS="$save_CFLAGS"
+	CC="$save_CC"
+
+	case $target in
 	*-*-solaris*)
 		case $PTHREAD_CC in
 		*gcc*)
-			VCC_CC="$PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
-			break
+			VCC_CC="exec $VCC_CC %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
 			;;
 		*cc)
-			VCC_CC="$PTHREAD_CC $OCFLAGS %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			VCC_CC="exec $VCC_CC %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
 			;;
 		esac
 		;;
 	*-*-darwin*)
-		VCC_CC="exec cc $OCFLAGS %w -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+		VCC_CC="exec $VCC_CC %w -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
 		;;
 	*)
-		VCC_CC="exec $PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
+		VCC_CC="exec $VCC_CC %w $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
 		;;
 	esac
 fi
@@ -843,6 +882,20 @@ VMOD_TESTS="$(cd $srcdir/vmod && echo tests/*.vtc)"
 AC_SUBST(VMOD_TESTS)
 AM_SUBST_NOTMAKE(VMOD_TESTS)
 
+AC_ARG_WITH([contrib],
+	[AS_HELP_STRING([--with-contrib],
+		[Build Varnish with external contributions.])])
+
+AM_CONDITIONAL([WITH_CONTRIB], [test "$with_contrib" = yes])
+CONTRIB_TESTS="$(cd $srcdir/contrib && echo tests/*.vtc)"
+AC_SUBST(CONTRIB_TESTS)
+AM_SUBST_NOTMAKE(CONTRIB_TESTS)
+
+AM_COND_IF([WITH_CONTRIB], [
+	AC_DEFINE([WITH_CONTRIB], [1],
+		[Define to 1 when Varnish is built with contributions.])
+])
+
 # Make sure this include dir exists
 AC_CONFIG_COMMANDS([mkdir], [$MKDIR_P doc/sphinx/include])
 
@@ -858,6 +911,7 @@ AC_CONFIG_FILES([
     bin/varnishhist/Makefile
     bin/varnishtest/Makefile
     bin/varnishncsa/Makefile
+    contrib/Makefile
     doc/Makefile
     doc/graphviz/Makefile
     doc/sphinx/Makefile
@@ -875,4 +929,5 @@ AC_CONFIG_FILES([
     varnishapi-uninstalled.pc
     vmod/Makefile
 ])
+
 AC_OUTPUT

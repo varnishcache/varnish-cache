@@ -133,7 +133,7 @@ barrier_sock_thread(void *priv)
 	struct vtclog *vl;
 	const char *err;
 	char buf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const struct suckaddr *sua;
 
 	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 	int i, sock, *conns;

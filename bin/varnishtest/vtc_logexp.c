@@ -45,8 +45,9 @@
  *                         expect <skip> <vxid> <tag> <regex>
  *                         fail add <vxid> <tag> <regex>
  *                         fail clear
+ *                         abort
  *                         ...
- *                 } [-start|-wait]
+ *                 } [-start|-wait|-run]
  *
  * And once declared, you can start them, or wait on them::
  *
@@ -84,6 +85,9 @@
  *
  * \-wait
  *         Wait for the logexpect thread to finish
+ *
+ * \-run
+ *        Equivalent to "-start -wait".
  *
  * VSL arguments (similar to the varnishlog options):
  *
@@ -139,6 +143,11 @@
  *      fail clear
  *
  * .. XXX can we come up with a better solution which is still safe?
+ *
+ * abort specification:
+ *
+ * abort(3) varnishtest, intended to help debugging of the VSL client library
+ * itself.
  */
 
 #include "config.h"
@@ -162,6 +171,7 @@
 #define LE_SEEN  (-4)
 #define LE_FAIL  (-5)
 #define LE_CLEAR (-6)	// clear fail list
+#define LE_ABORT (-7)
 
 struct logexp_test {
 	unsigned			magic;
@@ -170,7 +180,7 @@ struct logexp_test {
 	VTAILQ_ENTRY(logexp_test)	faillist;
 
 	struct vsb			*str;
-	int				vxid;
+	int64_t				vxid;
 	int				tag;
 	vre_t				*vre;
 	int				skip_max;
@@ -191,7 +201,7 @@ struct logexp {
 
 	struct logexp_test		*test;
 	int				skip_cnt;
-	int				vxid_last;
+	int64_t				vxid_last;
 	int				tag_last;
 
 	struct tests_head		fail;
@@ -213,10 +223,12 @@ static VTAILQ_HEAD(, logexp)		logexps =
 
 static cmd_f cmd_logexp_expect;
 static cmd_f cmd_logexp_fail;
+static cmd_f cmd_logexp_abort;
 
 static const struct cmds logexp_cmds[] = {
 	{ "expect",		cmd_logexp_expect },
 	{ "fail",		cmd_logexp_fail },
+	{ "abort",		cmd_logexp_abort },
 	{ NULL,			NULL },
 };
 
@@ -354,6 +366,9 @@ logexp_next(struct logexp *le)
 		VTAILQ_INSERT_TAIL(&le->fail, le->test, faillist);
 		logexp_next(le);
 		return;
+	case LE_ABORT:
+		abort();
+		NEEDLESS(return);
 	default:
 		vtc_log(le->vl, 3, "test | %s", VSB_data(le->test->str));
 	}
@@ -367,7 +382,7 @@ enum le_match_e {
 
 static enum le_match_e
 logexp_match(const struct logexp *le, struct logexp_test *test,
-    const char *data, int vxid, int tag, int type, int len)
+    const char *data, int64_t vxid, int tag, int type, int len)
 {
 	const char *legend;
 	int ok = 1, skip = 0, alt, fail, vxid_ok = 0;
@@ -431,8 +446,8 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		legend = "err";
 
 	if (legend != NULL)
-		vtc_log(le->vl, 4, "%-5s| %10u %-15s %c %.*s",
-		    legend, vxid, VSL_tags[tag], type, len,
+		vtc_log(le->vl, 4, "%-5s| %10ju %-15s %c %.*s",
+		    legend, (intmax_t)vxid, VSL_tags[tag], type, len,
 		    data);
 
 	if (ok) {
@@ -454,7 +469,7 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 
 static enum le_match_e
 logexp_failchk(const struct logexp *le,
-    const char *data, int vxid, int tag, int type, int len)
+    const char *data, int64_t vxid, int tag, int type, int len)
 {
 	struct logexp_test *test;
 	static enum le_match_e r;
@@ -485,7 +500,8 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	struct VSL_transaction *t;
 	int i;
 	enum le_match_e r;
-	int vxid, tag, type, len;
+	int64_t vxid;
+	int tag, type, len;
 	const char *data;
 
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
@@ -635,7 +651,8 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 {
 	vre_t *vre;
 	struct vsb vsb[1];
-	int err, pos, tag, vxid;
+	int64_t vxid;
+	int err, pos, tag;
 	struct logexp_test *test;
 	char *end, errbuf[VRE_ERROR_LEN];
 
@@ -644,7 +661,7 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 	else if (!strcmp(av[2], "="))
 		vxid = LE_LAST;
 	else {
-		vxid = (int)strtol(av[2], &end, 10);
+		vxid = strtoll(av[2], &end, 10);
 		if (*end != '\0' || vxid < 0)
 			vtc_fatal(vl, "Not a positive integer: '%s'", av[2]);
 	}
@@ -743,6 +760,18 @@ cmd_logexp_fail(CMD_ARGS)
 		vtc_fatal(vl, "Syntax error");
 
 	cmd_logexp_common(le, vl, LE_FAIL, av);
+}
+
+/* aid vsl debugging */
+static void
+cmd_logexp_abort(CMD_ARGS)
+{
+
+	struct logexp *le;
+
+	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
+
+	cmd_logexp_common(le, vl, LE_ABORT, av);
 }
 
 static void

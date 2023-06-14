@@ -63,7 +63,7 @@ PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
 }
 
 void
-VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+VSL(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, ...)
 {
 	(void)tag;
 	(void)vxid;

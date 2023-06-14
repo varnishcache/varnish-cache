@@ -50,7 +50,9 @@ varnish v1 -vcl {
 				set resp.body += "world";
 			}
 		}
-		if (req.url ~ "blob") {
+		if (req.url ~ "blob/literal") {
+			set resp.body = :aGVsbG93b3JsZA==:;
+		} elif (req.url ~ "blob") {
 			set resp.body = blob.decode(HEX, encoded="1100");
 			if (req.url ~ "reset") {
 				set resp.body = blob.decode(HEX, encoded="221100");
@@ -95,4 +97,8 @@ client c2 {
 	txreq -url "/blob/add"
 	rxresp
 	expect resp.bodylen == 5
+
+	txreq -url "/blob/literal"
+	rxresp
+	expect resp.body == helloworld
 } -run

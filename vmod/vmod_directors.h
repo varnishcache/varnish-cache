@@ -46,6 +46,7 @@ struct vdir {
 
 void vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
     const struct vdi_methods *, void *priv);
+void vdir_release(struct vdir *vd);
 void vdir_delete(struct vdir **vdp);
 void vdir_rdlock(struct vdir *vd);
 void vdir_wrlock(struct vdir *vd);

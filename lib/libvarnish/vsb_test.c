@@ -135,34 +135,34 @@ main(int argc, char *argv[])
 		VSB_clear(vsbo);
 		VSB_printf(vsbo, "0x%02x: ", tc->how);
 		VSB_quote(vsbo, tc->in, tc->inlen, VSB_QUOTE_HEX);
-		VSB_printf(vsbo, " -> ");
+		VSB_cat(vsbo, " -> ");
 		VSB_quote(vsbo, VSB_data(vsb), -1, VSB_QUOTE_HEX);
-		VSB_printf(vsbo, " (");
+		VSB_cat(vsbo, " (");
 		VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_ESCHEX);
-		VSB_printf(vsbo, ")");
+		VSB_cat(vsbo, ")");
 		if (strcmp(VSB_data(vsb), tc->out)) {
-			VSB_printf(vsbo, "\nShould have been:\n\t");
+			VSB_cat(vsbo, "\nShould have been:\n\t");
 			VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_HEX);
-			VSB_printf(vsbo, "\nThat's:\n\t");
+			VSB_cat(vsbo, "\nThat's:\n\t");
 			VSB_quote(vsbo, VSB_data(vsb), -1, VSB_QUOTE_ESCHEX);
-			VSB_printf(vsbo, "\nvs:\n\t");
+			VSB_cat(vsbo, "\nvs:\n\t");
 			VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_ESCHEX);
 			VSB_printf(vsbo, "\nFlags 0x%02x = ", tc->how);
 			if (!tc->how)
-				VSB_printf(vsbo, "\n\t0");
+				VSB_cat(vsbo, "\n\t0");
 			if (tc->how & VSB_QUOTE_NONL)
-				VSB_printf(vsbo, "\n\tVSB_QUOTE_NONL");
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_NONL");
 			if (tc->how & VSB_QUOTE_JSON)
-				VSB_printf(vsbo, "\n\tVSB_QUOTE_JSON");
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_JSON");
 			if (tc->how & VSB_QUOTE_HEX)
-				VSB_printf(vsbo, "\n\tVSB_QUOTE_HEX");
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_HEX");
 			if (tc->how & VSB_QUOTE_CSTR)
-				VSB_printf(vsbo, "\n\tVSB_QUOTE_CSTR");
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_CSTR");
 			if (tc->how & VSB_QUOTE_UNSAFE)
-				VSB_printf(vsbo, "\n\tVSB_QUOTE_UNSAFE");
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_UNSAFE");
 			if (tc->how & VSB_QUOTE_ESCHEX)
-				VSB_printf(vsbo, "\n\tVSB_QUOTE_ESCHEX");
-			VSB_printf(vsbo, "\n\n");
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_ESCHEX");
+			VSB_cat(vsbo, "\n\n");
 			err = 1;
 		}
 		AZ(VSB_finish(vsbo));

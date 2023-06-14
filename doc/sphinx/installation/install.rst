@@ -27,17 +27,6 @@ is highly operating system specific:
 	install_openbsd
 	install_redhat
 
-Cloud images of Varnish
-=======================
-
-.. toctree::
-	:maxdepth: 2
-
-	cloud_debian
-	cloud_redhat
-	cloud_ubuntu
-
-
 Compiling Varnish from source
 =============================
 

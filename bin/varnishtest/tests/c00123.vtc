@@ -1,0 +1,75 @@
+varnishtest "Low req.body streaming pressure on storage"
+
+server s0 {
+	rxreq
+	txresp -status 200
+	expect req.bodylen == 100000
+} -dispatch
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		set req.storage = storage.s0;
+		if (req.http.cache) {
+			std.cache_req_body(100000b);
+		}
+	}
+} -start
+
+# explicit setting to be robust against changes to the default value
+varnish v1 -cliok "param.set fetch_chunksize 16k"
+
+# chunked req.body streaming uses approximately one fetch_chunksize'd chunk
+client c1 {
+	txreq -req PUT -hdr "Transfer-encoding: chunked"
+	chunkedlen 100000
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+} -run
+
+# in practice a little over fetch_chunksize is allocated
+varnish v1 -expect SM?.s0.c_bytes < 20000
+
+# reset s0 counters
+varnish v1 -cliok stop
+varnish v1 -cliok start
+varnish v1 -expect SM?.s0.c_bytes == 0
+
+# content-length req.body streaming also needs one chunk
+client c2 {
+	txreq -req PUT -bodylen 100000
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect SM?.s0.c_bytes < 20000
+
+# reset s0 counters
+varnish v1 -cliok stop
+varnish v1 -cliok start
+
+# chunked req.body caching allocates storage for the entire body
+client c3 {
+	txreq -req PUT -hdr "cache: body" -hdr "Transfer-encoding: chunked"
+	chunkedlen 100000
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect SM?.s0.c_bytes > 100000
+
+# reset s0 counters
+varnish v1 -cliok stop
+varnish v1 -cliok start
+
+# content-length req.body caching allocates storage for the entire body
+client c4 {
+	txreq -req PUT -hdr "cache: body" -bodylen 100000
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect SM?.s0.c_bytes > 100000

@@ -88,8 +88,12 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
 
 	wrk->strangelove = cache_param->nuke_limit;
 	AN(stv->allocobj);
-	if (stv->allocobj(wrk, stv, oc, wsl) == 0)
+	if (stv->allocobj(wrk, stv, oc, wsl) == 0) {
+		VSLb(wrk->vsl, SLT_Error,
+		    "Failed to create object object from %s %s",
+		    stv->name, stv->ident);
 		return (0);
+	}
 	oc->oa_present = 0;
 	wrk->stats->n_object++;
 	VSLb(wrk->vsl, SLT_Storage, "%s %s",

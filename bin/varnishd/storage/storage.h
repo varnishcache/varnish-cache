@@ -78,51 +78,53 @@ typedef void sml_free_f(struct storage *);
 /*--------------------------------------------------------------------*/
 
 struct stevedore {
-	unsigned		magic;
-#define STEVEDORE_MAGIC		0x4baf43db
-	const char		*name;
+	unsigned			magic;
+#define STEVEDORE_MAGIC			0x4baf43db
+	const char			*name;
 
 	/* Called in MGT process */
-	storage_init_f		*init;
+	storage_init_f			*init;
 
 	/* Called in cache process
 	 * only allocobj is required, other callbacks are optional
 	 */
-	storage_open_f		*open;
-	storage_close_f		*close;
-	storage_allocobj_f	*allocobj;
-	storage_baninfo_f	*baninfo;
-	storage_banexport_f	*banexport;
-	storage_panic_f		*panic;
-	storage_allocbuf_f	*allocbuf;
-	storage_freebuf_f	*freebuf;
+	storage_open_f			*open;
+	storage_close_f			*close;
+	storage_allocobj_f		*allocobj;
+	storage_baninfo_f		*baninfo;
+	storage_banexport_f		*banexport;
+	storage_panic_f			*panic;
+	storage_allocbuf_f		*allocbuf;
+	storage_freebuf_f		*freebuf;
 
 	/* Only if SML is used */
-	sml_alloc_f		*sml_alloc;
-	sml_free_f		*sml_free;
-	sml_getobj_f		*sml_getobj;
+	sml_alloc_f			*sml_alloc;
+	sml_free_f			*sml_free;
+	sml_getobj_f			*sml_getobj;
 
-	const struct obj_methods
-				*methods;
+	const struct obj_methods	*methods;
 
 	/* Only if LRU is used */
-	struct lru		*lru;
+	struct lru			*lru;
 
 #define VRTSTVVAR(nm, vtype, ctype, dval) stv_var_##nm *var_##nm;
 #include "tbl/vrt_stv_var.h"
 
 	/* private fields for the stevedore */
-	void			*priv;
+	void				*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;
-	const char		*ident;
-	const char		*vclname;
+	char				**av;
+	const char			*ident;
+	const char			*vclname;
 };
 
 extern struct stevedore *stv_transient;
 extern struct stevedore *stv_h2_rxbuf;
 
 /*--------------------------------------------------------------------*/
+
+void STV_Register(const struct stevedore *, const char *altname);
 
 #define STV_Foreach(arg) for (arg = NULL; STV__iter(&arg);)
 

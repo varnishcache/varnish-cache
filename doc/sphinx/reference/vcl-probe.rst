@@ -95,6 +95,19 @@ The expected HTTP status, defaults to ``200``::
 
     .expected_response = 418;
 
+Attribute ``.expect_close``
+---------------------------
+
+Whether or not to expect the backend to close the underlying connection.
+
+Accepts ``true`` or ``false``, defaults to ``true``::
+
+    .expect_close = false;
+
+Warning: when the backend does not close the connection,
+setting ``expect_close`` to ``false`` makes probe tasks wait until
+they time out before inspecting the response.
+
 Attribute ``.timeout``
 ----------------------
 

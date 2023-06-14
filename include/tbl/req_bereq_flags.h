@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014-2015 Varnish Software AS
+ * Copyright (c) 2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -31,19 +31,10 @@
 
 /*lint -save -e525 -e539 */
 
-/*
- * filters: whether this flag determines beresp.filters default
- *
- * lower, vcl_r, vcl_beresp_r, vcl_beresp_w, filters, doc */
-BO_FLAG(do_esi,		0, 1, 1, 1, "")
-BO_FLAG(do_gzip,	0, 1, 1, 1, "")
-BO_FLAG(do_gunzip,	0, 1, 1, 1, "")
-BO_FLAG(do_stream,	0, 1, 1, 0, "")
-BO_FLAG(uncacheable,	0, 0, 0, 0, "")
-BO_FLAG(was_304,	0, 1, 0, 0, "")
-BO_FLAG(is_bgfetch,	1, 0, 0, 0, "")
-BO_FLAG(is_hitmiss,	1, 0, 0, 0, "")
-BO_FLAG(is_hitpass,	1, 0, 0, 0, "")
-#undef BO_FLAG
+/* lower, vcl_r, vcl_w, doc */
+REQ_BEREQ_FLAG(is_hitmiss,		1, 0, "")
+REQ_BEREQ_FLAG(is_hitpass,		1, 0, "")
+REQ_BEREQ_FLAG(trace,			1, 0, "")
+#undef REQ_BEREQ_FLAG
 
 /*lint -restore */

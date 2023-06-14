@@ -40,7 +40,7 @@ enum vfp_status {
 	VFP_ERROR = -1,
 	VFP_OK = 0,
 	VFP_END = 1,
-	VFP_NULL = 2,
+	VFP_NULL = 2,	// signal bypass, never returned by VFP_Suck()
 };
 
 typedef enum vfp_status vfp_init_f(VRT_CTX, struct vfp_ctx *,
@@ -62,8 +62,8 @@ struct vfp_entry {
 #define VFP_ENTRY_MAGIC		0xbe32a027
 	enum vfp_status		closed;
 	const struct vfp	*vfp;
-	void			*priv1;
-	intptr_t		priv2;
+	void			*priv1;	// XXX ambiguous with priv1 in struct vfp
+	ssize_t			priv2;
 	VTAILQ_ENTRY(vfp_entry)	list;
 	uint64_t		calls;
 	uint64_t		bytes_out;
@@ -93,9 +93,8 @@ enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     v_printflike_(2, 3);
 
-/* These two deprecated per 2021-12-01, add v_deprecated_ after next major */
-void VRT_AddVFP(VRT_CTX, const struct vfp *);
-void VRT_RemoveVFP(VRT_CTX, const struct vfp *);
+void v_deprecated_ VRT_AddVFP(VRT_CTX, const struct vfp *);
+void v_deprecated_ VRT_RemoveVFP(VRT_CTX, const struct vfp *);
 
 /* Deliver processors ------------------------------------------------*/
 
@@ -123,6 +122,7 @@ struct vdp {
 	vdp_init_f		*init;
 	vdp_bytes_f		*bytes;
 	vdp_fini_f		*fini;
+	const void		*priv1;
 };
 
 struct vdp_entry {
@@ -152,9 +152,8 @@ struct vdp_ctx {
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *, ssize_t);
 
-/* These two deprecated per 2021-12-01, add v_deprecated_ after next major */
-void VRT_AddVDP(VRT_CTX, const struct vdp *);
-void VRT_RemoveVDP(VRT_CTX, const struct vdp *);
+void v_deprecated_ VRT_AddVDP(VRT_CTX, const struct vdp *);
+void v_deprecated_ VRT_RemoveVDP(VRT_CTX, const struct vdp *);
 
 /* Registry functions -------------------------------------------------*/
 const char *VRT_AddFilter(VRT_CTX, const struct vfp *, const struct vdp *);

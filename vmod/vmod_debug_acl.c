@@ -131,9 +131,12 @@ setup_sweep(VRT_CTX, struct acl_sweep *asw, VCL_IP ip0, VCL_IP ip1,
 	}
 	asw->this = asw->reset;
 
-	asw->probe = VSA_Clone(ip0);
+	/* Dont try this at home */
+	asw->probe = malloc(vsa_suckaddr_len);
+	AN(asw->probe);
+	memcpy(asw->probe, ip0, vsa_suckaddr_len);
 	(void)VSA_GetPtr(asw->probe, &ptr);
-	asw->probe_p = TRUST_ME(ptr);
+	asw->probe_p = ((uint8_t*)(asw->probe)) + (ptr - (uint8_t*)asw->probe);
 
 	asw->step = step;
 
@@ -183,7 +186,7 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 	AN(ip1);
 	assert(step > 0);
 	if (setup_sweep(ctx, asw, ip0, ip1, step))
-		return(NULL);
+		return (NULL);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -200,7 +203,7 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 		VSB_putc(vsb, "-X"[i]);
 		if ((j & 0x3f) == 0x3f) {
 			AZ(VSB_finish(vsb));
-			VSLb(ctx->vsl, SLT_Debug, "%s", VSB_data(vsb));
+			VSLbs(ctx->vsl, SLT_Debug, TOSTRAND(VSB_data(vsb)));
 			sz =VSB_len(vsb);
 			assert (sz > 0);
 			VSHA256_Update(vsha, VSB_data(vsb), sz);
@@ -211,7 +214,7 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 	}
 	if (VSB_len(vsb)) {
 		AZ(VSB_finish(vsb));
-		VSLb(ctx->vsl, SLT_Debug, "%s", VSB_data(vsb));
+		VSLbs(ctx->vsl, SLT_Debug, TOSTRAND(VSB_data(vsb)));
 		sz =VSB_len(vsb);
 		assert (sz > 0);
 		VSHA256_Update(vsha, VSB_data(vsb), sz);
@@ -247,7 +250,7 @@ xyzzy_time_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1,
 	assert(turnus > 0);
 
 	if (setup_sweep(ctx, asw, ip0, ip1, step))
-		return(-1);
+		return (-1);
 	do {
 		(void)VRT_acl_match(ctx, acl, asw->probe);
 	} while (step_sweep(asw) <= 0);

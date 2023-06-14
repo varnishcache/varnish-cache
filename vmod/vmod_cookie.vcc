@@ -67,9 +67,9 @@ Delete ``cookiename`` from internal vmod storage if it exists.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2");
 	    cookie.delete("cookie2");
-	    # get_string() will now yield "cookie1: value1";
+	    # get_string() will now yield "cookie1=value1"
 	}
 
 $Function VOID filter(PRIV_TASK, STRING filterstring)
@@ -80,10 +80,9 @@ comma-separated argument cookienames.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.filter("cookie1,cookie2");
-	    # get_string() will now yield
-	    # "cookie3: value3";
+	    # get_string() will now yield "cookie3=value3"
 	}
 
 
@@ -95,10 +94,9 @@ regular expression ``expression``.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.filter_re("^cookie[12]$");
-	    # get_string() will now yield
-	    # "cookie3: value3";
+	    # get_string() will now yield "cookie3=value3"
 	}
 
 $Function VOID keep(PRIV_TASK, STRING filterstring)
@@ -109,10 +107,9 @@ comma-separated argument cookienames.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.keep("cookie1,cookie2");
-	    # get_string() will now yield
-	    # "cookie1: value1; cookie2: value2;";
+	    # get_string() will now yield "cookie1=value1; cookie2=value2"
 	}
 
 $Function VOID keep_re(PRIV_TASK, REGEX expression)
@@ -123,16 +120,15 @@ expression ``expression``.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.keep_re("^cookie[12]$");
-	    # get_string() will now yield
-	    # "cookie1: value1; cookie2: value2;";
+	    # get_string() will now yield "cookie1=value1; cookie2=value2"
 	}
 
 
 
 
-$Function STRING format_rfc1123(TIME now, DURATION timedelta)
+$Function STRING format_date(TIME now, DURATION timedelta)
 
 Get a RFC1123 formatted date string suitable for inclusion in a
 Set-Cookie response header.
@@ -145,7 +141,7 @@ Example::
 	sub vcl_deliver {
 	    # Set a userid cookie on the client that lives for 5 minutes.
 	    set resp.http.Set-Cookie = "userid=" + req.http.userid +
-	        "; Expires=" + cookie.format_rfc1123(now, 5m) + "; httpOnly";
+	        "; Expires=" + cookie.format_date(now, 5m) + "; httpOnly";
 	}
 
 $Function STRING get(PRIV_TASK, STRING cookiename)
@@ -156,7 +152,7 @@ Example::
 
 	import std;
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2");
 	    std.log("cookie1 value is: " + cookie.get("cookie1"));
 	}
 
@@ -202,7 +198,7 @@ Example::
 
 	import std;
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2");
 	    std.log("cookie1 value is: " + cookie.get_re("^cookie1$"));
 	}
 
@@ -227,7 +223,7 @@ Example::
 
 	import std;
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2");
 	    if (cookie.isset("cookie2")) {
 	        std.log("cookie2 is set.");
 	    }
@@ -254,3 +250,8 @@ Example::
 	    cookie.set("cookie1", "value1");
 	    std.log("cookie1 value is: " + cookie.get("cookie1"));
 	}
+
+DEPRECATED
+==========
+
+$Alias format_rfc1123 format_date

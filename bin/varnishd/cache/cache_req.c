@@ -34,15 +34,15 @@
 
 #include "config.h"
 
-#include "cache_varnishd.h"
-#include "cache_filter.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cache_varnishd.h"
+#include "cache_filter.h"
 #include "cache_pool.h"
 #include "cache_transport.h"
 
+#include "common/heritage.h"
 #include "vtim.h"
 
 void
@@ -55,7 +55,7 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 
 	a = &req->acct;
 
-	if (req->vsl->wid && !(req->res_mode & RES_PIPE)) {
+	if (!IS_NO_VXID(req->vsl->wid) && !(req->res_mode & RES_PIPE)) {
 		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
 		    (uintmax_t)a->req_hdrbytes,
 		    (uintmax_t)a->req_bodybytes,
@@ -88,15 +88,34 @@ Req_LogHit(struct worker *wrk, struct req *req, struct objcore *oc,
 			clen = sep = "";
 		else
 			sep = " ";
-		VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f %jd%s%s",
-		    ObjGetXID(wrk, oc), EXP_Dttl(req, oc),
+		VSLb(req->vsl, SLT_Hit, "%ju %.6f %.6f %.6f %jd%s%s",
+		    VXID(ObjGetXID(wrk, oc)), EXP_Dttl(req, oc),
 		    oc->grace, oc->keep,
 		    fetch_progress, sep, clen);
 	} else {
-		VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f",
-		    ObjGetXID(wrk, oc), EXP_Dttl(req, oc),
+		VSLb(req->vsl, SLT_Hit, "%ju %.6f %.6f %.6f",
+		    VXID(ObjGetXID(wrk, oc)), EXP_Dttl(req, oc),
 		    oc->grace, oc->keep);
 	}
+}
+
+const char *
+Req_LogStart(const struct worker *wrk, struct req *req)
+{
+	const char *ci, *cp, *endpname;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
+
+	ci = SES_Get_String_Attr(req->sp, SA_CLIENT_IP);
+	cp = SES_Get_String_Attr(req->sp, SA_CLIENT_PORT);
+	CHECK_OBJ_NOTNULL(req->sp->listen_sock, LISTEN_SOCK_MAGIC);
+	endpname = req->sp->listen_sock->name;
+	AN(endpname);
+	VSLb(req->vsl, SLT_ReqStart, "%s %s %s", ci, cp, endpname);
+
+	return (ci);
 }
 
 /*--------------------------------------------------------------------
@@ -194,7 +213,7 @@ Req_Release(struct req *req)
 #include "tbl/acct_fields_req.h"
 
 	AZ(req->vcl);
-	if (req->vsl->wid)
+	if (!IS_NO_VXID(req->vsl->wid))
 		VSL_End(req->vsl);
 #ifdef ENABLE_WORKSPACE_EMULATOR
 	WS_Rollback(req->ws, 0);
@@ -262,12 +281,12 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		VCL_Recache(wrk, &req->vcl);
 
 	/* Charge and log byte counters */
-	if (req->vsl->wid) {
+	if (!IS_NO_VXID(req->vsl->wid)) {
 		Req_AcctLogCharge(wrk->stats, req);
-		if (req->vsl->wid != sp->vxid)
+		if (!IS_SAME_VXID(req->vsl->wid, sp->vxid))
 			VSL_End(req->vsl);
 		else
-			req->vsl->wid = 0; /* ending an h2 stream 0 */
+			req->vsl->wid = NO_VXID; /* ending an h2 stream 0 */
 	}
 
 	if (!isnan(req->t_prev) && req->t_prev > 0. && req->t_prev > sp->t_idle)

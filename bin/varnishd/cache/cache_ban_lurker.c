@@ -300,13 +300,13 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			if (i) {
 				if (kill) {
 					VSLb(vsl, SLT_ExpBan,
-					    "%u killed for lurker cutoff",
-					    ObjGetXID(wrk, oc));
+					    "%ju killed for lurker cutoff",
+					    VXID(ObjGetXID(wrk, oc)));
 					lokc++;
 				} else {
 					VSLb(vsl, SLT_ExpBan,
-					    "%u banned by lurker",
-					    ObjGetXID(wrk, oc));
+					    "%ju banned by lurker",
+					    VXID(ObjGetXID(wrk, oc)));
 					lok++;
 				}
 				HSH_Kill(oc);

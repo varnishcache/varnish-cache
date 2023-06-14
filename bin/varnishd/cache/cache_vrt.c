@@ -123,9 +123,9 @@ VPI_acl_log(VRT_CTX, const char *msg)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(msg);
 	if (ctx->vsl != NULL)
-		VSLb(ctx->vsl, SLT_VCL_acl, "%s", msg);
+		VSLbs(ctx->vsl, SLT_VCL_acl, TOSTRAND(msg));
 	else
-		VSL(SLT_VCL_acl, 0, "%s", msg);
+		VSL(SLT_VCL_acl, NO_VXID, "%s", msg);
 }
 
 int
@@ -602,7 +602,7 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 	if (u <= l) {
 		WS_Release(hp->ws, 0);
 		WS_MarkOverflow(hp->ws);
-		VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+		VSLbs(ctx->vsl, SLT_LostHeader, TOSTRAND(hs->what + 1));
 		return;
 	}
 	b = WS_Reservation(hp->ws);
@@ -611,7 +611,8 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 		if (p == NULL) {
 			WS_Release(hp->ws, 0);
 			WS_MarkOverflow(hp->ws);
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+			VSLbs(ctx->vsl, SLT_LostHeader,
+			    TOSTRAND(hs->what + 1));
 			return;
 		}
 	} else {
@@ -642,19 +643,28 @@ VRT_handling(VRT_CTX, unsigned hand)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(hand != VCL_RET_FAIL);
-	AN(ctx->handling);
-	AZ(*ctx->handling);
+	AN(ctx->vpi);
+	AZ(ctx->vpi->handling);
 	assert(hand > 0);
 	assert(hand < VCL_RET_MAX);
-	*ctx->handling = hand;
+	ctx->vpi->handling = hand;
 }
 
 unsigned
 VRT_handled(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	return (*ctx->handling);
+	AN(ctx->vpi);
+	return (ctx->vpi->handling);
+}
+
+/* the trace value is cached in the VPI for efficiency */
+VCL_VOID
+VRT_trace(VRT_CTX, VCL_BOOL a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->vpi);
+	ctx->vpi->trace = a;
 }
 
 /*--------------------------------------------------------------------*/
@@ -666,10 +676,10 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(ctx->vsl != NULL || ctx->msg != NULL);
-	AN(ctx->handling);
-	if (*ctx->handling == VCL_RET_FAIL)
+	AN(ctx->vpi);
+	if (ctx->vpi->handling == VCL_RET_FAIL)
 		return;
-	AZ(*ctx->handling);
+	AZ(ctx->vpi->handling);
 	AN(fmt);
 	AZ(strchr(fmt, '\n'));
 	va_start(ap, fmt);
@@ -681,7 +691,7 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 		VSB_putc(ctx->msg, '\n');
 	}
 	va_end(ap);
-	*ctx->handling = VCL_RET_FAIL;
+	ctx->vpi->handling = VCL_RET_FAIL;
 }
 
 /*--------------------------------------------------------------------
@@ -721,7 +731,6 @@ VCL_STRING v_matchproto_()
 VRT_IP_string(VRT_CTX, VCL_IP ip)
 {
 	char buf[VTCP_ADDRBUFSIZE];
-	struct vsb vsb[1];
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ip == NULL) {
@@ -729,9 +738,7 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 		return (NULL);
 	}
 	VTCP_name(ip, buf, sizeof buf, NULL, 0);
-	WS_VSB_new(vsb, ctx->ws);
-	VSB_cat(vsb, buf);
-	return (WS_VSB_finish(vsb, ctx->ws, NULL));
+	return (WS_Copy(ctx->ws, buf, -1));
 }
 
 int
@@ -747,7 +754,7 @@ VRT_INT_string(VRT_CTX, VCL_INT num)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (!VRT_INT_is_valid(num))
-		VRT_fail(ctx, "INT overflow converting to string (%jX)",
+		VRT_fail(ctx, "INT overflow converting to string (0x%jx)",
 		    (intmax_t)num);
 	return (WS_Printf(ctx->ws, "%jd", (intmax_t)num));
 }
@@ -971,14 +978,19 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 VCL_BYTES
 VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 {
+	const char * const err = "req.body can only be cached in vcl_recv{}";
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->method != VCL_MET_RECV) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
-		    "req.body can only be cached in vcl_recv{}");
+		if (ctx->vsl != NULL) {
+			VSLbs(ctx->vsl, SLT_VCL_Error, TOSTRAND(err));
+		} else {
+			AN(ctx->msg);
+			VSB_printf(ctx->msg, "%s\n", err);
+		};
 		return (-1);
 	}
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	return (VRB_Cache(ctx->req, maxsize));
 }
 

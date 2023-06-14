@@ -1,0 +1,23 @@
+varnishtest "Append configurable Via header"
+
+server s1 {
+	rxreq
+	expect req.http.via == \
+		"1.1 v2 (Varnish/${pkg_branch}), 1.1 v1 (Varnish/${pkg_branch})"
+	txresp
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+varnish v2 -vcl {
+	backend v1 {
+		.host = "${v1_sock}";
+	}
+} -start
+
+client c1 -connect ${v2_sock} {
+	txreq
+	rxresp
+	expect resp.http.via == \
+		"1.1 v1 (Varnish/${pkg_branch}), 1.1 v2 (Varnish/${pkg_branch})"
+} -run

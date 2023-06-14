@@ -114,6 +114,7 @@ struct vep_state {
 	dostuff_f		*dostuff;
 
 	struct vsb		*include_src;
+	unsigned		include_continue;
 
 	unsigned		nm_skip;
 	unsigned		nm_verbatim;
@@ -181,6 +182,7 @@ static struct vep_match vep_match_esi[] = {
 
 static struct vep_match vep_match_attr_include[] = {
 	{ "src=",	&VEP_ATTRGETVAL },
+	{ "onerror=",	&VEP_ATTRGETVAL },
 	{ NULL,		&VEP_SKIPATTR }
 };
 
@@ -429,41 +431,65 @@ vep_do_remove(struct vep_state *vep, enum dowhat what)
 /*---------------------------------------------------------------------
  */
 
+static void
+include_attr_src(struct vep_state *vep)
+{
+	const char *p;
+
+	if (vep->include_src != NULL) {
+		vep_error(vep,
+		    "ESI 1.0 <esi:include> "
+		    "has multiple src= attributes");
+		vep->state = VEP_TAGERROR;
+		VSB_destroy(&vep->attr_vsb);
+		VSB_destroy(&vep->include_src);
+		return;
+	}
+	for (p = VSB_data(vep->attr_vsb); *p != '\0'; p++)
+		if (vct_islws(*p))
+			break;
+	if (*p != '\0') {
+		vep_error(vep,
+		    "ESI 1.0 <esi:include> "
+		    "has whitespace in src= attribute");
+		vep->state = VEP_TAGERROR;
+		VSB_destroy(&vep->attr_vsb);
+		if (vep->include_src != NULL)
+			VSB_destroy(&vep->include_src);
+		return;
+	}
+	vep->include_src = vep->attr_vsb;
+	vep->attr_vsb = NULL;
+}
+
+static void
+include_attr_onerror(struct vep_state *vep)
+{
+
+	vep->include_continue = !strcmp("continue", VSB_data(vep->attr_vsb));
+	VSB_destroy(&vep->attr_vsb);
+}
+
 static void v_matchproto_()
 vep_do_include(struct vep_state *vep, enum dowhat what)
 {
 	const char *p, *q, *h;
 	ssize_t l;
+	char incl;
 
 	Debug("DO_INCLUDE(%d)\n", what);
 	if (what == DO_ATTR) {
 		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			VSB_data(vep->attr_vsb));
-		if (vep->include_src != NULL) {
-			vep_error(vep,
-			    "ESI 1.0 <esi:include> "
-			    "has multiple src= attributes");
-			vep->state = VEP_TAGERROR;
-			VSB_destroy(&vep->attr_vsb);
-			VSB_destroy(&vep->include_src);
+		if (!strcmp("src=", vep->match_hit->match)) {
+			include_attr_src(vep);
 			return;
 		}
-		for (p = VSB_data(vep->attr_vsb); *p != '\0'; p++)
-			if (vct_islws(*p))
-				break;
-		if (*p != '\0') {
-			vep_error(vep,
-			    "ESI 1.0 <esi:include> "
-			    "has whitespace in src= attribute");
-			vep->state = VEP_TAGERROR;
-			VSB_destroy(&vep->attr_vsb);
-			if (vep->include_src != NULL)
-				VSB_destroy(&vep->include_src);
+		if (!strcmp("onerror=", vep->match_hit->match)) {
+			include_attr_onerror(vep);
 			return;
 		}
-		vep->include_src = vep->attr_vsb;
-		vep->attr_vsb = NULL;
-		return;
+		WRONG("Unhandled <esi:include> attribute");
 	}
 	assert(what == DO_TAG);
 	if (!vep->emptytag)
@@ -488,6 +514,8 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	l = VSB_len(vep->include_src);
 	h = 0;
 
+	incl = vep->include_continue ? VEC_IC : VEC_IA;
+
 	if (l > 7 && !memcmp(p, "http://", 7)) {
 		h = p + 7;
 		p = strchr(h, '/');
@@ -500,7 +528,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			return;
 		}
 		Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
-		VSB_printf(vep->vsb, "%c", VEC_INCL);
+		VSB_printf(vep->vsb, "%c", incl);
 		VSB_printf(vep->vsb, "Host: %.*s%c", (int)(p-h), h, 0);
 	} else if (l > 8 && !memcmp(p, "https://", 8)) {
 		if (!FEATURE(FEATURE_ESI_IGNORE_HTTPS)) {
@@ -523,13 +551,13 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			VSB_destroy(&vep->include_src);
 			return;
 		}
-		VSB_printf(vep->vsb, "%c", VEC_INCL);
+		VSB_printf(vep->vsb, "%c", incl);
 		VSB_printf(vep->vsb, "Host: %.*s%c", (int)(p-h), h, 0);
 	} else if (*p == '/') {
-		VSB_printf(vep->vsb, "%c", VEC_INCL);
+		VSB_printf(vep->vsb, "%c", incl);
 		VSB_printf(vep->vsb, "%c", 0);
 	} else {
-		VSB_printf(vep->vsb, "%c", VEC_INCL);
+		VSB_printf(vep->vsb, "%c", incl);
 		VSB_printf(vep->vsb, "%c", 0);
 		/* Look for the last / before a '?' */
 		h = NULL;
@@ -563,6 +591,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 #undef R
 	VSB_printf(vep->vsb, "%c", 0);
 	VSB_destroy(&vep->include_src);
+	vep->include_continue = 0;
 }
 
 /*---------------------------------------------------------------------

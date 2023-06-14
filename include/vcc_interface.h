@@ -46,6 +46,8 @@ void v_noreturn_ VPI_Fail(const char *func, const char *file, int line,
  */
 
 struct vpi_ref {
+	unsigned	magic;
+#define VPI_REF_MAGIC	0xd955f567
 	unsigned	source;
 	unsigned	offset;
 	unsigned	line;
@@ -53,7 +55,21 @@ struct vpi_ref {
 	const char	*token;
 };
 
-void VPI_count(VRT_CTX, unsigned);
+/* VPI's private part of the worker */
+struct wrk_vpi {
+	unsigned	magic;
+#define WRK_VPI_MAGIC	0xaa3d3df3
+	unsigned	handling;
+	unsigned	trace;	// caches (be)req.trace
+	unsigned	ref;	// index into (struct vpi_ref)[]
+};
+
+#define VPI_count(ctx, max, u) \
+	do {							\
+		assert(u < max);				\
+		(ctx)->vpi->ref = u;				\
+	} while(0)
+void VPI_trace(VRT_CTX, unsigned);
 void VPI_vcl_fini(VRT_CTX);
 
 int VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,

@@ -356,6 +356,10 @@ vjsn_number(struct vjsn *js)
 		while (*js->ptr >= '0' && *js->ptr <= '9')
 			js->ptr++;
 	}
+	/*
+	 * The terminating NUL is supplied by the caller, once they
+	 * have decided if they like what occupies that spot.
+	 */
 	return (jsv);
 }
 

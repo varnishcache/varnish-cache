@@ -50,9 +50,8 @@
 
 #include "hash/hash_slinger.h"
 #include "libvcc.h"
-#include "vav.h"
 #include "vcli_serve.h"
-#include "vend.h"
+#include "vct.h"
 #include "vev.h"
 #include "vfil.h"
 #include "vin.h"
@@ -63,6 +62,7 @@
 #include "vtim.h"
 #include "waiter/mgt_waiter.h"
 #include "vsa.h"
+#include "vus.h"
 
 struct heritage		heritage;
 unsigned		d_flag = 0;
@@ -73,22 +73,19 @@ struct VSC_mgt		*VSC_C_mgt;
 static int		I_fd = -1;
 static char		*workdir;
 
-static struct vpf_fh *pfh1 = NULL;
-static struct vpf_fh *pfh2 = NULL;
-
 static struct vfil_path *vcl_path = NULL;
-static VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 
-static const char opt_spec[] = "?a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
-
-int optreset;	// Some has it, some doesn't.  Cheaper than auto*
+static const char opt_spec[] = "?a:b:CdE:f:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 /*--------------------------------------------------------------------*/
 
 static void
 usage(void)
 {
-#define FMT "  %-28s # %s\n"
+	char *p;
+
+#define FMT_NONL "  %-28s # %s"
+#define FMT FMT_NONL "\n"
 
 	printf( "Usage: varnishd [options]\n");
 
@@ -110,6 +107,11 @@ usage(void)
 	printf(FMT, "", "Can be specified multiple times.");
 	printf(FMT, "-n dir", "Working directory");
 
+	p = VIN_n_Arg(NULL);
+	AN(p);
+	printf(FMT_NONL "  default: %s\n", "", "", p);
+	free(p);
+
 	printf("\n-b can be used only once, and not together with -f\n");
 
 	printf("\nDocumentation options:\n");
@@ -130,6 +132,7 @@ usage(void)
 	printf(FMT, "-P file", "PID file");
 	printf(FMT, "-i identity", "Identity of varnish instance");
 	printf(FMT, "-I clifile", "Initialization CLI commands");
+	printf(FMT, "-E extension", "Load extension");
 
 	printf("\nTuning options:\n");
 
@@ -171,6 +174,46 @@ usage(void)
 	printf(FMT, "-V", "version");
 	printf(FMT, "-h kind[,options]", "Hash specification");
 	printf(FMT, "-W waiter", "Waiter implementation");
+}
+
+/*--------------------------------------------------------------------*/
+
+struct arg_list {
+	unsigned		magic;
+#define ARG_LIST_MAGIC		0x7b0d1bc4
+	char			arg[2];
+	char			*val;
+	VTAILQ_ENTRY(arg_list)	list;
+	void			*priv;
+};
+
+static VTAILQ_HEAD(, arg_list) arglist = VTAILQ_HEAD_INITIALIZER(arglist);
+
+static struct arg_list *
+arg_list_add(const char arg, const char *val)
+{
+	struct arg_list *alp;
+
+	ALLOC_OBJ(alp, ARG_LIST_MAGIC);
+	AN(alp);
+	alp->arg[0] = arg;
+	alp->arg[1] = '\0';
+	REPLACE(alp->val, val);
+	VTAILQ_INSERT_TAIL(&arglist, alp, list);
+	return (alp);
+}
+
+static unsigned
+arg_list_count(const char *arg)
+{
+	unsigned retval = 0;
+	struct arg_list *alp;
+
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		if (!strcmp(alp->arg, arg))
+			retval++;
+	}
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
@@ -251,8 +294,11 @@ mgt_Cflag_atexit(void)
 	/* Only master process */
 	if (getpid() != heritage.mgt_pid)
 		return;
+	if (arg_list_count("E")) {
+		vext_cleanup(1);
+		VJ_rmdir("vext_cache");
+	}
 	VJ_rmdir("vmod_cache");
-	VJ_unlink("_.pid");
 	(void)chdir("/");
 	VJ_rmdir(workdir);
 }
@@ -411,10 +457,9 @@ struct f_arg {
 #define F_ARG_MAGIC		0x840649a8
 	char			*farg;
 	char			*src;
-	VTAILQ_ENTRY(f_arg)	list;
 };
 
-static void
+static struct f_arg *
 mgt_f_read(const char *fn)
 {
 	struct f_arg *fa;
@@ -431,7 +476,83 @@ mgt_f_read(const char *fn)
 	free(fa->farg);
 	fa->farg = fnp;
 	fa->src = f;
-	VTAILQ_INSERT_TAIL(&f_args, fa, list);
+	return (fa);
+}
+
+static void
+mgt_b_conv(const char *b_arg)
+{
+	struct f_arg *fa;
+	struct vsb *vsb;
+
+	ALLOC_OBJ(fa, F_ARG_MAGIC);
+	AN(fa);
+	REPLACE(fa->farg, "<-b argument>");
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_cat(vsb, "vcl 4.1;\n");
+	VSB_cat(vsb, "backend default ");
+	if (!strcasecmp(b_arg, "none"))
+		VSB_cat(vsb, "none;\n");
+	else if (VUS_is(b_arg))
+		VSB_printf(vsb, "{\n    .path = \"%s\";\n}\n", b_arg);
+	else
+		VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n", b_arg);
+	AZ(VSB_finish(vsb));
+	fa->src = strdup(VSB_data(vsb));
+	AN(fa->src);
+	VSB_destroy(&vsb);
+	AZ(arg_list_count("f"));
+	arg_list_add('f', "")->priv = fa;
+}
+
+static int
+mgt_process_f_arg(struct cli *cli, unsigned C_flag, void **fap)
+{
+	int retval = 0;
+	struct f_arg *fa;
+	const char *name = NULL;
+
+	TAKE_OBJ_NOTNULL(fa, fap, F_ARG_MAGIC);
+	if (arg_list_count("f") == 1)
+		name = "boot";
+	mgt_vcl_startup(cli, fa->src, name, fa->farg, C_flag);
+	if (C_flag) {
+		if (cli->result != CLIS_OK &&
+		    cli->result != CLIS_TRUNCATED)
+			retval = 2;
+		AZ(VSB_finish(cli->sb));
+		fprintf(stderr, "%s\n", VSB_data(cli->sb));
+		VSB_clear(cli->sb);
+	} else {
+		cli_check(cli);
+	}
+	free(fa->farg);
+	free(fa->src);
+	FREE_OBJ(fa);
+	return (retval);
+}
+
+static const char *
+create_bogo_n_arg(void)
+{
+	struct vsb *vsb;
+	char *p;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	if (getenv("TMPDIR") != NULL)
+		VSB_printf(vsb, "%s", getenv("TMPDIR"));
+	else
+		VSB_cat(vsb, "/tmp");
+	VSB_cat(vsb, "/varnishd_C_XXXXXXX");
+	AZ(VSB_finish(vsb));
+	p = strdup(VSB_data(vsb));
+	AN(p);
+	VSB_destroy(&vsb);
+	AN(mkdtemp(p));
+	AZ(chmod(p, 0750));
+	return (p);
 }
 
 static struct vpf_fh *
@@ -457,6 +578,7 @@ create_pid_file(pid_t *ppid, const char *fmt, ...)
 		    VSB_data(vsb), VAS_errtxt(errno));
 	VJ_master(JAIL_MASTER_LOW);
 	VSB_destroy(&vsb);
+	va_end(ap);
 	return (pfh);
 }
 
@@ -465,31 +587,25 @@ main(int argc, char * const *argv)
 {
 	int o, eric_fd = -1;
 	unsigned C_flag = 0;
-	unsigned f_flag = 0;
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
 	const char *i_arg = NULL;
 	const char *j_arg = NULL;
 	const char *h_arg = "critbit";
-	const char *M_arg = NULL;
 	const char *n_arg = NULL;
-	const char *P_arg = NULL;
 	const char *S_arg = NULL;
 	const char *s_arg = "default,100m";
 	const char *W_arg = NULL;
-	int s_arg_given = 0;
-	int novcl = 0;
-	const char *T_arg = "localhost:0";
+	const char *c;
 	char *p;
 	struct cli cli[1];
-	char **av;
 	const char *err;
 	unsigned u;
 	struct sigaction sac;
 	struct vev *e;
-	struct f_arg *fa;
-	struct vsb *vsb;
 	pid_t pid;
+	struct arg_list *alp;
+	int first_arg = 1;
 
 	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
 		printf("%s\n", opt_spec);
@@ -506,35 +622,22 @@ main(int argc, char * const *argv)
 
 	mgt_initialize(cli);
 
-	/* Check if first argument is a special flag */
-
-	o = getopt(argc, argv, opt_spec);
-	switch (o) {
-	case 'x':
-		if (argc != 3)
-			ARGV_ERR("Too many arguments for -x\n");
-		mgt_x_arg(optarg);
-		exit(0);
-	case 'V':
-		if (argc != 2)
-			ARGV_ERR("Too many arguments for -V\n");
-		VCS_Message("varnishd");
-		exit(0);
-	default:
-		break;
-	}
-
-	/* First pass over arguments to determine overall configuration */
-
-	do {
+	for (; (o = getopt(argc, argv, opt_spec)) != -1; first_arg = 0) {
 		switch (o) {
-		case '?':
-			usage();
-			exit(2);
 		case 'V':
+			if (!first_arg)
+				ARGV_ERR("-V must be the first argument\n");
+			if (argc != 2)
+				ARGV_ERR("Too many arguments for -V\n");
+			VCS_Message("varnishd");
+			exit(0);
 		case 'x':
-			ARGV_ERR("-%c must be the first argument\n", o);
-			break;
+			if (!first_arg)
+				ARGV_ERR("-x must be the first argument\n");
+			if (argc != 3)
+				ARGV_ERR("Too many arguments for -x\n");
+			mgt_x_arg(optarg);
+			exit(0);
 		case 'b':
 			b_arg = optarg;
 			break;
@@ -544,31 +647,61 @@ main(int argc, char * const *argv)
 		case 'd':
 			d_flag++;
 			break;
-		case 'f':
-			f_flag = 1;
-			break;
 		case 'F':
 			F_flag = 1;
 			break;
 		case 'j':
 			j_arg = optarg;
 			break;
-		default:
+		case 'h':
+			h_arg = optarg;
 			break;
+		case 'i':
+			i_arg = optarg;
+			break;
+		case 'l':
+			arg_list_add('p', "vsl_space")->priv = optarg;
+			break;
+		case 'n':
+			n_arg = optarg;
+			break;
+		case 'S':
+			S_arg = optarg;
+			break;
+		case 't':
+			arg_list_add('p', "default_ttl")->priv = optarg;
+			break;
+		case 'W':
+			W_arg = optarg;
+			break;
+		case 'a':
+		case 'E':
+		case 'f':
+		case 'I':
+		case 'p':
+		case 'P':
+		case 'M':
+		case 'r':
+		case 's':
+		case 'T':
+			(void)arg_list_add(o, optarg);
+			break;
+		default:
+			usage();
+			exit(2);
 		}
-		o = getopt(argc, argv, opt_spec);
-	} while (o != -1);
+	}
 
 	if (argc != optind)
 		ARGV_ERR("Too many arguments (%s...)\n", argv[optind]);
 
-	if (b_arg != NULL && f_flag)
+	if (b_arg != NULL && arg_list_count("f"))
 		ARGV_ERR("Only one of -b or -f can be specified\n");
 
 	if (d_flag && F_flag)
 		ARGV_ERR("Only one of -d or -F can be specified\n");
 
-	if (C_flag && b_arg == NULL && !f_flag)
+	if (C_flag && b_arg == NULL && !arg_list_count("f"))
 		ARGV_ERR("-C needs either -b <backend> or -f <vcl_file>\n");
 
 	if (d_flag && C_flag)
@@ -577,11 +710,17 @@ main(int argc, char * const *argv)
 	if (F_flag && C_flag)
 		ARGV_ERR("-F makes no sense with -C\n");
 
-	if (!d_flag && b_arg == NULL && !f_flag)
+	if (!d_flag && b_arg == NULL && !arg_list_count("f"))
 		ARGV_ERR("Neither -b nor -f given. (use -f '' to override)\n");
+
+	if (arg_list_count("I") > 1)
+		ARGV_ERR("\tOnly one -I allowed\n");
 
 	if (d_flag || F_flag)
 		complain_to_stderr = 1;
+
+	if (!arg_list_count("T"))
+		(void)arg_list_add('T', "localhost:0");
 
 	/*
 	 * Start out by closing all unwanted file descriptors we might
@@ -616,159 +755,60 @@ main(int argc, char * const *argv)
 	/* Initialize the bogo-IP VSA */
 	VSA_Init();
 
-	optind = 1;
-	optreset = 1;
-	while ((o = getopt(argc, argv, opt_spec)) != -1) {
-		switch (o) {
-		case 'C':
-		case 'd':
-		case 'F':
-		case 'j':
-			/* Handled in first pass */
-			break;
+	if (b_arg != NULL)
+		mgt_b_conv(b_arg);
+
+	/* Process delayed arguments */
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		switch(alp->arg[0]) {
 		case 'a':
-			MAC_Arg(optarg);
-			break;
-		case 'b':
-			ALLOC_OBJ(fa, F_ARG_MAGIC);
-			AN(fa);
-			REPLACE(fa->farg, "<-b argument>");
-			vsb = VSB_new_auto();
-			AN(vsb);
-			VSB_cat(vsb, "vcl 4.1;\n");
-			VSB_cat(vsb, "backend default ");
-			if (! strcasecmp(optarg, "none"))
-				VSB_cat(vsb, "none;\n");
-			else if (*optarg != '/')
-				VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n",
-				    optarg);
-			else
-				VSB_printf(vsb, "{\n    .path = \"%s\";\n}\n",
-				    optarg);
-			AZ(VSB_finish(vsb));
-			fa->src = strdup(VSB_data(vsb));
-			AN(fa->src);
-			VSB_destroy(&vsb);
-			VTAILQ_INSERT_TAIL(&f_args, fa, list);
+			MAC_Arg(alp->val);
 			break;
 		case 'f':
-			if (*optarg == '\0') {
-				novcl = 1;
-				break;
-			}
-			mgt_f_read(optarg);
+			if (*alp->val != '\0')
+				alp->priv = mgt_f_read(alp->val);
 			break;
-		case 'h':
-			h_arg = optarg;
-			break;
-		case 'i':
-			i_arg = optarg;
+		case 'E':
+			vext_argument(alp->val);
 			break;
 		case 'I':
-			if (I_fd >= 0)
-				ARGV_ERR("\tOnly one -I allowed\n");
 			VJ_master(JAIL_MASTER_FILE);
-			I_fd = open(optarg, O_RDONLY);
+			I_fd = open(alp->val, O_RDONLY);
 			if (I_fd < 0)
-				ARGV_ERR("\tCant open %s: %s\n",
-				    optarg, VAS_errtxt(errno));
+				ARGV_ERR("\tCan't open %s: %s\n",
+				    alp->val, VAS_errtxt(errno));
 			VJ_master(JAIL_MASTER_LOW);
 			break;
-		case 'l':
-			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
-			AN(av);
-			if (av[0] != NULL)
-				ARGV_ERR("-l ...: %s\n", av[0]);
-			if (av[1] != NULL && av[2] != NULL && av[3] != NULL)
-				ARGV_ERR("Too many sub arguments to -l\n");
-			if (av[1] != NULL) {
-				MCF_ParamSet(cli, "vsl_space", av[1]);
-				cli_check(cli);
-			}
-			if (av[1] != NULL && av[2] != NULL) {
-				fprintf(stderr,
-				    "Warning: Ignoring deprecated second"
-				    " subargument to -l\n");
-			}
-			VAV_Free(av);
-			break;
-		case 'M':
-			M_arg = optarg;
-			break;
-		case 'n':
-			n_arg = optarg;
-			break;
-		case 'P':
-			P_arg = optarg;
-			break;
 		case 'p':
-			p = strchr(optarg, '=');
-			if (p == NULL)
-				ARGV_ERR("\t-p lacks '='\n");
-			AN(p);
-			*p++ = '\0';
-			MCF_ParamSet(cli, optarg, p);
-			*--p = '=';
-			cli_check(cli);
+			if (alp->priv) {
+				MCF_ParamSet(cli, alp->val, alp->priv);
+			} else {
+				p = strchr(alp->val, '=');
+				if (p == NULL)
+					ARGV_ERR("\t-p lacks '='\n");
+				AN(p);
+				*p++ = '\0';
+				MCF_ParamSet(cli, alp->val, p);
+			}
 			break;
 		case 'r':
-			MCF_ParamProtect(cli, optarg);
-			cli_check(cli);
-			break;
-		case 'S':
-			S_arg = optarg;
+			MCF_ParamProtect(cli, alp->val);
 			break;
 		case 's':
-			s_arg_given = 1;
-			STV_Config(optarg);
-			break;
-		case 'T':
-			if (!strcmp(optarg, "none"))
-				T_arg = NULL;
-			else
-				T_arg = optarg;
-			break;
-		case 't':
-			MCF_ParamSet(cli, "default_ttl", optarg);
-			break;
-		case 'W':
-			W_arg = optarg;
+			STV_Config(alp->val);
 			break;
 		default:
-			WRONG("Error in argument parsing");
+			break;
 		}
-	}
-	assert(argc == optind);
-
-	/* XXX: we can have multiple CLI actions above, is this enough ? */
-	if (cli[0].result != CLIS_OK) {
-		AZ(VSB_finish(cli[0].sb));
-		ARGV_ERR("Failed parameter creation:\n%s\n",
-		    VSB_data(cli[0].sb));
+		cli_check(cli);
 	}
 
 	VCLS_SetLimit(mgt_cls, &mgt_param.cli_limit);
 
 	assert(d_flag == 0 || F_flag == 0);
 
-	if (C_flag) {
-		if (n_arg == NULL) {
-			vsb = VSB_new_auto();
-			AN(vsb);
-			if (getenv("TMPDIR") != NULL)
-				VSB_printf(vsb, "%s", getenv("TMPDIR"));
-			else
-				VSB_cat(vsb, "/tmp");
-			VSB_cat(vsb, "/varnishd_C_XXXXXXX");
-			AZ(VSB_finish(vsb));
-			p = strdup(VSB_data(vsb));
-			AN(p);
-			VSB_destroy(&vsb);
-			AN(mkdtemp(p));
-			AZ(chmod(p, 0750));
-			n_arg = p;
-		}
-	}
+	if (C_flag && n_arg == NULL)
+		n_arg = create_bogo_n_arg();
 
 	if (S_arg != NULL && !strcmp(S_arg, "none")) {
 		fprintf(stderr,
@@ -788,6 +828,10 @@ main(int argc, char * const *argv)
 
 	if (i_arg == NULL || *i_arg == '\0')
 		i_arg = mgt_HostName();
+	else for (c = i_arg; *c != '\0'; c++) {
+		if (!vct_istchar(*c))
+			ARGV_ERR("Invalid character '%c' for -i\n", *c);
+	}
 	heritage.identity = i_arg;
 
 	mgt_ProcTitle("Mgt");
@@ -800,6 +844,7 @@ main(int argc, char * const *argv)
 
 	VJ_master(JAIL_MASTER_SYSTEM);
 	AZ(system("rm -rf vmod_cache"));
+	AZ(system("rm -rf vext_cache"));
 	VJ_master(JAIL_MASTER_LOW);
 
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
@@ -808,47 +853,43 @@ main(int argc, char * const *argv)
 		    workdir, VAS_errtxt(errno));
 	}
 
+	if (arg_list_count("E") &&
+	    VJ_make_subdir("vext_cache", "VMOD cache", NULL)) {
+		ARGV_ERR(
+		    "Cannot create vmod directory (%s/vext_cache): %s\n",
+		    workdir, VAS_errtxt(errno));
+	}
+
 	if (C_flag)
 		AZ(atexit(mgt_Cflag_atexit));
 
-	pfh1 = create_pid_file(&pid, "%s/_.pid", workdir);
-
-	if (P_arg)
-		pfh2 = create_pid_file(&pid, "%s", P_arg);
-
 	/* If no -s argument specified, process default -s argument */
-	if (!s_arg_given)
+	if (!arg_list_count("s"))
 		STV_Config(s_arg);
 
-	/* Configure Transient storage, if user did not */
-	STV_Config_Transient();
+	/* Configure CLI and Transient storage, if user did not */
+	STV_Config_Final();
 
 	mgt_vcl_init();
 
+	vext_copyin(vident);
+
 	u = 0;
-	while (!VTAILQ_EMPTY(&f_args)) {
-		fa = VTAILQ_FIRST(&f_args);
-		CHECK_OBJ_NOTNULL(fa, F_ARG_MAGIC);
-		VTAILQ_REMOVE(&f_args, fa, list);
-		mgt_vcl_startup(cli, fa->src,
-		    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
-		    fa->farg, C_flag);
-		if (C_flag) {
-			if (cli->result != CLIS_OK &&
-			    cli->result != CLIS_TRUNCATED)
-				u = 2;
-			AZ(VSB_finish(cli->sb));
-			fprintf(stderr, "%s\n", VSB_data(cli->sb));
-			VSB_clear(cli->sb);
-		} else {
-			cli_check(cli);
-		}
-		free(fa->farg);
-		free(fa->src);
-		FREE_OBJ(fa);
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		if (!strcmp(alp->arg, "f") && alp->priv != NULL)
+			u |= mgt_process_f_arg(cli, C_flag, &alp->priv);
 	}
 	if (C_flag)
 		exit(u);
+
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		if (!strcmp(alp->arg, "P"))
+			alp->priv = create_pid_file(&pid, "%s", alp->val);
+	}
+
+	/* Implict -P argument */
+	alp = arg_list_add('P', NULL);
+	alp->priv = create_pid_file(&pid, "%s/_.pid", workdir);
 
 	if (VTAILQ_EMPTY(&heritage.socks))
 		MAC_Arg(":80\0");	// XXX: extra NUL for FlexeLint
@@ -864,20 +905,20 @@ main(int argc, char * const *argv)
 	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i");
 	VSC_C_mgt = VSC_mgt_New(NULL, NULL, "");
 
-	if (M_arg != NULL)
-		mgt_cli_master(M_arg);
-	if (T_arg != NULL)
-		mgt_cli_telnet(T_arg);
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		if (!strcmp(alp->arg, "M"))
+			mgt_cli_master(alp->val);
+		else if (!strcmp(alp->arg, "T") && strcmp(alp->val, "none"))
+			mgt_cli_telnet(alp->val);
+		else if (!strcmp(alp->arg, "P"))
+			VPF_Write(alp->priv);
+	}
 
 	AZ(VSB_finish(vident));
 
 	if (S_arg == NULL)
 		S_arg = make_secret(workdir);
 	AN(S_arg);
-
-	VPF_Write(pfh1);
-	if (pfh2 != NULL)
-		VPF_Write(pfh2);
 
 	MGT_Complain(C_DEBUG, "Version: %s", VCS_String("V"));
 	MGT_Complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
@@ -911,7 +952,7 @@ main(int argc, char * const *argv)
 	assert(I_fd == -1);
 
 	err = mgt_has_vcl();
-	if (!d_flag && err != NULL && !novcl)
+	if (!d_flag && err != NULL && !arg_list_count("f"))
 		MGT_Complain(C_ERR, "%s", err);
 
 	if (err == NULL && !d_flag)
@@ -960,8 +1001,14 @@ main(int argc, char * const *argv)
 	MGT_Complain(C_INFO, "manager dies");
 	mgt_cli_close_all();
 	VEV_Destroy(&mgt_evb);
-	VPF_Remove(pfh1);
-	if (pfh2 != NULL)
-		VPF_Remove(pfh2);
+	VJ_master(JAIL_MASTER_SYSTEM);
+	/*lint -e(730)*/
+	vext_cleanup(! MGT_DO_DEBUG(DBG_VMOD_SO_KEEP));
+	(void)rmdir("vext_cache");
+	VJ_master(JAIL_MASTER_LOW);
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		if (!strcmp(alp->arg, "P"))
+			VPF_Remove(alp->priv);
+	}
 	exit(exit_status);
 }

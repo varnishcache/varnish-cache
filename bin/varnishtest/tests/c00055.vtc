@@ -4,7 +4,10 @@ server s1 {
 	rxreq
 	expect req.bodylen == 3
 	txresp -hdr "Connection: close" -hdr "Foo: BAR" -body "1234"
+
+	expect_close
 	accept
+
 	rxreq
 	expect req.bodylen == 3
 	txresp -hdr "Foo: Foo" -body "56"
@@ -14,25 +17,17 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_recv {
-		if (std.cache_req_body(1KB)) {
-			set req.http.stored = true;
-		} else {
-			set req.http.stored = false;
-		}
+		set req.http.stored = std.cache_req_body(1KB);
 		return (pass);
 	}
+
 	sub vcl_deliver {
 		if (resp.http.foo == "BAR") {
 			return (restart);
 		}
 		set resp.http.stored = req.http.stored;
 	}
-} -start
 
-# check log for the aborted POST
-logexpect l1 -v v1 {
-	expect * 1006	Begin
-	expect * =	FetchError	"^straight insufficient bytes"
 } -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
@@ -45,32 +40,37 @@ client c1 {
 	expect resp.http.stored == true
 } -run
 
-delay .1
+# check log for the aborted POST
+logexpect l1 -v v1 {
+	expect * 1006	Begin
+	expect * =	FetchError	"^straight insufficient bytes"
+} -start
 
-client c1 {
-	txreq -req POST -nolen -hdr "Content-Length: 52"
-	delay .3
-	expect resp.http.stored == <undef>
+client c2 {
+	txreq -req POST -hdr "Content-Length: 52"
 } -run
 
+logexpect l1 -wait
+
 delay .1
 
+varnish v1 -expect MGT.child_died == 0
+
+# no req body
 server s1 {
 	rxreq
 	txresp
 } -start
 
-client c1 {
-	txreq -url "/is_varnish_still_running"
+client c4 {
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.http.stored == true
 } -run
 
-client c2 {
-       txreq -req POST -nolen -hdr "Content-Length: 1025"
-       expect_close
-	expect resp.http.stored == <undef>
+# req body overflow
+client c5 {
+	txreq -req POST -hdr "Content-Length: 1025"
+	expect_close
 } -run
-varnish v1 -stop
-logexpect l1 -wait

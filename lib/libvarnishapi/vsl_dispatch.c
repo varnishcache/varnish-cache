@@ -76,6 +76,7 @@ static const char * const vsl_r_names[VSL_r__MAX] = {
 };
 
 struct vtx;
+VTAILQ_HEAD(vtxhead, vtx);
 
 struct vslc_raw {
 	unsigned		magic;
@@ -92,7 +93,7 @@ struct synth {
 
 	VTAILQ_ENTRY(synth)	list;
 	size_t			offset;
-	uint32_t		data[2 + 64 / sizeof (uint32_t)];
+	uint32_t		data[VSL_OVERHEAD + 64 / sizeof (uint32_t)];
 };
 VTAILQ_HEAD(synthhead, synth);
 
@@ -136,7 +137,7 @@ struct vslc_vtx {
 };
 
 struct vtx_key {
-	unsigned		vxid;
+	uint64_t		vxid;
 	VRBT_ENTRY(vtx_key)	entry;
 };
 VRBT_HEAD(vtx_tree, vtx_key);
@@ -161,12 +162,12 @@ struct vtx {
 	enum VSL_reason_e	reason;
 
 	struct vtx		*parent;
-	VTAILQ_HEAD(,vtx)	child;
+	struct vtxhead		child;
 	unsigned		n_child;
 	unsigned		n_childready;
 	unsigned		n_descend;
 
-	VTAILQ_HEAD(,synth)	synth;
+	struct synthhead	synth;
 
 	struct chunk		shmchunks[VTX_SHMCHUNKS];
 	struct chunkhead	shmchunks_free;
@@ -189,11 +190,11 @@ struct VSLQ {
 
 	/* Structured mode */
 	struct vtx_tree		tree;
-	VTAILQ_HEAD(,vtx)	ready;
-	VTAILQ_HEAD(,vtx)	incomplete;
+	struct vtxhead		ready;
+	struct vtxhead		incomplete;
 	int			n_outstanding;
 	struct chunkhead	shmrefs;
-	VTAILQ_HEAD(,vtx)	cache;
+	struct vtxhead		cache;
 	unsigned		n_cache;
 
 	/* Rate limiting */
@@ -231,6 +232,7 @@ vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 VRBT_GENERATE_REMOVE_COLOR(vtx_tree, vtx_key, entry, static)
 VRBT_GENERATE_REMOVE(vtx_tree, vtx_key, entry, static)
 VRBT_GENERATE_INSERT_COLOR(vtx_tree, vtx_key, entry, static)
+VRBT_GENERATE_INSERT_FINISH(vtx_tree, vtx_key, entry, static)
 VRBT_GENERATE_INSERT(vtx_tree, vtx_key, entry, vtx_keycmp, static)
 VRBT_GENERATE_FIND(vtx_tree, vtx_key, entry, vtx_keycmp, static)
 
@@ -601,7 +603,7 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 
 /* Lookup a vtx by vxid from the managed list */
 static struct vtx *
-vtx_lookup(const struct VSLQ *vslq, unsigned vxid)
+vtx_lookup(const struct VSLQ *vslq, uint64_t vxid)
 {
 	struct vtx_key lkey, *key;
 	struct vtx *vtx;
@@ -617,7 +619,7 @@ vtx_lookup(const struct VSLQ *vslq, unsigned vxid)
 
 /* Insert a new vtx into the managed list */
 static struct vtx *
-vtx_add(struct VSLQ *vslq, unsigned vxid)
+vtx_add(struct VSLQ *vslq, uint64_t vxid)
 {
 	struct vtx *vtx;
 
@@ -688,10 +690,10 @@ vtx_set_parent(struct vtx *parent, struct vtx *child)
    successfully parsed. */
 static int
 vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
-    unsigned *pvxid, enum VSL_reason_e *preason)
+    uint64_t *pvxid, enum VSL_reason_e *preason, uint64_t *psub)
 {
 	char type[16], reason[16];
-	unsigned vxid;
+	uintmax_t vxid, sub;
 	int i;
 	enum VSL_transaction_e et;
 	enum VSL_reason_e er;
@@ -701,7 +703,7 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 	AN(pvxid);
 	AN(preason);
 
-	i = sscanf(str, "%15s %u %15s", type, &vxid, reason);
+	i = sscanf(str, "%15s %ju %15s %ju", type, &vxid, reason, &sub);
 	if (i < 1)
 		return (0);
 
@@ -728,7 +730,13 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 	if (er >= VSL_r__MAX)
 		er = VSL_r_unknown;
 	*preason = er;
-	return (3);
+	if (i == 3)
+		return (3);
+
+	/* request sub-level */
+	if (psub != NULL)
+		*psub = sub;
+	return (4);
 }
 
 /* Parse and process a begin record */
@@ -738,15 +746,15 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	int i;
 	enum VSL_transaction_e type;
 	enum VSL_reason_e reason;
-	unsigned p_vxid;
+	uint64_t p_vxid;
 	struct vtx *p_vtx;
 
 	assert(VSL_TAG(ptr) == SLT_Begin);
 
 	AZ(vtx->flags & VTX_F_READY);
 
-	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason);
-	if (i != 3)
+	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason, NULL);
+	if (i < 3)
 		return (vtx_diag_tag(vtx, ptr, "parse error"));
 	if (type == VSL_t_unknown)
 		(void)vtx_diag_tag(vtx, ptr, "unknown vxid type");
@@ -805,15 +813,15 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	int i;
 	enum VSL_transaction_e c_type;
 	enum VSL_reason_e c_reason;
-	unsigned c_vxid;
+	uint64_t c_vxid;
 	struct vtx *c_vtx;
 
 	assert(VSL_TAG(ptr) == SLT_Link);
 
 	AZ(vtx->flags & VTX_F_READY);
 
-	i = vtx_parse_link(VSL_CDATA(ptr), &c_type, &c_vxid, &c_reason);
-	if (i != 3)
+	i = vtx_parse_link(VSL_CDATA(ptr), &c_type, &c_vxid, &c_reason, NULL);
+	if (i < 3)
 		return (vtx_diag_tag(vtx, ptr, "parse error"));
 	if (c_type == VSL_t_unknown)
 		(void)vtx_diag_tag(vtx, ptr, "unknown vxid type");
@@ -1025,12 +1033,13 @@ vtx_synth_rec(struct vtx *vtx, unsigned tag, const char *fmt, ...)
 	va_list ap;
 	char *buf;
 	int l, buflen;
+	uint64_t vxid;
 
 	ALLOC_OBJ(synth, SYNTH_MAGIC);
 	AN(synth);
 
-	buf = (char *)&synth->data[2];
-	buflen = sizeof (synth->data) - 2 * sizeof (uint32_t);
+	buf = (char *)&synth->data[VSL_OVERHEAD];
+	buflen = sizeof (synth->data) - VSL_OVERHEAD * sizeof (uint32_t);
 	va_start(ap, fmt);
 	l = vsnprintf(buf, buflen, fmt, ap);
 	assert(l >= 0);
@@ -1038,18 +1047,21 @@ vtx_synth_rec(struct vtx *vtx, unsigned tag, const char *fmt, ...)
 	if (l > buflen - 1)
 		l = buflen - 1;
 	buf[l++] = '\0';	/* NUL-terminated */
-	synth->data[1] = vtx->key.vxid;
+	vxid = vtx->key.vxid;
 	switch (vtx->type) {
 	case VSL_t_req:
-		synth->data[1] |= VSL_CLIENTMARKER;
+		vxid |= VSL_CLIENTMARKER;
 		break;
 	case VSL_t_bereq:
-		synth->data[1] |= VSL_BACKENDMARKER;
+		vxid |= VSL_BACKENDMARKER;
 		break;
 	default:
 		break;
 	}
-	synth->data[0] = (((tag & 0xff) << 24) | l);
+	synth->data[2] = vxid >> 32;
+	synth->data[1] = vxid;
+	synth->data[0] = (((tag & VSL_IDMASK) << VSL_IDSHIFT) |
+	    (VSL_VERSION_3 << VSL_VERSHIFT) | l);
 	synth->offset = vtx->c.offset;
 
 	VTAILQ_FOREACH_REVERSE(it, &vtx->synth, synthhead, list) {
@@ -1084,7 +1096,7 @@ static int
 vtx_diag_tag(struct vtx *vtx, const uint32_t *ptr, const char *reason)
 {
 
-	vtx_synth_rec(vtx, SLT_VSL, "%s (%u:%s \"%.*s\")", reason, VSL_ID(ptr),
+	vtx_synth_rec(vtx, SLT_VSL, "%s (%ju:%s \"%.*s\")", reason, VSL_ID(ptr),
 	    VSL_tags[VSL_TAG(ptr)], (int)VSL_LEN(ptr), VSL_CDATA(ptr));
 	return (-1);
 }
@@ -1287,7 +1299,7 @@ vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
 	enum VSL_reason_e reason;
 	struct VSL_data *vsl;
 	enum VSL_tag_e tag;
-	unsigned p_vxid;
+	uint64_t p_vxid, sub;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
@@ -1301,24 +1313,24 @@ vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	if (vslq->grouping == VSL_g_vxid) {
 		if (!vsl->c_opt && !vsl->b_opt)
-			return (1); /* Implies also !vsl->E_opt */
-		if (!vsl->b_opt && !VSL_CLIENT(ptr))
+			AZ(vsl->E_opt);
+		else if (!vsl->b_opt && !VSL_CLIENT(ptr))
 			return (0);
-		if (!vsl->c_opt && !VSL_BACKEND(ptr))
+		else if (!vsl->c_opt && !VSL_BACKEND(ptr))
 			return (0);
 		/* Need to parse the Begin tag - fallthrough to below */
 	}
 
 	tag = VSL_TAG(ptr);
 	assert(tag == SLT_Begin);
-	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason);
-	if (i != 3 || type == VSL_t_unknown)
+	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason, &sub);
+	if (i < 3 || type == VSL_t_unknown)
 		return (0);
 
-	if (type == VSL_t_sess)
+	if (vslq->grouping == VSL_g_request && type == VSL_t_sess)
 		return (0);
 
-	if (vslq->grouping == VSL_g_vxid && reason == VSL_r_esi && !vsl->E_opt)
+	if (vslq->grouping == VSL_g_vxid && i > 3 && sub > 0 && !vsl->E_opt)
 		return (0);
 
 	return (1);
@@ -1333,7 +1345,8 @@ vslq_next(struct VSLQ *vslq)
 	enum vsl_status r;
 	enum VSL_tag_e tag;
 	ssize_t len;
-	unsigned vxid, keep;
+	uint64_t vxid;
+	unsigned keep;
 	struct vtx *vtx;
 
 	c = vslq->c;

@@ -203,7 +203,7 @@ varnishlog_thread(void *priv)
 	struct vsm *vsm;
 	struct VSL_cursor *c;
 	enum VSL_tag_e tag;
-	uint32_t vxid;
+	uint64_t vxid;
 	unsigned len;
 	const char *tagname, *data;
 	int type, i, opt;
@@ -259,11 +259,13 @@ varnishlog_thread(void *priv)
 				VSB_quote(vsb, data, len, VSB_QUOTE_HEX);
 				AZ(VSB_finish(vsb));
 				/* +2 to skip "0x" */
-				vtc_log(v->vl, 4, "vsl| %10u %-15s %c [%s]",
-				    vxid, tagname, type, VSB_data(vsb) + 2);
+				vtc_log(v->vl, 4, "vsl| %10ju %-15s %c [%s]",
+				    (uintmax_t)vxid, tagname, type,
+				    VSB_data(vsb) + 2);
 			} else {
-				vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s",
-				    vxid, tagname, type, (int)len, data);
+				vtc_log(v->vl, 4, "vsl| %10ju %-15s %c %.*s",
+				    (uintmax_t)vxid, tagname, type, (int)len,
+				    data);
 			}
 		}
 		if (i == 0) {
@@ -402,8 +404,8 @@ varnish_launch(struct varnish *v)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_cat(vsb, "cd ${pwd} &&");
-	VSB_printf(vsb, " exec varnishd %s -d -n %s",
-	    v->jail, v->workdir);
+	VSB_printf(vsb, " exec varnishd %s -d -n %s -i %s",
+	    v->jail, v->workdir, v->name);
 	VSB_cat(vsb, VSB_data(params_vsb));
 	if (leave_temp) {
 		VSB_cat(vsb, " -p debug=+vcl_keep");
@@ -428,6 +430,10 @@ varnish_launch(struct varnish *v)
 	if (vmod_path != NULL)
 		VSB_printf(vsb, " -p vmod_path=%s", vmod_path);
 	VSB_printf(vsb, " %s", VSB_data(v->args));
+	if (macro_isdef(NULL, "varnishd_args")) {
+		VSB_putc(vsb, ' ');
+		macro_cat(v->vl, vsb, "varnishd_args", NULL);
+	}
 	AZ(VSB_finish(vsb));
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
 	vsb1 = macro_expand(v->vl, VSB_data(vsb));
@@ -470,7 +476,7 @@ varnish_launch(struct varnish *v)
 	fd[1].events = POLLIN;
 	fd[2].fd = v->fds[2];
 	fd[2].events = POLLIN;
-	i = poll(fd, 2, vtc_maxdur * 1000 / 3);
+	i = poll(fd, 2, (int)(vtc_maxdur * 1000 / 3));
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents, fd[2].revents);
 	if (i == 0)
@@ -618,7 +624,7 @@ varnish_start(struct varnish *v)
 	wait_running(v);
 	free(resp);
 	resp = NULL;
-	u = varnish_ask_cli(v, "debug.xid 999", &resp);
+	u = varnish_ask_cli(v, "debug.xid 1000", &resp);
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)
@@ -1065,6 +1071,12 @@ vsl_catchup(struct varnish *v)
  *
  * \-arg STRING
  *         Pass an argument to varnishd, for example "-h simple_list".
+ *
+ *         If the ${varnishd_args} macro is defined, it is expanded and
+ *         appended to the varnishd command line, before the command line
+ *         itself is expanded. This enables tweaks to the varnishd command
+ *         line without editing test cases. This macro can be defined using
+ *         the ``-D`` option for varnishtest.
  *
  * \-vcl STRING
  *         Specify the VCL to load on this Varnish instance. You'll probably

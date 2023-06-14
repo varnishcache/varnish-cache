@@ -243,6 +243,10 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 	const char *p;
 	unsigned u;
 
+	if (VSL_tag_is_masked(SLT_H2RxHdr) &&
+	    VSL_tag_is_masked(SLT_H2RxBody))
+		return;
+
 	AN(ptr);
 	assert(len >= 9);
 	b = ptr;
@@ -540,8 +544,8 @@ h2_do_req(struct worker *wrk, void *priv)
 	THR_SetRequest(req);
 	CNT_Embark(wrk, req);
 
-	wrk->stats->client_req++;
 	if (CNT_Request(req) != REQ_FSM_DISEMBARK) {
+		wrk->stats->client_req++;
 		assert(!WS_IsReserved(req->ws));
 		AZ(req->top->vcl0);
 		h2 = r2->h2sess;
@@ -620,6 +624,13 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	}
 	AN(req->http->hd[HTTP_HDR_PROTO].b);
 
+	if (*req->http->hd[HTTP_HDR_URL].b == '*' &&
+	    (Tlen(req->http->hd[HTTP_HDR_METHOD]) != 7 ||
+	    strncmp(req->http->hd[HTTP_HDR_METHOD].b, "OPTIONS", 7))) {
+		VSLb(h2->vsl, SLT_BogoHeader, "Illegal :path pseudo-header");
+		return (H2SE_PROTOCOL_ERROR); //rfc7540,l,3068,3071
+	}
+
 	assert(req->req_step == R_STP_TRANSPORT);
 	VCL_TaskEnter(req->privs);
 	VCL_TaskEnter(req->top->privs);
@@ -672,8 +683,8 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
-	VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
-	VSL(SLT_Link, req->sp->vxid, "req %u rxreq", VXID(req->vsl->wid));
+	VSLb(req->vsl, SLT_Begin, "req %ju rxreq", VXID(req->sp->vxid));
+	VSL(SLT_Link, req->sp->vxid, "req %ju rxreq", VXID(req->vsl->wid));
 
 	h2->new_req = req;
 	req->sp = h2->sess;

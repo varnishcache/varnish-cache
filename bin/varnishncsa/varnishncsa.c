@@ -110,7 +110,7 @@ struct format {
 	char			*string;
 	const char *const	*strptr;
 	char			*time_fmt;
-	int32_t			*int32;
+	int64_t			*int64;
 };
 
 struct watch {
@@ -159,7 +159,7 @@ static struct ctx {
 	const char		*hitmiss;
 	const char		*handling;
 	const char		*side;
-	int32_t			vxid;
+	int64_t			vxid;
 } CTX;
 
 static void
@@ -235,11 +235,11 @@ format_strptr(const struct format *format)
 }
 
 static int v_matchproto_(format_f)
-format_int32(const struct format *format)
+format_int64(const struct format *format)
 {
 
 	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
-	VSB_printf(CTX.vsb, "%" PRIi32, *format->int32);
+	VSB_printf(CTX.vsb, "%jd", (intmax_t)*format->int64);
 	return (1);
 }
 
@@ -448,15 +448,15 @@ addf_fragment(struct fragment *frag, const char *str)
 }
 
 static void
-addf_int32(int32_t *i)
+addf_int64(int64_t *i)
 {
 	struct format *f;
 
 	AN(i);
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = format_int32;
-	f->int32 = i;
+	f->func = format_int64;
+	f->int64 = i;
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
@@ -626,7 +626,7 @@ parse_x_format(char *buf)
 		return;
 	}
 	if (!strcmp(buf, "Varnish:vxid")) {
-		addf_int32(&CTX.vxid);
+		addf_int64(&CTX.vxid);
 		return;
 	}
 	if (!strncmp(buf, "VCL_Log:", 8)) {

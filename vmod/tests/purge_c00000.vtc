@@ -68,7 +68,7 @@ logexpect l2 -v v1 -q "Begin ~ bgfetch" {
 } -start
 
 logexpect l3 -v v1 -g raw -q "vxid == 0" {
-	expect * * ExpKill x=1008
+	expect * * ExpKill xid=1008
 } -start
 
 client c1 {

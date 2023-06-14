@@ -1,0 +1,30 @@
+# Generic rule to generate C code from VSC files. VSC files must be listed
+# in the $(VSC_SRC) variable. The $(VSCTOOL) variable must point to the
+# location of vsctool.py, normally set up by varnish.m4 at configure time.
+# The resulting $(VSC_GEN) variable must be added to $(BUILT_SOURCES). The
+# $(VSC_RST) variable references RST file names for manual pages includes.
+
+VSC_GEN = $(VSC_SRC:.vsc=.c) $(VSC_SRC:.vsc=.h)
+
+VSC_RST = $(VSC_SRC:.vsc=.rst)
+
+_VSC_RST = $(VSC_SRC:.vsc=.rst_)
+
+$(VSC_GEN) $(VSC_RST): $(VSCTOOL)
+
+SUFFIXES = .vsc .c .h .rst
+
+.vsc.c:
+	$(AM_V_GEN) $(PYTHON) $(VSCTOOL) -c $<
+
+.vsc.h:
+	$(AM_V_GEN) $(PYTHON) $(VSCTOOL) -h $<
+
+.vsc.rst:
+	$(AM_V_GEN) $(PYTHON) $(VSCTOOL) -r $< >${@}_
+	@mv ${@}_ $@
+
+clean-local: vsc-clean
+
+vsc-clean:
+	rm -f $(VSC_GEN) $(VSC_RST) $(_VSC_RST)

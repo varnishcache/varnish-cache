@@ -1,5 +1,7 @@
 varnishtest "varnishstat coverage"
 
+feature cmd "command -v cmp"
+
 server s1 {
 	rxreq
 	txresp

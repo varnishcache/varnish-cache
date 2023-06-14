@@ -35,10 +35,8 @@ SVGS = \
 	cache_req_fsm.svg \
 	cache_fetch.svg
 
-if HAVE_DOT
 CLEANFILES = \
 	$(PDFS)
-endif
 
 pdf: $(PDFS)
 
@@ -46,31 +44,10 @@ html: $(SVGS) link_srcdir
 
 # XXX does not fit onto a4 unless in landscape
 cache_fetch.pdf: cache_fetch.dot
-if ! HAVE_DOT
-	@echo ==================================================
-	@echo You need graphviz installed to generate pdf output
-	@echo ==================================================
-	@false
-else
-	@DOT@ -Tpdf -Gsize=$(SIZE) -Grotate=90 $< >$@
-endif
+	$(AM_V_GEN) $(DOT) -Tpdf -Gsize=$(SIZE) -Grotate=90 $< >$@
 
 .dot.pdf:
-if ! HAVE_DOT
-	@echo ==================================================
-	@echo You need graphviz installed to generate pdf output
-	@echo ==================================================
-	@false
-else
-	@DOT@ -Tpdf -Gsize=$(SIZE) $< >$@
-endif
+	$(AM_V_GEN) $(DOT) -Tpdf -Gsize=$(SIZE) $< >$@
 
 .dot.svg:
-if ! HAVE_DOT
-	@echo ==================================================
-	@echo You need graphviz installed to generate svg output
-	@echo ==================================================
-	@false
-else
-	@DOT@ -Tsvg $< >$@
-endif
+	$(AM_V_GEN) $(DOT) -Tsvg $< >$@

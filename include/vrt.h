@@ -46,6 +46,10 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
+#define VRT_MAJOR_VERSION	17U
+
+#define VRT_MINOR_VERSION	0U
+
 /***********************************************************************
  * Major and minor VRT API versions.
  *
@@ -53,7 +57,24 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * Next (2021-03-15)
+ * NEXT (2023-09-15)
+ *	[cache_filter.h] struct vdp gained priv1 member
+ *	VRT_trace() added
+ * 17.0 (2023-03-15)
+ *	VXID is 64 bit
+ *	[cache.h] http_GetRange() changed
+ *	exp_close added to struct vrt_backend_probe
+ *	VRT_new_backend() signature changed
+ *	VRT_new_backend_clustered() signature changed
+ *	authority field added to struct vrt_backend
+ *	release field added to struct vdi_methods
+ * 16.0 (2022-09-15)
+ *	VMOD C-prototypes moved into JSON
+ *	VRT_AddVDP() deprecated
+ *	VRT_AddVFP() deprecated
+ *	VRT_RemoveVDP() deprecated
+ *	VRT_RemoveVFP() deprecated
+ * 15.0 (2022-03-15)
  *	VRT_r_req_transport() added
  *	VRT_Assign_Backend() added
  *	VRT_StaticDirector() added
@@ -65,7 +86,13 @@
  *	BODY can either be a BLOB or a STRANDS, but only a STRANDS
  *	can take a non-NULL const char * prefix. The changes to BODY
  *	assignments doesn't break the ABI or the API.
- *
+ *	TOSTRAND() and TOSTRANDS() macros added
+ *	[cache.h] enum sess_close replaced by struct stream_close
+ *	[cache.h] http_IsHdr() added
+ *	[cache_filter.h] vfp_init_f() changed to take a VRT_CTX
+ *	[cache_filter.h] vdp_init_f() changed to take a VRT_CTX
+ *	[cache_filter.h] VRT_AddFilter() added
+ *	[cache_filter.h] VRT_RemoveFilter() added
  * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
  *	VSB_new() and VSB_delete() removed
@@ -238,10 +265,6 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	14U
-
-#define VRT_MINOR_VERSION	0U
-
 /***********************************************************************/
 
 #include <stddef.h>		// NULL, size_t
@@ -267,6 +290,7 @@ struct VSC_main;
 struct vsc_seg;
 struct vsl_log;
 struct vsmw_cluster;
+struct wrk_vpi;
 struct ws;
 
 typedef const struct stream_close *stream_close_t;
@@ -300,7 +324,7 @@ extern const struct strands *vrt_null_strands;
 /*
  * Macros for VCL_STRANDS creation
  */
-#define TOSTRAND(s)(&(struct strands){.n=1,.p=(const char *[1]){s}})
+#define TOSTRAND(s)(&(struct strands){.n=1,.p=(const char *[1]){(s)}})
 #define TOSTRANDS(x, ...)(&(struct strands){.n=x,.p=(const char *[x]){__VA_ARGS__}})
 
 /***********************************************************************
@@ -373,7 +397,8 @@ struct vrt_ctx {
 	unsigned			syntax;
 	unsigned			vclver;
 	unsigned			method;
-	unsigned			*handling;
+
+	struct wrk_vpi			*vpi;
 
 	/*
 	 * msg is for error messages and exists only for
@@ -541,6 +566,7 @@ struct vrt_endpoint {
 #define VRT_BACKEND_FIELDS(rigid)				\
 	rigid char			*vcl_name;		\
 	rigid char			*hosthdr;		\
+	rigid char			*authority;		\
 	vtim_dur			connect_timeout;	\
 	vtim_dur			first_byte_timeout;	\
 	vtim_dur			between_bytes_timeout;	\
@@ -551,6 +577,7 @@ struct vrt_endpoint {
 	do {					\
 		DA(vcl_name);			\
 		DA(hosthdr);			\
+		DA(authority);			\
 		DN(connect_timeout);		\
 		DN(first_byte_timeout);		\
 		DN(between_bytes_timeout);	\
@@ -572,7 +599,8 @@ struct vrt_backend {
 	unsigned			exp_status;		\
 	unsigned			window;			\
 	unsigned			threshold;		\
-	unsigned			initial;
+	unsigned			initial;		\
+	unsigned			exp_close;
 
 #define VRT_BACKEND_PROBE_HANDLE()		\
 	do {					\
@@ -582,6 +610,7 @@ struct vrt_backend {
 		DN(window);			\
 		DN(threshold);			\
 		DN(initial);			\
+		DN(exp_close);			\
 	} while (0)
 
 struct vrt_backend_probe {
@@ -593,9 +622,9 @@ struct vrt_backend_probe {
 };
 
 /* Backend related */
-VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *);
+VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *, VCL_BACKEND);
 VCL_BACKEND VRT_new_backend_clustered(VRT_CTX,
-    struct vsmw_cluster *, const struct vrt_backend *);
+    struct vsmw_cluster *, const struct vrt_backend *, VCL_BACKEND);
 size_t VRT_backend_vsm_need(VRT_CTX);
 void VRT_delete_backend(VRT_CTX, VCL_BACKEND *);
 struct vrt_endpoint *VRT_Endpoint_Clone(const struct vrt_endpoint *vep);
@@ -648,6 +677,7 @@ VCL_VOID VRT_UnsetHdr(VRT_CTX, VCL_HEADER);
 VCL_VOID VRT_SetHdr(VRT_CTX, VCL_HEADER, const char *pfx, VCL_STRANDS);
 VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
 unsigned VRT_handled(VRT_CTX);
+VCL_VOID VRT_trace(VRT_CTX, VCL_BOOL);
 VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
 VCL_VOID VRT_hashdata(VRT_CTX, VCL_STRANDS);
 
@@ -667,6 +697,7 @@ typedef VCL_IP vdi_getip_f(VRT_CTX, VCL_BACKEND);
 typedef void vdi_finish_f(VRT_CTX, VCL_BACKEND);
 typedef stream_close_t vdi_http1pipe_f(VRT_CTX, VCL_BACKEND);
 typedef void vdi_event_f(VCL_BACKEND, enum vcl_event_e);
+typedef void vdi_release_f(VCL_BACKEND);
 typedef void vdi_destroy_f(VCL_BACKEND);
 typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);
 typedef void vdi_list_f(VRT_CTX, VCL_BACKEND, struct vsb *, int, int);
@@ -682,6 +713,9 @@ struct vdi_methods {
 	vdi_getip_f			*getip;
 	vdi_finish_f			*finish;
 	vdi_event_f			*event;
+	// called by VRT_DelDirector: deref all backends
+	vdi_release_f			*release;
+	// when refcount goes 0
 	vdi_destroy_f			*destroy;
 	vdi_panic_f			*panic;
 	vdi_list_f			*list;

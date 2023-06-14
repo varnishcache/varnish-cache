@@ -16,11 +16,16 @@ parameters:
   configure_args:
     type: string
     default: |
+        --with-contrib \
         --with-unwind \
         --enable-developer-warnings \
         --enable-debugging-symbols \
         --disable-stack-protector \
         --with-persistent-storage \
+  build-pkgs:
+    type: string
+    default: ""
+
 jobs:
   dist:
     description: Build or download varnish-x.y.z.tar.gz that is used later for the packaging jobs
@@ -49,7 +54,7 @@ jobs:
             - run:
                 name: Download the dist tarball
                 command: |
-                  curl -s << pipeline.parameters.dist-url >> -o varnish-dist.tar.gz
+                  curl -Ls '<< pipeline.parameters.dist-url >>' -o varnish-dist.tar.gz
             - when:
                 condition: << pipeline.parameters.dist-url-sha256 >>
                 steps:
@@ -125,7 +130,7 @@ jobs:
         description: the resource class to use, usuall arm.medium or medium
         type: string
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2004:202111-02
     resource_class: << parameters.rclass >>
     steps:
       - attach_workspace:
@@ -160,30 +165,33 @@ jobs:
             mkdir -p packages
             case "<< parameters.platform >>" in
                 debian:*|ubuntu:*)  EXT=deb ;;
-                centos:*)         EXT=rpm ;;
-                alpine:*)         EXT=apk ;;
+                centos:*|fedora:*)  EXT=rpm ;;
+                almalinux:*)        EXT=rpm ;;
+                alpine:*)           EXT=apk ;;
                 *)
                     echo "unrecognized platform: << parameters.platform >>"
                     exit 1
             esac
 
-            case "<< parameters.rclass >>" in
-                arm.*)
-                    IMG=arm64v8/<< parameters.platform >>
-                    ;;
-                *)
-                    IMG=<< parameters.platform >>
-                    ;;
+            case "<< parameters.platform >>" in
+                centos:stream)      REPO=quay.io/centos/ ;;
+                *)                  REPO= ;;
             esac
 
-            set -x
-            echo "FROM $IMG" > Dockerfile
-            echo "ADD make-$EXT-packages.sh /usr/bin/" >> Dockerfile
-            echo "CMD make-$EXT-packages.sh" >> Dockerfile
+            case "<< parameters.rclass >>" in
+                arm.*)              ARCH=arm64 ;;
+                *)                  ARCH=amd64 ;;
+            esac
 
-            cp .circleci/make-$EXT-packages.sh .
-            docker build -t docker_img .
-            docker run --rm -it -e PARAM_DIST=$(echo "<< parameters.platform >>" | cut -d: -f1) -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) -v$(pwd):/varnish-cache docker_img
+            docker run \
+              --rm \
+              -it \
+              -e PARAM_DIST=$(echo "<< parameters.platform >>" | cut -d: -f1) \
+              -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) \
+              -v$(pwd):/varnish-cache \
+              --platform linux/$ARCH \
+              ${REPO}<< parameters.platform >> \
+              /varnish-cache/.circleci/make-$EXT-packages.sh
       - run:
           name: List created packages
           command: find ./packages -type f
@@ -191,13 +199,21 @@ jobs:
           root: .
           paths:
             - "packages"
-  distcheck:
+  build:
     parameters:
+      prefix:
+        description: the container image prefix (repository or architecture)
+        type: string
+        default: ""
       dist:
         description: the Linux distribution (debian|ubuntu)
         type: string
       release:
-        description: the release name (stretch|buster|bionic|focal)
+        description: the release name (buster|bullseye|bionic|focal|jammy)
+        type: string
+      make_target:
+        description: the make target to execute during the build
+        default: distcheck
         type: string
       extra_conf:
         description: platform-specific configure arguments
@@ -208,27 +224,39 @@ jobs:
     working_directory: /workspace
     steps:
       - setup_remote_docker:
-          version: 20.10.6
+          version: 20.10.11
       - run:
           name: Install docker
           command: yum install -y docker
       - checkout
       - run:
-          name: Extract and distcheck
+          name: Extract and build
           command: |
-            docker create --name workspace -v /workspace << parameters.dist >>:<< parameters.release >> /bin/true
+            docker create --name workspace -v /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> /bin/true
             docker cp /workspace workspace:/
-            docker run --volumes-from workspace -w /workspace << parameters.dist >>:<< parameters.release >> sh -c '
-            if [ << parameters.dist >> = centos ]; then
-                if [ << parameters.release >> = 8 ]; then
-                    dnf install -y "dnf-command(config-manager)"
-                    yum config-manager --set-enabled powertools
-                    yum install -y diffutils python3-sphinx
-                else
-                    yum install -y python-sphinx
-                fi
-                yum install -y epel-release
+            docker run --volumes-from workspace -w /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> sh -c '
+            case "<< parameters.dist >>" in
+            centos|almalinux|fedora)
+                yum groupinstall -y "Development Tools"
+                case "<< parameters.dist >>:<< parameters.release >>" in
+                    almalinux:9)
+                        dnf install -y "dnf-command(config-manager)"
+                        yum config-manager --set-enabled crb
+                        yum install -y diffutils
+                        yum install -y epel-release
+                        ;;
+                    centos:stream|almalinux:8)
+                        dnf install -y "dnf-command(config-manager)"
+                        yum config-manager --set-enabled powertools
+                        yum install -y diffutils
+                        yum install -y epel-release
+                        ;;
+                    centos:7)
+                        yum install -y epel-release
+                        ;;
+                esac
                 yum install -y \
+                    cpio \
                     automake \
                     git \
                     jemalloc-devel \
@@ -238,8 +266,10 @@ jobs:
                     make \
                     pcre2-devel \
                     python3 \
+                    /usr/bin/sphinx-build \
                     sudo
-            elif [ << parameters.dist >> = debian -o << parameters.dist >> = ubuntu ]; then
+                ;;
+            debian|ubuntu)
                 export DEBIAN_FRONTEND=noninteractive
                 export DEBCONF_NONINTERACTIVE_SEEN=true
                 apt-get update
@@ -260,7 +290,8 @@ jobs:
                     pkg-config \
                     python3-sphinx \
                     sudo
-            elif [ << parameters.dist >> = alpine ]; then
+                ;;
+            alpine)
                 apk update
                 apk add -q \
                     autoconf \
@@ -279,13 +310,9 @@ jobs:
                     py3-sphinx \
                     tar \
                     sudo
-            elif [ << parameters.dist >> = archlinux ]; then
-                # XXX: TEMPORARY fix for https://bugs.archlinux.org/task/69563
-                cd /tmp
-                patched_glibc=glibc-linux4-2.33-4-x86_64.pkg.tar.zst && curl -LO "https://repo.archlinuxcn.org/x86_64/$patched_glibc" && bsdtar -C / -xvf "$patched_glibc"
-                cd -
-                pacman -Sy --noconfirm \
-                    base-devel \
+                ;;
+            archlinux)
+                pacman -Syu --noconfirm \
                     ca-certificates \
                     cpio \
                     git \
@@ -297,15 +324,20 @@ jobs:
                     python-docutils \
                     python-sphinx \
                     tar
-            fi
+                ;;
+            esac
 
-            if [ << parameters.dist >> = archlinux ]; then
+            case "<< parameters.dist >>" in
+            archlinux)
                 useradd varnish
-            elif [ << parameters.dist >> = centos ]; then
-            	adduser varnish
-            else
-            	adduser --disabled-password --gecos "" varnish
-            fi
+                ;;
+            centos|almalinux|fedora)
+                adduser varnish
+                ;;
+            *)
+                adduser --disabled-password --gecos "" varnish
+                ;;
+            esac
 
             chown -R varnish:varnish .
 
@@ -322,7 +354,7 @@ jobs:
                 << parameters.extra_conf >>
             sudo -u varnish \
                 --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-                make distcheck VERBOSE=1 -j 4 -k \
+                make << parameters.make_target >> VERBOSE=1 -j 4 -k \
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
             '
@@ -346,44 +378,74 @@ jobs:
 workflows:
   version: 2
   commit:
+    unless: &packaging_cond
+      or:
+        - << pipeline.parameters.build-pkgs >>
+        - << pipeline.parameters.dist-url >>
     jobs:
-      - dist
-      - distcheck:
-          name: distcheck_centos_7
+      - build:
+          name: build_centos_7
           dist: centos
           release: "7"
-      - distcheck:
-          name: distcheck_centos_8
+      - build:
+          name: build_centos_stream
+          prefix: quay.io/centos/
           dist: centos
+          release: stream
+      - build:
+          name: build_almalinux_8
+          dist: almalinux
           release: "8"
-      - distcheck:
-          name: distcheck_debian_buster
+      - build:
+          name: build_almalinux_9
+          dist: almalinux
+          release: "9"
+      # fedora is our witness
+      - build:
+          name: build_fedora_latest
+          dist: fedora
+          release: latest
+          make_target: witness.dot
+      - build:
+          name: build_fedora_rawhide
+          dist: fedora
+          release: rawhide
+      # latest debian uses sanitizers
+      - build:
+          name: build_debian_buster
           dist: debian
           release: buster
+      - build:
+          name: build_debian_bullseye
+          dist: debian
+          release: bullseye
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
-      - distcheck:
-          name: distcheck_ubuntu_bionic
+      # oldest ubuntu goes 32bit
+      - build:
+          name: build_ubuntu_bionic
+          prefix: i386/
           dist: ubuntu
           release: bionic
-          extra_conf: CFLAGS='-g -O2 -m32'
-      - distcheck:
-          name: distcheck_alpine
+      - build:
+          name: build_ubuntu_focal
+          dist: ubuntu
+          release: focal
+      - build:
+          name: build_ubuntu_jammy
+          dist: ubuntu
+          release: jammy
+      - build:
+          name: build_alpine
           dist: alpine
           release: "latest"
-          #extra_conf: --without-jemalloc
-      - distcheck:
-          name: distcheck_archlinux
+          extra_conf: --without-contrib
+      - build:
+          name: build_archlinux
           dist: archlinux
-          release: "latest"
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 4 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
+          release: base-devel
+  packaging:
+    when: *packaging_cond
+    jobs: &packaging_jobs
       - dist
       - tar_pkg_tools
       - package:
@@ -396,11 +458,14 @@ workflows:
               platform:
                 - ubuntu:bionic
                 - ubuntu:focal
-                - debian:bullseye
+                - ubuntu:jammy
                 - debian:buster
-                - debian:stretch
+                - debian:bullseye
                 - centos:7
-                - centos:8
+                - centos:stream
+                - almalinux:8
+                - almalinux:9
+                - fedora:latest
                 - alpine:3
               rclass:
                 - arm.medium
@@ -408,3 +473,12 @@ workflows:
       - collect_packages:
           requires:
             - package
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 4 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs: *packaging_jobs

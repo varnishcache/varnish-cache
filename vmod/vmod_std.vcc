@@ -48,8 +48,9 @@ $Function REAL random(REAL lo, REAL hi)
 Returns a random real number between *lo* and *hi*.
 
 This function uses the "testable" random generator in varnishd which
-enables deterministic tests to be run (See ``m00002.vtc``).  This
-function should not be used for cryptographic applications.
+enables deterministic tests to be run (See ``debug.srandom`` CLI
+command).  This function should not be used for cryptographic
+applications.
 
 Example::
 
@@ -520,6 +521,8 @@ Example::
 		...
 	}
 
+$Restrict vcl_recv
+
 $Function VOID late_100_continue(BOOL late)
 
 Controls when varnish reacts to an ``Expect: 100-continue`` client
@@ -554,6 +557,8 @@ Example::
 		...
 	 }
 
+$Restrict vcl_recv
+
 $Function VOID set_ip_tos(INT tos)
 
 Sets the Differentiated Services Codepoint (DSCP) / IPv4 Type of
@@ -571,6 +576,8 @@ Example::
 		std.set_ip_tos(0);
 	}
 
+$Restrict client
+
 $Function VOID rollback(HTTP h)
 
 Restores the *h* HTTP headers to their original state.
@@ -578,6 +585,8 @@ Restores the *h* HTTP headers to their original state.
 Example::
 
 	std.rollback(bereq);
+
+$Restrict backend vcl_recv vcl_pass vcl_hash vcl_purge vcl_miss vcl_hit vcl_deliver vcl_synth
 
 $Function BOOL ban(STRING)
 
@@ -658,6 +667,16 @@ $Function STRING ban_error()
 Returns a textual error description of the last `std.ban()`_ call from
 the same task or the empty string if there either was no error or no
 `std.ban()`_ call.
+
+$Function TIME now()
+
+Returns the current time. In contrast to the ``now`` built-in
+variable, every call returns a new value.
+
+$Function DURATION timed_call(SUB)
+
+Call the given SUB and return a high precision measurement of the
+execution time.
 
 DEPRECATED functions
 ====================

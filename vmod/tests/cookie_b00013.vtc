@@ -9,7 +9,7 @@ varnish v1 -vcl {
 		cookie.keep_re("NOTHING_MATCHES_SO_NOTHING_KEPT$");
 		set resp.http.X-empty = cookie.get_string();
 
-		cookie.parse("biscuit=standard; bredela=eggwhites; empire=jellytots;");
+		cookie.parse("biscuit=standard; bredela=eggwhites; empire=jellytots");
 		cookie.keep_re("^b");
 		set resp.http.X-bees = cookie.get_string();
 	}
@@ -19,5 +19,5 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.http.X-empty == ""
-	expect resp.http.X-bees == "biscuit=standard; bredela=eggwhites;"
+	expect resp.http.X-bees == "biscuit=standard; bredela=eggwhites"
 } -run

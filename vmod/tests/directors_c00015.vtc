@@ -16,8 +16,6 @@ varnish v1 -vcl {
 	if (req.url == "/1") {
 	    set req.backend_hint = shard.backend(
 	      param=blob.decode(HEX, encoded=""));
-	} else if (req.url == "/2") {
-	    p.set(by=HASH);
 	}
     }
 } -start
@@ -30,9 +28,6 @@ logexpect l1 -v v1 -g raw -d 1 {
 logexpect l2 -v v1 -g raw {
     expect * 1001 VCL_Error {vmod_directors: shard shard: .backend.key_blob. param invalid}
 } -start
-logexpect l3 -v v1 -g raw {
-    expect * 1003 VCL_Error {vmod_directors: shard p: shard_param.set.. may only be used in vcl_init and in backend/pipe context}
-} -start
 
 client c1 {
     txreq -url "/1"
@@ -41,15 +36,8 @@ client c1 {
     expect_close
 } -run
 
-client c1 {
-    txreq -url "/2"
-    rxresp
-    expect resp.status == 503
-    expect_close
-} -run
 
 logexpect l2 -wait
-logexpect l3 -wait
 
 varnish v1 -errvcl {shard .associate param invalid} {
     import directors;
@@ -204,5 +192,24 @@ varnish v1 -errvcl {vmod_directors: shard shard: .remove_backend(): either backe
     sub vcl_init {
 	new shard = directors.shard();
 	shard.remove_backend();
+    }
+}
+
+varnish v1 -errvcl "Not available in subroutine 'vcl_recv'" {
+    import directors;
+    import blob;
+
+    backend dummy None;
+
+    sub vcl_init {
+        new shard = directors.shard();
+	    new p = directors.shard_param();
+	    p.set(by=BLOB, key_blob=blob.decode(HEX, encoded=""));
+    }
+
+    sub vcl_recv {
+	    if (req.url == "/2") {
+	        p.set(by=HASH);
+	    }
     }
 }

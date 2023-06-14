@@ -29,3 +29,5 @@ client c1 {
 	} -run
 	stream 1 -wait
 } -run
+
+varnish v1 -expect client_req == 2

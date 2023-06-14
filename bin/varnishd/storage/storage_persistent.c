@@ -494,7 +494,7 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
 	INIT_OBJ(ss, STORAGE_MAGIC);
 	ss->ptr = PRNUP(sc, ss + 1);
 	ss->space = max_size;
-	ss->priv = sc;
+	ss->priv = sc->base;
 	if (ssg != NULL)
 		*ssg = sg;
 	return (ss);
@@ -566,7 +566,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
 	EXP_COPY(so, oc);
-	so->ptr = (uint8_t*)o - sc->base;
+	so->ptr = (uint8_t*)(o->objstore) - sc->base;
 	so->ban = BAN_Time(oc->ban);
 
 	smp_init_oc(oc, sg, objidx);
@@ -683,8 +683,14 @@ smp_init(void)
 {
 	lck_smp = Lck_CreateClass(NULL, "smp");
 	CLI_AddFuncs(debug_cmds);
-	smp_oc_realmethods = SML_methods;
-	smp_oc_realmethods.objtouch = NULL;
+	smp_oc_realmethods.objfree = SML_methods.objfree;
+	smp_oc_realmethods.objiterator = SML_methods.objiterator;
+	smp_oc_realmethods.objgetspace = SML_methods.objgetspace;
+	smp_oc_realmethods.objextend = SML_methods.objextend;
+	smp_oc_realmethods.objbocdone = SML_methods.objbocdone;
+	smp_oc_realmethods.objgetattr = SML_methods.objgetattr;
+	smp_oc_realmethods.objsetattr = SML_methods.objsetattr;
+	smp_oc_realmethods.objtouch = LRU_Touch;
 	smp_oc_realmethods.objfree = smp_oc_objfree;
 }
 

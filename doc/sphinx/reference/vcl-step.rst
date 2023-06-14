@@ -1,24 +1,63 @@
 ..
-	Copyright (c) 2012-2019 Varnish Software AS
+	Copyright (c) 2013-2021 Varnish Software AS
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-.. _user-guide-vcl_actions:
 
-Actions
-=======
+.. role:: ref(emphasis)
+
+.. _vcl-steps(7):
+
+=========
+VCL-steps
+=========
+
+--------------------
+Built-in subroutines
+--------------------
+
+:Manual section: 7
+
+
+DESCRIPTION
+===========
+
+Various built-in subroutines are called during processing of client
+and backend requests as well as upon ``vcl.load`` and ``vcl.discard``.
+
+See :ref:`reference-states` for a detailed graphical overview of the
+states and how they relate to core code functions and VCL subroutines.
+
+Built-in subroutines always terminate with a ``return (<action>)``,
+where ``<action>`` determines how processing continues in the request
+processing state machine.
+
+The behaviour of actions is identical or at least similar across
+subroutines, so differences are only documented where relevant.
+
+Common actions are documented in
+:ref:`vcl_actions` in the next section. Actions specific
+to only one or some subroutines are documented in :ref:`vcl_steps`.
+
+A default behavior is provided for all :ref:`reference-states` in the
+:ref:`vcl-built-in-code` code.
+
+.. _vcl_actions:
+
+VCL Actions
+===========
 
 Actions are used with the ``return(<action>)`` keyword, which returns
 control from subroutines back to varnish. The action determines how
 processing in varnish continues as shown in :ref:`reference-states`.
 
 Common actions are documented here, while additional actions specific
-to only one or some subroutines are documented in
-:ref:`vcl-built-in-subs` as well as which action can be used from
-which built in subroutine.
+to only one or some subroutines are documented in the next section
+:ref:`vcl_steps` as well as which action can be used from which built
+in subroutine.
 
-common actions for the client and backend side
-----------------------------------------------
+Common actions for the client and backend side
+##############################################
 
 .. _fail:
 
@@ -33,8 +72,8 @@ common actions for the client and backend side
     Intended for fatal errors, for which only minimal error handling is
     possible.
 
-common actions for the client side
-----------------------------------
+Common actions for the client side
+##################################
 
 .. _synth:
 
@@ -76,8 +115,8 @@ common actions for the client side
     preserved except for ``req.restarts`` and ``req.xid``, which need
     to change by design.
 
-common actions for the backend side
------------------------------------
+Common actions for the backend side
+###################################
 
 .. _abandon:
 
@@ -87,3 +126,23 @@ common actions for the backend side
     Abandon the backend request. Unless the backend request was a
     background fetch, control is passed to :ref:`vcl_synth` on the
     client side with ``resp.status`` preset to 503.
+
+
+.. include:: vcl_step.rst
+
+
+
+SEE ALSO
+========
+
+* :ref:`varnishd(1)`
+* :ref:`vcl(7)`
+
+COPYRIGHT
+=========
+
+This document is licensed under the same license as Varnish
+itself. See LICENSE for details.
+
+* Copyright (c) 2006 Verdens Gang AS
+* Copyright (c) 2006-2021 Varnish Software AS

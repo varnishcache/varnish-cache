@@ -96,12 +96,17 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 {
 	/* XXX: This might belong in cache/cache_http.c */
 	const char *b0;
+	int disallow_empty;
 	unsigned n;
+	char *p;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	AN(b);
 	assert(namelen >= 2);	/* 2 chars from the ': ' that we added */
 	assert(namelen <= len);
+
+	disallow_empty = 0;
 
 	if (len > UINT_MAX) {	/* XXX: cache_param max header size */
 		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.20s", b);
@@ -117,10 +122,33 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			b += namelen;
 			len -= namelen;
 			n = HTTP_HDR_METHOD;
+			disallow_empty = 1;
+
+			/* First field cannot contain SP or CTL */
+			for (p = b, u = 0; u < len; p++, u++) {
+				if (vct_issp(*p) || vct_isctl(*p))
+					return (H2SE_PROTOCOL_ERROR);
+			}
 		} else if (!strncmp(b, ":path: ", namelen)) {
 			b += namelen;
 			len -= namelen;
 			n = HTTP_HDR_URL;
+			disallow_empty = 1;
+
+			// rfc9113,l,2693,2705
+			if (len > 0 && *b != '/' &&
+			    strncmp(b, "*", len) != 0) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Illegal :path pseudo-header %.*s",
+				    (int)len, b);
+				return (H2SE_PROTOCOL_ERROR);
+			}
+
+			/* Second field cannot contain LWS or CTL */
+			for (p = b, u = 0; u < len; p++, u++) {
+				if (vct_islws(*p) || vct_isctl(*p))
+					return (H2SE_PROTOCOL_ERROR);
+			}
 		} else if (!strncmp(b, ":scheme: ", namelen)) {
 			/* XXX: What to do about this one? (typically
 			   "http" or "https"). For now set it as a normal
@@ -128,6 +156,15 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			b++;
 			len-=1;
 			n = hp->nhd;
+
+			for (p = b + namelen, u = 0; u < len-namelen;
+			    p++, u++) {
+				if (vct_issp(*p) || vct_isctl(*p))
+					return (H2SE_PROTOCOL_ERROR);
+			}
+
+			if (!u)
+				return (H2SE_PROTOCOL_ERROR);
 		} else if (!strncmp(b, ":authority: ", namelen)) {
 			b+=6;
 			len-=6;
@@ -163,6 +200,13 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 
 	hp->hd[n].b = b;
 	hp->hd[n].e = b + len;
+
+	if (disallow_empty && !Tlen(hp->hd[n])) {
+		VSLb(hp->vsl, SLT_BogoHeader,
+		    "Empty pseudo-header %.*s",
+		    (int)namelen, b0);
+		return (H2SE_PROTOCOL_ERROR);
+	}
 
 	return (0);
 }

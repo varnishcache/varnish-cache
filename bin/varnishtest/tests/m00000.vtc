@@ -140,7 +140,15 @@ varnish v1 -errvcl {Symbol not found: 'obj'} {
 	}
 }
 
-varnish v1 -errvcl {Failed initialization} {
+varnish v1 -errvcl {rot13: VFP already registered (per-vcl)} {
+	import debug;
+	backend none none;
+	sub vcl_init {
+		debug.rot104();
+	}
+}
+
+varnish v1 -errvcl {Failed from VCL} {
 	import debug;
 	import directors;
 	backend default { .host = "${localhost}"; }
@@ -157,7 +165,32 @@ varnish v1 -errvcl {Failed initialization} {
 	}
 }
 
-varnish v1 -cliok "param.set vcc_allow_inline_c on"
+varnish v1 -errvcl {Failed initialization} {
+	import debug;
+	backend none none;
+	sub vcl_init {
+		new fails = debug.obj("fail");
+	}
+}
+
+shell {
+	cat >${tmpdir}/f1 <<-EOF
+	vcl 4.1;
+	import debug;
+	backend none none;
+	sub vcl_init {
+		new fails = debug.obj("fail");
+	}
+	EOF
+}
+
+varnish v1 -clierr 300 "vcl.load f1 ${tmpdir}/f1"
+
+shell -exit 1 -expect {failing as requested} {
+	varnishadm -n ${tmpdir}/v1 vcl.load f1 ${tmpdir}/f1
+}
+
+varnish v1 -cliok "param.set vcc_feature +allow_inline_c"
 varnish v1 -vcl {
 	import vtc;
 
@@ -281,7 +314,7 @@ varnish v1 -cliok "vcl.list"
 
 varnish v1 -expect vmods == 3
 
-varnish v1 -cliok "vcl.discard vcl[1-8]"
+varnish v1 -cliok "vcl.discard vcl[1-9] vcl10"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 

@@ -49,6 +49,7 @@ code instead::
         vdi_getip_f                     *getip;
         vdi_finish_f                    *finish;
         vdi_event_f                     *event;
+        vdi_release_f                   *release;
         vdi_destroy_f                   *destroy;
         vdi_panic_f                     *panic;
         vdi_list_f                      *list;
@@ -60,6 +61,7 @@ code instead::
         void                            *priv;
         char                            *vcl_name;
         struct vcldir                   *vdir;
+        struct lock                     *mtx;
     };
 
 A director can be summed up as:
@@ -93,10 +95,10 @@ The fundamental steps towards a director implementation are:
 
 - in your destructor or other finalizer, call ``VRT_DelDirector()``
 
-For forwards compatibility, it is strongly recommended for the last
-step not to destroy the actual director private state, but rather
-implement and declare in ``struct vdi_methods`` a ``destroy``
-callback.
+- implement a ``destroy`` callback to destroy the actual director
+  private state. It will be called when all references to the director
+  are gone, until then the private state must remain intact and
+  ``vdi_methods`` functions callable (but they may return errors).
 
 While vmods can implement functions returning directors,
 :ref:`ref-vmod-vcl-c-objects` are usually a more natural
@@ -116,6 +118,18 @@ director. Directors are walked until a leaf director is found. A leaf director
 doesn't have a ``resolve`` function and is used to actually make the backend
 request, just like the backends you declare in VCL.
 
+*load balancing* directors use ``VRT_Assign_Backend()`` to take
+references to other directors. They *must* implement a ``release``
+callback which has to release all references to other directors and
+ensure that none are gained after it returns.
+
+Static Directors
+================
+
+As opposed to dynamic backends covered below, directors which are
+guaranteed to have VCL lifetime (that is, they do not get destroyed
+before the VCL goes cold) can call ``VRT_StaticDirector()`` to avoid
+reference counting overhead.
 
 Dynamic Backends
 ================
@@ -147,9 +161,8 @@ its VCL, it can be deleted any time with ``VRT_delete_backend``. The
 VCL will delete the remaining backends once discarded, you don't need
 to take care of it.
 
-.. XXX this does not quite work yet because the deleted backend could
-   be referenced, but at least that's where we want to get to. See
-   also https://github.com/varnishcache/varnish-cache/pull/2725
+Reference counting is used to ensure that backends which are no longer
+referenced are destroyed.
 
 Finally, Varnish will take care of event propagation for *all* native backends,
 but dynamic backends can only be created when the VCL is warm. If your backends
@@ -204,6 +217,11 @@ to implement the whole probing infrastructure from scratch.
 You may also consider making your custom backend compliant with regards to the
 VCL state (see :ref:`ref-vmod-event-functions`).
 
+If you are implementing the `gethdrs` method of your backend (i.e. your
+backend is able to generate a backend response to be manipulated in
+`vcl_backend_response`), you will want to log the response code, protocol and
+the various headers it'll create for easier debugging. For this, you can look
+at the `VSL*` family of functions, listed in `cache/cache.h`.
 
 Data structure considerations
 -----------------------------

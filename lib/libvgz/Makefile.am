@@ -1,11 +1,13 @@
 #
 
-AM_LDFLAGS  = $(AM_LT_LDFLAGS)
+AM_CFLAGS = $(AM_LT_CFLAGS) \
+	-D_LARGEFILE64_SOURCE=1 \
+	-DZLIB_CONST \
+	$(VGZ_CFLAGS)
+
+AM_LDFLAGS = $(AM_LT_LDFLAGS)
 
 noinst_LTLIBRARIES = libvgz.la
-
-libvgz_la_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST \
-	$(libvgz_extra_cflags)
 
 libvgz_la_SOURCES = \
 	adler32.c \

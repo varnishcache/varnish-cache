@@ -1,4 +1,4 @@
-varnishtest "test if our default paramers make sense ..."
+varnishtest "test if our default parameters make sense ..."
 
 feature 64bit
 feature !sanitizer

@@ -149,7 +149,7 @@ vmod_log(VRT_CTX, VCL_STRANDS s)
 	if (ctx->vsl != NULL)
 		VSLbs(ctx->vsl, SLT_VCL_Log, s);
 	else
-		VSLs(SLT_VCL_Log, 0, s);
+		VSLs(SLT_VCL_Log, NO_VXID, s);
 }
 
 /* XXX use vsyslog() ? */
@@ -270,12 +270,7 @@ VCL_VOID v_matchproto_(td_std_late_100_continue)
 vmod_late_100_continue(VRT_CTX, VCL_BOOL late)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ctx->method != VCL_MET_RECV) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
-		    "std.late_100_continue() only valid in vcl_recv{}");
-		return;
-	}
-
+	assert(ctx->method == VCL_MET_RECV);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->want100cont)
 		ctx->req->late100cont = late;
@@ -369,4 +364,23 @@ vmod_ban_error(VRT_CTX)
 	if (r == NULL)
 		r = "";
 	return (r);
+}
+
+VCL_TIME v_matchproto_(td_std_now)
+vmod_now(VRT_CTX)
+{
+
+	(void) ctx;
+	return (VTIM_real());
+}
+
+VCL_DURATION v_matchproto_(td_std_timed_call)
+vmod_timed_call(VRT_CTX, VCL_SUB sub)
+{
+	vtim_mono b;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	b = VTIM_mono();
+	VRT_call(ctx, sub);
+	return (VTIM_mono() - b);
 }

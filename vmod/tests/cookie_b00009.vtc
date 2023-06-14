@@ -14,13 +14,13 @@ varnish v1 -vcl {
 client c1 {
 	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
 	rxresp
-	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
 } -run
 
 client c2 {
 	txreq -hdr "Cookie: __utmc=253898641; __utma=253898641.654622101.1372224466.1372224466.1372224466.1; __utmb=253898641.44.10.1372224466; __utmz=253898641.1372224466.1.1.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=index%2Bof%2Bccnp%2Bpdf"
 	rxresp
-	expect resp.http.X-foo == "__utmc=253898641; __utma=253898641.654622101.1372224466.1372224466.1372224466.1; __utmb=253898641.44.10.1372224466; __utmz=253898641.1372224466.1.1.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=index%2Bof%2Bccnp%2Bpdf;"
+	expect resp.http.X-foo == "__utmc=253898641; __utma=253898641.654622101.1372224466.1372224466.1372224466.1; __utmb=253898641.44.10.1372224466; __utmz=253898641.1372224466.1.1.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=index%2Bof%2Bccnp%2Bpdf"
 } -run
 
 client c3 {
@@ -40,12 +40,12 @@ client c4 {
 client c5 {
 	txreq -hdr "Cookie: cookie1=foobarbaz"
 	rxresp
-	expect resp.http.X-foo == "cookie1=foobarbaz;"
+	expect resp.http.X-foo == "cookie1=foobarbaz"
 } -run
 
 # Don't overflow the buffer with an edge case
 client c6 {
 	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128a;=" -hdr "X-Not-Cookie: sessionid=a707505310ddf259bb290d3ca63fc561"
 	rxresp
-	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128a;"
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128a"
 } -run

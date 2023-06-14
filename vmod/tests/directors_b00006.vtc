@@ -61,6 +61,8 @@ client c1 {
 	expect resp.bodylen == 4
 } -run
 
+varnish v1 -vsl_catchup
+
 server s1 -start
 server s2 -start
 
@@ -73,6 +75,8 @@ client c2 {
 	rxresp
 	expect resp.bodylen == 2
 } -run
+
+varnish v1 -vsl_catchup
 
 server s4 -start
 

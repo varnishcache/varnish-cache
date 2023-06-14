@@ -1,0 +1,32 @@
+varnishtest "probe expect close"
+
+server s0 {
+	rxreq
+	txresp
+	expect_close
+} -dispatch
+
+varnish v1 -vcl+backend {
+	probe default {
+		.window = 3;
+		.threshold = 1;
+		.timeout = 0.5s;
+		.interval = 0.1s;
+		.expect_close = true;
+	}
+} -start
+
+varnish v2 -vcl+backend {
+	probe default {
+		.window = 3;
+		.threshold = 1;
+		.timeout = 0.5s;
+		.interval = 0.1s;
+		.expect_close = false;
+	}
+} -start
+
+delay 2.0
+
+varnish v1 -cliexpect sick backend.list
+varnish v2 -cliexpect healthy backend.list

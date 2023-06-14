@@ -74,6 +74,9 @@ tweak_t tweak_boolean;
 tweak_t tweak_bytes;
 tweak_t tweak_bytes_u;
 tweak_t tweak_double;
+tweak_t tweak_debug;
+tweak_t tweak_experimental;
+tweak_t tweak_feature;
 tweak_t tweak_poolparam;
 tweak_t tweak_storage;
 tweak_t tweak_string;
@@ -81,9 +84,7 @@ tweak_t tweak_thread_pool_min;
 tweak_t tweak_thread_pool_max;
 tweak_t tweak_timeout;
 tweak_t tweak_uint;
+tweak_t tweak_vcc_feature;
 tweak_t tweak_vsl_buffer;
+tweak_t tweak_vsl_mask;
 tweak_t tweak_vsl_reclen;
-
-extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */
-extern struct parspec VSL_parspec[]; /* mgt_param_vsl.c */
-extern struct parspec WRK_parspec[]; /* mgt_pool.c */

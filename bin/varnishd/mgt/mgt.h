@@ -157,7 +157,7 @@ void VJ_subproc(enum jail_subproc_e);
 int VJ_make_workdir(const char *);
 int VJ_make_subdir(const char *, const char *, struct vsb *);
 void VJ_fix_fd(int, enum jail_fixfd_e);
-void VJ_unlink(const char *);
+void VJ_unlink(const char *, int);
 void VJ_rmdir(const char *);
 
 extern const struct jail_tech jail_tech_unix;
@@ -191,13 +191,12 @@ void MCF_ParamConf(enum mcf_which_e, const char *param, const char *, ...)
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
 void MCF_DumpRstParam(void);
-void MCF_AddParams(struct parspec *ps);
 extern struct params mgt_param;
 
 /* mgt_shmem.c */
 void mgt_SHM_Init(void);
 void mgt_SHM_static_alloc(const void *, ssize_t size,
-    const char *class, const char *ident);
+    const char *category, const char *ident);
 void mgt_SHM_Create(void);
 void mgt_SHM_Destroy(int keep);
 
@@ -220,7 +219,8 @@ char **MGT_NamedArg(const char *, const char **, const char *);
 /* stevedore_mgt.c */
 extern const char *mgt_stv_h2_rxbuf;
 void STV_Config(const char *spec);
-void STV_Config_Transient(void);
+void STV_Config_Final(void);
+void STV_Init(void);
 
 /* mgt_vcc.c */
 void mgt_DumpBuiltin(void);
@@ -237,12 +237,12 @@ extern char *mgt_cc_cmd_def;
 extern char *mgt_cc_warn;
 extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;
-#define MGT_VCC(t, n, cc) extern t mgt_vcc_ ## n;
-#include <tbl/mgt_vcc.h>
 
 #if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
 #error "Keep pthreads out of in manager process"
 #endif
 
-#define MGT_FEATURE(x)	COM_FEATURE(mgt_param.feature_bits, x)
-#define MGT_DO_DEBUG(x)	COM_DO_DEBUG(mgt_param.debug_bits, x)
+#define MGT_FEATURE(x)		COM_FEATURE(mgt_param.feature_bits, x)
+#define MGT_EXPERIMENT(x)	COM_EXPERIMENT(mgt_param.experimental_bits, x)
+#define MGT_DO_DEBUG(x)		COM_DO_DEBUG(mgt_param.debug_bits, x)
+#define MGT_VCC_FEATURE(x)	COM_VCC_FEATURE(mgt_param.vcc_feature_bits, x)
