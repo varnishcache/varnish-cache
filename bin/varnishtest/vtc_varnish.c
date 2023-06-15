@@ -425,7 +425,7 @@ varnish_launch(struct varnish *v)
 	VSB_cat(vsb, " -p sigsegv_handler=on");
 	VSB_cat(vsb, " -p thread_pool_min=10");
 	VSB_cat(vsb, " -p debug=+vtc_mode");
-	VSB_cat(vsb, " -p vsl_mask=+Debug");
+	VSB_cat(vsb, " -p vsl_mask=+Debug,+H2RxHdr,+H2RxBody");
 	VSB_cat(vsb, " -p h2_initial_window_size=1m");
 	VSB_cat(vsb, " -p h2_rx_window_low_water=64k");
 	if (!v->has_a_arg) {
