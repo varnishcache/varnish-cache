@@ -4,7 +4,7 @@ barrier b1 sock 3
 
 server s1 {
 	rxreq
-	expect req.url == /1
+	expect req.url == "/1"
 	expect req.body == abcde
 	txresp
 	rxreq
@@ -14,6 +14,7 @@ server s1 {
 	expect req.body == a
 } -start
 
+varnish v1 -cliok "param.set fetch_chunksize 64k"
 varnish v1 -vcl+backend {
 	import vtc;
 	sub vcl_recv {
