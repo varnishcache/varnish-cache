@@ -336,6 +336,18 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	startup_timeout,
+	/* type */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"0.000",
+	/* units */	"seconds",
+	/* descr */
+	"Alternative timeout for the initial worker process startup.\n"
+	"If cli_timeout is longer than startup_timeout, it is used instead."
+)
+
+PARAM_SIMPLE(
 	/* name */	clock_skew,
 	/* type */	uint,
 	/* min */	"0",

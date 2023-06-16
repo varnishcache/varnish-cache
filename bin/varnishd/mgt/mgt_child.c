@@ -90,6 +90,7 @@ static struct vlu	*child_std_vlu;
 static struct vsb *child_panic = NULL;
 
 static void mgt_reap_child(void);
+static int kill_child(void);
 
 /*=====================================================================
  * Panic string evacuation and handling
@@ -302,12 +303,14 @@ child_poker(const struct vev *e, int what)
 static void
 mgt_launch_child(struct cli *cli)
 {
-	pid_t pid, pidr;
+	pid_t pid;
 	unsigned u;
 	char *p;
 	struct vev *e;
 	int i, cp[2];
 	struct rlimit rl[1];
+	vtim_dur dstart;
+	vtim_mono t0;
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -436,15 +439,23 @@ mgt_launch_child(struct cli *cli)
 	AN(child_std_vlu);
 
 	/* Wait for cache/cache_cli.c::CLI_Run() to check in */
-	if (VCLI_ReadResult(child_cli_in, &u, NULL, mgt_param.cli_timeout)) {
+	dstart = vmax(mgt_param.startup_timeout, mgt_param.cli_timeout);
+	t0 = VTIM_mono();
+	if (VCLI_ReadResult(child_cli_in, &u, NULL, dstart)) {
+		int bstart = mgt_param.startup_timeout >= mgt_param.cli_timeout;
 		assert(u == CLIS_COMMS);
-		pidr = waitpid(pid, &i, 0);
-		assert(pidr == pid);
-		do {
-			i = VLU_Fd(child_std_vlu, child_output);
-		} while (i == 0);
-		MGT_Complain(C_ERR, "Child failed on launch");
-		exit(1);		// XXX Harsh ?
+		if (VTIM_mono() - t0 < dstart)
+			mgt_launch_err(cli, u, "Child failed on launch ");
+		else
+			mgt_launch_err(cli, u, "Child failed on launch "
+			    "within %s_timeout=%.2fs%s",
+			    bstart ? "startup" : "cli", dstart,
+			    bstart ? "" : " (tip: set startup_timeout)");
+		child_pid = pid;
+		kill_child();
+		mgt_reap_child();
+		child_state = CH_STOPPED;
+		return;
 	} else {
 		assert(u == CLIS_OK);
 		fprintf(stderr, "Child launched OK\n");

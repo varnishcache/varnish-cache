@@ -9,7 +9,8 @@ process p1 -dump {
 process p1 -expect-text 0 0 {to launch}
 process p1 -write "start\n"
 process p1 -expect-text 0 0 {-spersistent has been deprecated}
-process p1 -wait
+process p1 -write "quit\n"
+process p1 -expect-exit 0x20 -wait
 
 server s1 {
 	rxreq
