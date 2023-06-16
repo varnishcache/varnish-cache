@@ -1,5 +1,5 @@
 /*-
- * Copyright 2021 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2021,2023 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * Author: Nils Goroll <nils.goroll@uplex.de>
@@ -35,10 +35,21 @@
 #include "cache/cache_varnishd.h"
 #include "cache/cache_obj.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
+
+#include "vtim.h"
+#include "vnum.h"
+
+/* we cheat and make the open delay a static to avoid
+ * having to wrap all callbacks to unpack the priv
+ * pointer. Consequence: last dopen applies to all
+ * debug stevedores
+ */
+static vtim_dur dopen = 0.0;
 
 /* returns one byte less than requested */
 static int v_matchproto_(objgetspace_f)
@@ -51,6 +62,18 @@ smd_lsp_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	return (SML_methods.objgetspace(wrk, oc, sz, ptr));
 }
 
+#define dur_arg(a, s, d)					\
+	(! strncmp((a), (s), strlen(s))				\
+	 && (d = VNUM_duration(a + strlen(s))) != nan(""))
+
+static void smd_open(struct stevedore *stv)
+{
+	sma_stevedore.open(stv);
+	fprintf(stderr, "-sdebug open delay %fs\n", dopen);
+	if (dopen > 0.0)
+		VTIM_sleep(dopen);
+}
+
 static void v_matchproto_(storage_init_f)
 smd_init(struct stevedore *parent, int aac, char * const *aav)
 {
@@ -58,8 +81,9 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	const char *ident;
 	int i, ac = 0;
 	size_t nac;
-	char *a;
+	vtim_dur d, dinit = 0.0;
 	char **av;	//lint -e429
+	char *a;
 
 	ident = parent->ident;
 	memcpy(parent, &sma_stevedore, sizeof *parent);
@@ -83,6 +107,14 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 				methods->objgetspace = smd_lsp_getspace;
 				continue;
 			}
+			if (dur_arg(a, "dinit=", d)) {
+				dinit = d;
+				continue;
+			}
+			if (dur_arg(a, "dopen=", d)) {
+				dopen = d;
+				continue;
+			}
 		}
 		av[ac] = a;
 		ac++;
@@ -93,6 +125,12 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 
 	sma_stevedore.init(parent, ac, av);
 	free(av);
+	fprintf(stderr, "-sdebug init delay %fs\n", dinit);
+	fprintf(stderr, "-sdebug open delay in init %fs\n", dopen);
+	if (dinit > 0.0) {
+		VTIM_sleep(dinit);
+	}
+	parent->open = smd_open;
 }
 
 const struct stevedore smd_stevedore = {
