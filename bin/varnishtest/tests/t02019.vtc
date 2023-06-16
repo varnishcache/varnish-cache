@@ -15,6 +15,7 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set fetch_chunksize 64k"
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.reset h2_initial_window_size"
 varnish v1 -cliok "param.reset h2_rx_window_low_water"
@@ -22,21 +23,25 @@ varnish v1 -cliok "param.reset h2_rx_window_low_water"
 client c1 {
 	stream 1 {
 		txreq -req POST -url /1 -hdr "content-length" "131072" -nostrend
+
+		expect stream.peer_window == 65535
 		txdata -datalen 16384 -nostrend
 		txdata -datalen 16384 -nostrend
 		txdata -datalen 16384 -nostrend
 		txdata -datalen 16383 -nostrend
+		expect stream.peer_window == 0
 		barrier b1 sync
+
+		loop 4 {
+			rxwinup
+			expect stream.peer_window == 65535
+			txdata -datalen 16384 -nostrend
+		}
+
 		rxwinup
-		txdata -datalen 16384 -nostrend
-		rxwinup
-		txdata -datalen 16384 -nostrend
-		rxwinup
-		txdata -datalen 16384 -nostrend
-		rxwinup
-		txdata -datalen 16384 -nostrend
-		rxwinup
+		expect stream.peer_window == 65535
 		txdata -datalen 1
+
 		rxresp
 		expect resp.status == 200
 	} -run
