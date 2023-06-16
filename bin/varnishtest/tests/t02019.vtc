@@ -32,21 +32,11 @@ client c1 {
 		expect stream.peer_window == 0
 		barrier b1 sync
 
-		rxwinup
-		expect stream.peer_window == 65535
-		txdata -datalen 16384 -nostrend
-
-		rxwinup
-		expect stream.peer_window == 65535
-		txdata -datalen 16384 -nostrend
-
-		rxwinup
-		expect stream.peer_window == 65535
-		txdata -datalen 16384 -nostrend
-
-		rxwinup
-		expect stream.peer_window == 65535
-		txdata -datalen 16384 -nostrend
+		loop 4 {
+			rxwinup
+			expect stream.peer_window == 65535
+			txdata -datalen 16384 -nostrend
+		}
 
 		rxwinup
 		expect stream.peer_window == 65535
