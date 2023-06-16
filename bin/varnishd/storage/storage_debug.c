@@ -58,6 +58,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	const char *ident;
 	int i, ac = 0;
 	size_t nac;
+	char *a;
 	char **av;	//lint -e429
 
 	ident = parent->ident;
@@ -76,11 +77,14 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	av = calloc(nac, sizeof *av);
 	AN(av);
 	for (i = 0; i < aac; i++) {
-		if (aav[i] != NULL && ! strcmp(aav[i], "lessspace")) {
-			methods->objgetspace = smd_lsp_getspace;
-			continue;
+		a = aav[i];
+		if (a != NULL) {
+			if (! strcmp(a, "lessspace")) {
+				methods->objgetspace = smd_lsp_getspace;
+				continue;
+			}
 		}
-		av[ac] = aav[i];
+		av[ac] = a;
 		ac++;
 	}
 	assert(ac >= 0);
