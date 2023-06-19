@@ -90,6 +90,17 @@ do {									\
 	VAS_Fail(__func__, __FILE__, __LINE__, expl, VAS_WRONG);	\
 } while (0)
 
+#define _PTOK(call, var)						\
+do { 									\
+	int var = call;							\
+	if (!var)							\
+		break;							\
+	errno = var;							\
+	WRONG(#call " failed");						\
+} while (0)
+
+#define PTOK(call) _PTOK(call, VUNIQ_NAME(_pterr))
+
 #define INCOMPL()							\
 do {									\
 	VAS_Fail(__func__, __FILE__, __LINE__,				\
