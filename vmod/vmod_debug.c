@@ -689,8 +689,8 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 		return (0);
 	}
 
-	AZ(pthread_create(&thread, NULL, cooldown_thread, priv_vcl));
-	AZ(pthread_detach(thread));
+	PTOK(pthread_create(&thread, NULL, cooldown_thread, priv_vcl));
+	PTOK(pthread_detach(thread));
 	return (0);
 }
 
@@ -758,14 +758,14 @@ VCL_VOID
 xyzzy_vsc_new(VRT_CTX)
 {
 	(void)ctx;
-	AZ(pthread_mutex_lock(&vsc_mtx));
+	PTOK(pthread_mutex_lock(&vsc_mtx));
 	if (vsc == NULL) {
 		AZ(vsc_seg);
 		vsc = VSC_debug_New(NULL, &vsc_seg, "");
 	}
 	AN(vsc);
 	AN(vsc_seg);
-	AZ(pthread_mutex_unlock(&vsc_mtx));
+	PTOK(pthread_mutex_unlock(&vsc_mtx));
 }
 
 VCL_VOID
@@ -780,14 +780,14 @@ VCL_VOID
 xyzzy_vsc_destroy(VRT_CTX)
 {
 	(void)ctx;
-	AZ(pthread_mutex_lock(&vsc_mtx));
+	PTOK(pthread_mutex_lock(&vsc_mtx));
 	if (vsc != NULL) {
 		AN(vsc_seg);
 		VSC_debug_Destroy(&vsc_seg);
 	}
 	AZ(vsc_seg);
 	vsc = NULL;
-	AZ(pthread_mutex_unlock(&vsc_mtx));
+	PTOK(pthread_mutex_unlock(&vsc_mtx));
 }
 
 struct xyzzy_debug_concat {

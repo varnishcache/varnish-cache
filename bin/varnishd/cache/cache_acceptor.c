@@ -649,7 +649,7 @@ vca_acct(void *arg)
 	while (1) {
 		(void)sleep(1);
 		if (vca_sock_opt_init()) {
-			AZ(pthread_mutex_lock(&shut_mtx));
+			PTOK(pthread_mutex_lock(&shut_mtx));
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock == -2)
 					continue;	// VCA_Shutdown
@@ -667,7 +667,7 @@ vca_acct(void *arg)
 				 * listening socket. */
 				ls->test_heritage = 1;
 			}
-			AZ(pthread_mutex_unlock(&shut_mtx));
+			PTOK(pthread_mutex_unlock(&shut_mtx));
 		}
 		vca_periodic(t0);
 	}
@@ -713,7 +713,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			    ls->sock, errno, VAS_errtxt(errno));
 	}
 
-	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
+	PTOK(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
 }
 
 /*--------------------------------------------------------------------*/
@@ -737,7 +737,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	while (!pool_accepting)
 		VTIM_sleep(.1);
 
-	AZ(pthread_mutex_lock(&shut_mtx));
+	PTOK(pthread_mutex_lock(&shut_mtx));
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (!ls->uds) {
 			VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
@@ -746,7 +746,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 		else
 			VCLI_Out(cli, "%s %s -\n", ls->name, ls->endpoint);
 	}
-	AZ(pthread_mutex_unlock(&shut_mtx));
+	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 
 /*--------------------------------------------------------------------*/
@@ -771,13 +771,13 @@ VCA_Shutdown(void)
 	struct listen_sock *ls;
 	int i;
 
-	AZ(pthread_mutex_lock(&shut_mtx));
+	PTOK(pthread_mutex_lock(&shut_mtx));
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		i = ls->sock;
 		ls->sock = -2;
 		(void)close(i);
 	}
-	AZ(pthread_mutex_unlock(&shut_mtx));
+	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 
 /*--------------------------------------------------------------------

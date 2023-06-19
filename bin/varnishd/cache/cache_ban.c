@@ -994,7 +994,7 @@ BAN_Init(void)
 	/* Add a placeholder ban */
 	bp = BAN_Build();
 	AN(bp);
-	AZ(pthread_cond_init(&ban_lurker_cond, NULL));
+	PTOK(pthread_cond_init(&ban_lurker_cond, NULL));
 	AZ(BAN_Commit(bp));
 	Lck_Lock(&ban_mtx);
 	ban_mark_completed(VTAILQ_FIRST(&ban_head));
@@ -1019,7 +1019,7 @@ BAN_Shutdown(void)
 	ban_kick_lurker();
 	Lck_Unlock(&ban_mtx);
 
-	AZ(pthread_join(ban_thread, &status));
+	PTOK(pthread_join(ban_thread, &status));
 	AZ(status);
 
 	Lck_Lock(&ban_mtx);

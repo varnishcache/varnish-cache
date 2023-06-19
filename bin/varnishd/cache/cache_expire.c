@@ -120,7 +120,7 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 			VSC_C_main->exp_mailed++;
 		}
 		oc->exp_flags |= cmds | OC_EF_POSTED;
-		AZ(pthread_cond_signal(&exphdl->condvar));
+		PTOK(pthread_cond_signal(&exphdl->condvar));
 	}
 }
 
@@ -445,7 +445,7 @@ EXP_Init(void)
 	AN(ep);
 
 	Lck_New(&ep->mtx, lck_exp);
-	AZ(pthread_cond_init(&ep->condvar, NULL));
+	PTOK(pthread_cond_init(&ep->condvar, NULL));
 	VSTAILQ_INIT(&ep->inbox);
 	WRK_BgThread(&pt, "cache-exp", exp_thread, ep);
 	ep->thread = pt;
@@ -460,11 +460,11 @@ EXP_Shutdown(void)
 
 	Lck_Lock(&ep->mtx);
 	exp_shutdown = 1;
-	AZ(pthread_cond_signal(&ep->condvar));
+	PTOK(pthread_cond_signal(&ep->condvar));
 	Lck_Unlock(&ep->mtx);
 
 	AN(ep->thread);
-	AZ(pthread_join(ep->thread, &status));
+	PTOK(pthread_join(ep->thread, &status));
 	AZ(status);
 	memset(&ep->thread, 0, sizeof ep->thread);
 

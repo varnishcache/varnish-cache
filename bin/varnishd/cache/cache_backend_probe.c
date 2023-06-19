@@ -423,7 +423,7 @@ vbp_heap_insert(struct vbp_target *vt)
 	// Lck_AssertHeld(&vbp_mtx);
 	VBH_insert(vbp_heap, vt);
 	if (VBH_root(vbp_heap) == vt)
-		AZ(pthread_cond_signal(&vbp_cond));
+		PTOK(pthread_cond_signal(&vbp_cond));
 }
 
 /*--------------------------------------------------------------------
@@ -761,6 +761,6 @@ VBP_Init(void)
 	Lck_New(&vbp_mtx, lck_probe);
 	vbp_heap = VBH_new(NULL, vbp_cmp, vbp_update);
 	AN(vbp_heap);
-	AZ(pthread_cond_init(&vbp_cond, NULL));
+	PTOK(pthread_cond_init(&vbp_cond, NULL));
 	WRK_BgThread(&thr, "backend-poller", vbp_thread, NULL);
 }

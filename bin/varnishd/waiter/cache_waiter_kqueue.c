@@ -178,7 +178,7 @@ vwk_init(struct waiter *w)
 	EV_SET(&ke, vwk->pipe[0], EVFILT_READ, EV_ADD, 0, 0, vwk);
 	AZ(kevent(vwk->kq, &ke, 1, NULL, 0, NULL));
 
-	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
+	PTOK(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
 }
 
 /*--------------------------------------------------------------------
@@ -197,7 +197,7 @@ vwk_fini(struct waiter *w)
 	vwk->die = 1;
 	assert(write(vwk->pipe[1], "Y", 1) == 1);
 	Lck_Unlock(&vwk->mtx);
-	AZ(pthread_join(vwk->thread, &vp));
+	PTOK(pthread_join(vwk->thread, &vp));
 	Lck_Delete(&vwk->mtx);
 }
 

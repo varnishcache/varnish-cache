@@ -63,13 +63,13 @@ pthread_mutexattr_t mtxattr_errorcheck;
 static void
 cache_vrnd_lock(void)
 {
-	AZ(pthread_mutex_lock(&cache_vrnd_mtx));
+	PTOK(pthread_mutex_lock(&cache_vrnd_mtx));
 }
 
 static void
 cache_vrnd_unlock(void)
 {
-	AZ(pthread_mutex_unlock(&cache_vrnd_mtx));
+	PTOK(pthread_mutex_unlock(&cache_vrnd_mtx));
 }
 
 /*--------------------------------------------------------------------
@@ -86,7 +86,7 @@ void
 THR_SetBusyobj(const struct busyobj *bo)
 {
 
-	AZ(pthread_setspecific(bo_key, bo));
+	PTOK(pthread_setspecific(bo_key, bo));
 }
 
 struct busyobj *
@@ -100,7 +100,7 @@ void
 THR_SetRequest(const struct req *req)
 {
 
-	AZ(pthread_setspecific(req_key, req));
+	PTOK(pthread_setspecific(req_key, req));
 }
 
 struct req *
@@ -114,7 +114,7 @@ void
 THR_SetWorker(const struct worker *wrk)
 {
 
-	AZ(pthread_setspecific(wrk_key, wrk));
+	PTOK(pthread_setspecific(wrk_key, wrk));
 }
 
 struct worker *
@@ -134,7 +134,7 @@ void
 THR_SetName(const char *name)
 {
 
-	AZ(pthread_setspecific(name_key, name));
+	PTOK(pthread_setspecific(name_key, name));
 #if defined(HAVE_PTHREAD_SET_NAME_NP)
 	pthread_set_name_np(pthread_self(), name);
 #elif defined(HAVE_PTHREAD_SETNAME_NP)
@@ -368,7 +368,7 @@ cli_quit(int sig)
 {
 
 	if (!IS_CLI()) {
-		AZ(pthread_kill(cli_thread, sig));
+		PTOK(pthread_kill(cli_thread, sig));
 		return;
 	}
 
@@ -394,20 +394,20 @@ child_main(int sigmagic, size_t altstksz)
 #endif
 
 	/* Before anything uses pthreads in anger */
-	AZ(pthread_mutexattr_init(&mtxattr_errorcheck));
-	AZ(pthread_mutexattr_settype(&mtxattr_errorcheck, PTHREAD_MUTEX_ERRORCHECK));
+	PTOK(pthread_mutexattr_init(&mtxattr_errorcheck));
+	PTOK(pthread_mutexattr_settype(&mtxattr_errorcheck, PTHREAD_MUTEX_ERRORCHECK));
 
 	cache_param = heritage.param;
 
-	AZ(pthread_key_create(&req_key, NULL));
-	AZ(pthread_key_create(&bo_key, NULL));
-	AZ(pthread_key_create(&wrk_key, NULL));
-	AZ(pthread_key_create(&witness_key, free));
-	AZ(pthread_key_create(&name_key, NULL));
+	PTOK(pthread_key_create(&req_key, NULL));
+	PTOK(pthread_key_create(&bo_key, NULL));
+	PTOK(pthread_key_create(&wrk_key, NULL));
+	PTOK(pthread_key_create(&witness_key, free));
+	PTOK(pthread_key_create(&name_key, NULL));
 
 	THR_SetName("cache-main");
 
-	AZ(pthread_mutex_init(&cache_vrnd_mtx, &mtxattr_errorcheck));
+	PTOK(pthread_mutex_init(&cache_vrnd_mtx, &mtxattr_errorcheck));
 	VRND_Lock = cache_vrnd_lock;
 	VRND_Unlock = cache_vrnd_unlock;
 

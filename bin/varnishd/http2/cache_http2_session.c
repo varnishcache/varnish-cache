@@ -121,7 +121,7 @@ h2_init_sess(struct sess *sp,
 	h2->htc->rfd = &sp->fd;
 	h2->sess = sp;
 	h2->rxthr = pthread_self();
-	AZ(pthread_cond_init(h2->winupd_cond, NULL));
+	PTOK(pthread_cond_init(h2->winupd_cond, NULL));
 	VTAILQ_INIT(&h2->streams);
 	VTAILQ_INIT(&h2->txqueue);
 	h2_local_settings(&h2->local_settings);
@@ -147,7 +147,7 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, stream_close_t reason)
 	AN(reason);
 
 	VHT_Fini(h2->dectbl);
-	AZ(pthread_cond_destroy(h2->winupd_cond));
+	PTOK(pthread_cond_destroy(h2->winupd_cond));
 	TAKE_OBJ_NOTNULL(req, &h2->srq, REQ_MAGIC);
 	assert(!WS_IsReserved(req->ws));
 	sp = h2->sess;
@@ -410,9 +410,9 @@ h2_new_session(struct worker *wrk, void *arg)
 		if (r2->error == 0)
 			r2->error = h2->error;
 		if (r2->cond != NULL)
-			AZ(pthread_cond_signal(r2->cond));
+			PTOK(pthread_cond_signal(r2->cond));
 	}
-	AZ(pthread_cond_broadcast(h2->winupd_cond));
+	PTOK(pthread_cond_broadcast(h2->winupd_cond));
 	Lck_Unlock(&h2->sess->mtx);
 	while (1) {
 		again = 0;

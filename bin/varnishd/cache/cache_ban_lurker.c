@@ -52,7 +52,7 @@ ban_kick_lurker(void)
 
 	Lck_AssertHeld(&ban_mtx);
 	ban_generation++;
-	AZ(pthread_cond_signal(&ban_lurker_cond));
+	PTOK(pthread_cond_signal(&ban_lurker_cond));
 }
 
 /*

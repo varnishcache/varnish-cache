@@ -179,6 +179,6 @@ Sess_Start_Thread(
 	ta->listen_addr = listen_addr;
 	ta->asocket = asocket;
 	ta->spec = spec;
-	AZ(pthread_create(&pt, NULL, sess_thread, ta));
+	PTOK(pthread_create(&pt, NULL, sess_thread, ta));
 	return (pt);
 }

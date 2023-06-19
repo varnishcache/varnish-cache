@@ -169,7 +169,7 @@ vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
 		pfd->state = PFD_STATE_USED;
 		VTAILQ_REMOVE(&cp->connlist, pfd, list);
 		AN(pfd->cond);
-		AZ(pthread_cond_signal(pfd->cond));
+		PTOK(pthread_cond_signal(pfd->cond));
 		break;
 	case PFD_STATE_AVAIL:
 		cp->methods->close(pfd);

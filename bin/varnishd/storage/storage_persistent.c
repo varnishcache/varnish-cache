@@ -407,7 +407,7 @@ smp_close(const struct stevedore *st, int warn)
 		sc->flags |= SMP_SC_STOP;
 		Lck_Unlock(&sc->mtx);
 	} else {
-		AZ(pthread_join(sc->bgthread, &status));
+		PTOK(pthread_join(sc->bgthread, &status));
 		AZ(status);
 	}
 }

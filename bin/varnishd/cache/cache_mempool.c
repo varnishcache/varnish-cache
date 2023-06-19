@@ -243,8 +243,8 @@ MPL_New(const char *name,
 	/* XXX: prealloc min_pool */
 	mpl->vsc = VSC_mempool_New(NULL, &mpl->vsc_seg, mpl->name + 4);
 	AN(mpl->vsc);
-	AZ(pthread_create(&mpl->thread, NULL, mpl_guard, mpl));
-	AZ(pthread_detach(mpl->thread));
+	PTOK(pthread_create(&mpl->thread, NULL, mpl_guard, mpl));
+	PTOK(pthread_detach(mpl->thread));
 	return (mpl);
 }
 

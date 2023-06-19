@@ -101,7 +101,7 @@ ved_reembark(struct worker *wrk, struct req *req)
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 	Lck_Lock(&req->sp->mtx);
 	ecx->woken = 1;
-	AZ(pthread_cond_signal(&ecx->preq->wrk->cond));
+	PTOK(pthread_cond_signal(&ecx->preq->wrk->cond));
 	Lck_Unlock(&req->sp->mtx);
 }
 

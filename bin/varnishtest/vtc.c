@@ -58,13 +58,13 @@ static pthread_mutex_t	vtc_vrnd_mtx;
 static void
 vtc_vrnd_lock(void)
 {
-	AZ(pthread_mutex_lock(&vtc_vrnd_mtx));
+	PTOK(pthread_mutex_lock(&vtc_vrnd_mtx));
 }
 
 static void
 vtc_vrnd_unlock(void)
 {
-	AZ(pthread_mutex_unlock(&vtc_vrnd_mtx));
+	PTOK(pthread_mutex_unlock(&vtc_vrnd_mtx));
 }
 
 static const char *tfn;
@@ -163,7 +163,7 @@ init_macro(void)
 			vtc_log(vltop, 4, "extmacro def %s(...)", m->name);
 	}
 
-	AZ(pthread_mutex_init(&macro_mtx, NULL));
+	PTOK(pthread_mutex_init(&macro_mtx, NULL));
 }
 
 void
@@ -181,12 +181,12 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 		name = buf1;
 	}
 
-	AZ(pthread_mutex_lock(&macro_mtx));
+	PTOK(pthread_mutex_lock(&macro_mtx));
 	va_start(ap, fmt);
 	m = macro_def_int(name, NULL, fmt, ap);
 	va_end(ap);
 	vtc_log(vl, 4, "macro def %s=%s", name, m->val);
-	AZ(pthread_mutex_unlock(&macro_mtx));
+	PTOK(pthread_mutex_unlock(&macro_mtx));
 }
 
 void
@@ -200,7 +200,7 @@ macro_undef(struct vtclog *vl, const char *instance, const char *name)
 		name = buf1;
 	}
 
-	AZ(pthread_mutex_lock(&macro_mtx));
+	PTOK(pthread_mutex_lock(&macro_mtx));
 	VTAILQ_FOREACH(m, &macro_list, list)
 		if (!strcmp(name, m->name))
 			break;
@@ -213,7 +213,7 @@ macro_undef(struct vtclog *vl, const char *instance, const char *name)
 		free(m->val);
 		FREE_OBJ(m);
 	}
-	AZ(pthread_mutex_unlock(&macro_mtx));
+	PTOK(pthread_mutex_unlock(&macro_mtx));
 }
 
 unsigned
@@ -227,11 +227,11 @@ macro_isdef(const char *instance, const char *name)
 		name = buf1;
 	}
 
-	AZ(pthread_mutex_lock(&macro_mtx));
+	PTOK(pthread_mutex_lock(&macro_mtx));
 	VTAILQ_FOREACH(m, &macro_list, list)
 		if (!strcmp(name, m->name))
 			break;
-	AZ(pthread_mutex_unlock(&macro_mtx));
+	PTOK(pthread_mutex_unlock(&macro_mtx));
 
 	return (m != NULL);
 }
@@ -258,7 +258,7 @@ macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 
 	assert(argc >= 2);
 
-	AZ(pthread_mutex_lock(&macro_mtx));
+	PTOK(pthread_mutex_lock(&macro_mtx));
 	VTAILQ_FOREACH(m, &macro_list, list) {
 		CHECK_OBJ_NOTNULL(m, MACRO_MAGIC);
 		if (!strcmp(argv[1], m->name))
@@ -278,7 +278,7 @@ macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 				err = "macro does not take arguments";
 		}
 	}
-	AZ(pthread_mutex_unlock(&macro_mtx));
+	PTOK(pthread_mutex_unlock(&macro_mtx));
 
 	VAV_Free(argv);
 
@@ -564,7 +564,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	(void)signal(SIGPIPE, SIG_IGN);
 
-	AZ(pthread_mutex_init(&vtc_vrnd_mtx, NULL));
+	PTOK(pthread_mutex_init(&vtc_vrnd_mtx, NULL));
 	VRND_Lock = vtc_vrnd_lock;
 	VRND_Unlock = vtc_vrnd_unlock;
 	VRND_SeedAll();

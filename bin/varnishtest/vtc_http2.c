@@ -347,7 +347,7 @@ write_frame(struct stream *sp, const struct frame *f, const unsigned lock)
 	}
 
 	if (lock)
-		AZ(pthread_mutex_lock(&hp->mtx));
+		PTOK(pthread_mutex_lock(&hp->mtx));
 	l = write(hp->sess->fd, hdr, sizeof(hdr));
 	if (l != sizeof(hdr))
 		vtc_log(sp->vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
@@ -362,7 +362,7 @@ write_frame(struct stream *sp, const struct frame *f, const unsigned lock)
 					l, f->size, strerror(errno));
 	}
 	if (lock)
-		AZ(pthread_mutex_unlock(&hp->mtx));
+		PTOK(pthread_mutex_unlock(&hp->mtx));
 }
 
 static void
@@ -735,21 +735,21 @@ receive_frame(void *priv)
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 
-	AZ(pthread_mutex_lock(&hp->mtx));
+	PTOK(pthread_mutex_lock(&hp->mtx));
 	while (hp->h2) {
 		/*no wanted frames? */
 		assert(hp->wf >= 0);
 		if (hp->wf == 0) {
-			AZ(pthread_cond_wait(&hp->cond, &hp->mtx));
+			PTOK(pthread_cond_wait(&hp->cond, &hp->mtx));
 			continue;
 		}
-		AZ(pthread_mutex_unlock(&hp->mtx));
+		PTOK(pthread_mutex_unlock(&hp->mtx));
 
 		if (get_bytes(hp, hdr, sizeof hdr) <= 0) {
-			AZ(pthread_mutex_lock(&hp->mtx));
+			PTOK(pthread_mutex_lock(&hp->mtx));
 			VTAILQ_FOREACH(s, &hp->streams, list)
-				AZ(pthread_cond_signal(&s->cond));
-			AZ(pthread_mutex_unlock(&hp->mtx));
+				PTOK(pthread_cond_signal(&s->cond));
+			PTOK(pthread_mutex_unlock(&hp->mtx));
 			vtc_log(hp->vl, hp->fatal,
 			    "could not get frame header");
 			return (NULL);
@@ -770,11 +770,11 @@ receive_frame(void *priv)
 			AN(f->data);
 			f->data[f->size] = '\0';
 			if (get_bytes(hp, f->data, f->size) <= 0) {
-				AZ(pthread_mutex_lock(&hp->mtx));
+				PTOK(pthread_mutex_lock(&hp->mtx));
 				VTAILQ_FOREACH(s, &hp->streams, list)
-					AZ(pthread_cond_signal(&s->cond));
+					PTOK(pthread_cond_signal(&s->cond));
 				clean_frame(&f);
-				AZ(pthread_mutex_unlock(&hp->mtx));
+				PTOK(pthread_mutex_unlock(&hp->mtx));
 				vtc_log(hp->vl, hp->fatal,
 				    "could not get frame body");
 				return (NULL);
@@ -782,21 +782,21 @@ receive_frame(void *priv)
 		}
 
 		/* is the corresponding stream waiting? */
-		AZ(pthread_mutex_lock(&hp->mtx));
+		PTOK(pthread_mutex_lock(&hp->mtx));
 		s = NULL;
 		while (!s) {
 			VTAILQ_FOREACH(s, &hp->streams, list)
 				if (s->id == f->stid)
 					break;
 			if (!s)
-				AZ(pthread_cond_wait(&hp->cond, &hp->mtx));
+				PTOK(pthread_cond_wait(&hp->cond, &hp->mtx));
 			if (!hp->h2) {
 				clean_frame(&f);
-				AZ(pthread_mutex_unlock(&hp->mtx));
+				PTOK(pthread_mutex_unlock(&hp->mtx));
 				return (NULL);
 			}
 		}
-		AZ(pthread_mutex_unlock(&hp->mtx));
+		PTOK(pthread_mutex_unlock(&hp->mtx));
 
 		AN(s);
 		if (expect_cont &&
@@ -858,17 +858,17 @@ receive_frame(void *priv)
 				WRONG("wrong frame type");
 		}
 
-		AZ(pthread_mutex_lock(&hp->mtx));
+		PTOK(pthread_mutex_lock(&hp->mtx));
 		VTAILQ_INSERT_HEAD(&s->fq, f, list);
 		if (s->wf) {
 			assert(hp->wf > 0);
 			hp->wf--;
 			s->wf = 0;
-			AZ(pthread_cond_signal(&s->cond));
+			PTOK(pthread_cond_signal(&s->cond));
 		}
 		continue;
 	}
-	AZ(pthread_mutex_unlock(&hp->mtx));
+	PTOK(pthread_mutex_unlock(&hp->mtx));
 	if (vsb != NULL)
 		VSB_destroy(&vsb);
 	return (NULL);
@@ -1289,9 +1289,9 @@ cmd_sendhex(CMD_ARGS)
 	vsb = vtc_hex_to_bin(hp->vl, av[1]);
 	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
-	AZ(pthread_mutex_lock(&hp->mtx));
+	PTOK(pthread_mutex_lock(&hp->mtx));
 	http_write(hp, 4, VSB_data(vsb), VSB_len(vsb), "sendhex");
-	AZ(pthread_mutex_unlock(&hp->mtx));
+	PTOK(pthread_mutex_unlock(&hp->mtx));
 	VSB_destroy(&vsb);
 }
 
@@ -1922,7 +1922,7 @@ cmd_txsettings(CMD_ARGS)
 	INIT_FRAME(f, SETTINGS, 0, s->id, 0);
 	f.data = buf;
 
-	AZ(pthread_mutex_lock(&hp->mtx));
+	PTOK(pthread_mutex_lock(&hp->mtx));
 	while (*++av) {
 		if (!strcmp(*av, "-push")) {
 			++av;
@@ -1964,7 +1964,7 @@ cmd_txsettings(CMD_ARGS)
 
 	AN(s->hp);
 	write_frame(s, &f, 0);
-	AZ(pthread_mutex_unlock(&hp->mtx));
+	PTOK(pthread_mutex_unlock(&hp->mtx));
 }
 
 /* SECTION: stream.spec.ping_txping txping
@@ -2112,11 +2112,11 @@ cmd_txwinup(CMD_ARGS)
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown txwinup spec: %s\n", *av);
 
-	AZ(pthread_mutex_lock(&hp->mtx));
+	PTOK(pthread_mutex_lock(&hp->mtx));
 	if (s->id == 0)
 		hp->h2_win_self->size += size;
 	s->win_self += size;
-	AZ(pthread_mutex_unlock(&hp->mtx));
+	PTOK(pthread_mutex_unlock(&hp->mtx));
 
 	size = htonl(size);
 	f.data = (void *)&size;
@@ -2130,23 +2130,23 @@ rxstuff(struct stream *s)
 
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 
-	AZ(pthread_mutex_lock(&s->hp->mtx));
+	PTOK(pthread_mutex_lock(&s->hp->mtx));
 	if (VTAILQ_EMPTY(&s->fq)) {
 		assert(s->hp->wf >= 0);
 		s->hp->wf++;
 		s->wf = 1;
-		AZ(pthread_cond_signal(&s->hp->cond));
-		AZ(pthread_cond_wait(&s->cond, &s->hp->mtx));
+		PTOK(pthread_cond_signal(&s->hp->cond));
+		PTOK(pthread_cond_wait(&s->cond, &s->hp->mtx));
 	}
 	if (VTAILQ_EMPTY(&s->fq)) {
-		AZ(pthread_mutex_unlock(&s->hp->mtx));
+		PTOK(pthread_mutex_unlock(&s->hp->mtx));
 		return (NULL);
 	}
 	clean_frame(&s->frame);
 	f = VTAILQ_LAST(&s->fq, fq_head);
 	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
 	VTAILQ_REMOVE(&s->fq, f, list);
-	AZ(pthread_mutex_unlock(&s->hp->mtx));
+	PTOK(pthread_mutex_unlock(&s->hp->mtx));
 	return (f);
 }
 
@@ -2526,12 +2526,12 @@ cmd_expect(CMD_ARGS)
 	AN(av[1]);
 	AN(av[2]);
 	AZ(av[3]);
-	AZ(pthread_mutex_lock(&s->hp->mtx));
+	PTOK(pthread_mutex_lock(&s->hp->mtx));
 	lhs = cmd_var_resolve(s, av[0], buf);
 	cmp = av[1];
 	rhs = cmd_var_resolve(s, av[2], buf);
 	vtc_expect(vl, av[0], lhs, cmp, av[2], rhs);
-	AZ(pthread_mutex_unlock(&s->hp->mtx));
+	PTOK(pthread_mutex_unlock(&s->hp->mtx));
 }
 
 /* SECTION: stream.spec.gunzip gunzip
@@ -2637,7 +2637,7 @@ stream_new(const char *name, struct http *h)
 
 	ALLOC_OBJ(s, STREAM_MAGIC);
 	AN(s);
-	AZ(pthread_cond_init(&s->cond, NULL));
+	PTOK(pthread_cond_init(&s->cond, NULL));
 	REPLACE(s->name, name);
 	AN(s->name);
 	VTAILQ_INIT(&s->fq);
@@ -2658,9 +2658,9 @@ stream_new(const char *name, struct http *h)
 	s->hp = h;
 
 	//bprintf(s->connect, "%s", "${v1_sock}");
-	AZ(pthread_mutex_lock(&h->mtx));
+	PTOK(pthread_mutex_lock(&h->mtx));
 	VTAILQ_INSERT_HEAD(&h->streams, s, list);
-	AZ(pthread_mutex_unlock(&h->mtx));
+	PTOK(pthread_mutex_unlock(&h->mtx));
 	return (s);
 }
 
@@ -2698,7 +2698,7 @@ stream_start(struct stream *s)
 {
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 	vtc_log(s->hp->vl, 2, "Starting stream %s (%p)", s->name, s);
-	AZ(pthread_create(&s->tp, NULL, stream_thread, s));
+	PTOK(pthread_create(&s->tp, NULL, stream_thread, s));
 	s->running = 1;
 }
 
@@ -2713,7 +2713,7 @@ stream_wait(struct stream *s)
 
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 	vtc_log(s->hp->vl, 2, "Waiting for stream %u", s->id);
-	AZ(pthread_join(s->tp, &res));
+	PTOK(pthread_join(s->tp, &res));
 	if (res != NULL)
 		vtc_fatal(s->hp->vl, "Stream %u returned \"%s\"", s->id,
 		    (char *)res);
@@ -2886,8 +2886,8 @@ void
 start_h2(struct http *hp)
 {
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	AZ(pthread_mutex_init(&hp->mtx, NULL));
-	AZ(pthread_cond_init(&hp->cond, NULL));
+	PTOK(pthread_mutex_init(&hp->mtx, NULL));
+	PTOK(pthread_cond_init(&hp->cond, NULL));
 	VTAILQ_INIT(&hp->streams);
 	hp->h2_win_self->init = 0xffff;
 	hp->h2_win_self->size = 0xffff;
@@ -2897,7 +2897,7 @@ start_h2(struct http *hp)
 
 	hp->decctx = HPK_NewCtx(4096);
 	hp->encctx = HPK_NewCtx(4096);
-	AZ(pthread_create(&hp->tp, NULL, receive_frame, hp));
+	PTOK(pthread_create(&hp->tp, NULL, receive_frame, hp));
 }
 
 void
@@ -2909,21 +2909,21 @@ stop_h2(struct http *hp)
 	VTAILQ_FOREACH_SAFE(s, &hp->streams, list, s2) {
 		if (s->running)
 			stream_wait(s);
-		AZ(pthread_mutex_lock(&hp->mtx));
+		PTOK(pthread_mutex_lock(&hp->mtx));
 		VTAILQ_REMOVE(&hp->streams, s, list);
-		AZ(pthread_mutex_unlock(&hp->mtx));
+		PTOK(pthread_mutex_unlock(&hp->mtx));
 		stream_delete(s);
 	}
 
-	AZ(pthread_mutex_lock(&hp->mtx));
+	PTOK(pthread_mutex_lock(&hp->mtx));
 	hp->h2 = 0;
-	AZ(pthread_cond_signal(&hp->cond));
-	AZ(pthread_mutex_unlock(&hp->mtx));
-	AZ(pthread_join(hp->tp, NULL));
+	PTOK(pthread_cond_signal(&hp->cond));
+	PTOK(pthread_mutex_unlock(&hp->mtx));
+	PTOK(pthread_join(hp->tp, NULL));
 
 	HPK_FreeCtx(hp->decctx);
 	HPK_FreeCtx(hp->encctx);
 
-	AZ(pthread_mutex_destroy(&hp->mtx));
-	AZ(pthread_cond_destroy(&hp->cond));
+	PTOK(pthread_mutex_destroy(&hp->mtx));
+	PTOK(pthread_cond_destroy(&hp->cond));
 }

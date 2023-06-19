@@ -626,7 +626,7 @@ logexp_start(struct logexp *le)
 	le->skip_cnt = 0;
 	le->vxid_last = le->tag_last = -1;
 	le->run = 1;
-	AZ(pthread_create(&le->tp, NULL, logexp_thread, le));
+	PTOK(pthread_create(&le->tp, NULL, logexp_thread, le));
 }
 
 static void
@@ -636,7 +636,7 @@ logexp_wait(struct logexp *le)
 
 	CHECK_OBJ_NOTNULL(le, LOGEXP_MAGIC);
 	vtc_log(le->vl, 2, "Waiting for logexp");
-	AZ(pthread_join(le->tp, &res));
+	PTOK(pthread_join(le->tp, &res));
 	logexp_close(le);
 	if (res != NULL && !vtc_stop)
 		vtc_fatal(le->vl, "logexp returned \"%p\"", (char *)res);

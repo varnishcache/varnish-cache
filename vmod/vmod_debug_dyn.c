@@ -99,10 +99,10 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	 * instance if the new one is identical.  We do it here because
 	 * the d* tests requires a replacement.
 	 */
-	AZ(pthread_mutex_lock(&dyn->mtx));
+	PTOK(pthread_mutex_lock(&dyn->mtx));
 	dir2 = dyn->dir;
 	dyn->dir = dir;
-	AZ(pthread_mutex_unlock(&dyn->mtx));
+	PTOK(pthread_mutex_unlock(&dyn->mtx));
 
 	if (dir2 != NULL)
 		VRT_delete_backend(ctx, &dir2);
@@ -133,7 +133,7 @@ xyzzy_dyn__init(VRT_CTX, struct xyzzy_debug_dyn **dynp,
 	AN(dyn);
 	REPLACE(dyn->vcl_name, vcl_name);
 
-	AZ(pthread_mutex_init(&dyn->mtx, NULL));
+	PTOK(pthread_mutex_init(&dyn->mtx, NULL));
 
 	dyn_dir_init(ctx, dyn, addr, port, probe, via);
 	XXXAN(dyn->dir);
@@ -148,7 +148,7 @@ xyzzy_dyn__fini(struct xyzzy_debug_dyn **dynp)
 	TAKE_OBJ_NOTNULL(dyn, dynp, VMOD_DEBUG_DYN_MAGIC);
 	/* at this point all backends will be deleted by the vcl */
 	free(dyn->vcl_name);
-	AZ(pthread_mutex_destroy(&dyn->mtx));
+	PTOK(pthread_mutex_destroy(&dyn->mtx));
 	FREE_OBJ(dyn);
 }
 
@@ -214,10 +214,10 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 	if ((dir = VRT_new_backend(ctx, &vrt, NULL)) == NULL)
 		return (-1);
 
-	AZ(pthread_mutex_lock(&uds->mtx));
+	PTOK(pthread_mutex_lock(&uds->mtx));
 	dir2 = uds->dir;
 	uds->dir = dir;
-	AZ(pthread_mutex_unlock(&uds->mtx));
+	PTOK(pthread_mutex_unlock(&uds->mtx));
 
 	if (dir2 != NULL)
 		VRT_delete_backend(ctx, &dir2);
@@ -238,11 +238,11 @@ xyzzy_dyn_uds__init(VRT_CTX, struct xyzzy_debug_dyn_uds **udsp,
 	ALLOC_OBJ(uds, VMOD_DEBUG_UDS_MAGIC);
 	AN(uds);
 	REPLACE(uds->vcl_name, vcl_name);
-	AZ(pthread_mutex_init(&uds->mtx, NULL));
+	PTOK(pthread_mutex_init(&uds->mtx, NULL));
 
 	if (dyn_uds_init(ctx, uds, path) != 0) {
 		free(uds->vcl_name);
-		AZ(pthread_mutex_destroy(&uds->mtx));
+		PTOK(pthread_mutex_destroy(&uds->mtx));
 		FREE_OBJ(uds);
 		return;
 	}
@@ -257,7 +257,7 @@ xyzzy_dyn_uds__fini(struct xyzzy_debug_dyn_uds **udsp)
 
 	TAKE_OBJ_NOTNULL(uds, udsp, VMOD_DEBUG_UDS_MAGIC);
 	free(uds->vcl_name);
-	AZ(pthread_mutex_destroy(&uds->mtx));
+	PTOK(pthread_mutex_destroy(&uds->mtx));
 	FREE_OBJ(uds);
 }
 
