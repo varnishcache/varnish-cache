@@ -52,6 +52,7 @@ DEBUG_BIT(PROCESSORS,		processors,	"Fetch/Deliver processors")
 DEBUG_BIT(PROTOCOL,		protocol,	"Protocol debugging")
 DEBUG_BIT(VCL_KEEP,		vcl_keep,	"Keep VCL C and so files")
 DEBUG_BIT(LCK,			lck,		"Additional lock statistics")
+DEBUG_BIT(CLI_SHOW_SENSITIVE,	cli_show_sensitive, "Log sensitive commands to syslog and VSL")
 #undef DEBUG_BIT
 
 /*lint -restore */

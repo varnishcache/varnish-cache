@@ -371,7 +371,9 @@ mgt_cli_cb_before(const struct cli *cli, struct cli_proto *clp, const char * con
 	if (cli->priv == stderr)
 		fprintf(stderr, "> %s\n", VSB_data(cli->cmd));
 
-	if (cmd != NULL && (cmd->flags & CLI_F_SENSITIVE)) {
+	if (cmd != NULL &&
+	    !MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE) &&
+	    (cmd->flags & CLI_F_SENSITIVE)) {
 		d = (*VSB_data(cli->cmd) == '-');
 		VSB_clear(cli->cmd);
 		VSB_printf(cli->cmd, "%s", d ? "-" : "");
@@ -392,7 +394,9 @@ mgt_cli_cb_after(const struct cli *cli, struct cli_proto *clp, const char * cons
 
 	if (av) {
 		cmd = (clp == NULL ? mgt_cmd_lookup(av[1]) : clp->desc);
-		if (cmd == NULL || !(cmd->flags & CLI_F_SENSITIVE)) {
+		if (cmd == NULL ||
+		    MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE)  ||
+		    !(cmd->flags & CLI_F_SENSITIVE)) {
 			MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
 			    cli->ident, cli->result, VSB_data(cli->sb));
 		} else {
