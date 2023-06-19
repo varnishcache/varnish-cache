@@ -129,7 +129,7 @@ h2_send_rel_locked(struct h2_sess *h2, const struct h2_req *r2)
 	r2 = VTAILQ_FIRST(&h2->txqueue);
 	if (r2 != NULL) {
 		CHECK_OBJ_NOTNULL(r2->wrk, WORKER_MAGIC);
-		AZ(pthread_cond_signal(&r2->wrk->cond));
+		PTOK(pthread_cond_signal(&r2->wrk->cond));
 	}
 }
 

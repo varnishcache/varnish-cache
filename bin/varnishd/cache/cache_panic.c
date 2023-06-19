@@ -848,7 +848,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */
 
 	v_gcov_flush();
-	AZ(pthread_mutex_unlock(&panicstr_mtx));
+	PTOK(pthread_mutex_unlock(&panicstr_mtx));
 	abort();
 }
 
@@ -879,7 +879,7 @@ void
 PAN_Init(void)
 {
 
-	AZ(pthread_mutex_init(&panicstr_mtx, &mtxattr_errorcheck));
+	PTOK(pthread_mutex_init(&panicstr_mtx, &mtxattr_errorcheck));
 	VAS_Fail_Func = pan_ic;
 	pan_vsb = &pan_vsb_storage;
 	AN(heritage.panic_str);

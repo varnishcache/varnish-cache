@@ -202,7 +202,7 @@ vwe_init(struct waiter *w)
 	ee.data.ptr = vwe;
 	AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_ADD, vwe->pipe[0], &ee));
 
-	AZ(pthread_create(&vwe->thread, NULL, vwe_thread, vwe));
+	PTOK(pthread_create(&vwe->thread, NULL, vwe_thread, vwe));
 }
 
 /*--------------------------------------------------------------------
@@ -222,7 +222,7 @@ vwe_fini(struct waiter *w)
 	vwe->die = 1;
 	assert(write(vwe->pipe[1], "Y", 1) == 1);
 	Lck_Unlock(&vwe->mtx);
-	AZ(pthread_join(vwe->thread, &vp));
+	PTOK(pthread_join(vwe->thread, &vp));
 	Lck_Delete(&vwe->mtx);
 }
 

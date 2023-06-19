@@ -164,7 +164,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			t.clen = len;
 			t.rec_data = VSL_CDATA(tr->c->rec.ptr);
 
-			AZ(pthread_mutex_lock(&mtx));
+			PTOK(pthread_mutex_lock(&mtx));
 			tp = VRBT_FIND(t_key, &h_key, &t);
 			if (tp) {
 				VRBT_REMOVE(t_order, &h_order, tp);
@@ -185,7 +185,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				VRBT_INSERT(t_key, &h_key, tp);
 				VRBT_INSERT(t_order, &h_order, tp);
 			}
-			AZ(pthread_mutex_unlock(&mtx));
+			PTOK(pthread_mutex_unlock(&mtx));
 
 		}
 	}
@@ -267,9 +267,9 @@ do_curses(void *arg)
 	AC(erase());
 	timeout(1000);
 	while (!VSIG_int && !VSIG_term && !VSIG_hup) {
-		AZ(pthread_mutex_lock(&mtx));
+		PTOK(pthread_mutex_lock(&mtx));
 		update(period);
-		AZ(pthread_mutex_unlock(&mtx));
+		PTOK(pthread_mutex_unlock(&mtx));
 
 		switch (getch()) {
 		case ERR:
@@ -368,10 +368,10 @@ main(int argc, char **argv)
 		(void)VUT_Main(vut);
 		dump();
 	} else {
-		AZ(pthread_create(&thr, NULL, do_curses, NULL));
+		PTOK(pthread_create(&thr, NULL, do_curses, NULL));
 		(void)VUT_Main(vut);
 		end_of_file = 1;
-		AZ(pthread_join(thr, NULL));
+		PTOK(pthread_join(thr, NULL));
 	}
 	VUT_Fini(&vut);
 	return (0);

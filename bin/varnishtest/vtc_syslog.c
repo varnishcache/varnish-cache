@@ -278,9 +278,9 @@ syslog_new(const char *name, struct vtclog *vl)
 	s->rxbuf = malloc(s->rxbuf_sz);		/* XXX */
 	AN(s->rxbuf);
 
-	AZ(pthread_mutex_lock(&syslog_mtx));
+	PTOK(pthread_mutex_lock(&syslog_mtx));
 	VTAILQ_INSERT_TAIL(&syslogs, s, list);
-	AZ(pthread_mutex_unlock(&syslog_mtx));
+	PTOK(pthread_mutex_unlock(&syslog_mtx));
 	return (s);
 }
 
@@ -483,7 +483,7 @@ syslog_start(struct syslog_srv *s)
 		syslog_bind(s);
 	vtc_log(s->vl, 1, "Bound on %s", s->bind);
 	s->run = 1;
-	AZ(pthread_create(&s->tp, NULL, syslog_thread, s));
+	PTOK(pthread_create(&s->tp, NULL, syslog_thread, s));
 }
 
 /**********************************************************************
@@ -498,7 +498,7 @@ syslog_stop(struct syslog_srv *s)
 	CHECK_OBJ_NOTNULL(s, SYSLOG_SRV_MAGIC);
 	vtc_log(s->vl, 2, "Stopping for syslog server");
 	(void)pthread_cancel(s->tp);
-	AZ(pthread_join(s->tp, &res));
+	PTOK(pthread_join(s->tp, &res));
 	s->tp = 0;
 	s->run = 0;
 }
@@ -514,7 +514,7 @@ syslog_wait(struct syslog_srv *s)
 
 	CHECK_OBJ_NOTNULL(s, SYSLOG_SRV_MAGIC);
 	vtc_log(s->vl, 2, "Waiting for syslog server (%d)", s->sock);
-	AZ(pthread_join(s->tp, &res));
+	PTOK(pthread_join(s->tp, &res));
 	if (res != NULL && !vtc_stop)
 		vtc_fatal(s->vl, "Syslog server returned \"%p\"",
 		    (char *)res);
@@ -569,12 +569,12 @@ cmd_syslog(CMD_ARGS)
 	if (av == NULL) {
 		/* Reset and free */
 		do {
-			AZ(pthread_mutex_lock(&syslog_mtx));
+			PTOK(pthread_mutex_lock(&syslog_mtx));
 			s = VTAILQ_FIRST(&syslogs);
 			CHECK_OBJ_ORNULL(s, SYSLOG_SRV_MAGIC);
 			if (s != NULL)
 				VTAILQ_REMOVE(&syslogs, s, list);
-			AZ(pthread_mutex_unlock(&syslog_mtx));
+			PTOK(pthread_mutex_unlock(&syslog_mtx));
 			if (s != NULL) {
 				if (s->run) {
 					(void)pthread_cancel(s->tp);
@@ -591,11 +591,11 @@ cmd_syslog(CMD_ARGS)
 	AZ(strcmp(av[0], "syslog"));
 	av++;
 
-	AZ(pthread_mutex_lock(&syslog_mtx));
+	PTOK(pthread_mutex_lock(&syslog_mtx));
 	VTAILQ_FOREACH(s, &syslogs, list)
 		if (!strcmp(s->name, av[0]))
 			break;
-	AZ(pthread_mutex_unlock(&syslog_mtx));
+	PTOK(pthread_mutex_unlock(&syslog_mtx));
 	if (s == NULL)
 		s = syslog_new(av[0], vl);
 	CHECK_OBJ_NOTNULL(s, SYSLOG_SRV_MAGIC);
@@ -657,5 +657,5 @@ cmd_syslog(CMD_ARGS)
 void
 init_syslog(void)
 {
-	AZ(pthread_mutex_init(&syslog_mtx, NULL));
+	PTOK(pthread_mutex_init(&syslog_mtx, NULL));
 }

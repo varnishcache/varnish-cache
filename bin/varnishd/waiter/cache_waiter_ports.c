@@ -245,7 +245,7 @@ vws_init(struct waiter *w)
 	vws->dport = port_create();
 	assert(vws->dport >= 0);
 
-	AZ(pthread_create(&vws->thread, NULL, vws_thread, vws));
+	PTOK(pthread_create(&vws->thread, NULL, vws_thread, vws));
 }
 
 /*--------------------------------------------------------------------*/
@@ -259,7 +259,7 @@ vws_fini(struct waiter *w)
 	CAST_OBJ_NOTNULL(vws, w->priv, VWS_MAGIC);
 	vws->die = 1;
 	closefd(&vws->dport);
-	AZ(pthread_join(vws->thread, &vp));
+	PTOK(pthread_join(vws->thread, &vp));
 }
 
 /*--------------------------------------------------------------------*/

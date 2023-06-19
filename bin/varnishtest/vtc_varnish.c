@@ -466,7 +466,7 @@ varnish_launch(struct varnish *v)
 	v->fds[0] = v->fds[2];
 	v->fds[2] = v->fds[3] = -1;
 	VSB_destroy(&vsb);
-	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
+	PTOK(pthread_create(&v->tp, NULL, varnish_thread, v));
 
 	/* Wait for the varnish to call home */
 	memset(fd, 0, sizeof fd);
@@ -532,7 +532,7 @@ varnish_launch(struct varnish *v)
 	assert(VSM_Arg(v->vsm_vsl, 'n', v->workdir) > 0);
 	AZ(VSM_Attach(v->vsm_vsl, -1));
 
-	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
+	PTOK(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 }
 
 #define VARNISH_LAUNCH(v)				\
@@ -675,11 +675,11 @@ varnish_cleanup(struct varnish *v)
 	closefd(&v->fds[1]);
 
 	/* Wait until STDOUT+STDERR closes */
-	AZ(pthread_join(v->tp, &p));
+	PTOK(pthread_join(v->tp, &p));
 	closefd(&v->fds[0]);
 
 	/* Pick up the VSL thread */
-	AZ(pthread_join(v->tp_vsl, &p));
+	PTOK(pthread_join(v->tp_vsl, &p));
 
 	vtc_wait4(v->vl, v->pid, v->expect_exit, 0, 0);
 	v->pid = 0;

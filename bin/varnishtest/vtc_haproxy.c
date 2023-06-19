@@ -388,7 +388,7 @@ haproxy_cli_wait(struct haproxy_cli *hc)
 
 	CHECK_OBJ_NOTNULL(hc, HAPROXY_CLI_MAGIC);
 	vtc_log(hc->vl, 2, "CLI waiting");
-	AZ(pthread_join(hc->tp, &res));
+	PTOK(pthread_join(hc->tp, &res));
 	if (res != NULL)
 		vtc_fatal(hc->vl, "CLI returned \"%s\"", (char *)res);
 	REPLACE(hc->spec, NULL);
@@ -405,7 +405,7 @@ haproxy_cli_start(struct haproxy_cli *hc)
 {
 	CHECK_OBJ_NOTNULL(hc, HAPROXY_CLI_MAGIC);
 	vtc_log(hc->vl, 2, "CLI starting");
-	AZ(pthread_create(&hc->tp, NULL, haproxy_cli_thread, hc));
+	PTOK(pthread_create(&hc->tp, NULL, haproxy_cli_thread, hc));
 	hc->running = 1;
 
 }
@@ -781,7 +781,7 @@ haproxy_start(struct haproxy *h)
 	h->fds[0] = h->fds[2];
 	h->fds[2] = h->fds[3] = -1;
 
-	AZ(pthread_create(&h->tp, NULL, haproxy_thread, h));
+	PTOK(pthread_create(&h->tp, NULL, haproxy_thread, h));
 
 	if (h->pid_fn != NULL)
 		haproxy_wait_pidfile(h);
@@ -836,7 +836,7 @@ haproxy_wait(struct haproxy *h)
 		}
 	}
 
-	AZ(pthread_join(h->tp, &p));
+	PTOK(pthread_join(h->tp, &p));
 	AZ(p);
 	closefd(&h->fds[0]);
 	if (!h->opt_daemon) {

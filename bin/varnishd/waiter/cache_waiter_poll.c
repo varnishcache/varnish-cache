@@ -242,7 +242,7 @@ vwp_init(struct waiter *w)
 	vwp_extend_pollspace(vwp);
 	vwp->pollfd[0].fd = vwp->pipes[0];
 	vwp->pollfd[0].events = POLLIN;
-	AZ(pthread_create(&vwp->thread, NULL, vwp_main, vwp));
+	PTOK(pthread_create(&vwp->thread, NULL, vwp_main, vwp));
 }
 
 /*--------------------------------------------------------------------
@@ -262,7 +262,7 @@ vwp_fini(struct waiter *w)
 		(void)usleep(100000);
 	// XXX: set write pipe blocking
 	assert(write(vwp->pipes[1], &vp, sizeof vp) == sizeof vp);
-	AZ(pthread_join(vwp->thread, &vp));
+	PTOK(pthread_join(vwp->thread, &vp));
 	closefd(&vwp->pipes[0]);
 	closefd(&vwp->pipes[1]);
 	free(vwp->pollfd);

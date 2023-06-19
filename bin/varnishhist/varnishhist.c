@@ -248,10 +248,10 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			i = VSL_Next(tr->c);
 			if (i == -3) {
 				/* overrun - need to skip forward */
-				AZ(pthread_mutex_lock(&mtx));
+				PTOK(pthread_mutex_lock(&mtx));
 				vsl_to = vsl_t0 = vsl_ts = 0;
 				t0 = VTIM_mono();
-				AZ(pthread_mutex_unlock(&mtx));
+				PTOK(pthread_mutex_unlock(&mtx));
 				break;
 			}
 			if (i != 1)
@@ -306,7 +306,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		assert(i >= 0);
 		assert((unsigned)i < hist_buckets);
 
-		AZ(pthread_mutex_lock(&mtx));
+		PTOK(pthread_mutex_lock(&mtx));
 
 		/*
 		 * only parse the last tsp seen in this transaction -
@@ -342,7 +342,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (++next_hist == HIST_N) {
 			next_hist = 0;
 		}
-		AZ(pthread_mutex_unlock(&mtx));
+		PTOK(pthread_mutex_unlock(&mtx));
 	}
 
 	if (vsl_ts < vsl_to)
@@ -350,7 +350,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 	t = VTIM_mono();
 
-	AZ(pthread_mutex_lock(&mtx));
+	PTOK(pthread_mutex_lock(&mtx));
 	if (vsl_t0 == 0)
 		vsl_to = vsl_t0 = vsl_ts;
 
@@ -363,7 +363,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		i = pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
 		assert(i == 0 || i == ETIMEDOUT);
 	}
-	AZ(pthread_mutex_unlock(&mtx));
+	PTOK(pthread_mutex_unlock(&mtx));
 
 	return (0);
 }
@@ -382,9 +382,9 @@ do_curses(void *arg)
 	AC(curs_set(0));
 	AC(erase());
 	while (!VSIG_int && !VSIG_term && !VSIG_hup) {
-		AZ(pthread_mutex_lock(&mtx));
+		PTOK(pthread_mutex_lock(&mtx));
 		update();
-		AZ(pthread_mutex_unlock(&mtx));
+		PTOK(pthread_mutex_unlock(&mtx));
 
 		assert(ms_delay > 0);
 		timeout(ms_delay);
@@ -439,7 +439,7 @@ do_curses(void *arg)
 		}
 
 		if (ch == '<' || ch == '>') {
-			AZ(pthread_mutex_lock(&mtx));
+			PTOK(pthread_mutex_lock(&mtx));
 			vsl_to = vsl_t0 = vsl_ts;
 			t0 = VTIM_mono();
 			if (timebend == 0)
@@ -448,8 +448,8 @@ do_curses(void *arg)
 				timebend /= 2;
 			else
 				timebend *= 2;
-			AZ(pthread_cond_broadcast(&timebend_cv));
-			AZ(pthread_mutex_unlock(&mtx));
+			PTOK(pthread_cond_broadcast(&timebend_cv));
+			PTOK(pthread_mutex_unlock(&mtx));
 		}
 	}
 	AC(endwin());
@@ -478,7 +478,7 @@ main(int argc, char **argv)
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);
 	AN(vut);
-	AZ(pthread_cond_init(&timebend_cv, NULL));
+	PTOK(pthread_cond_init(&timebend_cv, NULL));
 
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (i) {
@@ -622,12 +622,12 @@ main(int argc, char **argv)
 		ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	else
 		ident = strdup("");
-	AZ(pthread_create(&thr, NULL, do_curses, NULL));
+	PTOK(pthread_create(&thr, NULL, do_curses, NULL));
 	vut->dispatch_f = accumulate;
 	vut->dispatch_priv = NULL;
 	(void)VUT_Main(vut);
 	end_of_file = 1;
-	AZ(pthread_join(thr, NULL));
+	PTOK(pthread_join(thr, NULL));
 	VUT_Fini(&vut);
 	exit(0);
 }

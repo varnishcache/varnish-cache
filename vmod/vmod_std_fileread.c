@@ -71,12 +71,12 @@ fini_frfile(VRT_CTX, void *ptr)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(frf, ptr, CACHED_FILE_MAGIC);
 
-	AZ(pthread_mutex_lock(&frmtx));
+	PTOK(pthread_mutex_lock(&frmtx));
 	if (--frf->refcount > 0)
 		frf = NULL;
 	else
 		VTAILQ_REMOVE(&frlist, frf, list);
-	AZ(pthread_mutex_unlock(&frmtx));
+	PTOK(pthread_mutex_unlock(&frmtx));
 	if (frf != NULL) {
 		free(frf->contents);
 		free(frf->file_name);
@@ -108,7 +108,7 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 			return (frf);
 	}
 
-	AZ(pthread_mutex_lock(&frmtx));
+	PTOK(pthread_mutex_lock(&frmtx));
 	if (frf != NULL)
 		frf->refcount--;
 	VTAILQ_FOREACH(frf, &frlist, list) {
@@ -117,7 +117,7 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 			break;
 		}
 	}
-	AZ(pthread_mutex_unlock(&frmtx));
+	PTOK(pthread_mutex_unlock(&frmtx));
 	if (frf != NULL) {
 		priv->methods = frfile_methods;
 		priv->priv = frf;
@@ -136,9 +136,9 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 		frf->blob->len = (size_t)sz;
 		priv->methods = frfile_methods;
 		priv->priv = frf;
-		AZ(pthread_mutex_lock(&frmtx));
+		PTOK(pthread_mutex_lock(&frmtx));
 		VTAILQ_INSERT_HEAD(&frlist, frf, list);
-		AZ(pthread_mutex_unlock(&frmtx));
+		PTOK(pthread_mutex_unlock(&frmtx));
 	}
 	return (frf);
 }

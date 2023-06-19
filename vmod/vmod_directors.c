@@ -81,7 +81,7 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
 	ALLOC_OBJ(vd, VDIR_MAGIC);
 	AN(vd);
 	*vdp = vd;
-	AZ(pthread_rwlock_init(&vd->mtx, NULL));
+	PTOK(pthread_rwlock_init(&vd->mtx, NULL));
 	vd->dir = VRT_AddDirector(ctx, m, priv, "%s", vcl_name);
 	vd->healthy = vbit_new(8);
 	AN(vd->healthy);
@@ -110,7 +110,7 @@ vdir_delete(struct vdir **vdp)
 	AZ(vd->n_backend);
 	free(vd->backend);
 	free(vd->weight);
-	AZ(pthread_rwlock_destroy(&vd->mtx));
+	PTOK(pthread_rwlock_destroy(&vd->mtx));
 	vbit_destroy(vd->healthy);
 	FREE_OBJ(vd);
 }
@@ -119,21 +119,21 @@ void
 vdir_rdlock(struct vdir *vd)
 {
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
-	AZ(pthread_rwlock_rdlock(&vd->mtx));
+	PTOK(pthread_rwlock_rdlock(&vd->mtx));
 }
 
 void
 vdir_wrlock(struct vdir *vd)
 {
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
-	AZ(pthread_rwlock_wrlock(&vd->mtx));
+	PTOK(pthread_rwlock_wrlock(&vd->mtx));
 }
 
 void
 vdir_unlock(struct vdir *vd)
 {
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
-	AZ(pthread_rwlock_unlock(&vd->mtx));
+	PTOK(pthread_rwlock_unlock(&vd->mtx));
 }
 
 

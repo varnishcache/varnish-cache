@@ -303,7 +303,7 @@ client_wait(struct client *c)
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
 	vtc_log(c->vl, 2, "Waiting for client");
-	AZ(pthread_join(c->tp, &res));
+	PTOK(pthread_join(c->tp, &res));
 	if (res != NULL)
 		vtc_fatal(c->vl, "Client returned \"%s\"", (char *)res);
 	c->tp = 0;
