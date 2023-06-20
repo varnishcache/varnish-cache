@@ -104,8 +104,9 @@ local unsigned syncsearch OF((unsigned FAR *have, const unsigned char FAR *buf,
                               unsigned len));
 #endif /* NOVGZ */
 
-local int inflateStateCheck(strm)
-z_streamp strm;
+local int inflateStateCheck(
+    z_streamp strm
+)
 {
     struct inflate_state FAR *state;
     if (strm == Z_NULL ||
@@ -118,8 +119,9 @@ z_streamp strm;
     return 0;
 }
 
-int ZEXPORT inflateResetKeep(strm)
-z_streamp strm;
+int ZEXPORT inflateResetKeep(
+    z_streamp strm
+)
 {
     struct inflate_state FAR *state;
 
@@ -145,8 +147,9 @@ z_streamp strm;
     return Z_OK;
 }
 
-int ZEXPORT inflateReset(strm)
-z_streamp strm;
+int ZEXPORT inflateReset(
+    z_streamp strm
+)
 {
     struct inflate_state FAR *state;
 
@@ -158,9 +161,10 @@ z_streamp strm;
     return inflateResetKeep(strm);
 }
 
-int ZEXPORT inflateReset2(strm, windowBits)
-z_streamp strm;
-int windowBits;
+int ZEXPORT inflateReset2(
+    z_streamp strm,
+    int windowBits
+)
 {
     int wrap;
     struct inflate_state FAR *state;
@@ -198,11 +202,12 @@ int windowBits;
     return inflateReset(strm);
 }
 
-int ZEXPORT inflateInit2_(strm, windowBits, version, stream_size)
-z_streamp strm;
-int windowBits;
-const char *version;
-int stream_size;
+int ZEXPORT inflateInit2_(
+    z_streamp strm,
+    int windowBits,
+    const char *version,
+    int stream_size
+)
 {
     int ret;
     struct inflate_state FAR *state;
@@ -244,18 +249,20 @@ int stream_size;
 
 #ifdef NOVGZ
 
-int ZEXPORT inflateInit_(strm, version, stream_size)
-z_streamp strm;
-const char *version;
-int stream_size;
+int ZEXPORT inflateInit_(
+    z_streamp strm,
+    const char *version,
+    int stream_size
+)
 {
     return inflateInit2_(strm, DEF_WBITS, version, stream_size);
 }
 
-int ZEXPORT inflatePrime(strm, bits, value)
-z_streamp strm;
-int bits;
-int value;
+int ZEXPORT inflatePrime(
+    z_streamp strm,
+    int bits,
+    int value
+)
 {
     struct inflate_state FAR *state;
 
@@ -285,8 +292,9 @@ int value;
    used for threaded applications, since the rewriting of the tables and virgin
    may not be thread-safe.
  */
-local void fixedtables(state)
-struct inflate_state FAR *state;
+local void fixedtables(
+    struct inflate_state FAR *state
+)
 {
 #ifdef BUILDFIXED
     static int virgin = 1;
@@ -403,10 +411,11 @@ void makefixed()
    output will fall in the output data, making match copies simpler and faster.
    The advantage may be dependent on the size of the processor's data caches.
  */
-local int updatewindow(strm, end, copy)
-z_streamp strm;
-const Bytef *end;
-unsigned copy;
+local int updatewindow(
+    z_streamp strm,
+    const Bytef *end,
+    unsigned copy
+)
 {
     struct inflate_state FAR *state;
     unsigned dist;
@@ -629,9 +638,10 @@ unsigned copy;
    will return Z_BUF_ERROR if it has not reached the end of the stream.
  */
 
-int ZEXPORT inflate(strm, flush)
-z_streamp strm;
-int flush;
+int ZEXPORT inflate(
+    z_streamp strm,
+    int flush
+)
 {
     struct inflate_state FAR *state;
     z_const unsigned char FAR *next;    /* next input */
@@ -1313,8 +1323,9 @@ int flush;
     return ret;
 }
 
-int ZEXPORT inflateEnd(strm)
-z_streamp strm;
+int ZEXPORT inflateEnd(
+    z_streamp strm
+)
 {
     struct inflate_state FAR *state;
     if (inflateStateCheck(strm))
