@@ -186,10 +186,11 @@ uLong ZEXPORT adler32_combine64(adler1, adler2, len2)
     return adler32_combine_(adler1, adler2, len2);
 }
 #else /* NOVGZ */
-uLong ZEXPORT adler32(adler, buf, len)
-    uLong adler;
-    const Bytef *buf;
-    uInt len;
+uLong ZEXPORT adler32(
+    uLong adler,
+    const Bytef *buf,
+    uInt len
+)
 {
 	(void)adler;
 	(void)buf;
