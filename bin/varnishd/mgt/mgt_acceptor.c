@@ -166,6 +166,45 @@ MAC_close_sockets(void)
 
 /*--------------------------------------------------------------------*/
 
+int
+MAC_smuggle_sockets(void)
+{
+	struct listen_sock *ls;
+	uint64_t *nonce;
+
+	nonce = heritage.traffic;
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		CHECK_OBJ(ls, LISTEN_SOCK_MAGIC);
+		assert(ls->sock > 0);
+		*nonce = mgt_smuggle(ls->sock);
+		if (*nonce == 0)
+			break;
+		nonce++;
+	}
+
+	if (ls == NULL) {
+		MAC_close_sockets();
+		return (0);
+	}
+
+	MGT_Complain(C_ERR, "Could not smuggle listen socket %d: (%s)",
+	    ls->sock, ls->endpoint);
+
+	nonce = heritage.traffic;
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		if (*nonce != 0) {
+			assert(ls->sock > 0);
+			XXXAZ(mgt_SMUG_Cancel(*nonce));
+			*nonce = 0;
+		}
+		nonce++;
+	}
+
+	return (-1);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct listen_sock *
 mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 {

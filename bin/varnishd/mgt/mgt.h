@@ -73,6 +73,7 @@ extern const char * const builtin_vcl;
 void MAC_Arg(const char *);
 void MAC_close_sockets(void);
 int MAC_reopen_sockets(void);
+int MAC_smuggle_sockets(void);
 
 /* mgt_child.c */
 void MCH_Init(void);
