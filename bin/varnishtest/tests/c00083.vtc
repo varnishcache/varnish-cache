@@ -119,7 +119,7 @@ process p1 {
 	nlines=`wc -l < ${tmpdir}/v1/_.vsm_mgt/_.index`
 	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_mgt/_.index`
 	echo MGT NLINES $nlines NMINUS $nminus
-	# cat ${tmpdir}/v1/_.vsm_child/_.index
+	# cat ${tmpdir}/v1/_.vsm_mgt/_.index
 	test $nminus -eq 0
 } -run
 
@@ -131,8 +131,8 @@ process p1 {
 	nlines=`wc -l < ${tmpdir}/v1/_.vsm_mgt/_.index`
 	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_mgt/_.index`
 	echo MGT NLINES $nlines NMINUS $nminus
-	# cat ${tmpdir}/v1/_.vsm_child/_.index
-	test $nminus -eq 2
+	# cat ${tmpdir}/v1/_.vsm_mgt/_.index
+	test $nminus -eq 3
 } -run
 
 varnish v1 -cliok "start"

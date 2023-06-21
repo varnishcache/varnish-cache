@@ -48,7 +48,8 @@
 #include "common/heritage.h"
 #include "common/vsmw.h"
 
-static struct vsmw *mgt_vsmw;
+static struct vsmw	*mgt_vsmw;
+static void 		*mgt_traffic;
 
 /*--------------------------------------------------------------------
  */
@@ -113,6 +114,9 @@ mgt_SHM_Init(void)
 void
 mgt_SHM_ChildNew(void)
 {
+	struct listen_sock *ls;
+	uint64_t *nonce;
+	unsigned n;
 
 	VJ_master(JAIL_MASTER_SYSTEM);
 	AZ(system("rm -rf " VSM_CHILD_DIRNAME));
@@ -135,6 +139,17 @@ mgt_SHM_ChildNew(void)
 	heritage.panic_str = VSMW_Allocf(mgt_vsmw, NULL, "Panic",
 	    heritage.panic_str_len, "");
 	AN(heritage.panic_str);
+
+	n = 0;
+	VTAILQ_FOREACH(ls, &heritage.socks, list)
+		n++;
+	mgt_traffic = VSMW_Allocf(mgt_vsmw, NULL, "Traffic",
+	    n * sizeof *nonce, "");
+	AN(mgt_traffic);
+
+	nonce = mgt_traffic;
+	VTAILQ_FOREACH(ls, &heritage.socks, list)
+		ls->nonce = nonce++;
 }
 
 void
@@ -147,6 +162,7 @@ mgt_SHM_ChildDestroy(void)
 		AZ(system("rm -rf " VSM_CHILD_DIRNAME));
 		VJ_master(JAIL_MASTER_LOW);
 	}
+	VSMW_Free(mgt_vsmw, (void**)&mgt_traffic);
 	VSMW_Free(mgt_vsmw, (void**)&heritage.panic_str);
 	VSMW_Free(mgt_vsmw, (void**)&heritage.param);
 }
