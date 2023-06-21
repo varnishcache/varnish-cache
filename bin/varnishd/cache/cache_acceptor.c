@@ -676,14 +676,40 @@ vca_acct(void *arg)
 
 /*--------------------------------------------------------------------*/
 
+static int
+vca_fence(struct cli *cli)
+{
+	struct listen_sock *ls;
+
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		assert(ls->sock < 0);
+		AN(ls->nonce);
+		AN(*ls->nonce);
+		ls->sock = SMUG_Fence(*ls->nonce);
+		if (ls->sock < 0)
+			break;
+		*ls->nonce = 0;
+	}
+
+	if (ls == NULL)
+		return (0);
+
+	VCLI_SetResult(cli, CLIS_CANT);
+	VCLI_Out(cli, "Could not acquire listen socket '%s': %s\n",
+	    ls->endpoint, strerror(errno));
+	return (-1);
+}
+
 static void v_matchproto_(cli_func_t)
 ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
 	struct listen_sock *ls;
 
-	(void)cli;
 	(void)av;
 	(void)priv;
+
+	if (vca_fence(cli) < 0)
+		return;
 
 	(void)vca_sock_opt_init();
 

@@ -83,7 +83,6 @@ mac_closesocket(struct listen_sock *ls)
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 	if (ls->sock < 0)
 		return;
-	MCH_Fd_Inherit(ls->sock, NULL);
 	closefd(&ls->sock);
 }
 
@@ -120,7 +119,6 @@ mac_opensocket(struct listen_sock *ls)
 		if (chown(ls->endpoint, ls->perms->uid, ls->perms->gid) != 0)
 			return (errno);
 	}
-	MCH_Fd_Inherit(ls->sock, "sock");
 	return (0);
 }
 
@@ -170,16 +168,15 @@ int
 MAC_smuggle_sockets(void)
 {
 	struct listen_sock *ls;
-	uint64_t *nonce;
 
-	nonce = heritage.traffic;
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		CHECK_OBJ(ls, LISTEN_SOCK_MAGIC);
 		assert(ls->sock > 0);
-		*nonce = mgt_smuggle(ls->sock);
-		if (*nonce == 0)
+		AN(ls->nonce);
+		AZ(*ls->nonce);
+		*ls->nonce = mgt_smuggle(ls->sock);
+		if (*ls->nonce == 0)
 			break;
-		nonce++;
 	}
 
 	if (ls == NULL) {
@@ -190,14 +187,12 @@ MAC_smuggle_sockets(void)
 	MGT_Complain(C_ERR, "Could not smuggle listen socket %d: (%s)",
 	    ls->sock, ls->endpoint);
 
-	nonce = heritage.traffic;
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (*nonce != 0) {
+		if (*ls->nonce != 0) {
 			assert(ls->sock > 0);
-			XXXAZ(mgt_SMUG_Cancel(*nonce));
-			*nonce = 0;
+			XXXAZ(mgt_SMUG_Cancel(*ls->nonce));
+			*ls->nonce = 0;
 		}
-		nonce++;
 	}
 
 	return (-1);

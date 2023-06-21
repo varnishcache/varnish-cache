@@ -356,7 +356,6 @@ mgt_launch_child(struct cli *cli)
 		exit(1);		// XXX Harsh ?
 	}
 	if (pid == 0) {
-
 		if (MGT_FEATURE(FEATURE_NO_COREDUMP)) {
 			memset(rl, 0, sizeof *rl);
 			rl->rlim_cur = 0;
@@ -384,6 +383,9 @@ mgt_launch_child(struct cli *cli)
 		 * circumstances.
 		 */
 		closelog();
+
+		/* Closing manually to clear file descriptors */
+		MAC_close_sockets();
 
 		for (i = STDERR_FILENO + 1; i <= CLOSE_FD_UP_TO; i++) {
 			if (vbit_test(fd_map, i))
@@ -495,6 +497,15 @@ mgt_launch_child(struct cli *cli)
 		mgt_launch_err(cli, u, "Child (%jd) Pushing vcls failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);
+		MCH_Stop_Child();
+		return;
+	}
+
+	if (MAC_smuggle_sockets()) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		MGT_Complain(C_ERR,
+		    "Child (%jd) Pushing listen sockets failed\n",
+		    (intmax_t)child_pid);
 		MCH_Stop_Child();
 		return;
 	}
