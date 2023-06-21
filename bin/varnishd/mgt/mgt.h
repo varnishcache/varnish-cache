@@ -71,6 +71,7 @@ extern const char * const builtin_vcl;
 /* mgt_acceptor.c */
 
 void MAC_Arg(const char *);
+void MAC_close_sockets(void);
 int MAC_reopen_sockets(void);
 
 /* mgt_child.c */

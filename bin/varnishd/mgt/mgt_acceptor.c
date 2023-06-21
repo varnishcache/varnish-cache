@@ -153,6 +153,19 @@ MAC_reopen_sockets(void)
 
 /*--------------------------------------------------------------------*/
 
+void
+MAC_close_sockets(void)
+{
+	struct listen_sock *ls;
+
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		CHECK_OBJ(ls, LISTEN_SOCK_MAGIC);
+		mac_closesocket(ls);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct listen_sock *
 mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 {
