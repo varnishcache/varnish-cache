@@ -76,6 +76,17 @@ struct uds_perms {
 static VTAILQ_HEAD(,listen_arg) listen_args =
     VTAILQ_HEAD_INITIALIZER(listen_args);
 
+static void
+mac_closesocket(struct listen_sock *ls)
+{
+
+	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+	if (ls->sock < 0)
+		return;
+	MCH_Fd_Inherit(ls->sock, NULL);
+	closefd(&ls->sock);
+}
+
 static int
 mac_vus_bind(void *priv, const struct sockaddr_un *uds)
 {
@@ -89,10 +100,7 @@ mac_opensocket(struct listen_sock *ls)
 	const char *err;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-	if (ls->sock > 0) {
-		MCH_Fd_Inherit(ls->sock, NULL);
-		closefd(&ls->sock);
-	}
+	assert(ls->sock < 0);
 	if (!ls->uds)
 		ls->sock = VTCP_bind(ls->addr, NULL);
 	else
@@ -128,6 +136,8 @@ MAC_reopen_sockets(void)
 	int err, fail = 0;
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		CHECK_OBJ(ls, LISTEN_SOCK_MAGIC);
+		mac_closesocket(ls);
 		VJ_master(JAIL_MASTER_PRIVPORT);
 		err = mac_opensocket(ls);
 		VJ_master(JAIL_MASTER_LOW);
