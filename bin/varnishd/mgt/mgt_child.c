@@ -291,6 +291,14 @@ child_poker(const struct vev *e, int what)
  * Launch the child process
  */
 
+#define mgt_launch_err(cli, status, ...) do {		\
+		MGT_Complain(C_ERR, __VA_ARGS__);	\
+		if (cli == NULL)			\
+			break;				\
+		VCLI_Out(cli, __VA_ARGS__);		\
+		VCLI_SetResult(cli, status);		\
+	} while (0)
+
 static void
 mgt_launch_child(struct cli *cli)
 {
@@ -467,8 +475,7 @@ mgt_launch_child(struct cli *cli)
 	child_pid = pid;
 
 	if (mgt_push_vcls(cli, &u, &p)) {
-		VCLI_SetResult(cli, u);
-		MGT_Complain(C_ERR, "Child (%jd) Pushing vcls failed:\n%s",
+		mgt_launch_err(cli, u, "Child (%jd) Pushing vcls failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);
 		MCH_Stop_Child();
@@ -476,8 +483,7 @@ mgt_launch_child(struct cli *cli)
 	}
 
 	if (mgt_cli_askchild(&u, &p, "start\n")) {
-		VCLI_SetResult(cli, u);
-		MGT_Complain(C_ERR, "Child (%jd) Acceptor start failed:\n%s",
+		mgt_launch_err(cli, u, "Child (%jd) Acceptor start failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);
 		MCH_Stop_Child();
