@@ -486,6 +486,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 	if (dlh == NULL) {
 		VSB_cat(msg, "Could not load compiled VCL.\n");
 		VSB_printf(msg, "\tdlopen() = %s\n", dlerror());
+		VSB_cat(msg, "\thint: check for \"noexec\" mount\n");
 		return (NULL);
 	}
 	cnf = dlsym(dlh, "VCL_conf");

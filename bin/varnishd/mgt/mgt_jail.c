@@ -39,6 +39,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -138,6 +139,7 @@ VJ_subproc(enum jail_subproc_e jse)
 int
 VJ_make_workdir(const char *dname)
 {
+	struct statvfs vfs[1];
 	int i;
 
 	AN(dname);
@@ -163,6 +165,17 @@ VJ_make_workdir(const char *dname)
 		ARGV_ERR("Cannot create test-file in %s (%s)\n"
 		    "Check permissions (or delete old directory)\n",
 		    dname, VAS_errtxt(errno));
+
+#ifdef ST_NOEXEC
+	/* deliberately ignore fstatvfs errors */
+	if (! fstatvfs(i, vfs) && vfs->f_flag & ST_NOEXEC) {
+		closefd(&i);
+		AZ(unlink("_.testfile"));
+		ARGV_ERR("Working directory %s (-n argument) "
+		    "can not reside on a file system mounted noexec\n", dname);
+	}
+#endif
+
 	closefd(&i);
 	AZ(unlink("_.testfile"));
 	VJ_master(JAIL_MASTER_LOW);
