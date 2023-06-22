@@ -453,7 +453,10 @@ CLI_CMD(TRAFFIC_ACCEPT,
     "traffic.accept",
     "traffic.accept",
     "Accept new client connections and requests.",
-    "Accepting client traffic is the normal mode of operations.",
+    "Accepting client traffic is the normal mode of operations. Listen "
+    "addresses must all be available to succeed, which may not be the "
+    "case after a traffic.refuse command until all ongoing connections "
+    "are closed.",
     0, 0
 )
 
@@ -463,7 +466,11 @@ CLI_CMD(TRAFFIC_REFUSE,
     "Refuse new client connections and requests.",
     "When a Varnish instance is taken offline, for example to be removed "
     "from a cluster, new traffic can be refused without affecting ongoing "
-    "transactions.",
+    "transactions.\n\n"
+    "Listen sockets are closed and it is no longer possible to establish "
+    "new connections for clients. This means that traffic.accept may fail "
+    "to bind listen addresses again, if meanwhile they end up already in "
+    "use.\n\n",
     0, 0
 )
 

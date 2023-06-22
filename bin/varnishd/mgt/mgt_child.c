@@ -510,7 +510,7 @@ mgt_launch_child(struct cli *cli)
 		return;
 	}
 
-	if (mgt_cli_askchild(&u, &p, "start\n")) {
+	if (mgt_param.accept_traffic && mgt_cli_askchild(&u, &p, "start\n")) {
 		mgt_launch_err(cli, u, "Child (%jd) Acceptor start failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);

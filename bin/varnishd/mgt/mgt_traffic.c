@@ -28,7 +28,7 @@
 
 #include "config.h"
 
-#include "stddef.h"
+#include "stdlib.h"
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -38,21 +38,54 @@
 static void v_matchproto_(cli_func_t)
 mcf_traffic_accept(struct cli *cli, const char * const *av, void *priv)
 {
+	unsigned status;
+	char *p;
 
 	(void)cli;
 	(void)av;
 	(void)priv;
-	heritage.param->accept_traffic = mgt_param.accept_traffic = 1;
+	if (mgt_param.accept_traffic)
+		return;
+	if (!MCH_Running()) {
+		heritage.param->accept_traffic = mgt_param.accept_traffic = 1;
+		return;
+	}
+	if (MAC_reopen_sockets() || MAC_smuggle_sockets()) {
+		VCLI_Out(cli, "Could not accept traffic.\n");
+		VCLI_SetResult(cli, CLIS_CANT);
+		MAC_close_sockets();
+		return;
+	}
+	if (!mgt_cli_askchild(&status, &p, "traffic.accept\n"))
+		heritage.param->accept_traffic = mgt_param.accept_traffic = 1;
+	VCLI_SetResult(cli, status);
+	if (p != NULL) {
+		VCLI_Out(cli, "%s", p);
+		free(p);
+	}
+	MAC_close_sockets();
 }
 
 static void v_matchproto_(cli_func_t)
 mcf_traffic_refuse(struct cli *cli, const char * const *av, void *priv)
 {
+	unsigned status;
+	char *p;
 
 	(void)cli;
 	(void)av;
 	(void)priv;
+	if (!mgt_param.accept_traffic)
+		return;
 	heritage.param->accept_traffic = mgt_param.accept_traffic = 0;
+	if (!MCH_Running())
+		return;
+	mgt_cli_askchild(&status, &p, "traffic.refuse\n");
+	VCLI_SetResult(cli, status);
+	if (p != NULL) {
+		VCLI_Out(cli, "%s", p);
+		free(p);
+	}
 }
 
 static void v_matchproto_(cli_func_t)

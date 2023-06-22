@@ -2,6 +2,10 @@ varnishtest "traffic.accept coverage"
 
 varnish v1 -vcl {
 	backend be none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
 } -start
 
 # CLI
@@ -16,3 +20,42 @@ varnish v1 -cliexpect {"traffic": false} "traffic.status -j"
 varnish v1 -clijson "traffic.status -j"
 
 varnish v1 -cliexpect "Not accepting traffic"  "debug.listen_address"
+
+# acceptor
+
+varnish v1 -cliok traffic.accept
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok traffic.refuse
+
+varnish v2 -cliok "param.set connect_timeout 1"
+varnish v2 -vcl {
+	backend v1 {
+		.host = "${v1_sock}";
+	}
+
+	sub vcl_recv {
+		return (pass);
+	}
+} -start
+
+client c2 -connect "${v2_sock}" {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v2 -stop
+
+server s2 -listen "${v1_sock}" {
+	accept
+} -start
+
+varnish v1 -clierr 300 traffic.accept
+
+server s2 -break
