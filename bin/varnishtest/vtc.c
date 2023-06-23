@@ -600,6 +600,11 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));
 	macro_def(vltop, NULL, "tmpdir", "%s", tmpdir);
+	p = strrchr(tmpdir, '/');
+	AN(p);
+	p++;
+	AN(*p);
+	macro_def(vltop, NULL, "vtcid", "%s", p);
 
 	/* Drop file to tell what was going on here */
 	f = fopen("INFO", "w");
