@@ -2,7 +2,7 @@ varnishtest "Abstract UDS backend: change path, drop poll"
 
 feature abstract_uds
 
-server s1 -listen "@vtc.s1.sock" {
+server s1 -listen "@${vtcid}.s1.sock" {
 	non_fatal
 	timeout 3
 	loop 40 {
@@ -12,7 +12,7 @@ server s1 -listen "@vtc.s1.sock" {
 	}
 } -start
 
-server s2 -listen "@vtc.s2.sock" {
+server s2 -listen "@${vtcid}.s2.sock" {
 	non_fatal
 	timeout 3
 	loop 40 {
@@ -22,7 +22,7 @@ server s2 -listen "@vtc.s2.sock" {
 	}
 } -start
 
-varnish v1 -arg "-a @vtc.v1.sock" -vcl {
+varnish v1 -arg "-a @${vtcid}.v1.sock" -vcl {
 	probe default {
 		.window = 8;
 		.initial = 7;
@@ -30,7 +30,7 @@ varnish v1 -arg "-a @vtc.v1.sock" -vcl {
 		.interval = 0.1s;
 	}
 	backend s1 {
-		.path = "@vtc.s2.sock";
+		.path = "@${vtcid}.s2.sock";
 	}
 } -start
 
@@ -44,7 +44,7 @@ varnish v1 -vcl {
 		.interval = 0.1s;
 	}
 	backend s1 {
-		.path = "@vtc.s1.sock";
+		.path = "@${vtcid}.s1.sock";
 	}
 } -cliok "vcl.use vcl2" -cliok "vcl.discard vcl1"
 
@@ -52,7 +52,7 @@ delay 1
 
 varnish v1 -vcl {
 	backend s1 {
-		.path = "@vtc.s1.sock";
+		.path = "@${vtcid}.s1.sock";
 	}
 } -cliok "vcl.use vcl3" -cliok "vcl.discard vcl2"
 
@@ -69,7 +69,7 @@ server s1 -break {
 
 delay 1
 
-client c1 -connect "@vtc.v1.sock" {
+client c1 -connect "@${vtcid}.v1.sock" {
 	txreq -url /foo
 	rxresp
 	txreq -url /foo
