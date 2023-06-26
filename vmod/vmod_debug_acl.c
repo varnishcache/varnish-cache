@@ -85,14 +85,14 @@ struct acl_sweep {
 	uint8_t			*probe_p;
 	VCL_INT			step;
 	uint64_t		reset;
-	uint64_t		this;
+	uint64_t		that;
 	uint64_t		count;
 };
 
 static void
 reset_sweep(struct acl_sweep *asw)
 {
-	asw->this = asw->reset;
+	asw->that = asw->reset;
 }
 
 static int
@@ -129,7 +129,7 @@ setup_sweep(VRT_CTX, struct acl_sweep *asw, VCL_IP ip0, VCL_IP ip1,
 		}
 		asw->reset = vbe64dec(asw->ip0_p + 8);
 	}
-	asw->this = asw->reset;
+	asw->that = asw->reset;
 
 	/* Dont try this at home */
 	asw->probe = malloc(vsa_suckaddr_len);
@@ -156,12 +156,12 @@ step_sweep(struct acl_sweep *asw)
 
 	AN(asw);
 	asw->count++;
-	asw->this += asw->step;
+	asw->that += asw->step;
 	if (asw->family == PF_INET) {
-		vbe32enc(asw->probe_p, asw->this);
+		vbe32enc(asw->probe_p, asw->that);
 		return (memcmp(asw->probe_p, asw->ip1_p, 4));
 	} else {
-		vbe64enc(asw->probe_p + 8, asw->this);
+		vbe64enc(asw->probe_p + 8, asw->that);
 		return (memcmp(asw->probe_p, asw->ip1_p, 16));
 	}
 }
