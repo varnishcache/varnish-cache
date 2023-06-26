@@ -39,6 +39,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+//lint -efile(766, sys/statvfs.h)
 #include <sys/statvfs.h>
 
 #include "mgt/mgt.h"
