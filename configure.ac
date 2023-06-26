@@ -695,13 +695,6 @@ if test $? -ne 0 ; then
 fi
 
 # zlib-specific flags
-AX_CHECK_COMPILE_FLAG([-Wno-error=strict-prototypes],
-	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=strict-prototypes"])
-
-dnl https://github.com/madler/zlib/issues/633
-AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-non-prototype],
-	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=deprecated-non-prototype"])
-
 AC_SUBST(VGZ_CFLAGS)
 
 # Support for visibility attribute (zlib)
