@@ -139,7 +139,6 @@ VJ_subproc(enum jail_subproc_e jse)
 int
 VJ_make_workdir(const char *dname)
 {
-	struct statvfs vfs[1];
 	int i;
 
 	AN(dname);
@@ -167,6 +166,8 @@ VJ_make_workdir(const char *dname)
 		    dname, VAS_errtxt(errno));
 
 #ifdef ST_NOEXEC
+	struct statvfs vfs[1];
+
 	/* deliberately ignore fstatvfs errors */
 	if (! fstatvfs(i, vfs) && vfs->f_flag & ST_NOEXEC) {
 		closefd(&i);
