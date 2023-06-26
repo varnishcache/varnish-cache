@@ -204,7 +204,6 @@
  *
  */
 
-//lint -e{766}
 #include "config.h"
 
 #ifdef HAVE_SETPPRIV

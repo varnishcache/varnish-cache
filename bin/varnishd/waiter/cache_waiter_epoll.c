@@ -32,7 +32,6 @@
  * - thank you, Marc Alexander Lehmann
  */
 
-//lint -e{766}
 #include "config.h"
 
 #if defined(HAVE_EPOLL_CTL)

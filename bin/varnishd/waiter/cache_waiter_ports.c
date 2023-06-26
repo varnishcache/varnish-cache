@@ -63,7 +63,6 @@
  *
  */
 
-//lint -e{766}
 #include "config.h"
 
 #if defined(HAVE_PORT_CREATE)

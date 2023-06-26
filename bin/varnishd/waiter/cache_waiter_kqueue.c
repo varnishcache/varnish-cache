@@ -30,7 +30,6 @@
  *
  */
 
-//lint -e{766}
 #include "config.h"
 
 #if defined(HAVE_KQUEUE)
