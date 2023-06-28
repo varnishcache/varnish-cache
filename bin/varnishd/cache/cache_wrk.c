@@ -193,7 +193,7 @@ wrk_addstat(const struct worker *wrk, const struct pool_task *tp, unsigned locke
 			Lck_Unlock(&pp->mtx);
 	}
 
-	return (tp == NULL ? 0 : 1);
+	return (tp != NULL);
 }
 
 void
