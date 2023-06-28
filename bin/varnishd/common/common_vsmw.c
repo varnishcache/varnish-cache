@@ -155,6 +155,7 @@ static void
 vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg, char act)
 {
 
+	vsmw_assert_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 	AN(seg->cluster);
@@ -198,6 +199,7 @@ vsmw_append_record(struct vsmw *vsmw, struct vsmwseg *seg, char act)
 {
 	int fd;
 
+	vsmw_assert_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 	fd = openat(vsmw->vdirfd, vsmw->idx, O_APPEND | O_WRONLY);
@@ -271,6 +273,7 @@ vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	int fd;
 	size_t ps;
 
+	vsmw_assert_lock();
 	ALLOC_OBJ(vc, VSMW_CLUSTER_MAGIC);
 	AN(vc);
 
@@ -331,6 +334,7 @@ static void
 vsmw_DestroyCluster_locked(struct vsmw *vsmw, struct vsmw_cluster *vc)
 {
 
+	vsmw_assert_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(vc, VSMW_CLUSTER_MAGIC);
 
