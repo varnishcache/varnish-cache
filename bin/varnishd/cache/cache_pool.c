@@ -116,17 +116,27 @@ void v_matchproto_(task_func_t)
 pool_stat_summ(struct worker *wrk, void *priv)
 {
 	struct VSC_main_wrk *src;
+	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->pool, POOL_MAGIC);
+	pp = wrk->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(priv);
 	src = priv;
+
 	Lck_Lock(&wstat_mtx);
 	VSC_main_Summ_wrk(VSC_C_main, src);
+
+	Lck_Lock(&pp->mtx);
+	VSC_main_Summ_pool(VSC_C_main, pp->stats);
+	Lck_Unlock(&pp->mtx);
+	memset(pp->stats, 0, sizeof pp->stats);
+
 	Lck_Unlock(&wstat_mtx);
 	memset(src, 0, sizeof *src);
-	AZ(wrk->pool->b_stat);
-	wrk->pool->b_stat = src;
+
+	AZ(pp->b_stat);
+	pp->b_stat = src;
 }
 
 /*--------------------------------------------------------------------
