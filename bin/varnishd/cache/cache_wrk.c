@@ -655,10 +655,6 @@ pool_herder(void *priv)
 			t_idle = VTIM_real() - cache_param->wthread_timeout;
 
 			Lck_Lock(&pp->mtx);
-			/* XXX: unsafe counters */
-			VSC_main_Summ_pool(VSC_C_main, pp->stats);
-			memset(pp->stats, 0, sizeof pp->stats);
-
 			wrk = NULL;
 			pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
 			if (pt != NULL) {
