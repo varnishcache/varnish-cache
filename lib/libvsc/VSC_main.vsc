@@ -10,7 +10,7 @@
 .. varnish_vsc_begin::	main
 	:oneliner:	Main counters
 	:order:		10
-	:sumfunction:	wrk_wrk wrk
+	:sumfunction:	wrk_wrk wrk pool
 
 .. varnish_vsc:: summs
 	:level:	debug
@@ -325,18 +325,21 @@
 	lack of resources.
 
 .. varnish_vsc:: sess_queued
+	:group: pool
 	:oneliner:	Sessions queued for thread
 
 	Number of times session was queued waiting for a thread. See also
 	parameter thread_queue_limit.
 
 .. varnish_vsc:: sess_dropped
+	:group: pool
 	:oneliner:	Sessions dropped for thread
 
 	Number of times an HTTP/1 session was dropped because the queue was
 	too long already. See also parameter thread_queue_limit.
 
 .. varnish_vsc:: req_dropped
+	:group: pool
 	:oneliner:	Requests dropped
 
 	Number of times an HTTP/2 stream was refused because the queue was
