@@ -51,10 +51,8 @@ struct pool {
 	struct taskhead			queues[TASK_QUEUE_RESERVE];
 	unsigned			nthr;
 	unsigned			lqueue;
-	uintmax_t			sdropped;
-	uintmax_t			rdropped;
-	uintmax_t			nqueued;
 	uintmax_t			ndequeued;
+	struct VSC_main_pool		stats[1];
 	struct VSC_main_wrk		*a_stat;
 	struct VSC_main_wrk		*b_stat;
 
