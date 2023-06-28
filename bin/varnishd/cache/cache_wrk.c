@@ -343,15 +343,20 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 	} else if (!TASK_QUEUE_LIMITED(prio) ||
 	    pp->lqueue + pp->nthr < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit) {
-		pp->nqueued++;
+		pp->stats->sess_queued++;
 		pp->lqueue++;
 		VTAILQ_INSERT_TAIL(&pp->queues[prio], task, list);
 		PTOK(pthread_cond_signal(&pp->herder_cond));
 	} else {
+		/* NB: This is counter-intuitive but when we drop a REQ
+		 * task, it is an HTTP/1 request and we effectively drop
+		 * the whole session. It is otherwise an h2 stream with
+		 * STR priority in which case we are dropping a request.
+		 */
 		if (prio == TASK_QUEUE_REQ)
-			pp->sdropped++;
+			pp->stats->sess_dropped++;
 		else
-			pp->rdropped++;
+			pp->stats->req_dropped++;
 		retval = -1;
 	}
 	Lck_Unlock(&pp->mtx);
@@ -651,10 +656,8 @@ pool_herder(void *priv)
 
 			Lck_Lock(&pp->mtx);
 			/* XXX: unsafe counters */
-			VSC_C_main->sess_queued += pp->nqueued;
-			VSC_C_main->sess_dropped += pp->sdropped;
-			VSC_C_main->req_dropped += pp->rdropped;
-			pp->nqueued = pp->sdropped = pp->rdropped = 0;
+			VSC_main_Summ_pool(VSC_C_main, pp->stats);
+			memset(pp->stats, 0, sizeof pp->stats);
 
 			wrk = NULL;
 			pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
