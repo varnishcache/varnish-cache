@@ -513,11 +513,21 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_ns_t ns, vcc_kind_t kind)
 void
 VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type)
 {
+	vcc_kind_t kind;
 	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
 	AN(type);
 	AN(type->global_pfx);
+
+	kind = VCC_HandleKind(type);
+
+	if (sym->lname != NULL) {
+		AN(sym->rname);
+		assert(sym->type == type);
+		assert(sym->kind == kind);
+		return;
+	}
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -536,7 +546,7 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type)
 	VSB_destroy(&vsb);
 
 	sym->type = type;
-	sym->kind = VCC_HandleKind(sym->type);
+	sym->kind = kind;
 	if (sym->kind != SYM_NONE) {
 		AZ(VCT_invalid_name(sym->rname, NULL));
 		if (type == SUB)
