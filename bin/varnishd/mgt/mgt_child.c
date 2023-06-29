@@ -310,6 +310,7 @@ mgt_launch_child(struct cli *cli)
 	int i, cp[2];
 	struct rlimit rl[1];
 	vtim_dur dstart;
+	int bstart;
 	vtim_mono t0;
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
@@ -439,10 +440,10 @@ mgt_launch_child(struct cli *cli)
 	AN(child_std_vlu);
 
 	/* Wait for cache/cache_cli.c::CLI_Run() to check in */
-	dstart = vmax(mgt_param.startup_timeout, mgt_param.cli_timeout);
+	bstart = mgt_param.startup_timeout >= mgt_param.cli_timeout;
+	dstart = bstart ? mgt_param.startup_timeout : mgt_param.cli_timeout;
 	t0 = VTIM_mono();
 	if (VCLI_ReadResult(child_cli_in, &u, NULL, dstart)) {
-		int bstart = mgt_param.startup_timeout >= mgt_param.cli_timeout;
 		assert(u == CLIS_COMMS);
 		if (VTIM_mono() - t0 < dstart)
 			mgt_launch_err(cli, u, "Child failed on launch ");

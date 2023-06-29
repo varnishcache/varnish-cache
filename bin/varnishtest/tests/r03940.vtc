@@ -16,8 +16,8 @@ varnish v1 -expectexit 0x40
 process p1 { varnishd \
 	-sdebug=debug,dinit=5s \
 	-pstartup_timeout=3s -pcli_timeout=2s \
-	-n ${tmpdir}/p1 -a :0 -b none 2>&1 } -start
-process p1 -expect-exit 0x2 -wait
+	-n ${tmpdir}/p1 -a :0 -b none 2>&1
+} -expect-exit 0x2 -run
 process p1 -expect-text 0 0 \
 	"Child failed on launch within startup_timeout=3.00s"
 
@@ -36,8 +36,8 @@ varnish v2 -expectexit 0x40
 process p2 { varnishd \
 	-sdebug=debug,dopen=5s \
 	-pstartup_timeout=2s -pcli_timeout=3s \
-	-n ${tmpdir}/p2 -a :0 -b none} -start
-process p2 -expect-exit 0x2 -wait
+	-n ${tmpdir}/p2 -a :0 -b none
+} -expect-exit 0x2 -run
 
 # expect-text does not work here because the panic info pushes the
 # error out of the emulated terminal's view.
