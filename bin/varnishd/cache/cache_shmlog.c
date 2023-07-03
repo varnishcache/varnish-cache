@@ -662,6 +662,9 @@ VSM_Init(void)
 	vsmw_lock = vsm_vsmw_lock;
 	vsmw_unlock = vsm_vsmw_unlock;
 
+	heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
+	AN(heritage.proc_vsmw);
+
 	VSC_C_main = VSC_main_New(NULL, NULL, "");
 	AN(VSC_C_main);
 

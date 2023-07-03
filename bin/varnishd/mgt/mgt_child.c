@@ -402,9 +402,6 @@ mgt_launch_child(struct cli *cli)
 
 		VJ_subproc(JAIL_SUBPROC_WORKER);
 
-		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
-		AN(heritage.proc_vsmw);
-
 		/*
 		 * We pass these two params because child_main needs them
 		 * well before it has found its own param struct.
