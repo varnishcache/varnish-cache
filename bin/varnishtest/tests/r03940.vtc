@@ -7,11 +7,12 @@ varnishtest "test startup_timeout vs. stevedore init / open"
 # startup_timeout used, delay in stevedore init
 varnish v1 -arg "-sdebug=debug,dinit=5s -pstartup_timeout=3s -pcli_timeout=2s" \
 	-arg "-p feature=+no_coredump" \
-	-vcl "backend none none;"
+	-vcl "backend none none;" \
+	-expectexit 0x40
 varnish v1 -cliexpect \
 	"Child failed on launch within startup_timeout=3.00s" \
 	"start"
-varnish v1 -expectexit 0x40
+varnish v1 -wait
 
 process p1 { varnishd \
 	-sdebug=debug,dinit=5s \
@@ -27,12 +28,13 @@ shell {grep -q "Child failed on launch within startup_timeout=3.00s" ${p1_out}}
 
 varnish v2 -arg "-sdebug=debug,dopen=5s -pstartup_timeout=2s -pcli_timeout=3s" \
 	-arg "-p feature=+no_coredump" \
-	-vcl "backend none none;"
+	-vcl "backend none none;" \
+	-expectexit 0x40
 varnish v2 -cliexpect \
 	"launch within cli_timeout=3.00s .tip: set startup_" \
 	"start"
 varnish v2 -cliok "panic.clear"
-varnish v2 -expectexit 0x40
+varnish v2 -wait
 
 process p2 { varnishd \
 	-sdebug=debug,dopen=5s \
