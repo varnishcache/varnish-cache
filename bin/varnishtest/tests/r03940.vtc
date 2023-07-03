@@ -33,6 +33,7 @@ varnish v2 -arg "-sdebug=debug,dopen=5s -pstartup_timeout=2s -pcli_timeout=3s" \
 varnish v2 -cliexpect \
 	"launch within cli_timeout=3.00s .tip: set startup_" \
 	"start"
+# "time for the big quit"
 varnish v2 -cliok "panic.clear"
 varnish v2 -wait
 
@@ -41,6 +42,8 @@ process p2 { varnishd \
 	-pstartup_timeout=2s -pcli_timeout=3s \
 	-n ${tmpdir}/p2 -a :0 -b none
 } -expect-exit 0x2 -run
+
+shell {grep -q "time for the big quit" ${p2_err}}
 
 # see explanation of previous shell grep
 shell {grep -q "launch within cli_timeout=3.00s (tip: set startup_" ${p2_err}}
