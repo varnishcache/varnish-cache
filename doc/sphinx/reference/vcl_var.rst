@@ -550,7 +550,7 @@ req_top.http.*
 	HTTP headers of the top-level request in a tree of ESI requests.
 	Identical to req.http. in non-ESI requests.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
 
 
 .. _req_top.method:
@@ -670,7 +670,7 @@ bereq.body
 
 	The request body.
 
-	Unset will also remove ``bereq.http.Content-Length``.
+	Unset will also remove bereq.http.content-length_.
 
 .. _bereq.connect_timeout:
 
@@ -733,8 +733,10 @@ bereq.http.*
 
 	The headers to be sent to the backend.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
 
+
+.. _bereq.http.content-length:
 
 bereq.http.content-length
 
@@ -1155,7 +1157,7 @@ beresp.http.*
 
 	The HTTP headers returned from the server.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
 
 
 beresp.http.content-length
@@ -1422,7 +1424,7 @@ obj.http.*
 
 	The HTTP headers stored in the object.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
 
 
 .. _obj.keep:
@@ -1605,7 +1607,7 @@ resp.http.*
 
 	The HTTP headers that will be returned.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
 
 
 resp.http.content-length
