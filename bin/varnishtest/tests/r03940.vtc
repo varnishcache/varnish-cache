@@ -12,7 +12,10 @@ varnish v1 -arg "-sdebug=debug,dinit=5s -pstartup_timeout=3s -pcli_timeout=2s" \
 varnish v1 -cliexpect \
 	"Child failed on launch within startup_timeout=3.00s" \
 	"start"
+# v1 registers a panic on some systems, but not others
+shell {varnishadm -n ${v1_name} panic.clear || true }
 varnish v1 -wait
+
 
 process p1 { varnishd \
 	-sdebug=debug,dinit=5s \
