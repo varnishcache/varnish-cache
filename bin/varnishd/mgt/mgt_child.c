@@ -558,8 +558,10 @@ mgt_reap_child(void)
 	vsb = VSB_new_auto();
 	XXXAN(vsb);
 
+	(void)VFIL_nonblocking(child_output);
 	/* Wait for child to die */
 	for (i = 0; i < mgt_param.cli_timeout * 10; i++) {
+		(void)child_listener(NULL, VEV__RD);
 		r = waitpid(child_pid, &status, WNOHANG);
 		if (r == child_pid)
 			break;
