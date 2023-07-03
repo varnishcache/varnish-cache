@@ -566,7 +566,8 @@ mgt_reap_child(void)
 		(void)usleep(100000);
 	}
 	if (r == 0) {
-		VSB_printf(vsb, "Child (%jd) not dying, killing", (intmax_t)r);
+		VSB_printf(vsb, "Child (%jd) not dying (waitpid = %jd),"
+		    " killing\n", (intmax_t)child_pid, (intmax_t)r);
 
 		/* Kick it Jim... */
 		(void)kill_child();
