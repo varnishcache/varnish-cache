@@ -20,7 +20,7 @@ process p1 { varnishd \
 } -expect-exit 0x2 -run
 # expect-text does not work if a panic info pushes the
 # error out of the emulated terminal's view.
-shell {grep -q "Child failed on launch within startup_timeout=3.00s" ${p1_err}}
+shell {grep -q "Child failed on launch within startup_timeout=3.00s" ${p1_out}}
 
 ####
 # cli_timeout used, delay in stevedore open
