@@ -49,7 +49,8 @@ varnishtest_SOURCES = \
 		vtc_subr.c \
 		vtc_syslog.c \
 		vtc_tunnel.c \
-		vtc_varnish.c
+		vtc_varnish.c \
+		vtc_vsm.c
 
 varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
@@ -60,6 +61,7 @@ varnishtest_LDADD = \
 varnishtest_CFLAGS = \
 		-DVTEST_WITH_VTC_LOGEXPECT \
 		-DVTEST_WITH_VTC_VARNISH \
+		-DVTEST_WITH_VTC_VSM \
 		-DTOP_BUILDDIR='"${top_builddir}"'
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
