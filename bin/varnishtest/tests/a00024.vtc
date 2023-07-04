@@ -2,25 +2,22 @@ varnishtest "Basic VSM status check"
 
 # just launch varnishd
 varnish v1 -cliok ping
-# POLA? vsm m1 -expect-status mgt-running
-vsm m1 -expect-status mgt-running,wrk-restarted
+vsm m1 -expect-status mgt-running
 
 varnish v1 -vcl "backend be none;"
-# POLA? vsm m1 -expect-status mgt-running
-vsm m1 -expect-status mgt-running,wrk-restarted
+vsm m1 -expect-status mgt-running
 
 varnish v1 -start
-# POLA? vsm m1 -expect-status mgt-running,mgt-changed,wrk-running
-vsm m1 -expect-status mgt-running,mgt-changed,mgt-restarted,wrk-running
+vsm m1 -expect-status \
+	mgt-running,mgt-changed,wrk-running,wrk-changed,wrk-restarted
 
 varnish v1 -vcl "backend be none;"
-# POLA? vsm m1 -expect-status mgt-running,wrk-running,wrk-changed
-vsm m1 -expect-status mgt-running,wrk-running
+vsm m1 -expect-status mgt-running,wrk-running,wrk-changed
 
 varnish v1 -stop
 # POLA? vsm m1 -expect-status mgt-running,mgt-changed,wrk-restarted
-vsm m1 -expect-status mgt-running,wrk-running
+vsm m1 -expect-status mgt-running,mgt-changed,wrk-running
 
 varnish v1 -start
-# POLA? vsm m1 -expect-status mgt-running,mgt-changed,wrk-running,wrk-restarted
-vsm m1 -expect-status mgt-running,mgt-changed,mgt-restarted,wrk-running
+vsm m1 -expect-status \
+	mgt-running,mgt-changed,wrk-running,wrk-changed,wrk-restarted
