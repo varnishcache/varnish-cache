@@ -31,10 +31,11 @@ client c1 {
 
 # in practice a little over fetch_chunksize is allocated
 varnish v1 -expect SM?.s0.c_bytes < 20000
+varnish v1 -vsl_catchup
 
 # reset s0 counters
-varnish v1 -cliok stop
-varnish v1 -cliok start
+varnish v1 -stop
+varnish v1 -start
 varnish v1 -expect SM?.s0.c_bytes == 0
 
 # content-length req.body streaming also needs one chunk
@@ -45,10 +46,11 @@ client c2 {
 } -run
 
 varnish v1 -expect SM?.s0.c_bytes < 20000
+varnish v1 -vsl_catchup
 
 # reset s0 counters
-varnish v1 -cliok stop
-varnish v1 -cliok start
+varnish v1 -stop
+varnish v1 -start
 
 # chunked req.body caching allocates storage for the entire body
 client c3 {
@@ -60,10 +62,11 @@ client c3 {
 } -run
 
 varnish v1 -expect SM?.s0.c_bytes > 100000
+varnish v1 -vsl_catchup
 
 # reset s0 counters
-varnish v1 -cliok stop
-varnish v1 -cliok start
+varnish v1 -stop
+varnish v1 -start
 
 # content-length req.body caching allocates storage for the entire body
 client c4 {
@@ -73,3 +76,4 @@ client c4 {
 } -run
 
 varnish v1 -expect SM?.s0.c_bytes > 100000
+varnish v1 -vsl_catchup
