@@ -494,18 +494,18 @@ vsm_vlu_hash(struct vsm *vd, struct vsm_set *vs, const char *line)
 
 	i = sscanf(line, "# %ju %ju", &id1, &id2);
 	if (i != 2) {
-		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		vs->retval |= vs->flag_restarted;
 		return (0);
 	}
 	if (vd->couldkill >= 0 && !kill(id1, 0)) {
 		vd->couldkill = 1;
 	} else if (vd->couldkill > 0 && errno == ESRCH) {
-		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		vs->retval |= vs->flag_restarted | VSM_MGT_CHANGED;
 		return (0);
 	}
 	vs->retval |= VSM_MGT_RUNNING;
 	if (id1 != vs->id1 || id2 != vs->id2) {
-		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		vs->retval |= vs->flag_restarted;
 		vs->id1 = id1;
 		vs->id2 = id2;
 	}
@@ -556,12 +556,13 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 			vg->cluster = vsm_findcluster(vs, vg->av[1]);
 			CHECK_OBJ_NOTNULL(vg->cluster, VSM_SEG_MAGIC);
 		}
+		vs->retval |= vs->flag_changed;
 	}
 	return (0);
 }
 
 static int
-vsm_vlu_minus(struct vsm *vd, const struct vsm_set *vs, const char *line)
+vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 {
 	char **av;
 	int ac;
@@ -584,6 +585,7 @@ vsm_vlu_minus(struct vsm *vd, const struct vsm_set *vs, const char *line)
 
 	for (;vg != NULL; vg = VTAILQ_NEXT(vg, list)) {
 		if (!vsm_cmp_av(&vg->av[1], &av[1])) {
+			vs->retval |= vs->flag_changed;
 			vsm_delseg(vg, 1);
 			break;
 		}
@@ -645,6 +647,7 @@ vsm_readlines(struct vsm_set *vs)
 static unsigned
 vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 {
+	unsigned restarted = 0;
 	struct stat st;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -657,6 +660,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 	    st.st_mode != vs->dst.st_mode ||
 	    st.st_nlink == 0)) {
 		closefd(&vs->dfd);
+		restarted = vs->flag_restarted;
 	}
 
 	if (vs->dfd < 0) {
@@ -668,7 +672,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 	if (vs->dfd < 0) {
 		vs->id1 = vs->id2 = 0;
 		vsm_wash_set(vs, 1);
-		return (vs->retval | vs->flag_restarted);
+		return (vs->retval | restarted);
 	}
 
 	AZ(fstat(vs->dfd, &vs->dst));
@@ -681,6 +685,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 	    st.st_size < vs->fst.st_size ||
 	    st.st_nlink < 1)) {
 		closefd(&vs->fd);
+		vs->retval |= vs->flag_changed;
 	}
 
 	if (vs->fd >= 0) {
@@ -692,7 +697,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 		vs->vg = VTAILQ_FIRST(&vs->segs);
 		vs->fd = openat(vs->dfd, "_.index", O_RDONLY);
 		if (vs->fd < 0)
-			return (vs->retval | vs->flag_restarted);
+			return (vs->retval | restarted);
 		VLU_Reset(vs->vlu);
 		AZ(fstat(vs->fd, &vs->fst));
 		vsm_readlines(vs);
