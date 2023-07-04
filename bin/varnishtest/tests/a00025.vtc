@@ -2,29 +2,25 @@ varnishtest "Basic VSM status check"
 
 # just launch varnishd
 varnish v1 -cliok ping
-# POLA? vsm m1 -expect-status mgt-running
-vsm m1 -expect-status mgt-running,wrk-restarted
+vsm m1 -expect-status mgt-running
 
 varnish v1 -vcl "backend be none;"
-# POLA? vsm m1 -expect-status mgt-running
-vsm m1 -expect-status mgt-running,wrk-restarted
-
-varnish v1 -start
-# POLA? vsm m1 -expect-status mgt-running,mgt-changed,wrk-running
-vsm m1 -expect-status mgt-running,mgt-changed,mgt-restarted,wrk-running
-
-varnish v1 -vcl "backend be none;"
-# POLA? vsm m1 -expect-status mgt-running,wrk-running,wrk-changed
-vsm m1 -expect-status mgt-running,wrk-running
-
-# The order of status flags does not matter, the next one is equivalent.
-varnish v1 -vcl "backend be none;"
-vsm m1 -expect-status wrk-running,mgt-running
-
-varnish v1 -stop
-# POLA? vsm m1 -expect-status mgt-running,mgt-changed
 vsm m1 -expect-status mgt-running
 
 varnish v1 -start
-# POLA? vsm m1 -expect-status mgt-running,mgt-changed,wrk-running,wrk-restarted
-vsm m1 -expect-status mgt-running,mgt-changed,mgt-restarted,wrk-running
+vsm m1 -expect-status \
+	mgt-running,mgt-changed,wrk-running,wrk-changed,wrk-restarted
+
+varnish v1 -vcl "backend be none;"
+vsm m1 -expect-status mgt-running,wrk-running,wrk-changed
+
+# The order of status flags does not matter, the next one is equivalent.
+varnish v1 -vcl "backend be none;"
+vsm m1 -expect-status wrk-changed,wrk-running,mgt-running
+
+varnish v1 -stop
+vsm m1 -expect-status mgt-running,mgt-changed
+
+varnish v1 -start
+vsm m1 -expect-status \
+	mgt-running,mgt-changed,wrk-running,wrk-changed,wrk-restarted
