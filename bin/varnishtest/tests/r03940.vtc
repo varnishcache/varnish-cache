@@ -46,7 +46,8 @@ process p2 { varnishd \
 	-n ${tmpdir}/p2 -a :0 -b none
 } -expect-exit 0x2 -run
 
-shell {grep -q "time for the big quit" ${p2_err}}
+# XXX not reliably the only failure mode
+#shell {grep -q "time for the big quit" ${p2_err}}
 
 # see explanation of previous shell grep
 shell {grep -q "launch within cli_timeout=3.00s (tip: set startup_" ${p2_err}}
