@@ -130,6 +130,9 @@ int VSM_Attach(struct vsm *, int progress);
 #define VSM_WRK_CHANGED		(1U<<10)
 #define VSM_WRK_RESTARTED	(1U<<11)
 
+#define VSM_MGT_MASK 0x00ff
+#define VSM_WRK_MASK 0xff00
+
 unsigned VSM_Status(struct vsm *);
 	/*
 	 * Returns a bitmap of the current status and changes in it
