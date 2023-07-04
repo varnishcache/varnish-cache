@@ -59,6 +59,9 @@ CMD_TOP(tunnel)
 CMD_TOP(varnish)
 #endif
 CMD_TOP(varnishtest)
+#ifdef VTEST_WITH_VTC_VSM
+CMD_TOP(vsm)
+#endif
 CMD_TOP(vtest)
 #undef CMD_TOP
 
