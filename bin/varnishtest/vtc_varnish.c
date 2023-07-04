@@ -204,7 +204,7 @@ varnishlog_thread(void *priv)
 	struct VSL_cursor *c;
 	enum VSL_tag_e tag;
 	uint64_t vxid;
-	unsigned len;
+	unsigned len, vs;
 	const char *tagname, *data;
 	int type, i, opt;
 	struct vsb *vsb = NULL;
@@ -271,7 +271,8 @@ varnishlog_thread(void *priv)
 		if (i == 0) {
 			/* Nothing to do but wait */
 			v->vsl_idle++;
-			if (!(VSM_Status(vsm) & VSM_WRK_RUNNING)) {
+			vs = VSM_Status(vsm) & VSM_WRK_MASK;
+			if ((vs & ~VSM_WRK_CHANGED) != VSM_WRK_RUNNING) {
 				/* Abandoned - try reconnect */
 				VSL_DeleteCursor(c);
 				c = NULL;
