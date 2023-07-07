@@ -151,6 +151,11 @@ vsmw_idx_head(const struct vsmw *vsmw, int fd)
 	assert(write(fd, buf, strlen(buf)) == strlen(buf));
 }
 
+#define ASSERT_SEG_STR(x) do {			\
+		AN(x);				\
+		AZ(strchr(x, '\n'));		\
+	} while (0);
+
 static void
 vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg, char act)
 {
@@ -159,6 +164,9 @@ vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg, char act)
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 	AN(seg->cluster);
+	ASSERT_SEG_STR(seg->category);
+	ASSERT_SEG_STR(seg->id);
+
 	VSB_printf(vsmw->vsb, "%c %s %zu %zu %s %s\n",
 	    act,
 	    seg->cluster->fn,
