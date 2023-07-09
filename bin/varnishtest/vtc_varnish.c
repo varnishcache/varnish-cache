@@ -406,6 +406,10 @@ varnish_launch(struct varnish *v)
 	VSB_cat(vsb, "cd ${pwd} &&");
 	VSB_printf(vsb, " exec varnishd %s -d -n %s -i %s",
 	    v->jail, v->workdir, v->name);
+	if (macro_isdef(NULL, "varnishd_args_prepend")) {
+		VSB_putc(vsb, ' ');
+		macro_cat(v->vl, vsb, "varnishd_args_prepend", NULL);
+	}
 	VSB_cat(vsb, VSB_data(params_vsb));
 	if (leave_temp) {
 		VSB_cat(vsb, " -p debug=+vcl_keep");
@@ -430,9 +434,9 @@ varnish_launch(struct varnish *v)
 	if (vmod_path != NULL)
 		VSB_printf(vsb, " -p vmod_path=%s", vmod_path);
 	VSB_printf(vsb, " %s", VSB_data(v->args));
-	if (macro_isdef(NULL, "varnishd_args")) {
+	if (macro_isdef(NULL, "varnishd_args_append")) {
 		VSB_putc(vsb, ' ');
-		macro_cat(v->vl, vsb, "varnishd_args", NULL);
+		macro_cat(v->vl, vsb, "varnishd_args_append", NULL);
 	}
 	AZ(VSB_finish(vsb));
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
@@ -1072,11 +1076,12 @@ vsl_catchup(struct varnish *v)
  * \-arg STRING
  *         Pass an argument to varnishd, for example "-h simple_list".
  *
- *         If the ${varnishd_args} macro is defined, it is expanded and
- *         appended to the varnishd command line, before the command line
- *         itself is expanded. This enables tweaks to the varnishd command
- *         line without editing test cases. This macro can be defined using
- *         the ``-D`` option for varnishtest.
+ *         If the ${varnishd_args_prepend} or ${varnishd_args_append} macros are
+ *         defined, they are expanded and inserted before / appended to the
+ *         varnishd command line as constructed by varnishtest, before the
+ *         command line itself is expanded. This enables tweaks to the varnishd
+ *         command line without editing test cases. This macros can be defined
+ *         using the ``-D`` option for varnishtest.
  *
  * \-vcl STRING
  *         Specify the VCL to load on this Varnish instance. You'll probably
