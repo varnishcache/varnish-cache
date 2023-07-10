@@ -30,6 +30,16 @@
 			(to)->magic = (type_magic);			\
 	} while (0)
 
+#define ALLOC_OBJ_ARRAY(to, len, fld, type_magic)			\
+	do {								\
+		v_static_assert(					\
+		    sizeof *(to) == offsetof(typeof(*(to)), fld));	\
+		(to) = calloc(1,					\
+		    sizeof *(to) + ((len) * sizeof *((to)->fld)));	\
+		if ((to) != NULL)					\
+			(to)->magic = (type_magic);			\
+	} while (0)
+
 #define FREE_OBJ(to)							\
 	do {								\
 		ZERO_OBJ(&(to)->magic, sizeof (to)->magic);		\
