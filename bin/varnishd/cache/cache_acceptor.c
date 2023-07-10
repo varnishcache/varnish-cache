@@ -71,10 +71,16 @@ struct poolsock {
 	unsigned			magic;
 #define POOLSOCK_MAGIC			0x1b0a2d38
 	VTAILQ_ENTRY(poolsock)		list;
+	VTAILQ_ENTRY(poolsock)		busy_list;
+	pthread_t			busy_thr;
+	struct worker			*busy_wrk;
 	struct listen_sock		*lsock;
 	struct pool_task		task[1];
 	struct pool			*pool;
 };
+
+static VTAILQ_HEAD(,poolsock)		busy_socks =
+    VTAILQ_HEAD_INITIALIZER(busy_socks);
 
 /*--------------------------------------------------------------------
  * TCP options we want to control
@@ -509,10 +515,23 @@ vca_accept_task(struct worker *wrk, void *arg)
 		vca_pace_check();
 
 		wa.acceptaddrlen = sizeof wa.acceptaddr;
+
+		AZ(pthread_mutex_lock(&shut_mtx));
+		AZ(ps->busy_wrk);
+		ps->busy_wrk = wrk;
+		ps->busy_thr = pthread_self();
+		VTAILQ_INSERT_TAIL(&busy_socks, ps, busy_list);
+		AZ(pthread_mutex_unlock(&shut_mtx));
+
 		do {
 			i = accept(ls->sock, (void*)&wa.acceptaddr,
 			    &wa.acceptaddrlen);
 		} while (i < 0 && errno == EAGAIN && !ps->pool->die);
+
+		AZ(pthread_mutex_lock(&shut_mtx));
+		ps->busy_wrk = NULL;
+		VTAILQ_REMOVE(&busy_socks, ps, busy_list);
+		AZ(pthread_mutex_unlock(&shut_mtx));
 
 		if (i < 0 && ps->pool->die)
 			break;
