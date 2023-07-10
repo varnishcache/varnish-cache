@@ -1,5 +1,9 @@
 varnishtest "rushed task queued"
 
+# this does not work reliably because the acceptor task may
+# be queued during the child startup if not all threads are
+# created
+
 # thread reserve mitigation barrier
 barrier b0 sock 2
 
@@ -61,12 +65,14 @@ varnish v1 -expect threads == 5
 client c1 {
 	txreq -hdr "Cookie: foo" -hdr "server: s1"
 	rxresp
+	expect resp.status == 200
 } -start
 
 # 2 threads
 client c2 {
 	txreq -hdr "server: s2"
 	rxresp
+	expect resp.status == 200
 } -start
 
 # ensure c1 and c2 fetch tasks are started
@@ -84,11 +90,11 @@ varnish v1 -expect sess_dropped == 0
 varnish v1 -expect sess_queued == 0
 
 # At this point, we are thread-starved and c3 below will steal the
-# acceptor thread. It will be queued before the acceptor task queues
-# itself with a lower priority.
+# acceptor thread that will queue itself.
 client c3 {
 	txreq
 	rxresp
+	expect resp.status == 200
 } -start
 
 logexpect l1 -wait
