@@ -693,8 +693,7 @@ vfp_gzip_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
 	if (vfe->priv1 != NULL) {
-		CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
-		vfe->priv1 = NULL;
+		TAKE_OBJ_NOTNULL(vg, &vfe->priv1, VGZ_MAGIC);
 		(void)VGZ_Destroy(&vg);
 	}
 }

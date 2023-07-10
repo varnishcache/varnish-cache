@@ -796,8 +796,7 @@ ved_gzgz_fini(struct vdp_ctx *vdc, void **priv)
 	struct ved_foo *foo;
 
 	(void)vdc;
-	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
-	*priv = NULL;
+	TAKE_OBJ_NOTNULL(foo, priv, VED_FOO_MAGIC);
 
 	/* XXX
 	 * this works due to the esi layering, a VDP pushing bytes from _fini

@@ -242,8 +242,7 @@ hcb_insert(const struct worker *wrk, struct hcb_root *root,
 
 	/* Insert */
 
-	CAST_OBJ_NOTNULL(y2, wrk->wpriv->nhashpriv, HCB_Y_MAGIC);
-	wrk->wpriv->nhashpriv = NULL;
+	TAKE_OBJ_NOTNULL(y2, &wrk->wpriv->nhashpriv, HCB_Y_MAGIC);
 	(void)hcb_crit_bit(digest, oh2, y2);
 	s2 = (digest[y2->ptr] & y2->bitmask) != 0;
 	assert(s2 < 2);
