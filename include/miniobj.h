@@ -33,7 +33,8 @@
 #define ALLOC_OBJ_ARRAY(to, len, fld, type_magic)			\
 	do {								\
 		v_static_assert(					\
-		    sizeof *(to) == offsetof(typeof(*(to)), fld));	\
+		    sizeof *(to) == offsetof(typeof(*(to)), fld),	\
+		    "the last field must be a zero-length array");	\
 		(to) = calloc(1,					\
 		    sizeof *(to) + ((len) * sizeof *((to)->fld)));	\
 		if ((to) != NULL)					\
