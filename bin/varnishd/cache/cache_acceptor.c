@@ -754,6 +754,12 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
+	if (!cache_param->accept_traffic) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "Not accepting traffic\n");
+		return;
+	}
+
 	/*
 	 * This CLI command is primarily used by varnishtest.  Don't
 	 * respond until listen(2) has been called, in order to avoid
