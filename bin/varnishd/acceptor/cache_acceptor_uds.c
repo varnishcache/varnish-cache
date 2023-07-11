@@ -495,14 +495,14 @@ vca_uds_accept(struct pool *pp)
 }
 
 static void
-vca_uds_update(pthread_mutex_t *shut_mtx)
+vca_uds_update(struct lock *shut_mtx)
 {
 	struct listen_sock *ls;
 
 	if (!vca_uds_sockopt_init())
 		return;
 
-	PTOK(pthread_mutex_lock(shut_mtx));
+	Lck_Lock(shut_mtx);
 
 	VTAILQ_FOREACH(ls, &UDS_acceptor.socks, vcalist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
@@ -524,7 +524,7 @@ vca_uds_update(pthread_mutex_t *shut_mtx)
 		ls->test_heritage = 1;
 	}
 
-	PTOK(pthread_mutex_unlock(shut_mtx));
+	Lck_Unlock(shut_mtx);
 }
 
 static void

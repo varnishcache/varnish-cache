@@ -36,6 +36,7 @@
 struct listen_sock;
 struct listen_arg;
 struct pool;
+struct lock;
 
 void VCA_Init(void);
 void VCA_Start(struct cli *cli);
@@ -54,7 +55,7 @@ typedef void acceptor_start_f(struct cli *);
 typedef void acceptor_event_f(struct cli *, struct listen_sock *,
     enum vca_event);
 typedef void acceptor_accept_f(struct pool *);
-typedef void acceptor_update_f(pthread_mutex_t *);
+typedef void acceptor_update_f(struct lock *);
 typedef void acceptor_shutdown_f(void);
 
 struct acceptor {
