@@ -710,8 +710,12 @@ VBP_Remove(struct backend *be)
 	be->probe = NULL;
 	vt->backend = NULL;
 	if (vt->running) {
+		// task scheduled, it calls vbp_delete()
 		vt->running = -1;
 		vt = NULL;
+	} else if (vt->heap_idx != VBH_NOIDX) {
+		// task done, not yet rescheduled
+		VBH_delete(vbp_heap, vt->heap_idx);
 	}
 	Lck_Unlock(&vbp_mtx);
 	if (vt != NULL) {
