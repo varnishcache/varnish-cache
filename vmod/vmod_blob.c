@@ -296,7 +296,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 				}
 			}
 		}
-		AZ(pthread_mutex_unlock(&b->lock));
+		PTOK(pthread_mutex_unlock(&b->lock));
 	}
 	return (b->encoding[enc][kase]);
 }
