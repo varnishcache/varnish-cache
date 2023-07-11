@@ -591,7 +591,7 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	}
 
 	if (via != NULL && t_path != NULL) {
-		VSB_printf(tl->sb, "Cannot set both .via and .path.\n");
+		VSB_cat(tl->sb, "Cannot set both .via and .path.\n");
 		vcc_ErrWhere(tl, t_be);
 		return;
 	}
