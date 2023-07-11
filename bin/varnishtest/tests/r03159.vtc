@@ -16,6 +16,7 @@ process p1 -log {
 
 shell {
 	# wait for startup vcl.load to complete
+	varnishadm -n ${tmpdir}/t ping ||
 	varnishadm -n ${tmpdir}/t ping
 }
 
