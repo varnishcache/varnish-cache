@@ -110,7 +110,7 @@ process p1 {
 	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_child/_.index`
 	echo CHILD NLINES $nlines NMINUS $nminus
 	# cat ${tmpdir}/v1/_.vsm_child/_.index
-	test $nminus -lt 20
+	test $nminus -lt 30
 } -run
 
 # Now check the management process VSM

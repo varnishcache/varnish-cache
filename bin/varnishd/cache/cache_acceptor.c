@@ -53,8 +53,8 @@
 static pthread_t	VCA_thread;
 static vtim_dur vca_pace = 0.0;
 static struct lock pace_mtx;
+static struct lock shut_mtx;
 static unsigned pool_accepting;
-static pthread_mutex_t shut_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 struct wrk_accept {
 	unsigned		magic;
@@ -516,22 +516,22 @@ vca_accept_task(struct worker *wrk, void *arg)
 
 		wa.acceptaddrlen = sizeof wa.acceptaddr;
 
-		AZ(pthread_mutex_lock(&shut_mtx));
+		Lck_Lock(&shut_mtx);
 		AZ(ps->busy_wrk);
 		ps->busy_wrk = wrk;
 		ps->busy_thr = pthread_self();
 		VTAILQ_INSERT_TAIL(&busy_socks, ps, busy_list);
-		AZ(pthread_mutex_unlock(&shut_mtx));
+		Lck_Unlock(&shut_mtx);
 
 		do {
 			i = accept(ls->sock, (void*)&wa.acceptaddr,
 			    &wa.acceptaddrlen);
 		} while (i < 0 && errno == EAGAIN && !ps->pool->die);
 
-		AZ(pthread_mutex_lock(&shut_mtx));
+		Lck_Lock(&shut_mtx);
 		ps->busy_wrk = NULL;
 		VTAILQ_REMOVE(&busy_socks, ps, busy_list);
-		AZ(pthread_mutex_unlock(&shut_mtx));
+		Lck_Unlock(&shut_mtx);
 
 		if (i < 0 && ps->pool->die)
 			break;
@@ -668,7 +668,7 @@ vca_acct(void *arg)
 	while (1) {
 		(void)sleep(1);
 		if (vca_sock_opt_init()) {
-			PTOK(pthread_mutex_lock(&shut_mtx));
+			Lck_Lock(&shut_mtx);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock == -2)
 					continue;	// VCA_Shutdown
@@ -686,7 +686,7 @@ vca_acct(void *arg)
 				 * listening socket. */
 				ls->test_heritage = 1;
 			}
-			PTOK(pthread_mutex_unlock(&shut_mtx));
+			Lck_Unlock(&shut_mtx);
 		}
 		vca_periodic(t0);
 	}
@@ -788,7 +788,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	while (!pool_accepting)
 		VTIM_sleep(.1);
 
-	PTOK(pthread_mutex_lock(&shut_mtx));
+	Lck_Lock(&shut_mtx);
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (!ls->uds) {
 			VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
@@ -797,7 +797,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 		else
 			VCLI_Out(cli, "%s %s -\n", ls->name, ls->endpoint);
 	}
-	PTOK(pthread_mutex_unlock(&shut_mtx));
+	Lck_Unlock(&shut_mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -814,6 +814,7 @@ VCA_Init(void)
 
 	CLI_AddFuncs(vca_cmds);
 	Lck_New(&pace_mtx, lck_vcapace);
+	Lck_New(&shut_mtx, lck_vcashut);
 }
 
 void
@@ -822,13 +823,13 @@ VCA_Shutdown(void)
 	struct listen_sock *ls;
 	int i;
 
-	PTOK(pthread_mutex_lock(&shut_mtx));
+	Lck_Lock(&shut_mtx);
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		i = ls->sock;
 		ls->sock = -2;
 		(void)close(i);
 	}
-	PTOK(pthread_mutex_unlock(&shut_mtx));
+	Lck_Unlock(&shut_mtx);
 }
 
 /*--------------------------------------------------------------------
