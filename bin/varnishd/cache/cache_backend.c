@@ -636,7 +636,7 @@ via_endpoint(const struct vrt_endpoint *vep, const struct suckaddr *sa,
 	ret = VRT_Endpoint_Clone(nvep);
 	CHECK_OBJ_NOTNULL(ret, VRT_ENDPOINT_MAGIC);
 	VSB_destroy(&preamble);
-	free(nvep);
+	FREE_OBJ(nvep);
 
 	return (ret);
 }
