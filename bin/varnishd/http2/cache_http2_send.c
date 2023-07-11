@@ -272,7 +272,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
 
 		if (h2_errcheck(r2, h2) == 0) {
-			w = vmin_t(int64_t, h2_win_limit(r2, h2), wanted);
+			w = vmin(h2_win_limit(r2, h2), wanted);
 			h2_win_charge(r2, h2, w);
 			assert (w > 0);
 		}
