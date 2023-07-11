@@ -57,7 +57,6 @@
 #include "vtim.h"
 
 #include "common/heritage.h"
-#include "common/vsmw.h"
 
 static pid_t		child_pid = -1;
 
@@ -450,7 +449,7 @@ mgt_launch_child(struct cli *cli)
 			    bstart ? "startup" : "cli", dstart,
 			    bstart ? "" : " (tip: set startup_timeout)");
 		child_pid = pid;
-		kill_child();
+		(void)kill_child();
 		mgt_reap_child();
 		child_state = CH_STOPPED;
 		return;
