@@ -375,6 +375,13 @@ cli_quit(int sig)
 	WRONG("It's time for the big quit");
 }
 
+static void
+child_sig_nore(int sig)
+{
+
+	(void)sig;
+}
+
 /*=====================================================================
  * Run the child process
  */
@@ -388,6 +395,7 @@ child_main(int sigmagic, size_t altstksz)
 	(void)signal(SIGINT, SIG_DFL);
 	(void)signal(SIGTERM, SIG_DFL);
 	(void)signal(SIGQUIT, cli_quit);
+	(void)signal(SIGUSR1, child_sig_nore);
 
 #if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 	malloc_message = child_malloc_fail;
