@@ -157,7 +157,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 
 	AZ(VFIL_fsinfo(fd, &bs, &fssize, NULL));
 	/* Increase granularity if it is lower than the filesystem block size */
-	*granularity = vmax(*granularity, bs);
+	*granularity = vmax_t(unsigned, *granularity, bs);
 
 	if ((size == NULL || *size == '\0') && st.st_size != 0) {
 		/*
