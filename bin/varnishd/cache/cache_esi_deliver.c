@@ -856,6 +856,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 {
 	int i = 0;
 	const char *p;
+	uint16_t status;
 	struct ecx *ecx;
 	struct ved_foo foo[1];
 	struct vrt_ctx ctx[1];
@@ -869,9 +870,9 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (wantbody == 0)
 		return;
 
-	if (!ecx->incl_cont &&
-	    req->resp->status != 200 &&
-	    req->resp->status != 204) {
+	status = req->resp->status % 1000;
+
+	if (!ecx->incl_cont && status != 200 && status != 204) {
 		req->top->topreq->vdc->retval = -1;
 		req->top->topreq->doclose = req->doclose;
 		return;
