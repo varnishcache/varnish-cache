@@ -8,8 +8,7 @@ server s1 {
 	txresp -body {
 		<html>
 		Before include
-		<esi:include src="/body" sr="foo"/>
-		After include
+		<esi:include src="/body" sr="foo"/><esi:include src="/synth"/>After include
 		</html>
 	}
 	rxreq
@@ -21,9 +20,17 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_synth {
+		set resp.body = """
+		""";
+		return (deliver);
+	}
 	sub vcl_recv {
 		if (req.esi_level > 0) {
 			set req.url = req.url + req.esi_level;
+			if (req.url ~ "^/synth") {
+				return (synth(3200));
+			}
 		} else {
 			set req.http.esi0 = "foo";
 		}
@@ -64,7 +71,7 @@ logexpect l4 -v v1 -g request {
 } -start
 
 logexpect l5 -v v1 -g request {
-	expect * 1005   Begin   "^req .* rxreq"
+	expect * 1006   Begin   "^req .* rxreq"
 	# Header bytes is 5 larger than in l1 due to two item X-Varnish hdr
 	expect * =	ReqAcct	"^29 0 29 175 75 250$"
 	expect 0 =      End
@@ -87,7 +94,7 @@ client c1 {
 }
 
 client c1 -run
-varnish v1 -expect esi_req == 2
+varnish v1 -expect esi_req == 4
 varnish v1 -expect esi_errors == 0
 varnish v1 -expect MAIN.s_resp_bodybytes == 150
 
@@ -104,7 +111,7 @@ shell {
 
 	cat >expected.txt <<-EOF
 	1001 c rxreq
-	1005 c rxreq
+	1006 c rxreq
 	EOF
 	diff -u expected.txt ncsa.txt
 }
@@ -129,8 +136,10 @@ shell {
 	cat >expected.txt <<-EOF
 	1001 c rxreq
 	1003 c esi
-	1005 c rxreq
-	1006 c esi
+	1005 c esi
+	1006 c rxreq
+	1007 c esi
+	1008 c esi
 	EOF
 	diff -u expected.txt ncsa.txt
 }
@@ -145,8 +154,10 @@ shell {
 	1002 b fetch
 	1003 c esi
 	1004 b fetch
-	1005 c rxreq
-	1006 c esi
+	1005 c esi
+	1006 c rxreq
+	1007 c esi
+	1008 c esi
 	EOF
 	diff -u expected.txt ncsa.txt
 }
