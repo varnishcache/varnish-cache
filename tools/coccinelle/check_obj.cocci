@@ -4,12 +4,12 @@
  */
 
 @@
-expression obj, magic;
+expression obj, magicval;
 @@
 
 if (obj != NULL) {
-- CHECK_OBJ_NOTNULL(obj, magic);
-+ CHECK_OBJ(obj, magic);
+- CHECK_OBJ_NOTNULL(obj, magicval);
++ CHECK_OBJ(obj, magicval);
 ...
 }
 
