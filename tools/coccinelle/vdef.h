@@ -24,6 +24,10 @@
 #define VTAILQ_HEAD_INITIALIZER(t)	0
 #define VSTAILQ_HEAD_INITIALIZER(t)	0
 
+#define VTAILQ_FOREACH(o, h, l)			if (o != NULL)
+#define VTAILQ_FOREACH_SAFE(o, h, l, o2)	if (o != NULL)
+#define VTAILQ_FOREACH_REVERSE(o, h, t, l)	if (o != NULL)
+
 /* include/vtree.h */
 #define VRBT_ENTRY(x)		unsigned
 #define VRBT_HEAD(x, y)		unsigned

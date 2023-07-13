@@ -320,7 +320,7 @@ hcb_cleaner(struct worker *wrk, void *priv)
 			FREE_OBJ(y);
 		}
 		VTAILQ_FOREACH_SAFE(oh, &dead_h, hoh_list, oh2) {
-			CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+			CHECK_OBJ(oh, OBJHEAD_MAGIC);
 			VTAILQ_REMOVE(&dead_h, oh, hoh_list);
 			HSH_DeleteObjHead(wrk, oh);
 		}
