@@ -30,7 +30,8 @@
 
 #include "config.h"
 
-#include "vmb.h"	//lint !e766
+//lint -e{766}
+#include "vmb.h"
 
 #ifdef VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE
 
