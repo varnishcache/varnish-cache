@@ -30,8 +30,6 @@
 
 #include "config.h"
 
-#include "vmb.h"
-
 #ifdef VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE
 
 #include <pthread.h>
@@ -40,6 +38,7 @@
 #include "vdef.h"
 
 #include "vas.h"
+#include "vmb.h"
 
 static pthread_mutex_t	mb_mtx;
 static pthread_once_t	mb_mtx_once = PTHREAD_ONCE_INIT;
