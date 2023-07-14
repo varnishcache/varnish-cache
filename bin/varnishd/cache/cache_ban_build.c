@@ -40,7 +40,6 @@
 #include "vend.h"
 #include "vtim.h"
 #include "vnum.h"
-#include "vre.h"
 
 void BAN_Build_Init(void);
 void BAN_Build_Fini(void);
