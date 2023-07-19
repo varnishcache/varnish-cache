@@ -52,8 +52,7 @@ varnish v1 -expect client_req == 1
 varnish v1 -expect cache_miss == 1
 varnish v1 -expect s_sess == 1
 varnish v1 -expect s_resp_bodybytes == 7
-varnish v1 -expect s_resp_hdrbytes == 146
-
+varnish v1 -expect s_resp_hdrbytes == 158
 client c1 {
 	txreq -url "/2"
 	rxresp
@@ -67,4 +66,4 @@ varnish v1 -expect client_req == 2
 varnish v1 -expect cache_miss == 2
 varnish v1 -expect s_sess == 2
 varnish v1 -expect s_resp_bodybytes == 14
-varnish v1 -expect s_resp_hdrbytes == 292
+varnish v1 -expect s_resp_hdrbytes == 316

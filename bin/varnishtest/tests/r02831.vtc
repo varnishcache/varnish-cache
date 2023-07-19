@@ -3,7 +3,7 @@ varnishtest "#2831: Out of storage in cache_req_body"
 server s1 {
 	rxreq
 	expect req.url == "/obj1"
-	txresp -bodylen 1048400
+	txresp -noserver -bodylen 1048400
 } -start
 
 varnish v1 \

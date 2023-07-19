@@ -7,10 +7,10 @@ server s1 {
 	rxreq
 	expect req.http.content-length == 7
 	expect req.http.transfer-encoding == <undef>
-	txresp -hdr "Accept-ranges: bytes" -hdr "Content-Type: text/plain" -body response
+	txresp -noserver -hdr "Accept-ranges: bytes" -hdr "Content-Type: text/plain" -body response
 
 	rxreq
-	txresp -hdr "Accept-ranges: bytes"
+	txresp -noserver -hdr "Accept-ranges: bytes"
 } -start
 
 varnish v1 -vcl+backend {
