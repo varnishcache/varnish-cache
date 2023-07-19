@@ -42,13 +42,14 @@ varnish v1 -vcl+backend {
 # resp:
 # HTTP/1.1 200 OK\r\n			17 bytes
 # Content-Length: 4\r\n			19 bytes
+# Server: s1\r\n		 	12 bytes
 # \r\n					 2 bytes
 # fdsa					 4 bytes
-# Total:				42 bytes
+# Total:				54 bytes
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001	Begin		"^req .* rxreq"
-	expect * =	PipeAcct	"^49 60 4 42$"
+	expect * =	PipeAcct	"^49 60 4 54$"
 	expect 0 =	End
 } -start
 
@@ -63,4 +64,4 @@ logexpect l1 -wait
 
 varnish v1 -expect s_pipe_hdrbytes == 49
 varnish v1 -expect s_pipe_in == 4
-varnish v1 -expect s_pipe_out == 42
+varnish v1 -expect s_pipe_out == 54

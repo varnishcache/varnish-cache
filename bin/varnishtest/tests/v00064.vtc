@@ -3,16 +3,16 @@ varnishtest "vbf_stp_condfetch could not get storage #3273"
 server s1 {
     rxreq
     expect req.url == "/transient"
-    txresp -bodylen 1048400
+    txresp -noserver -bodylen 1048400
 
     rxreq
     expect req.url == "/malloc"
-    txresp -hdr "Cache-Control: max-age=2" -hdr "Last-Modified: Fri, 03 Apr 2020 13:00:01 GMT" -bodylen 1048292
+    txresp -noserver -hdr "Cache-Control: max-age=2" -hdr "Last-Modified: Fri, 03 Apr 2020 13:00:01 GMT" -bodylen 1048292
 
     rxreq
     expect req.http.If-Modified-Since == "Fri, 03 Apr 2020 13:00:01 GMT"
     expect req.url == "/malloc"
-    txresp -status 304
+    txresp -noserver -status 304
 } -start
 
 varnish v1 \

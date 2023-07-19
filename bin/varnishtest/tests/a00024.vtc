@@ -1,0 +1,52 @@
+varnishtest "test -noserver"
+
+server s1  {
+    rxreq
+    txresp
+    rxreq
+    txresp -hdr "Server: not-s1"
+} -start
+
+server s2  {
+    rxreq
+    txresp
+    rxreq
+    txresp -noserver
+} -start
+
+
+varnish v1 -vcl+backend {
+    sub vcl_recv {
+	    if (req.url == "/home") {
+	        set req.backend_hint = s1;
+	    } else {
+	        set req.backend_hint = s2;
+	    }
+    }
+
+    sub vcl_backend_response {
+        set Beresp.uncacheable = true;
+    }
+} -start
+
+
+client c101 {
+    txreq -url "/home"
+    rxresp
+    # by default, Server header is set to sNAME
+    expect resp.http.Server == "s1"
+    txreq  -url "/home"
+    rxresp
+    # when specified with -hdr, it overrides the default
+    expect resp.http.Server == "not-s1"
+} -run
+
+client c202 {
+	txreq
+	rxresp
+	expect resp.http.Server == "s2"
+    txreq
+	rxresp
+	# default Server header is not included when -noserver is specified
+	expect resp.http.Server == <undef>
+} -run

@@ -35,7 +35,7 @@ varnish v1 -expect client_req == 1
 varnish v1 -expect cache_miss == 1
 varnish v1 -expect s_sess == 1
 varnish v1 -expect s_resp_bodybytes == 7
-varnish v1 -expect s_resp_hdrbytes == 146
+varnish v1 -expect s_resp_hdrbytes == 158
 
 # varnishtest "vtc v_* macros when the listen address is UDS" (a00019)
 

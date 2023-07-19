@@ -34,8 +34,9 @@ varnish v1 -vcl+backend {
 # Response:
 # HTTP/1.1 200 OK\r\n		 17 bytes
 # Content-Length: 1000\r\n	 22 bytes
+# Server: s1\r\n		 12 bytes
 # \r\n				  2 bytes
-# Total:			 41 bytes
+# Total:			 53 bytes
 
 # Request (1004):
 # POST /2 HTTP/1.1\r\n		 18 bytes
@@ -54,7 +55,7 @@ logexpect l1 -v v1 -g session {
 	expect 0 1003	Begin		"^req .* rxreq"
 	expect * =	End
 	expect 0 1002   Begin		"^bereq "
-	expect * =      BereqAcct       "^54 4 58 41 1000 1041$"
+	expect * =      BereqAcct       "^54 4 58 53 1000 1053$"
 	expect 0 =      End
 	expect 0 1004	Begin		"^bereq"
 	expect * =	BereqAcct	"^54 4 58 12 0 12$"
