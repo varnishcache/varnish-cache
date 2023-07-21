@@ -188,6 +188,7 @@ logexpect l1012 -v v1 -g vxid -q "vxid == 1012" {
 	expect 0 =	BereqProtocol	{^HTTP/1.1}
 	expect 0 =	BereqHeader	{^foo: pipe}
 	expect 0 =	BereqHeader	{^Host: }
+	expect 0 =	BereqHeader	{^User-Agent: c1}
 	expect 0 =	BereqHeader	{^X-Forwarded-For: }
 	expect 0 =	BereqHeader	{^Via: }
 	expect 0 =	BereqHeader	{^X-Varnish: 1011}
@@ -207,6 +208,7 @@ logexpect l1011 -v v1 -g vxid -q "vxid == 1011" {
 	expect 0 =	ReqProtocol     {^HTTP/1.1}
 	expect 0 =	ReqHeader       {^foo: pipe}
 	expect 0 =	ReqHeader       {^Host: }
+	expect 0 =	reqHeader	{^User-Agent: c1}
 	expect 0 =	ReqHeader       {^X-Forwarded-For: }
 	expect 0 =	ReqHeader	{^Via: }
 	expect 0 =	VCL_call        {^RECV}
