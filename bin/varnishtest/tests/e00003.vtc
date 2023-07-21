@@ -50,7 +50,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001   Begin   "^req .* rxreq"
-	expect * =	ReqAcct	"^29 0 29 182 75 257$"
+	expect * =	ReqAcct	"^45 0 45 182 75 257$"
 	expect 0 =      End
 } -start
 
@@ -73,7 +73,7 @@ logexpect l4 -v v1 -g request {
 logexpect l5 -v v1 -g request {
 	expect * 1006   Begin   "^req .* rxreq"
 	# Header bytes is 5 larger than in l1 due to two item X-Varnish hdr
-	expect * =	ReqAcct	"^29 0 29 187 75 262$"
+	expect * =	ReqAcct	"^45 0 45 187 75 262$"
 	expect 0 =      End
 } -start
 
