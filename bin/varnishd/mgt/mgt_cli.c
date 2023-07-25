@@ -335,7 +335,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mcf_help(struct cli *cli, const char * const *av, void *priv)
 {
-	if (cli_o <= 0)
+	if (cli_o <= 0 || !cli->auth)
 		VCLS_func_help(cli, av, priv);
 	else
 		mcf_askchild(cli, av, priv);
@@ -344,7 +344,7 @@ mcf_help(struct cli *cli, const char * const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mcf_help_json(struct cli *cli, const char * const *av, void *priv)
 {
-	if (cli_o <= 0)
+	if (cli_o <= 0 || !cli->auth)
 		VCLS_func_help_json(cli, av, priv);
 	else
 		mcf_askchild(cli, av, priv);
