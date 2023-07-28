@@ -271,7 +271,8 @@ varnishlog_thread(void *priv)
 		if (i == 0) {
 			/* Nothing to do but wait */
 			v->vsl_idle++;
-			if (!(VSM_Status(vsm) & VSM_WRK_RUNNING)) {
+			unsigned xxx = VSM_Status(vsm) & VSM_WRK_MASK;
+			if (xxx != VSM_WRK_RUNNING) {
 				/* Abandoned - try reconnect */
 				VSL_DeleteCursor(c);
 				c = NULL;

@@ -1,0 +1,23 @@
+varnishtest "Basic VSM status check"
+
+# just launch varnishd
+varnish v1 -cliok ping
+vsm m1 -expect-status mgt-running
+
+varnish v1 -vcl "backend be none;"
+vsm m1 -expect-status mgt-running
+
+varnish v1 -start
+vsm m1 -expect-status \
+	mgt-running,mgt-changed,wrk-running,wrk-changed,wrk-restarted
+
+varnish v1 -vcl "backend be none;"
+vsm m1 -expect-status mgt-running,wrk-running,wrk-changed
+
+varnish v1 -stop
+# POLA? vsm m1 -expect-status mgt-running,mgt-changed,wrk-restarted
+vsm m1 -expect-status mgt-running,mgt-changed,wrk-running
+
+varnish v1 -start
+vsm m1 -expect-status \
+	mgt-running,mgt-changed,wrk-running,wrk-changed,wrk-restarted
