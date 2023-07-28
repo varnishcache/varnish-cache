@@ -533,6 +533,7 @@ int ZEXPORT deflateResetKeep (
     s = (deflate_state *)strm->state;
     s->pending = 0;
     s->pending_out = s->pending_buf;
+    zmemzero(&s->bounds, sizeof s->bounds);
 
     if (s->wrap < 0) {
         s->wrap = -s->wrap; /* was made negative by deflate(..., Z_FINISH); */
@@ -783,6 +784,19 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
 }
 
 #endif /* NOVGZ */
+
+/* ========================================================================= */
+int ZEXPORT deflateBlockBounds (strm, dest)
+    z_streamp strm;
+    z_boundsp dest;
+{
+    deflate_state *s;
+    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
+    s = strm->state;
+    if (dest != Z_NULL)
+        memcpy(dest, &s->bounds, sizeof *dest);
+    return Z_OK;
+}
 
 /* =========================================================================
  * Put a short in the pending buffer. The 16-bit value is put in MSB order.
@@ -1080,8 +1094,10 @@ int ZEXPORT deflate (
 #endif /* NOVGZ */
 #endif
 
-    if (strm->start_bit == 0)
+    if (s->bounds.init_block == 0) {
         strm->start_bit = (strm->total_out + s->pending) * 8 + s->bi_valid;
+        s->bounds.init_block = DEFLATE_BITS(s);
+    }
 
     /* Start a new block or continue the current one.
      */

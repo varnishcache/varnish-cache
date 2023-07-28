@@ -97,7 +97,7 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 		}
 		VGZ_Obuf(vef->vgz, ptr, dl);
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
-		VGZ_UpdateObj(vc, vef->vgz, VUA_UPDATE);
+		VGZ_UpdateObj(vc, vef->vgz, i);
 		if (dl > 0) {
 			vef->tot += dl;
 			VFP_Extend(vc, dl, VFP_OK);
@@ -145,7 +145,7 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 
 	if (vef->vgz != NULL) {
 		if (retval == VFP_END)
-			VGZ_UpdateObj(vc, vef->vgz, VUA_END_GZIP);
+			VGZ_UpdateObj(vc, vef->vgz, VGZ_END);
 		if (VGZ_Destroy(&vef->vgz) != VGZ_END)
 			retval = VFP_Error(vc,
 			    "ESI+Gzip Failed at the very end");

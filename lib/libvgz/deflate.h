@@ -268,7 +268,11 @@ typedef struct internal_state {
      * updated to the new high water mark.
      */
 
+    z_bounds bounds;
+    /* Track the bit positions of the first and last block of a stream. */
 } FAR deflate_state;
+
+#define DEFLATE_BITS(s) ((s->strm->total_out + s->pending) * 8 + s->bi_valid)
 
 /* Output a byte on the stream.
  * IN assertion: there is enough room in pending_buf.

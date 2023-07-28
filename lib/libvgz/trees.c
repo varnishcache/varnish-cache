@@ -879,9 +879,11 @@ void ZLIB_INTERNAL _tr_stored_block(
     int last          /* one if this is the last block for a file */
 )
 {
-    if (last)
+    if (last) {
         s->strm->last_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        s->bounds.last_block = DEFLATE_BITS(s);
+    }
 
     send_bits(s, (STORED_BLOCK<<1)+last, 3);    /* send block type */
     bi_windup(s);        /* align on byte boundary */
@@ -896,9 +898,11 @@ void ZLIB_INTERNAL _tr_stored_block(
     s->bits_sent += 2*16;
     s->bits_sent += stored_len<<3;
 #endif
-    if (last)
+    if (last) {
         s->strm->stop_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        s->bounds.last_bit = DEFLATE_BITS(s);
+    }
 }
 
 /* ===========================================================================
@@ -941,9 +945,11 @@ void ZLIB_INTERNAL _tr_flush_block(
     ulg opt_lenb, static_lenb; /* opt_len and static_len in bytes */
     int max_blindex = 0;  /* index of last bit length code of non zero freq */
 
-    if (last)
+    if (last) {
         s->strm->last_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        s->bounds.last_block = DEFLATE_BITS(s);
+    }
 
     /* Build the Huffman trees unless a stored block is forced */
     if (s->level > 0) {
@@ -1027,6 +1033,7 @@ void ZLIB_INTERNAL _tr_flush_block(
     if (last) {
         s->strm->stop_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        s->bounds.last_bit = DEFLATE_BITS(s);
         bi_windup(s);
 #ifdef ZLIB_DEBUG
         s->compressed_len += 7;  /* align on byte boundary */

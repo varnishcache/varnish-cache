@@ -123,4 +123,8 @@ struct inflate_state {
     int sane;                   /* if false, allow invalid distance too far */
     int back;                   /* bits back of last unprocessed length/lit */
     unsigned was;               /* initial length of match */
+    z_bounds bounds;            /* track the bit positions of the first and */
+        /*last block of a stream. */
 };
+
+#define INFLATE_BITS(strm, bytes, bits) (8 * (strm->total_in + bytes) - bits)

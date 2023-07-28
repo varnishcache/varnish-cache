@@ -30,7 +30,7 @@
  * Interaction with the linvgz (zlib) library.
  *
  * The zlib library pollutes namespace a LOT when you include the "vgz.h"
- * (aka (zlib.h") file so we contain the damage by vectoring all access
+ * (aka ("zlib.h") file so we contain the damage by vectoring all access
  * to libz through this source file.
  *
  * The API defined by this file, will also insulate the rest of the code,
@@ -264,7 +264,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 	case VGZ_ALIGN:		zflg = Z_SYNC_FLUSH; break;
 	case VGZ_RESET:		zflg = Z_FULL_FLUSH; break;
 	case VGZ_FINISH:	zflg = Z_FINISH; break;
-	default:		INCOMPL();
+	default:		WRONG("Invalid VGZ flag");
 	}
 	i = deflate(&vg->vz, zflg);
 	if (i == Z_OK || i == Z_STREAM_END) {
@@ -406,24 +406,33 @@ const struct vdp VDP_gunzip = {
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgz_ua_e e)
+VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 {
+	z_bounds bounds;
 	char *p;
 	intmax_t ii;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	ii = vg->vz.start_bit + vg->vz.last_bit + vg->vz.stop_bit;
-	if (e == VUA_UPDATE && ii == vg->bits)
+	if (e < VGZ_OK)
+		return;
+	if (vg->dir == VGZ_GZ)
+		assert(Z_OK == deflateBlockBounds(&vg->vz, &bounds));
+	else
+		assert(Z_OK == inflateBlockBounds(&vg->vz, &bounds));
+	ii = bounds.init_block + bounds.last_block + bounds.last_bit;
+	if (e != VGZ_END && ii == vg->bits)
 		return;
 	vg->bits = ii;
 	p = ObjSetAttr(vc->wrk, vc->oc, OA_GZIPBITS, 32, NULL);
 	AN(p);
-	vbe64enc(p, vg->vz.start_bit);
-	vbe64enc(p + 8, vg->vz.last_bit);
-	vbe64enc(p + 16, vg->vz.stop_bit);
-	if (e == VUA_END_GZIP)
+	vbe64enc(p, bounds.init_block);
+	vbe64enc(p + 8, bounds.last_block);
+	vbe64enc(p + 16, bounds.last_bit);
+	if (e != VGZ_END)
+		return;
+	if (vg->dir == VGZ_GZ)
 		vbe64enc(p + 24, vg->vz.total_in);
-	if (e == VUA_END_GUNZIP)
+	if (vg->dir == VGZ_UN)
 		vbe64enc(p + 24, vg->vz.total_out);
 }
 
@@ -435,17 +444,22 @@ VGZ_Destroy(struct vgz **vgp)
 {
 	struct vgz *vg;
 	enum vgzret_e vr;
+	z_bounds bounds;
 	int i;
 
 	TAKE_OBJ_NOTNULL(vg, vgp, VGZ_MAGIC);
 	AN(vg->id);
+	if (vg->dir == VGZ_GZ)
+		assert(Z_OK == deflateBlockBounds(&vg->vz, &bounds));
+	else
+		assert(Z_OK == inflateBlockBounds(&vg->vz, &bounds));
 	VSLb(vg->vsl, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
 	    vg->id,
 	    (intmax_t)vg->vz.total_in,
 	    (intmax_t)vg->vz.total_out,
-	    (intmax_t)vg->vz.start_bit,
-	    (intmax_t)vg->vz.last_bit,
-	    (intmax_t)vg->vz.stop_bit);
+	    (intmax_t)bounds.init_block,
+	    (intmax_t)bounds.last_block,
+	    (intmax_t)bounds.last_bit);
 	if (vg->dir == VGZ_GZ)
 		i = deflateEnd(&vg->vz);
 	else
@@ -620,7 +634,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 			if (vr < VGZ_OK)
 				return (VFP_Error(vc, "Gzip failed"));
 			if (dl > 0) {
-				VGZ_UpdateObj(vc, vg, VUA_UPDATE);
+				VGZ_UpdateObj(vc, vg, vr);
 				*lp = dl;
 				assert(dp == p);
 				if (vr != VGZ_END || !VGZ_IbufEmpty(vg))
@@ -632,7 +646,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 	if (vr != VGZ_END)
 		return (VFP_Error(vc, "Gzip failed"));
-	VGZ_UpdateObj(vc, vg, VUA_END_GZIP);
+	VGZ_UpdateObj(vc, vg, VGZ_END);
 	return (VFP_END);
 }
 
@@ -673,12 +687,9 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 				    "Invalid Gzip data: %s", vgz_msg(vg)));
 		} while (!VGZ_IbufEmpty(vg));
 	}
-	VGZ_UpdateObj(vc, vg, VUA_UPDATE);
-	if (vp == VFP_END) {
-		if (vr != VGZ_END)
-			return (VFP_Error(vc, "tGunzip failed"));
-		VGZ_UpdateObj(vc, vg, VUA_END_GUNZIP);
-	}
+	VGZ_UpdateObj(vc, vg, vr);
+	if (vp == VFP_END && vr != VGZ_END)
+		return (VFP_Error(vc, "tGunzip failed"));
 	return (vp);
 }
 
