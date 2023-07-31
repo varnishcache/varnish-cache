@@ -37,8 +37,10 @@
 
 struct cli;	/* NB: struct cli is opaque at this level.  */
 struct VCLS;
+struct vsb;
 
 typedef void cli_func_t(struct cli*, const char * const *av, void *priv);
+typedef void cmd_log_func_t(const struct cli*, const char * const *av, struct vsb *vsb);
 
 enum cli_flags {
 #define CLI_FLAG(U, v)	CLI_F_##U = v,
@@ -66,6 +68,9 @@ struct cli_proto {
 	/* Dispatch information */
 	cli_func_t			*func;
 	cli_func_t			*jsonfunc;
+	/* Used by sensitive commands for custom logging */
+	cmd_log_func_t			*logfunc;
+
 	void				*priv;
 
 	VTAILQ_ENTRY(cli_proto)		list;
@@ -96,7 +101,7 @@ void VCLI_JSON_end(struct cli *cli);
 void VCLI_SetResult(struct cli *cli, unsigned r);
 
 typedef int cls_cb_f(void *priv);
-typedef void cls_cbc_f(const struct cli*);
+typedef void cls_cbc_f(const struct cli*, struct cli_proto *, const char * const *av);
 struct VCLS *VCLS_New(struct VCLS *);
 void VCLS_SetHooks(struct VCLS *, cls_cbc_f *, cls_cbc_f *);
 void VCLS_SetLimit(struct VCLS *, volatile unsigned *);
