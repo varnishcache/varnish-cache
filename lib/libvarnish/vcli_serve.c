@@ -79,6 +79,15 @@ struct VCLS {
 	struct cli_proto		*wildcard;
 };
 
+enum cmd_error_e {
+    CMD_ERR_NONE,
+    CMD_ERR_SYNTAX,
+    CMD_ERR_EMPTY,
+    CMD_ERR_ISUPPER,
+    CMD_ERR_NOTLOWER,
+    CMD_ERR_UNKNOWN
+};
+
 /*--------------------------------------------------------------------*/
 
 void v_matchproto_(cli_func_t)
@@ -266,6 +275,42 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
 		cp->func(cli, (const char * const *)av, cp->priv);
 }
 
+static struct cli_proto *
+cls_lookup(char * const *av, struct cli *cli, struct VCLS *cs, enum cmd_error_e *err) {
+
+	struct cli_proto *clp = NULL;
+	*err = CMD_ERR_NONE;
+
+	if (av[0] != NULL) {
+		*err = CMD_ERR_SYNTAX;
+		return (NULL);
+	}
+
+	if (av[1] == NULL) {
+		*err = CMD_ERR_EMPTY;
+		return (NULL);
+	}
+
+	if (isupper(av[1][0])) {
+		*err = CMD_ERR_NOTLOWER;
+		return (NULL);
+	}
+
+	if (!islower(av[1][0])) {
+		*err = CMD_ERR_UNKNOWN;
+		return (NULL);
+	}
+
+
+	VTAILQ_FOREACH(clp, &cs->funcs, list) {
+		if ((clp->desc->flags & CLI_F_AUTH) && !cli->auth)
+			continue;
+		if (!strcmp(clp->desc->request, av[1]))
+			break;
+	}
+
+	return (clp);
+}
 /*--------------------------------------------------------------------
  * We have collected a full cli line, parse it and execute, if possible.
  */
@@ -274,13 +319,14 @@ static int
 cls_exec(struct VCLS_fd *cfd, char * const *av)
 {
 	struct VCLS *cs;
-	struct cli_proto *clp;
+	struct cli_proto *clp = NULL;
 	struct cli *cli;
 	int na;
 	ssize_t len;
 	char *s;
 	unsigned lim;
 	int retval = 0;
+	enum cmd_error_e cmd_err = CMD_ERR_NONE;
 
 	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 	cs = cfd->cls;
@@ -291,52 +337,42 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	AN(cli->cmd);
 
 	cli->cls = cs;
-
 	cli->result = CLIS_UNKNOWN;
+
 	VSB_clear(cli->sb);
 	VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
+
+	for (na = 0; av[na + 1] != NULL; (na)++)
+		continue;
+
+	clp = cls_lookup(av, cli, cs, &cmd_err);
 
 	if (cs->before != NULL)
 		cs->before(cli);
 
-	do {
-		if (av[0] != NULL) {
-			VCLI_Out(cli, "Syntax Error: %s\n", av[0]);
-			VCLI_SetResult(cli, CLIS_SYNTAX);
-			break;
-		}
-
-		if (av[1] == NULL) {
-			VCLI_Out(cli, "Empty CLI command.\n");
-			VCLI_SetResult(cli, CLIS_SYNTAX);
-			break;
-		}
-
-		if (isupper(av[1][0])) {
-			VCLI_Out(cli, "all commands are in lower-case.\n");
-			VCLI_SetResult(cli, CLIS_UNKNOWN);
-			break;
-		}
-
-		if (!islower(av[1][0]))
-			break;
-
-		for (na = 0; av[na + 1] != NULL; na++)
-			continue;
-
-		VTAILQ_FOREACH(clp, &cs->funcs, list) {
-			if ((clp->desc->flags & CLI_F_AUTH) && !cli->auth)
-				continue;
-			if (!strcmp(clp->desc->request, av[1])) {
-				cls_dispatch(cli, clp, av, na);
+	if (clp == NULL) {
+		switch (cmd_err) {
+			case (CMD_ERR_SYNTAX):
+				VCLI_Out(cli, "Syntax Error: %s\n", av[0]);
+				VCLI_SetResult(cli, CLIS_SYNTAX);
 				break;
-			}
+			case (CMD_ERR_EMPTY):
+				VCLI_Out(cli, "Empty CLI command.\n");
+				VCLI_SetResult(cli, CLIS_SYNTAX);
+				break;
+			case (CMD_ERR_NOTLOWER):
+				VCLI_Out(cli, "all commands are in lower-case.\n");
+				VCLI_SetResult(cli, CLIS_UNKNOWN);
+				break;
+			case (CMD_ERR_UNKNOWN):
+				break;
+			default:
+				if (cs->wildcard && (!(cs->wildcard->desc->flags & CLI_F_AUTH) || cli->auth))
+					cls_dispatch(cli, cs->wildcard, av, na);
+				break;
 		}
-		if (clp == NULL &&
-		    cs->wildcard && (!(cs->wildcard->desc->flags & CLI_F_AUTH) || cli->auth))
-			cls_dispatch(cli, cs->wildcard, av, na);
-
-	} while (0);
+	} else
+		cls_dispatch(cli, clp, av, na);
 
 	AZ(VSB_finish(cli->sb));
 
