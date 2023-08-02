@@ -245,9 +245,12 @@ BAN_AddTest(struct ban_proto *bp,
 	if (bp->err != NULL)
 		return (bp->err);
 
-	for (pv = pvars; pv->name != NULL; pv++)
-		if (!strncmp(a1, pv->name, strlen(pv->name)))
+	for (pv = pvars; pv->name != NULL; pv++) {
+		if (!(pv->flag & BANS_FLAG_HTTP) && !strcmp(a1, pv->name))
 			break;
+		if ((pv->flag & BANS_FLAG_HTTP) && !strncmp(a1, pv->name, strlen(pv->name)))
+			break;
+	}
 
 	if (pv->name == NULL)
 		return (ban_error(bp,
