@@ -10,4 +10,5 @@ varnish v1 -cliexpect {Unknown or unsupported field "obj.ageYY"} "ban obj.ageYY 
 varnish v1 -cliexpect {Unknown or unsupported field "req.ur"} "ban req.ur ~ foobarbazzz"
 varnish v1 -cliexpect {Unknown or unsupported field "req.htt"} "ban req.htt ~ foobarbazzz"
 varnish v1 -cliexpect {Unknown or unsupported field "req.htt.XXYY"} "ban req.htt.XXYY ~ foobarbazzz"
+varnish v1 -cliexpect {Missing header name: "obj.http."} "ban obj.http. ~ foobarbazzz"
 varnish v1 -cliok "ban req.http.XXYY ~ foobarbazzz"
