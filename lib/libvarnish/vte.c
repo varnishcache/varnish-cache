@@ -3,6 +3,7 @@
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -34,21 +35,17 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h> /* for MUSL (ssize_t) */
 
 #include "vdef.h"
-#include "vqueue.h"
 #include "miniobj.h"
 
 #include "vas.h"
-#include "vcli_serve.h"
 #include "vsb.h"
 #include "vte.h"
 
-#define MAXCOL 10
 #define MINSEP 1
 #define MAXSEP 3
 
@@ -282,47 +279,4 @@ VTE_format(struct vte *vte, VTE_format_f *func, void *priv)
 	}
 
 	return (0);
-}
-
-/* NB: cheating in the absence of a VCLI_Outv() */
-static int
-vcli_vte(void *priv, const char *fmt, ...)
-{
-	struct cli *cli;
-	va_list ap;
-	char buf[2];
-
-	cli = priv;
-	AN(cli);
-
-	va_start(ap, fmt);
-	(void)vsnprintf(buf, sizeof buf, fmt, ap);
-	va_end(ap);
-
-	VCLI_Out(cli, "%c", *buf);
-	return (0);
-}
-
-void
-VCLI_VTE(struct cli *cli, struct vsb **src, int width)
-{
-	struct vte *vte;
-
-	AN(cli);
-	AN(src);
-	AN(*src);
-	AZ(VSB_finish(*src));
-	if (VSB_len(*src) == 0) {
-		VSB_destroy(src);
-		return;
-	}
-
-	vte = VTE_new(MAXCOL, width);
-	AN(vte);
-	AZ(VTE_cat(vte, VSB_data(*src)));
-	AZ(VTE_finish(vte));
-	AZ(VTE_format(vte, vcli_vte, cli));
-	VTE_destroy(&vte);
-
-	VSB_destroy(src);
 }
