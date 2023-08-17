@@ -1893,6 +1893,8 @@ VCL
 
 * Fixed ``obj.hits`` in ``vcl_hit`` (had been always 0) (2746_)
 
+* req.ttl is fully supported again
+
 .. _2746: https://github.com/varnishcache/varnish-cache/issues/2746
 .. _2696: https://github.com/varnishcache/varnish-cache/issues/2696
 .. _2694: https://github.com/varnishcache/varnish-cache/issues/2694
