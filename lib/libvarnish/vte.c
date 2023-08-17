@@ -146,6 +146,24 @@ vte_update(struct vte *vte)
 }
 
 int
+VTE_putc(struct vte *vte, char c)
+{
+
+	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
+	AN(c);
+
+	if (vte->o_sep != 0)
+		return (-1);
+
+	if (VSB_putc(vte->vsb, c) < 0) {
+		vte->o_sep = -1;
+		return (-1);
+	}
+
+	return (vte_update(vte));
+}
+
+int
 VTE_cat(struct vte *vte, const char *s)
 {
 
