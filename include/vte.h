@@ -30,6 +30,7 @@
 struct vte;
 
 struct vte *VTE_new(int maxfields, int width);
+int VTE_putc(struct vte *, char);
 int VTE_cat(struct vte *, const char *);
 int VTE_printf(struct vte *, const char *, ...) v_printflike_(2, 3);
 void VTE_destroy(struct vte **);
