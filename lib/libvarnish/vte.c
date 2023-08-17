@@ -254,28 +254,24 @@ VTE_format(struct vte *vte, VTE_format_f *func, void *priv)
 	AN(p);
 	q = p;
 
-	for (fno = fsz = 0; *p != '\0'; p++) {
-		if (fsz == 0 && fno == 0 && *p == ' ') {
-			p = strchr(p, '\n');
-			if (p == NULL) {
-				p = q + 1; // trigger final flush
-				break;
-			}
-			continue;
-		}
+	fno = 0;
+	while (*p != 0) {
+		if (fno == 0 && *p == ' ')
+			fsz = strcspn(p, "\n");
+		else
+			fsz = strcspn(p, "\t\n");
+		p += fsz;
 		if (*p == '\t') {
 			assert(vte->f_maxsz[fno] + nsp > fsz);
 			VTE_FORMAT(func, priv, "%.*s%*s",
 			    (int)(p - q), q,
 			    vte->f_maxsz[fno] + nsp - fsz, "");
 			fno++;
-			fsz = 0;
-			q = p + 1;
+			q = ++p;
 		} else if (*p == '\n') {
 			fno = 0;
-			fsz = 0;
-		} else
-			fsz++;
+			p++;
+		}
 	}
 
 	if (q < p)
