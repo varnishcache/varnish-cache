@@ -46,6 +46,7 @@
 #include "vcli_serve.h"
 #include "vct.h"
 #include "vev.h"
+#include "vte.h"
 #include "vtim.h"
 
 struct vclstate {
@@ -1012,23 +1013,25 @@ mcf_vcl_deps(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
 	struct vcldep *vd;
-	struct vsb *vsb;
+	struct vte *vte;
 
 	(void)av;
 	(void)priv;
 
-	vsb = VSB_new_auto();
-	AN(vsb);
+	vte = VTE_new(2, 80);
+	AN(vte);
 
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (VTAILQ_EMPTY(&vp->dfrom)) {
-			VSB_printf(vsb, "%s\n", vp->name);
+			VTE_printf(vte, "%s\n", vp->name);
 			continue;
 		}
 		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom)
-			VSB_printf(vsb, "%s\t%s\n", vp->name, vd->to->name);
+			VTE_printf(vte, "%s\t%s\n", vp->name, vd->to->name);
 	}
-	VCLI_VTE(cli, &vsb, 80);
+	AZ(VTE_finish(vte));
+	AZ(VTE_format(vte, VCLI_VTE_format, cli));
+	VTE_destroy(&vte);
 }
 
 static void v_matchproto_(cli_func_t)
