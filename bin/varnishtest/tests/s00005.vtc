@@ -132,3 +132,16 @@ varnish v1 -cliexpect \
 	{would create a loop} \
 	{vcl.label lblA vcl5}
 
+# omitting ^vcl1 line to only get aligned fields
+varnish v1 -cliexpect {
+vcl2
+label1           vcl1
+label2           vcl1
+label3           vcl1
+slartibartfast   vcl1
+vcl3
+lblA             vcl3
+vcl4             lblA
+lblB             vcl4
+vcl5             lblB
+} vcl.deps
