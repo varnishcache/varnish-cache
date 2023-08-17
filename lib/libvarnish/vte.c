@@ -37,12 +37,59 @@
 
 #include "vdef.h"
 #include "vqueue.h"
+#include "miniobj.h"
 
 #include "vas.h"
 #include "vcli_serve.h"
 #include "vsb.h"
+#include "vte.h"
 
 #define MAXCOL 10
+
+struct vte {
+	unsigned	magic;
+#define VTE_MAGIC	0xedf42b97
+	struct vsb	*vsb;
+	int		c_off;		/* input char offset */
+	int		l_sz;		/* input line size */
+	int		l_maxsz;	/* maximum input line size */
+	int		o_sz;		/* output sz */
+	int		o_sep;		/* output field separators */
+	int		f_off;		/* input field offset */
+	int		f_sz;		/* input field size */
+	int		f_cnt;		/* actual number of fields */
+	int		f_maxcnt;	/* maximum number of fields */
+	int		f_maxsz[];	/* maximum size per field */
+};
+
+struct vte *
+VTE_new(int maxfields, int width)
+{
+	struct vte *vte;
+
+	assert(maxfields > 0);
+	assert(width > 0);
+
+	ALLOC_FLEX_OBJ(vte, f_maxsz, maxfields, VTE_MAGIC);
+	if (vte != NULL) {
+		vte->o_sz = width;
+		vte->f_maxcnt = maxfields;
+		vte->vsb = VSB_new_auto();
+		AN(vte->vsb);
+	}
+	return (vte);
+}
+
+void
+VTE_destroy(struct vte **vtep)
+{
+	struct vte *vte;
+
+	TAKE_OBJ_NOTNULL(vte, vtep, VTE_MAGIC);
+	AN(vte->vsb);
+	VSB_destroy(&vte->vsb);
+	FREE_OBJ(vte);
+}
 
 void
 VCLI_VTE(struct cli *cli, struct vsb **src, int width)
