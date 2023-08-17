@@ -661,6 +661,22 @@ VCLI_Out(struct cli *cli, const char *fmt, ...)
 	va_end(ap);
 }
 
+int v_matchproto_(VTE_format_f)
+VCLI_VTE_format(void *priv, const char *fmt, ...)
+{
+	struct cli *cli;
+	va_list ap;
+
+	CAST_OBJ_NOTNULL(cli, priv, CLI_MAGIC);
+	AN(fmt);
+
+	va_start(ap, fmt);
+	vcli_outv(cli, fmt, ap);
+	va_end(ap);
+
+	return (0);
+}
+
 /*lint -e{818} cli could be const */
 int
 VCLI_Overflow(struct cli *cli)
