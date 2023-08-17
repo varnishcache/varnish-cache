@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <errno.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h> /* for MUSL (ssize_t) */
@@ -155,6 +156,30 @@ VTE_cat(struct vte *vte, const char *s)
 		return (-1);
 
 	if (VSB_cat(vte->vsb, s) < 0) {
+		vte->o_sep = -1;
+		return (-1);
+	}
+
+	return (vte_update(vte));
+}
+
+int
+VTE_printf(struct vte *vte, const char *fmt, ...)
+{
+	va_list ap;
+	int res;
+
+	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
+	AN(fmt);
+
+	if (vte->o_sep != 0)
+		return (-1);
+
+	va_start(ap, fmt);
+	res = VSB_vprintf(vte->vsb, fmt, ap);
+	va_end(ap);
+
+	if (res < 0) {
 		vte->o_sep = -1;
 		return (-1);
 	}
