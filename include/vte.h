@@ -25,6 +25,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * Varnish Turbo Encabulator
+ *
+ * Align and print fields in a line-based output. Fields are delimited
+ * with a horizontal tab HT and lines starting with a space SP are kept
+ * verbatim. Lines are delimited with a single new line LF character.
+ *
+ * Using non-ASCII or non-printable ASCII character is undefined behavior.
  */
 
 struct vte;
