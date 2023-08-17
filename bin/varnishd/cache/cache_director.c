@@ -41,6 +41,7 @@
 #include "cache_director.h"
 
 #include "vcli_serve.h"
+#include "vte.h"
 #include "vtim.h"
 
 /* -------------------------------------------------------------------*/
@@ -309,6 +310,7 @@ struct list_args {
 	int		j;
 	const char	*jsep;
 	struct vsb	*vsb;
+	struct vte	*vte;
 };
 
 static const char *
@@ -329,6 +331,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	AN(cli);
 	CAST_OBJ_NOTNULL(la, priv, LIST_ARGS_MAGIC);
 	AN(la->vsb);
+	AN(la->vte);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
 	if (d->vdir->admin_health == VDI_AH_DELETED)
@@ -336,21 +339,28 @@ do_list(struct cli *cli, struct director *d, void *priv)
 
 	ctx = VCL_Get_CliCtx(0);
 
-	VSB_printf(la->vsb, "%s\t%s\t", d->vdir->cli_name, VDI_Ahealth(d));
+	VTE_printf(la->vte, "%s\t%s\t", d->vdir->cli_name, VDI_Ahealth(d));
 
-	if (d->vdir->methods->list != NULL)
+	if (d->vdir->methods->list != NULL) {
+		VSB_clear(la->vsb);
 		d->vdir->methods->list(ctx, d, la->vsb, 0, 0);
-	else if (d->vdir->methods->healthy != NULL)
-		VSB_printf(la->vsb, "0/0\t%s", cli_health(ctx, d));
+		AZ(VSB_finish(la->vsb));
+		VTE_cat(la->vte, VSB_data(la->vsb));
+	} else if (d->vdir->methods->healthy != NULL)
+		VTE_printf(la->vte, "0/0\t%s", cli_health(ctx, d));
 	else
-		VSB_cat(la->vsb, "0/0\thealthy");
+		VTE_cat(la->vte, "0/0\thealthy");
 
 	VTIM_format(d->vdir->health_changed, time_str);
-	VSB_printf(la->vsb, "\t%s", time_str);
-	if (la->p && d->vdir->methods->list != NULL)
+	VTE_printf(la->vte, "\t%s", time_str);
+	if (la->p && d->vdir->methods->list != NULL) {
+		VSB_clear(la->vsb);
 		d->vdir->methods->list(ctx, d, la->vsb, la->p, 0);
+		AZ(VSB_finish(la->vsb));
+		VTE_cat(la->vte, VSB_data(la->vsb));
+	}
 
-	VSB_cat(la->vsb, "\n");
+	VTE_cat(la->vte, "\n");
 	AZ(VCL_Rel_CliCtx(&ctx));
 	AZ(ctx);
 
@@ -443,10 +453,15 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 	} else {
 		la->vsb = VSB_new_auto();
 		AN(la->vsb);
-		VSB_printf(la->vsb, "%s\t%s\t%s\t%s\t%s\n",
+		la->vte = VTE_new(5, 80);
+		AN(la->vte);
+		VTE_printf(la->vte, "%s\t%s\t%s\t%s\t%s\n",
 		    "Backend name", "Admin", "Probe", "Health", "Last change");
 		(void)VCL_IterDirector(cli, av[i], do_list, la);
-		VCLI_VTE(cli, &la->vsb, 80);
+		AZ(VTE_finish(la->vte));
+		AZ(VTE_format(la->vte, VCLI_VTE_format, cli));
+		VTE_destroy(&la->vte);
+		VSB_destroy(&la->vsb);
 	}
 }
 
