@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h> /* for MUSL (ssize_t) */
@@ -89,6 +90,76 @@ VTE_destroy(struct vte **vtep)
 	AN(vte->vsb);
 	VSB_destroy(&vte->vsb);
 	FREE_OBJ(vte);
+}
+
+static int
+vte_update(struct vte *vte)
+{
+	const char *p, *q;
+	int len, fno;
+
+	AZ(vte->o_sep);
+
+	len = VSB_len(vte->vsb);
+	assert(len >= vte->c_off);
+
+	p = vte->vsb->s_buf + vte->c_off;
+	q = vte->vsb->s_buf + len;
+	for (; p < q; p++) {
+		if (vte->f_off < 0) {
+			while (p < q && *p != '\n')
+				p++;
+		}
+		if (vte->l_sz == 0 && *p == ' ') {
+			vte->f_off = -1;
+			continue;
+		}
+		if (*p == '\t' || *p == '\n') {
+			fno = vte->f_off;
+			if (fno >= 0 && vte->f_sz > vte->f_maxsz[fno])
+				vte->f_maxsz[fno] = vte->f_sz;
+			fno++;
+			assert(fno <= vte->f_maxcnt);
+			if (*p == '\t' && fno == vte->f_maxcnt) {
+				errno = EOVERFLOW;
+				vte->o_sep = -1;
+				return (-1);
+			}
+			vte->f_off = fno;
+			vte->f_sz = 0;
+		}
+		if (*p == '\n') {
+			vte->f_cnt = vmax(vte->f_cnt, vte->f_off);
+			vte->l_maxsz = vmax(vte->l_maxsz, vte->l_sz);
+			vte->f_off = 0;
+			vte->f_sz = 0;
+			vte->l_sz = 0;
+		} else {
+			vte->f_sz++;
+			vte->l_sz++;
+		}
+	}
+
+	vte->c_off = len;
+	return (0);
+}
+
+int
+VTE_cat(struct vte *vte, const char *s)
+{
+
+	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
+	AN(s);
+
+	if (vte->o_sep != 0)
+		return (-1);
+
+	if (VSB_cat(vte->vsb, s) < 0) {
+		vte->o_sep = -1;
+		return (-1);
+	}
+
+	return (vte_update(vte));
 }
 
 void
