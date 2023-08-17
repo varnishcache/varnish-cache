@@ -637,19 +637,27 @@ VCLS_Destroy(struct VCLS **csp)
  * Utility functions for implementing CLI commands
  */
 
+static void
+vcli_outv(struct cli *cli, const char *fmt, va_list ap)
+{
+
+	if (VSB_len(cli->sb) < *cli->limit)
+		(void)VSB_vprintf(cli->sb, fmt, ap);
+	else if (cli->result == CLIS_OK)
+		cli->result = CLIS_TRUNCATED;
+}
+
 /*lint -e{818} cli could be const */
 void
 VCLI_Out(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
-	AN(cli);
-	va_start(ap, fmt);
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
-	if (VSB_len(cli->sb) < *cli->limit)
-		(void)VSB_vprintf(cli->sb, fmt, ap);
-	else if (cli->result == CLIS_OK)
-		cli->result = CLIS_TRUNCATED;
+	AN(fmt);
+
+	va_start(ap, fmt);
+	vcli_outv(cli, fmt, ap);
 	va_end(ap);
 }
 
