@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h> /* for MUSL (ssize_t) */
@@ -283,18 +284,29 @@ VTE_format(struct vte *vte, VTE_format_f *func, void *priv)
 	return (0);
 }
 
+/* NB: cheating in the absence of a VCLI_Outv() */
+static int
+vcli_vte(void *priv, const char *fmt, ...)
+{
+	struct cli *cli;
+	va_list ap;
+	char buf[2];
+
+	cli = priv;
+	AN(cli);
+
+	va_start(ap, fmt);
+	(void)vsnprintf(buf, sizeof buf, fmt, ap);
+	va_end(ap);
+
+	VCLI_Out(cli, "%c", *buf);
+	return (0);
+}
+
 void
 VCLI_VTE(struct cli *cli, struct vsb **src, int width)
 {
-	int w_col[MAXCOL];
-	int n_col = 0;
-	int w_ln = 0;
-	int cc = 0;
-	int wc = 0;
-	int wl = 0;
-	int nsp;
-	const char *p;
-	char *s;
+	struct vte *vte;
 
 	AN(cli);
 	AN(src);
@@ -304,66 +316,13 @@ VCLI_VTE(struct cli *cli, struct vsb **src, int width)
 		VSB_destroy(src);
 		return;
 	}
-	s = VSB_data(*src);
-	AN(s);
-	memset(w_col, 0, sizeof w_col);
-	for (p = s; *p ; p++) {
-		if (wl == 0 && *p == ' ') {
-			while (p[1] != '\0' && *p != '\n')
-				p++;
-			continue;
-		}
-		if (*p == '\t' || *p == '\n') {
-			if (wc > w_col[cc])
-				w_col[cc] = wc;
-			cc++;
-			assert(cc < MAXCOL);
-			wc = 0;
-		}
-		if (*p == '\n') {
-			n_col = vmax(n_col, cc);
-			w_ln = vmax(w_ln, wl);
-			cc = 0;
-			wc = 0;
-			wl = 0;
-		} else {
-			wc++;
-			wl++;
-		}
-	}
 
-	if (n_col == 0)
-		return;
-	AN(n_col);
+	vte = VTE_new(MAXCOL, width);
+	AN(vte);
+	AZ(VTE_cat(vte, VSB_data(*src)));
+	AZ(VTE_finish(vte));
+	AZ(VTE_format(vte, vcli_vte, cli));
+	VTE_destroy(&vte);
 
-	nsp = vlimit_t(int, (width - (w_ln)) / n_col, 1, 3);
-
-	cc = 0;
-	wc = 0;
-	for (p = s; *p ; p++) {
-		if (wc == 0 && cc == 0 && *p == ' ') {
-			while (p[1] != '\0') {
-				VCLI_Out(cli, "%c", *p);
-				if (*p == '\n')
-					break;
-				p++;
-			}
-			continue;
-		}
-		if (*p == '\t') {
-			while (wc++ < w_col[cc] + nsp)
-				VCLI_Out(cli, " ");
-			cc++;
-			wc = 0;
-		} else if (*p == '\n') {
-			VCLI_Out(cli, "%c", *p);
-			cc = 0;
-			wc = 0;
-		} else {
-			VCLI_Out(cli, "%c", *p);
-			wc++;
-		}
-	}
 	VSB_destroy(src);
 }
-
