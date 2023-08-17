@@ -32,11 +32,8 @@
 
 #define ALLOC_FLEX_OBJ(to, fld, len, type_magic)			\
 	do {								\
-		v_static_assert(					\
-		    sizeof *(to) == offsetof(typeof(*(to)), fld),	\
-		    "the last field must be a flexible array");		\
-		(to) = calloc(1,					\
-		    sizeof *(to) + ((len) * sizeof *((to)->fld)));	\
+		(to) = calloc(1, offsetof(typeof(*(to)), fld) +		\
+		    ((len) * sizeof *((to)->fld)));			\
 		if ((to) != NULL)					\
 			(to)->magic = (type_magic);			\
 	} while (0)
