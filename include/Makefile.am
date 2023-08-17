@@ -80,6 +80,7 @@ nobase_pkginclude_HEADERS += \
 	vsb.h \
 	vsha256.h \
 	vtcp.h \
+	vte.h \
 	vtim.h \
 	vtree.h \
 	vrnd.h
