@@ -48,6 +48,8 @@
 #include "vte.h"
 
 #define MAXCOL 10
+#define MINSEP 1
+#define MAXSEP 3
 
 struct vte {
 	unsigned	magic;
@@ -209,6 +211,7 @@ VTE_printf(struct vte *vte, const char *fmt, ...)
 int
 VTE_finish(struct vte *vte)
 {
+	int sep;
 
 	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
 
@@ -225,7 +228,58 @@ VTE_finish(struct vte *vte)
 		return (0);
 	}
 
-	vte->o_sep = (vte->o_sz - vte->l_maxsz) / vte->f_cnt;
+	sep = (vte->o_sz - vte->l_maxsz) / vte->f_cnt;
+	vte->o_sep = vlimit(sep, MINSEP, MAXSEP);
+	return (0);
+}
+
+#define VTE_FORMAT(func, priv, ...)			\
+	do {						\
+		if (func(priv, __VA_ARGS__) < 0)	\
+			return (-1);			\
+	} while (0)
+
+int
+VTE_format(struct vte *vte, VTE_format_f *func, void *priv)
+{
+	int fno, fsz, nsp;
+	const char *p;
+
+	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
+	AN(func);
+
+	if (vte->o_sep <= 0)
+		return (-1);
+
+	nsp = vte->o_sep;
+	p = VSB_data(vte->vsb);
+	AN(p);
+
+	for (fno = fsz = 0; *p != '\0'; p++) {
+		if (fsz == 0 && fno == 0 && *p == ' ') {
+			while (p[1] != '\0') {
+				VTE_FORMAT(func, priv, "%c", *p);
+				if (*p == '\n')
+					break;
+				p++;
+			}
+			continue;
+		}
+		if (*p == '\t') {
+			while (fsz++ < vte->f_maxsz[fno] + nsp)
+				VTE_FORMAT(func, priv, " ");
+			fno++;
+			fsz = 0;
+		} else if (*p == '\n') {
+			VTE_FORMAT(func, priv, "\n");
+			fno = 0;
+			fsz = 0;
+		} else {
+			VTE_FORMAT(func, priv, "%c", *p);
+			fsz++;
+		}
+	}
+
 	return (0);
 }
 
