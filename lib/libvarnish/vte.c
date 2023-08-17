@@ -241,7 +241,7 @@ int
 VTE_format(struct vte *vte, VTE_format_f *func, void *priv)
 {
 	int fno, fsz, nsp;
-	const char *p;
+	const char *p, *q;
 
 	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
 	AN(func);
@@ -252,31 +252,33 @@ VTE_format(struct vte *vte, VTE_format_f *func, void *priv)
 	nsp = vte->o_sep;
 	p = VSB_data(vte->vsb);
 	AN(p);
+	q = p;
 
 	for (fno = fsz = 0; *p != '\0'; p++) {
 		if (fsz == 0 && fno == 0 && *p == ' ') {
-			while (p[1] != '\0') {
-				VTE_FORMAT(func, priv, "%c", *p);
-				if (*p == '\n')
-					break;
-				p++;
+			p = strchr(p, '\n');
+			if (p == NULL) {
+				p = q + 1; // trigger final flush
+				break;
 			}
 			continue;
 		}
 		if (*p == '\t') {
-			while (fsz++ < vte->f_maxsz[fno] + nsp)
-				VTE_FORMAT(func, priv, " ");
+			assert(vte->f_maxsz[fno] + nsp > fsz);
+			VTE_FORMAT(func, priv, "%.*s%*s",
+			    (int)(p - q), q,
+			    vte->f_maxsz[fno] + nsp - fsz, "");
 			fno++;
 			fsz = 0;
+			q = p + 1;
 		} else if (*p == '\n') {
-			VTE_FORMAT(func, priv, "\n");
 			fno = 0;
 			fsz = 0;
-		} else {
-			VTE_FORMAT(func, priv, "%c", *p);
+		} else
 			fsz++;
-		}
 	}
 
+	if (q < p)
+		VTE_FORMAT(func, priv, "%s", q);
 	return (0);
 }
