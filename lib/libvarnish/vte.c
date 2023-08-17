@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -203,6 +204,29 @@ VTE_printf(struct vte *vte, const char *fmt, ...)
 	}
 
 	return (vte_update(vte));
+}
+
+int
+VTE_finish(struct vte *vte)
+{
+
+	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
+
+	if (vte->o_sep != 0)
+		return (-1);
+
+	if (VSB_finish(vte->vsb) < 0) {
+		vte->o_sep = -1;
+		return (-1);
+	}
+
+	if (vte->f_cnt == 0) {
+		vte->o_sep = INT_MAX;
+		return (0);
+	}
+
+	vte->o_sep = (vte->o_sz - vte->l_maxsz) / vte->f_cnt;
+	return (0);
 }
 
 void
