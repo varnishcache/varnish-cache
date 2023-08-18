@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 
 lib_LTLIBRARIES = libvarnishapi.la
 
-libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 3:0:0
+libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 4:0:1
 
 libvarnishapi_la_SOURCES = \
 	../../include/vcs_version.h \
