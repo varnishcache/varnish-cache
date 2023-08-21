@@ -30,13 +30,15 @@
 			(to)->magic = (type_magic);			\
 	} while (0)
 
-#define ALLOC_FLEX_OBJ(to, fld, len, type_magic)			\
+#define ALLOC_OBJ_EXTRA(to, extra_size, type_magic)			\
 	do {								\
-		(to) = calloc(1, sizeof(*(to)) +			\
-		    ((len) * sizeof *((to)->fld)));			\
+		(to) = calloc(1, sizeof(*(to)) + (extra_size));		\
 		if ((to) != NULL)					\
 			(to)->magic = (type_magic);			\
 	} while (0)
+
+#define ALLOC_FLEX_OBJ(to, fld, len, type_magic)			\
+	ALLOC_OBJ_EXTRA(to, (len) * sizeof *((to)->fld), (type_magic))
 
 #define FREE_OBJ(to)							\
 	do {								\
