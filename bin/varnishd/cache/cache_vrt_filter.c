@@ -397,11 +397,12 @@ resp_default_filter_list(void *arg, struct vsb *vsb)
 
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
 
-	if (!req->disable_esi &&
+	if (!req->disable_esi && req->objcore != NULL &&
 	    ObjHasAttr(req->wrk, req->objcore, OA_ESIDATA))
 		VSB_cat(vsb, " esi");
 
 	if (cache_param->http_gzip_support &&
+	    req->objcore != NULL &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http))
 		VSB_cat(vsb, " gunzip");
