@@ -152,8 +152,8 @@ shell {
 }
 
 varnish v2 -arg "-f ${tmpdir}/ok1" -arg "-f ${tmpdir}/ok2" -start
-varnish v2 -cliexpect {available   auto    warm         0    boot0} "vcl.list"
-varnish v2 -cliexpect {active      auto    warm         0    boot} "vcl.list"
+varnish v2 -cliexpect {available   auto    warm      0   boot0} "vcl.list"
+varnish v2 -cliexpect {active      auto    warm      0   boot1} "vcl.list"
 varnish v2 -stop -wait
 
 # Test multiple -f options with a bad VCL
