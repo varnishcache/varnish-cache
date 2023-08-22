@@ -227,7 +227,7 @@ VTE_finish(struct vte *vte)
 	}
 
 	sep = (vte->o_sz - vte->l_maxsz) / vte->f_cnt;
-	vte->o_sep = vlimit(sep, MINSEP, MAXSEP);
+	vte->o_sep = vlimit_t(int, sep, MINSEP, MAXSEP);
 	return (0);
 }
 
@@ -238,7 +238,7 @@ VTE_finish(struct vte *vte)
 	} while (0)
 
 int
-VTE_format(struct vte *vte, VTE_format_f *func, void *priv)
+VTE_format(const struct vte *vte, VTE_format_f *func, void *priv)
 {
 	int fno, fsz, nsp;
 	const char *p, *q;
