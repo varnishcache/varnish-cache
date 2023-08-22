@@ -220,7 +220,7 @@ VJ_unlink(const char *fname, int ignore_enoent)
 	if (unlink(fname)) {
 		if (errno != ENOENT || !ignore_enoent)
 		    fprintf(stderr, "Could not delete '%s': %s\n",
-		        fname, strerror(errno));
+			fname, strerror(errno));
 	}
 	VJ_master(JAIL_MASTER_LOW);
 }
