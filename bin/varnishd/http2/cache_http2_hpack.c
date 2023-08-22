@@ -39,6 +39,7 @@
 #include "http2/cache_http2.h"
 #include "vct.h"
 
+// rfc9113,l,2493,2528
 static h2_error
 h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 {
@@ -48,46 +49,80 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 	AN(b);
 	assert(namelen >= 2);	/* 2 chars from the ': ' that we added */
 	assert(namelen <= len);
+	assert(b[namelen - 2] == ':');
+	assert(b[namelen - 1] == ' ');
 
 	if (namelen == 2) {
 		VSLb(hp->vsl, SLT_BogoHeader, "Empty name");
 		return (H2SE_PROTOCOL_ERROR);
 	}
 
-	for (p = b; p < b + len; p++) {
-		if (p < b + (namelen - 2)) {
-			/* Check valid name characters */
-			if (p == b && *p == ':')
-				continue; /* pseudo-header */
-			if (isupper(*p)) {
+	// VSLb(hp->vsl, SLT_Debug, "CHDR [%.*s] [%.*s]",
+	//     (int)namelen, b, (int)(len - namelen), b + namelen);
+
+	int state = 0;
+	for (p = b; p < b + namelen - 2; p++) {
+		switch(state) {
+		case 0:	/* First char of field */
+			state = 1;
+			if (*p == ':')
+				break;
+			/* FALL_THROUGH */
+		case 1: /* field name */
+			if (*p <= 0x20 || *p >= 0x7f) {
 				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Illegal header name (upper-case): %.*s",
+				    "Illegal field header name (control): %.*s",
 				    (int)(len > 20 ? 20 : len), b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
-			if (vct_istchar(*p)) {
-				/* XXX: vct should have a proper class for
-				   this avoiding two checks */
-				continue;
+			if (isupper(*p)) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Illegal field header name (upper-case): %.*s",
+				    (int)(len > 20 ? 20 : len), b);
+				return (H2SE_PROTOCOL_ERROR);
 			}
-			VSLb(hp->vsl, SLT_BogoHeader,
-			    "Illegal header name: %.*s",
-			    (int)(len > 20 ? 20 : len), b);
-			return (H2SE_PROTOCOL_ERROR);
-		} else if (p < b + namelen) {
-			/* ': ' added by us */
-			assert(*p == ':' || *p == ' ');
-		} else {
-			/* Check valid value characters */
-			if (!vct_isctl(*p) || vct_issp(*p))
-				continue;
-			VSLb(hp->vsl, SLT_BogoHeader,
-			    "Illegal header value: %.*s",
-			    (int)(len > 20 ? 20 : len), b);
-			return (H2SE_PROTOCOL_ERROR);
+			if (!vct_istchar(*p) || *p == ':') {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Illegal field header name (non-token): %.*s",
+				    (int)(len > 20 ? 20 : len), b);
+				return (H2SE_PROTOCOL_ERROR);
+			}
+			break;
+		default:
+			WRONG("http2 field name validation state");
 		}
 	}
 
+	state = 2;
+	for (p = b + namelen; p < b + len; p++) {
+		switch(state) {
+		case 2: /* First char of field */
+			if (*p == ' ' || *p == 0x09) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Illegal field value start %.*s",
+				    (int)(len > 20 ? 20 : len), b);
+				return (H2SE_PROTOCOL_ERROR);
+			}
+			state = 3;
+			/* FALL_THROUGH */
+		case 3: /* field value character */
+			if (*p != 0x09 && (*p < 0x20 || *p == 0x7f)) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Illegal field value (control) %.*s",
+				    (int)(len > 20 ? 20 : len), b);
+				return (H2SE_PROTOCOL_ERROR);
+			}
+			break;
+		default:
+			WRONG("http2 field value validation state");
+		}
+	}
+	if (state == 3 && b[len - 1] <= 0x20) {
+		VSLb(hp->vsl, SLT_BogoHeader,
+		    "Illegal val (end) %.*s",
+		    (int)(len > 20 ? 20 : len), b);
+		return (H2SE_PROTOCOL_ERROR);
+	}
 	return (0);
 }
 
@@ -270,6 +305,7 @@ h2h_decode_fini(const struct h2_sess *h2)
  * block. This is a connection level error.
  *
  * H2E_PROTOCOL_ERROR: Malformed header or duplicate pseudo-header.
+ *		       Violation of field name/value charsets
  */
 h2_error
 h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
