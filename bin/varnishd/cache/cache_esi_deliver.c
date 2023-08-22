@@ -204,7 +204,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		if (s == REQ_FSM_DONE)
 			break;
 		DSL(DBG_WAITINGLIST, req->vsl->wid,
-		    "loop waiting for ESI (%d)", (int)s);
+		    "waiting for ESI (%d)", (int)s);
 		assert(s == REQ_FSM_DISEMBARK);
 		Lck_Lock(&sp->mtx);
 		if (!ecx->woken)
