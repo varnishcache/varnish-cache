@@ -768,7 +768,7 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		VTE_printf(vte, "%s\t%s\t%s\t%6u\t%s", flg, vcl->state,
+		VTE_printf(vte, "%s\t%s\t%s\t\v%u\t%s", flg, vcl->state,
 		    vcl->temp->name, vcl->busy, vcl->loaded_name);
 		if (vcl->label != NULL) {
 			VTE_printf(vte, "\t->\t%s", vcl->label->loaded_name);
