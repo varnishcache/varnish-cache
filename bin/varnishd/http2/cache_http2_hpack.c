@@ -119,7 +119,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 	}
 	if (state == 3 && b[len - 1] <= 0x20) {
 		VSLb(hp->vsl, SLT_BogoHeader,
-		    "Illegal val (end) %.*s",
+		    "Illegal field value (end) %.*s",
 		    (int)(len > 20 ? 20 : len), b);
 		return (H2SE_PROTOCOL_ERROR);
 	}
