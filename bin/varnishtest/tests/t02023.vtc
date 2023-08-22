@@ -46,3 +46,47 @@ client c1 {
 		rxrst
 	} -run
 } -run
+
+varnish v1 -vsl_catchup
+
+client c1 {
+	stream 1 {
+		txreq -hdr "fo o" " bar"
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr "foo" " "
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr ":foo" "bar"
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr "foo" "b\x0car"
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr "f o" "bar"
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr "f: o" "bar"
+		rxrst
+	} -run
+} -run
