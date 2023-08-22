@@ -207,7 +207,6 @@
 -esym(534, VSB_putc)
 -esym(534, VSB_printf)
 -esym(534, VSB_vprintf)
--esym(534, VSB_putc)
 
 ///////////////////////////////////////////////////////////////////////
 // <vtree.h>
