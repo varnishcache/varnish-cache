@@ -116,6 +116,8 @@ vte_update(struct vte *vte)
 			vte->f_off = -1;
 			continue;
 		}
+		if (vte->f_off >= 0 && vte->f_sz == 0 && *p == '\v')
+			p++;
 		if (*p == '\t' || *p == '\n') {
 			fno = vte->f_off;
 			if (fno >= 0 && vte->f_sz > vte->f_maxsz[fno])
@@ -240,8 +242,8 @@ VTE_finish(struct vte *vte)
 int
 VTE_format(const struct vte *vte, VTE_format_f *func, void *priv)
 {
-	int fno, fsz, nsp;
-	const char *p, *q;
+	int fno, fsz, nsp, just_left;
+	const char *p, *q, *sep;
 
 	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
 	AN(func);
@@ -255,22 +257,42 @@ VTE_format(const struct vte *vte, VTE_format_f *func, void *priv)
 	q = p;
 
 	fno = 0;
+	sep = "";
+	just_left = 0;
 	while (*p != 0) {
-		if (fno == 0 && *p == ' ')
+		if (*p == '\v') {
+			if (p - 1 > q) { /* exclude previous separator */
+				VTE_FORMAT(func, priv, "%.*s%s",
+				    (int)(p - 1 - q), q, sep);
+			}
+			q = ++p;
+			just_left = 1;
+		}
+		if (!just_left && fno == 0 && *p == ' ')
 			fsz = strcspn(p, "\n");
 		else
 			fsz = strcspn(p, "\t\n");
 		p += fsz;
 		if (*p == '\t') {
 			assert(vte->f_maxsz[fno] + nsp > fsz);
-			VTE_FORMAT(func, priv, "%.*s%*s",
-			    (int)(p - q), q,
-			    vte->f_maxsz[fno] + nsp - fsz, "");
+			if (just_left) {
+				VTE_FORMAT(func, priv, "%*s%.*s%*s",
+				    vte->f_maxsz[fno] - fsz, "",
+				    (int)(p - q), q,
+				    nsp, "");
+				just_left = 0;
+			} else {
+				VTE_FORMAT(func, priv, "%.*s%*s",
+				    (int)(p - q), q,
+				    vte->f_maxsz[fno] + nsp - fsz, "");
+			}
 			fno++;
 			q = ++p;
+			sep = "";
 		} else if (*p == '\n') {
 			fno = 0;
 			p++;
+			sep = "\n";
 		}
 	}
 

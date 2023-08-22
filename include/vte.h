@@ -30,9 +30,11 @@
  *
  * Align and print fields in a line-based output. Fields are delimited
  * with a horizontal tab HT and lines starting with a space SP are kept
- * verbatim. Lines are delimited with a single new line LF character.
+ * verbatim. Lines are delimited with a single new line LF character. A
+ * field starting with a vertical tab VT is justified to the left.
  *
- * Using non-ASCII or non-printable ASCII character is undefined behavior.
+ * Using non-ASCII or non-printable ASCII characters besides delimiters
+ * and modifiers for fields and lines is undefined behavior.
  */
 
 struct vte;
