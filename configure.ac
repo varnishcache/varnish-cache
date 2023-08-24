@@ -657,6 +657,10 @@ AC_SUBST(VSCTOOL, [$\(top_srcdir\)/lib/libvsc/vsctool.py])
 # Check for linker script support
 gl_LD_VERSION_SCRIPT
 
+AC_CHECK_HEADERS([linux/magic.h])
+AC_CHECK_HEADERS([sys/vfs.h])
+AC_CHECK_FUNCS([fstatfs])
+
 #######################################################################
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code

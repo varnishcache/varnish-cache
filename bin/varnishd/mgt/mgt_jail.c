@@ -42,6 +42,11 @@
 //lint -efile(766, sys/statvfs.h)
 #include <sys/statvfs.h>
 
+#if defined(HAVE_SYS_VFS_H) && defined(HAVE_LINUX_MAGIC_H)
+#  include <sys/vfs.h>
+#  include <linux/magic.h>
+#endif
+
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 #include "vav.h"
@@ -177,7 +182,12 @@ VJ_make_workdir(const char *dname)
 		    "can not reside on a file system mounted noexec\n", dname);
 	}
 #endif
+#if defined(HAVE_FSTATFS) && defined(TMPFS_MAGIC)
+	struct statfs sfs[1];
 
+	if (!fstatfs(i, sfs) && sfs->f_type != TMPFS_MAGIC)
+			MGT_Complain(C_WARN, "Workdir is not mounted on tmpfs\n");
+#endif
 	closefd(&i);
 	AZ(unlink("_.testfile"));
 	VJ_master(JAIL_MASTER_LOW);
