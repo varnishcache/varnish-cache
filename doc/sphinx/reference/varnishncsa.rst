@@ -180,12 +180,14 @@ Supported formatters are:
     had been received.
 
   Varnish:hitmiss
-    One of the 'hit' or 'miss' strings, depending on whether the request
-    was a cache hit or miss. Pipe, pass and synth are considered misses.
+    In client mode, one of the 'hit' or 'miss' strings, depending on whether
+    the request was a cache hit or miss. Pipe, pass and synth are considered
+    misses. In backend mode, this field is blank.
 
   Varnish:handling
-    One of the 'hit', 'miss', 'pass', 'pipe' or 'synth' strings indicating
-    how the request was handled.
+    In client mode, one of the 'hit', 'miss', 'pass', 'pipe' or 'synth' strings
+    indicating how the request was handled. In backend mode, this field is
+    blank.
 
   Varnish:side
     Backend or client side. One of two values, 'b' or 'c', depending
