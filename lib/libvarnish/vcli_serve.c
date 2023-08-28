@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -52,6 +53,13 @@
 #include "vcli_serve.h"
 #include "vsb.h"
 #include "vtim.h"
+
+#define ASSERT_CLI_THR(cs) AN(pthread_self() == cs->thr)
+#define CHECK_VCLS(cs) do			\
+{						\
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);	\
+	ASSERT_CLI_THR(cs);			\
+} while (0)
 
 struct VCLS_fd {
 	unsigned			magic;
@@ -77,6 +85,7 @@ struct VCLS {
 	cls_cbc_f			*before, *after;
 	volatile unsigned		*limit;
 	struct cli_proto		*wildcard;
+	pthread_t			thr;
 };
 
 enum cmd_error_e {
@@ -93,9 +102,13 @@ enum cmd_error_e {
 void v_matchproto_(cli_func_t)
 VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 {
+	struct VCLS *cs;
 
 	(void)av;
 	(void)priv;
+	cs = cli->cls;
+	CHECK_VCLS(cs);
+
 	VCLI_Out(cli, "Closing CLI connection");
 	VCLI_SetResult(cli, CLIS_CLOSE);
 }
@@ -106,9 +119,13 @@ void v_matchproto_(cli_func_t)
 VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 {
 	time_t t;
+	struct VCLS *cs;
 
 	(void)av;
 	(void)priv;
+	cs = cli->cls;
+	CHECK_VCLS(cs);
+
 	t = time(NULL);
 	VCLI_Out(cli, "PONG %jd 1.0", (intmax_t)t);
 }
@@ -116,8 +133,13 @@ VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 void v_matchproto_(cli_func_t)
 VCLS_func_ping_json(struct cli *cli, const char * const *av, void *priv)
 {
+	struct VCLS *cs;
+
 	(void)av;
 	(void)priv;
+	cs = cli->cls;
+	CHECK_VCLS(cs);
+
 	VCLI_JSON_begin(cli, 2, av);
 	VCLI_Out(cli, ", \"PONG\"\n");
 	VCLI_JSON_end(cli);
@@ -144,7 +166,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	cs = cli->cls;
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 
 	for (av += 2; av[0] != NULL && av[0][0] == '-'; av++) {
 		if (!strcmp(av[0], "-a")) {
@@ -186,7 +208,7 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	cs = cli->cls;
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 
 	VCLI_JSON_begin(cli, 2, av);
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
@@ -514,6 +536,7 @@ VCLS_New(struct VCLS *model)
 	AN(cs);
 	VTAILQ_INIT(&cs->fds);
 	VTAILQ_INIT(&cs->funcs);
+	cs->thr = pthread_self();
 	if (model != NULL)
 		VTAILQ_CONCAT(&cs->funcs, &model->funcs, list);
 	return (cs);
@@ -522,7 +545,7 @@ VCLS_New(struct VCLS *model)
 void
 VCLS_SetLimit(struct VCLS *cs, volatile unsigned *limit)
 {
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	cs->limit = limit;
 }
 
@@ -530,7 +553,7 @@ void
 VCLS_SetHooks(struct VCLS *cs, cls_cbc_f *before, cls_cbc_f *after)
 {
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	cs->before = before;
 	cs->after = after;
 }
@@ -540,7 +563,7 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 {
 	struct VCLS_fd *cfd;
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	assert(fdi >= 0);
 	assert(fdo >= 0);
 	ALLOC_OBJ(cfd, VCLS_FD_MAGIC);
@@ -601,7 +624,7 @@ VCLS_AddFunc(struct VCLS *cs, struct cli_proto *clp)
 	struct cli_proto *clp2;
 	int i;
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	AN(clp);
 
 	for (;clp->desc != NULL; clp++) {
@@ -634,7 +657,7 @@ VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 	int i, j, k;
 	char buf[BUFSIZ];
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	if (cs->nfd == 0) {
 		errno = 0;
 		return (-1);
@@ -682,6 +705,7 @@ VCLS_Destroy(struct VCLS **csp)
 	struct cli_proto *clp;
 
 	TAKE_OBJ_NOTNULL(cs, csp, VCLS_MAGIC);
+	ASSERT_CLI_THR(cs);
 	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2)
 		(void)cls_close_fd(cs, cfd);
 
