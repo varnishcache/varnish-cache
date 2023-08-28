@@ -38,6 +38,8 @@ Varnish Cache NEXT (2023-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The ``VSHA256_*`` functions have been added to libvarnishapi.
+
 * Two bugs in the ban expression parser have been fixed where one of them
   could lead to a panic if a ban expression with an empty header name was
   issued (3962_)
