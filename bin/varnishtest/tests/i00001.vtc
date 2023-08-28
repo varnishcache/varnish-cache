@@ -16,6 +16,10 @@ varnish v1 -errvcl {Too many digits for real.} {
 	sub vcl_recv { set req.http.foo = 0.1234; }
 }
 
+varnish v1 -errvcl {Unexpected character 'e'.} {
+	sub vcl_recv { set req.http.foo = 42.42e42; }
+}
+
 server s1 {
 	rxreq
 	txresp

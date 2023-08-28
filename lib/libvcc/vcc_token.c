@@ -503,6 +503,12 @@ vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);
 	}
+	if (*tl->t->e == 'e' || *tl->t->e == 'E') {
+		VSB_printf(tl->sb, "Unexpected character '%c'.\n", *tl->t->e);
+		tl->t->e++;
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
 	tl->t->num = strtod(p, &s);
 	assert(s == tl->t->e);
 	return (r);
