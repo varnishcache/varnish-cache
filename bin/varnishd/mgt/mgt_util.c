@@ -138,6 +138,7 @@ mgt_BuildVident(void)
 #endif
 
 const char C_ERR[] = "Error:";
+const char C_WARN[] = "Warning:";
 const char C_INFO[] = "Info:";
 const char C_DEBUG[] = "Debug:";
 const char C_SECURITY[] = "Security:";
@@ -161,6 +162,8 @@ MGT_Complain(const char *loud, const char *fmt, ...)
 
 	if (loud == C_ERR)
 		sf = LOG_ERR;
+	else if (loud == C_WARN)
+		sf = LOG_WARNING;
 	else if (loud == C_INFO)
 		sf = LOG_INFO;
 	else if (loud == C_DEBUG)

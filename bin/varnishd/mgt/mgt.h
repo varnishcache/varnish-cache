@@ -173,6 +173,7 @@ struct choice {
 };
 
 extern const char C_ERR[];	// Things are not as they should be
+extern const char C_WARN[];	// Things you want to warn about
 extern const char C_INFO[];	// Normal stuff, keep a record for later
 extern const char C_DEBUG[];	// More detail than you'd normally want
 extern const char C_SECURITY[];	// Security issues
