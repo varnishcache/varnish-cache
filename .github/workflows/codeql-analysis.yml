@@ -43,6 +43,7 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         db-location: '${{ github.workspace }}/codeql_dbs'
+        queries: +security-and-quality
         languages: ${{ matrix.language }}
         #queries: samiberndtson/license-check/gpl.ql@main
         #queries: security-and-quality
