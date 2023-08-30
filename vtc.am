@@ -11,7 +11,7 @@
 VTC_LOG_COMPILER = $(top_builddir)/bin/varnishtest/varnishtest -v -i
 TEST_EXTENSIONS = .vtc
 
-check-local: vtc-check-tests
+check: vtc-check-tests
 
 vtc-check-tests:
 	@mkdir -p tests ; \

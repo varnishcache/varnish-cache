@@ -26,15 +26,17 @@ varnish v1 -vcl+backend {
 # POST /1 HTTP/1.1\r\n		 18 bytes
 # Host: foo\r\n			 11 bytes
 # Content-Length: 4\r\n		 19 bytes
+# User-Agent: c1\r\n		 16 bytes
 # \r\n				  2 bytes
-# Total:			 50 bytes
+# Total:			 66 bytes
 # Response:
 # HTTP/1.1 200 OK\r\n		 17 bytes
 # Content-Length: 1000\r\n	 22 bytes
 # Connection: keep-alive\r\n	 24 bytes
 # Accept-Ranges: bytes\r\n	 22 bytes
+# Server: s1\r\n		 12 bytes
 # \r\n				  2 bytes
-# Total:			 87 bytes
+# Total:			 99 bytes
 
 # Request (1003):
 # GET /2 HTTP/1.1\r\n		 17 bytes
@@ -46,8 +48,9 @@ varnish v1 -vcl+backend {
 # Content-Length: 2000\r\n	 22 bytes
 # Connection: keep-alive\r\n	 24 bytes
 # Accept-Ranges: bytes\r\n	 22 bytes
+# Server: s1\r\n		 12 bytes
 # \r\n				  2 bytes
-# Total:			 87 bytes
+# Total:			 99 bytes
 
 # Request (1005):
 # GET /2 HTTP/1.1\r\n		 17 bytes
@@ -59,8 +62,9 @@ varnish v1 -vcl+backend {
 # Content-Length: 2000\r\n	 22 bytes
 # Connection: keep-alive\r\n	 24 bytes
 # Accept-Ranges: bytes\r\n	 22 bytes
+# Server: s1\r\n		 12 bytes
 # \r\n				  2 bytes
-# Total:			 87 bytes
+# Total:			 99 bytes
 
 # Request (1006):
 # GET\r\n			  5 bytes
@@ -72,13 +76,13 @@ varnish v1 -vcl+backend {
 # Total:			 28 bytes
 logexpect l1 -v v1 -g session {
 	expect * 1001	Begin	"^req .* rxreq"
-	expect * =	ReqAcct	"^50 4 54 87 1000 1087$"
+	expect * =	ReqAcct	"^66 4 70 99 1000 1099$"
 	expect 0 =	End
 	expect * 1003	Begin	"^req .* rxreq"
-	expect * =	ReqAcct "^30 0 30 87 2000 2087$"
+	expect * =	ReqAcct "^30 0 30 99 2000 2099$"
 	expect 0 =	End
 	expect * 1005	Begin	"^req .* rxreq"
-	expect * =	ReqAcct "^30 0 30 87 2000 2087$"
+	expect * =	ReqAcct "^30 0 30 99 2000 2099$"
 	expect 0 =	End
 	expect * 1006	Begin	"^req .* rxreq"
 	expect * =	ReqAcct	"^7 0 7 28 0 28$"
@@ -108,7 +112,7 @@ client c1 {
 
 logexpect l1 -wait
 
-varnish v1 -expect s_req_hdrbytes == 117
+varnish v1 -expect s_req_hdrbytes == 133
 varnish v1 -expect s_req_bodybytes == 4
-varnish v1 -expect s_resp_hdrbytes == 289
+varnish v1 -expect s_resp_hdrbytes == 325
 varnish v1 -expect s_resp_bodybytes == 5000

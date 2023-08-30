@@ -315,20 +315,20 @@ term_expect_text(struct process *pp,
 	l = strlen(pat);
 	if (x + l - 1 > pp->ncol)
 		vtc_fatal(pp->vl, "XXX %d ncol %d", x + l - 1, pp->ncol);
-	AZ(pthread_mutex_lock(&pp->mtx));
+	PTOK(pthread_mutex_lock(&pp->mtx));
 	while (!term_find_text(pp, &x, &y, pat)) {
 		if (x != 0 && y != 0) {
 			t = pp->vram[y - 1] + x - 1;
 			vtc_log(pp->vl, 4,
 			    "text at %d,%d: '%.*s'", y, x, l, t);
 		}
-		AZ(pthread_mutex_unlock(&pp->mtx));
+		PTOK(pthread_mutex_unlock(&pp->mtx));
 		usleep(d);
-		AZ(pthread_mutex_lock(&pp->mtx));
+		PTOK(pthread_mutex_lock(&pp->mtx));
 		if (d < 3000000)
 			d += d;
 	}
-	AZ(pthread_mutex_unlock(&pp->mtx));
+	PTOK(pthread_mutex_unlock(&pp->mtx));
 	vtc_log(pp->vl, 4, "found expected text at %d,%d: '%s'", y, x, pat);
 }
 
@@ -394,7 +394,7 @@ term_match_text(struct process *pp,
 		    re, erroff, errbuf);
 	}
 
-	AZ(pthread_mutex_lock(&pp->mtx));
+	PTOK(pthread_mutex_lock(&pp->mtx));
 
 	len = (pp->nlin - y) * (pp->ncol - x);
 	for (i = y; i < pp->nlin; i++) {
@@ -409,7 +409,7 @@ term_match_text(struct process *pp,
 	else
 		vtc_log(pp->vl, 4, "match succeeded");
 
-	AZ(pthread_mutex_unlock(&pp->mtx));
+	PTOK(pthread_mutex_unlock(&pp->mtx));
 	VSB_destroy(&vsb);
 	VRE_free(&vre);
 }
@@ -461,7 +461,7 @@ process_new(const char *name)
 	ALLOC_OBJ(p, PROCESS_MAGIC);
 	AN(p);
 	REPLACE(p->name, name);
-	AZ(pthread_mutex_init(&p->mtx, NULL));
+	PTOK(pthread_mutex_init(&p->mtx, NULL));
 
 	p->vl = vtc_logopen("%s", name);
 	AN(p->vl);
@@ -495,7 +495,7 @@ process_delete(struct process *p)
 	int i;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
-	AZ(pthread_mutex_destroy(&p->mtx));
+	PTOK(pthread_mutex_destroy(&p->mtx));
 	vtc_logclose(p->vl);
 	free(p->name);
 	free(p->dir);
@@ -554,9 +554,9 @@ process_stdout(const struct vev *ev, int what)
 		vtc_log(p->vl, 4, "stdout read %d", i);
 		return (1);
 	}
-	AZ(pthread_mutex_lock(&p->mtx));
+	PTOK(pthread_mutex_lock(&p->mtx));
 	p->stdout_bytes += i;
-	AZ(pthread_mutex_unlock(&p->mtx));
+	PTOK(pthread_mutex_unlock(&p->mtx));
 	if (p->log == 1)
 		(void)VLU_Feed(p->vlu_stdout, buf, i);
 	else if (p->log == 2)
@@ -564,9 +564,9 @@ process_stdout(const struct vev *ev, int what)
 	else if (p->log == 3)
 		vtc_hexdump(p->vl, 4, "stdout", buf, i);
 	assert(write(p->f_stdout, buf, i) == i);
-	AZ(pthread_mutex_lock(&p->mtx));
+	PTOK(pthread_mutex_lock(&p->mtx));
 	teken_input(p->tek, buf, i);
-	AZ(pthread_mutex_unlock(&p->mtx));
+	PTOK(pthread_mutex_unlock(&p->mtx));
 	return (0);
 }
 
@@ -584,9 +584,9 @@ process_stderr(const struct vev *ev, int what)
 		vtc_log(p->vl, 4, "stderr read %d", i);
 		return (1);
 	}
-	AZ(pthread_mutex_lock(&p->mtx));
+	PTOK(pthread_mutex_lock(&p->mtx));
 	p->stderr_bytes += i;
-	AZ(pthread_mutex_unlock(&p->mtx));
+	PTOK(pthread_mutex_unlock(&p->mtx));
 	vtc_dump(p->vl, 4, "stderr", buf, i);
 	assert(write(p->f_stderr, buf, i) == i);
 	return (0);
@@ -654,13 +654,13 @@ process_thread(void *priv)
 	closefd(&p->f_stdout);
 	closefd(&p->f_stderr);
 
-	AZ(pthread_mutex_lock(&p->mtx));
+	PTOK(pthread_mutex_lock(&p->mtx));
 
 	/* NB: We keep the other macros around */
 	macro_undef(p->vl, p->name, "pid");
 	p->pid = -1;
 
-	AZ(pthread_mutex_unlock(&p->mtx));
+	PTOK(pthread_mutex_unlock(&p->mtx));
 
 	pthread_cleanup_pop(0);
 	VEV_Destroy(&evb);
@@ -787,7 +787,7 @@ process_start(struct process *p)
 	macro_def(p->vl, p->name, "out", "%s", p->out);
 	macro_def(p->vl, p->name, "err", "%s", p->err);
 	p->hasthread = 1;
-	AZ(pthread_create(&p->tp, NULL, process_thread, p));
+	PTOK(pthread_create(&p->tp, NULL, process_thread, p));
 }
 
 /**********************************************************************
@@ -800,7 +800,7 @@ process_wait(struct process *p)
 	void *v;
 
 	if (p->hasthread) {
-		AZ(pthread_join(p->tp, &v));
+		PTOK(pthread_join(p->tp, &v));
 		p->hasthread = 0;
 	}
 	vtc_log(p->vl, 4, "stdout %ju bytes, stderr %ju bytes",
@@ -820,9 +820,9 @@ process_kill(struct process *p, const char *sig)
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AN(sig);
 
-	AZ(pthread_mutex_lock(&p->mtx));
+	PTOK(pthread_mutex_lock(&p->mtx));
 	pid = p->pid;
-	AZ(pthread_mutex_unlock(&p->mtx));
+	PTOK(pthread_mutex_unlock(&p->mtx));
 
 	if (pid <= 0)
 		vtc_fatal(p->vl, "Cannot signal a non-running process");
@@ -1136,9 +1136,9 @@ cmd_process(CMD_ARGS)
 				u += bsnap;
 			av++;
 			do {
-				AZ(pthread_mutex_lock(&p->mtx));
+				PTOK(pthread_mutex_lock(&p->mtx));
 				v = p->stdout_bytes;
-				AZ(pthread_mutex_unlock(&p->mtx));
+				PTOK(pthread_mutex_unlock(&p->mtx));
 				vtc_log(p->vl, 4, "Have %ju bytes", v);
 				usleep(500000);
 			} while(v < u);
@@ -1200,9 +1200,9 @@ cmd_process(CMD_ARGS)
 			col = atoi(av[2]);
 			assert(col > 1);
 			av += 2;
-			AZ(pthread_mutex_lock(&p->mtx));
+			PTOK(pthread_mutex_lock(&p->mtx));
 			term_resize(p, lin, col);
-			AZ(pthread_mutex_unlock(&p->mtx));
+			PTOK(pthread_mutex_unlock(&p->mtx));
 			process_winsz(p, p->fd_term);
 			continue;
 		}

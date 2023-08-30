@@ -370,7 +370,6 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
 {
 
 	(void)type;
-	assert(sym->kind == SYM_VAR);
 	vcc_AddUses(tl, t, NULL, sym, XREF_READ);
 	ERRCHK(tl);
 	*e = vcc_mk_expr(sym->type, "%s", sym->rname);
@@ -378,6 +377,19 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
 	(*e)->nstr = 1;
 	if ((*e)->fmt == STRING)
 		(*e)->fmt = STRINGS;
+}
+
+void v_matchproto_(sym_expr_t)
+vcc_Eval_ProtectedHeader(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t type)
+{
+
+	AN(sym);
+	AZ(sym->lorev);
+
+	vcc_Header_Fh(tl, sym);
+	sym->eval = vcc_Eval_Var;
+	vcc_Eval_Var(tl, e, t, sym, type);
 }
 
 /*--------------------------------------------------------------------

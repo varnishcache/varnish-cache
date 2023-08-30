@@ -101,7 +101,7 @@ ved_reembark(struct worker *wrk, struct req *req)
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 	Lck_Lock(&req->sp->mtx);
 	ecx->woken = 1;
-	AZ(pthread_cond_signal(&ecx->preq->wrk->cond));
+	PTOK(pthread_cond_signal(&ecx->preq->wrk->cond));
 	Lck_Unlock(&req->sp->mtx);
 }
 
@@ -204,7 +204,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		if (s == REQ_FSM_DONE)
 			break;
 		DSL(DBG_WAITINGLIST, req->vsl->wid,
-		    "loop waiting for ESI (%d)", (int)s);
+		    "waiting for ESI (%d)", (int)s);
 		assert(s == REQ_FSM_DISEMBARK);
 		Lck_Lock(&sp->mtx);
 		if (!ecx->woken)
@@ -796,8 +796,7 @@ ved_gzgz_fini(struct vdp_ctx *vdc, void **priv)
 	struct ved_foo *foo;
 
 	(void)vdc;
-	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
-	*priv = NULL;
+	TAKE_OBJ_NOTNULL(foo, priv, VED_FOO_MAGIC);
 
 	/* XXX
 	 * this works due to the esi layering, a VDP pushing bytes from _fini
@@ -858,6 +857,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 {
 	int i = 0;
 	const char *p;
+	uint16_t status;
 	struct ecx *ecx;
 	struct ved_foo foo[1];
 	struct vrt_ctx ctx[1];
@@ -871,9 +871,9 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (wantbody == 0)
 		return;
 
-	if (!ecx->incl_cont &&
-	    req->resp->status != 200 &&
-	    req->resp->status != 204) {
+	status = req->resp->status % 1000;
+
+	if (!ecx->incl_cont && status != 200 && status != 204) {
 		req->top->topreq->vdc->retval = -1;
 		req->top->topreq->doclose = req->doclose;
 		return;

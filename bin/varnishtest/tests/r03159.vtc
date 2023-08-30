@@ -14,10 +14,15 @@ process p1 -log {
 	    -l 2m 2>&1
 } -start -expect-exit 0x40
 
-process p1 -expect-text 0 1 "Unused sub foo, defined:"
-process p1 -expect-text 0 1 "(That was just a warning)"
+shell {
+	# wait for startup vcl.load to complete
+	varnishadm -n ${tmpdir}/t ping ||
+	varnishadm -n ${tmpdir}/t ping
+}
 
 process p1 -screen_dump
+process p1 -expect-text 0 1 "Unused sub foo, defined:"
+process p1 -expect-text 0 1 "(That was just a warning)"
 
 process p2 -log {
 	set -e
@@ -26,12 +31,8 @@ process p2 -log {
 	varnishadm -n ${tmpdir}/t "vcl.list"
 } -run
 
-process p2 -wait
-process p1 -kill TERM
-
 process p2 -screen_dump
-
 process p2 -expect-text 0 1 "Unused sub foo, defined:"
 process p2 -expect-text 0 1 "(That was just a warning)"
 
-process p1 -wait
+process p1 -kill TERM

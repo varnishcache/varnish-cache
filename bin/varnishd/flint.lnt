@@ -124,6 +124,7 @@
 //////////////
 
 +libh mgt_event.h
+-esym(522, mgt_ProcTitle)
 
 -sem(VRT_AddDirector, custodial(3))
 -sem(VCP_New, custodial(3))

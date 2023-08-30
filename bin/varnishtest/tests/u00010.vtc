@@ -22,7 +22,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-process p1 -expect-text 1 1 {list length 6}
+process p1 -expect-text 1 1 {list length 7}
 
 process p1 -writehex 0c
 

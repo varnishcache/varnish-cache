@@ -207,7 +207,14 @@
 -esym(534, VSB_putc)
 -esym(534, VSB_printf)
 -esym(534, VSB_vprintf)
--esym(534, VSB_putc)
+
+///////////////////////////////////////////////////////////////////////
+// <vte.h>
+
+// ignore retval
+-esym(534, VTE_cat)
+-esym(534, VTE_putc)
+-esym(534, VTE_printf)
 
 ///////////////////////////////////////////////////////////////////////
 // <vtree.h>

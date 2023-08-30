@@ -45,6 +45,7 @@
 #include "cache_director.h"
 #include "cache_vcl.h"
 #include "vcli_serve.h"
+#include "vte.h"
 #include "vtim.h"
 #include "vcc_interface.h"
 
@@ -486,6 +487,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 	if (dlh == NULL) {
 		VSB_cat(msg, "Could not load compiled VCL.\n");
 		VSB_printf(msg, "\tdlopen() = %s\n", dlerror());
+		VSB_cat(msg, "\thint: check for \"noexec\" mount\n");
 		return (NULL);
 	}
 	cnf = dlsym(dlh, "VCL_conf");
@@ -749,7 +751,7 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
 	const char *flg;
-	struct vsb *vsb;
+	struct vte *vte;
 
 	/* NB: Shall generate same output as mcf_vcl_list() */
 
@@ -757,8 +759,8 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	ASSERT_CLI();
 	ASSERT_VCL_ACTIVE();
-	vsb = VSB_new_auto();
-	AN(vsb);
+	vte = VTE_new(7, 80);
+	AN(vte);
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
 		if (vcl == vcl_active) {
 			flg = "active";
@@ -766,20 +768,22 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		VSB_printf(vsb, "%s\t%s\t%s\t%6u\t%s", flg, vcl->state,
+		VTE_printf(vte, "%s\t%s\t%s\t\v%u\t%s", flg, vcl->state,
 		    vcl->temp->name, vcl->busy, vcl->loaded_name);
 		if (vcl->label != NULL) {
-			VSB_printf(vsb, "\t->\t%s", vcl->label->loaded_name);
+			VTE_printf(vte, "\t->\t%s", vcl->label->loaded_name);
 			if (vcl->nrefs)
-				VSB_printf(vsb, " (%d return(vcl)%s)",
+				VTE_printf(vte, " (%d return(vcl)%s)",
 				    vcl->nrefs, vcl->nrefs > 1 ? "'s" : "");
 		} else if (vcl->nlabels > 0) {
-			VSB_printf(vsb, "\t<-\t(%d label%s)",
+			VTE_printf(vte, "\t<-\t(%d label%s)",
 			    vcl->nlabels, vcl->nlabels > 1 ? "s" : "");
 		}
-		VSB_cat(vsb, "\n");
+		VTE_cat(vte, "\n");
 	}
-	VCLI_VTE(cli, &vsb, 80);
+	AZ(VTE_finish(vte));
+	AZ(VTE_format(vte, VCLI_VTE_format, cli));
+	VTE_destroy(&vte);
 }
 
 static void v_matchproto_(cli_func_t)

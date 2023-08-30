@@ -31,16 +31,18 @@ varnish v1 -vcl+backend {
 # Request (1001):
 # GET / HTTP/1.1\r\n			16 bytes
 # Host: foo\r\n				11 bytes
+# User-Agent: c1\r\n			16 bytes
 # \r\n					 2 bytes
-# Total:				29 bytes
+# Total:				45 bytes
 
 # Reponse:
 # HTTP/1.1 200 OK\r\n			17 bytes
 # Accept-Ranges: bytes\r\n		22 bytes
 # Transfer-Encoding: chunked\r\n	28 bytes
 # Connection: keep-alive\r\n		24 bytes
+# Server: s1\r\n		 	12 bytes
 # \r\n					 2 bytes
-# Total:				93 bytes
+# Total:				105 bytes
 
 # Response body:
 # Chunk len				 - bytes
@@ -63,7 +65,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001	Begin	"^req .* rxreq"
-	expect * =	ReqAcct		"^29 0 29 93 15 108$"
+	expect * =	ReqAcct		"^45 0 45 105 15 120$"
 	expect 0 =	End
 	expect * 1003	Begin		"^req .* esi"
 	expect * =	ReqAcct		"^0 0 0 0 12 12$"
@@ -85,7 +87,7 @@ client c1 {
 
 logexpect l1 -wait
 
-varnish v1 -expect s_req_hdrbytes == 29
+varnish v1 -expect s_req_hdrbytes == 45
 varnish v1 -expect s_req_bodybytes == 0
-varnish v1 -expect s_resp_hdrbytes == 93
+varnish v1 -expect s_resp_hdrbytes == 105
 varnish v1 -expect s_resp_bodybytes == 15

@@ -70,7 +70,7 @@ Lck_Witness_Lock(const struct ilck *il, const char *p, int l,
 	if (q == NULL) {
 		q = calloc(1, 1024);
 		AN(q);
-		AZ(pthread_setspecific(witness_key, q));
+		PTOK(pthread_setspecific(witness_key, q));
 	}
 	emit = *q != '\0';
 	strcat(q, " ");
@@ -121,7 +121,7 @@ Lck__Lock(struct lock *lck, const char *p, int l)
 		assert(r == 0 || r == EBUSY);
 	}
 	if (r)
-		AZ(pthread_mutex_lock(&ilck->mtx));
+		PTOK(pthread_mutex_lock(&ilck->mtx));
 	AZ(ilck->held);
 	if (r == EBUSY)
 		ilck->stat->dbg_busy++;
@@ -158,7 +158,7 @@ Lck__Unlock(struct lock *lck, const char *p, int l)
 #else
 	memset(&ilck->owner, 0, sizeof ilck->owner);
 #endif
-	AZ(pthread_mutex_unlock(&ilck->mtx));
+	PTOK(pthread_mutex_unlock(&ilck->mtx));
 	if (DO_DEBUG(DBG_WITNESS))
 		Lck_Witness_Unlock(ilck);
 }
@@ -295,7 +295,7 @@ Lck__New(struct lock *lck, struct VSC_lck *st, const char *w)
 	ilck->w = w;
 	ilck->stat = st;
 	ilck->stat->creat++;
-	AZ(pthread_mutex_init(&ilck->mtx, &mtxattr_errorcheck));
+	PTOK(pthread_mutex_init(&ilck->mtx, &mtxattr_errorcheck));
 	lck->priv = ilck;
 }
 
@@ -307,7 +307,7 @@ Lck_Delete(struct lock *lck)
 	AN(lck);
 	TAKE_OBJ_NOTNULL(ilck, &lck->priv, ILCK_MAGIC);
 	ilck->stat->destroy++;
-	AZ(pthread_mutex_destroy(&ilck->mtx));
+	PTOK(pthread_mutex_destroy(&ilck->mtx));
 	FREE_OBJ(ilck);
 }
 

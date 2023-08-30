@@ -1,0 +1,122 @@
+varnishtest "rushed task queued"
+
+# this does not work reliably because the acceptor task may
+# be queued during the child startup if not all threads are
+# created
+
+# thread reserve mitigation barrier
+barrier b0 sock 2
+
+# client ordering barrier
+barrier b1 cond 3
+
+# waitinglist barrier
+barrier b2 cond 2
+
+# thread starvation barrier
+barrier b3 cond 3
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	barrier b3 sync
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	barrier b1 sync
+	barrier b2 sync
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 0
+} -start
+
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set thread_pool_min 5"
+varnish v1 -cliok "param.set thread_pool_max 5"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set debug +waitinglist"
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+		if (req.http.server) {
+			# ensure both c1 and c2 got a thread
+			vtc.barrier_sync("${b0_sock}");
+		}
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.http.server == "s1") {
+			set bereq.backend = s1;
+		} else if (bereq.http.server == "s2") {
+			set bereq.backend = s2;
+		}
+	}
+} -start
+
+# wait for all threads to be started
+varnish v1 -expect threads == 5
+
+# 2 threads
+client c1 {
+	txreq -hdr "Cookie: foo" -hdr "server: s1"
+	rxresp
+	expect resp.status == 200
+} -start
+
+# 2 threads
+client c2 {
+	txreq -hdr "server: s2"
+	rxresp
+	expect resp.status == 200
+} -start
+
+# ensure c1 and c2 fetch tasks are started
+barrier b1 sync
+
+logexpect l1 -v v1 -g raw {
+	expect * 1007 Debug "on waiting list"
+} -start
+
+logexpect l2 -v v1 -g raw {
+	expect * 1007 Debug "off waiting list"
+} -start
+
+varnish v1 -expect sess_dropped == 0
+varnish v1 -expect sess_queued == 0
+
+# At this point, we are thread-starved and c3 below will steal the
+# acceptor thread that will queue itself.
+client c3 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+logexpect l1 -wait
+
+varnish v1 -expect sess_dropped == 0
+varnish v1 -expect sess_queued == 1
+varnish v1 -expect busy_sleep == 1
+
+# Wake up c2, This will in turn trigger a waitinglist rush and wake up c3.
+barrier b2 sync
+
+# The acceptor thread could have restarted on the newly available thread
+# if it weren't for the thread pool reserve. For the same reason, c3's
+# client task should be queued once woken up.
+logexpect l2 -wait
+
+# let everyone loose
+barrier b3 sync
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+
+varnish v1 -expect sess_dropped == 0
+varnish v1 -expect sess_queued == 2

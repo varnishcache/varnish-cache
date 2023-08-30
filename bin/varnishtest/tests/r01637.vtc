@@ -25,7 +25,7 @@ varnish v1  -arg "-sdefault,1M" -arg "-p nuke_limit=0 -p gzip_level=0" \
 } -start
 
 logexpect l1 -v v1 -g vxid -q "vxid == 1004" {
-	expect 25 1004	VCL_call        {^BACKEND_RESPONSE}
+	expect 26 1004	VCL_call        {^BACKEND_RESPONSE}
 	expect 0  =	BerespHeader    {^free:}
 	expect 0  =	VCL_return      {^deliver}
 	expect 0  =	Timestamp       {^Process}

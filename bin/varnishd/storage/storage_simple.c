@@ -249,24 +249,51 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 	}
 }
 
+static void
+sml_bocfini(const struct stevedore *stv, struct boc *boc)
+{
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+
+	if (boc->stevedore_priv == NULL)
+		return;
+
+	/* Free any leftovers from Trim */
+	TAKE_OBJ_NOTNULL(st, &boc->stevedore_priv, STORAGE_MAGIC);
+	sml_stv_free(stv, st);
+}
+
+/*
+ * called in two cases:
+ * - oc->boc == NULL: cache object on LRU freed
+ * - oc->boc != NULL: cache object replaced for backend error
+ */
 static void v_matchproto_(objfree_f)
 sml_objfree(struct worker *wrk, struct objcore *oc)
 {
+	const struct stevedore *stv;
 	struct storage *st;
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	sml_slim(wrk, oc);
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
+
+	sml_slim(wrk, oc);
 	st = o->objstore;
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	FINI_OBJ(o);
 
-	if (oc->boc == NULL && oc->stobj->stevedore->lru != NULL)
+	if (oc->boc != NULL)
+		sml_bocfini(stv, oc->boc);
+	else if (stv->lru != NULL)
 		LRU_Remove(oc);
 
-	sml_stv_free(oc->stobj->stevedore, st);
+	sml_stv_free(stv, st);
 
 	memset(oc->stobj, 0, sizeof oc->stobj);
 
@@ -547,7 +574,6 @@ static void v_matchproto_(objbocdone_f)
 sml_bocdone(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	const struct stevedore *stv;
-	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -555,12 +581,7 @@ sml_bocdone(struct worker *wrk, struct objcore *oc, struct boc *boc)
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
-	if (boc->stevedore_priv != NULL) {
-		/* Free any leftovers from Trim */
-		CAST_OBJ_NOTNULL(st, boc->stevedore_priv, STORAGE_MAGIC);
-		boc->stevedore_priv = NULL;
-		sml_stv_free(stv, st);
-	}
+	sml_bocfini(stv, boc);
 
 	if (stv->lru != NULL) {
 		if (isnan(wrk->lastused))

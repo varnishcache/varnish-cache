@@ -34,9 +34,9 @@ process p1 -winsz 25 200 {varnishncsa -n ${v1_name}} -start
 delay 1
 
 client c1 {
-	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz"
+	txreq -nouseragent -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz"
 	rxresp
-	txreq -url /1?foo=bar -hdr "baz: qux"
+	txreq -nouseragent -url /1?foo=bar -hdr "baz: qux"
 	rxresp
 } -run
 
@@ -46,7 +46,7 @@ shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
 shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
 
 client c2 {
-	txreq -url /2
+	txreq -nouseragent -url /2
 	rxresp
 } -run
 

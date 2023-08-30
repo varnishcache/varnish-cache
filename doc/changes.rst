@@ -38,6 +38,12 @@ Varnish Cache NEXT (2023-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The ``VSHA256_*`` functions have been added to libvarnishapi.
+
+* Two bugs in the ban expression parser have been fixed where one of them
+  could lead to a panic if a ban expression with an empty header name was
+  issued (3962_)
+
 * A bug has been fixed where ``unset bereq.body`` had no effect when
   used with a cached body (3914_)
 
@@ -87,6 +93,7 @@ Varnish Cache NEXT (2023-09-15)
 .. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
 .. _3911: https://github.com/varnishcache/varnish-cache/issues/3911
 .. _3914: https://github.com/varnishcache/varnish-cache/pull/3914
+.. _3962: https://github.com/varnishcache/varnish-cache/issues/3962
 
 ================================
 Varnish Cache 7.3.0 (2023-03-15)
@@ -1887,6 +1894,8 @@ VCL
 * Improved VCC error messages (2696_)
 
 * Fixed ``obj.hits`` in ``vcl_hit`` (had been always 0) (2746_)
+
+* req.ttl is fully supported again
 
 .. _2746: https://github.com/varnishcache/varnish-cache/issues/2746
 .. _2696: https://github.com/varnishcache/varnish-cache/issues/2696

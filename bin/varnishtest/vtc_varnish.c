@@ -406,6 +406,10 @@ varnish_launch(struct varnish *v)
 	VSB_cat(vsb, "cd ${pwd} &&");
 	VSB_printf(vsb, " exec varnishd %s -d -n %s -i %s",
 	    v->jail, v->workdir, v->name);
+	if (macro_isdef(NULL, "varnishd_args_prepend")) {
+		VSB_putc(vsb, ' ');
+		macro_cat(v->vl, vsb, "varnishd_args_prepend", NULL);
+	}
 	VSB_cat(vsb, VSB_data(params_vsb));
 	if (leave_temp) {
 		VSB_cat(vsb, " -p debug=+vcl_keep");
@@ -430,9 +434,9 @@ varnish_launch(struct varnish *v)
 	if (vmod_path != NULL)
 		VSB_printf(vsb, " -p vmod_path=%s", vmod_path);
 	VSB_printf(vsb, " %s", VSB_data(v->args));
-	if (macro_isdef(NULL, "varnishd_args")) {
+	if (macro_isdef(NULL, "varnishd_args_append")) {
 		VSB_putc(vsb, ' ');
-		macro_cat(v->vl, vsb, "varnishd_args", NULL);
+		macro_cat(v->vl, vsb, "varnishd_args_append", NULL);
 	}
 	AZ(VSB_finish(vsb));
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
@@ -466,7 +470,7 @@ varnish_launch(struct varnish *v)
 	v->fds[0] = v->fds[2];
 	v->fds[2] = v->fds[3] = -1;
 	VSB_destroy(&vsb);
-	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
+	PTOK(pthread_create(&v->tp, NULL, varnish_thread, v));
 
 	/* Wait for the varnish to call home */
 	memset(fd, 0, sizeof fd);
@@ -532,7 +536,7 @@ varnish_launch(struct varnish *v)
 	assert(VSM_Arg(v->vsm_vsl, 'n', v->workdir) > 0);
 	AZ(VSM_Attach(v->vsm_vsl, -1));
 
-	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
+	PTOK(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 }
 
 #define VARNISH_LAUNCH(v)				\
@@ -675,11 +679,11 @@ varnish_cleanup(struct varnish *v)
 	closefd(&v->fds[1]);
 
 	/* Wait until STDOUT+STDERR closes */
-	AZ(pthread_join(v->tp, &p));
+	PTOK(pthread_join(v->tp, &p));
 	closefd(&v->fds[0]);
 
 	/* Pick up the VSL thread */
-	AZ(pthread_join(v->tp_vsl, &p));
+	PTOK(pthread_join(v->tp_vsl, &p));
 
 	vtc_wait4(v->vl, v->pid, v->expect_exit, 0, 0);
 	v->pid = 0;
@@ -1072,11 +1076,12 @@ vsl_catchup(struct varnish *v)
  * \-arg STRING
  *         Pass an argument to varnishd, for example "-h simple_list".
  *
- *         If the ${varnishd_args} macro is defined, it is expanded and
- *         appended to the varnishd command line, before the command line
- *         itself is expanded. This enables tweaks to the varnishd command
- *         line without editing test cases. This macro can be defined using
- *         the ``-D`` option for varnishtest.
+ *         If the ${varnishd_args_prepend} or ${varnishd_args_append} macros are
+ *         defined, they are expanded and inserted before / appended to the
+ *         varnishd command line as constructed by varnishtest, before the
+ *         command line itself is expanded. This enables tweaks to the varnishd
+ *         command line without editing test cases. This macros can be defined
+ *         using the ``-D`` option for varnishtest.
  *
  * \-vcl STRING
  *         Specify the VCL to load on this Varnish instance. You'll probably

@@ -30,6 +30,7 @@
 
 #include "config.h"
 
+//lint -e{766}
 #include "vmb.h"
 
 #ifdef VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE
@@ -48,7 +49,7 @@ static void
 vmb_init(void)
 {
 
-	AZ(pthread_mutex_init(&mb_mtx, NULL));
+	PTOK(pthread_mutex_init(&mb_mtx, NULL));
 }
 
 
@@ -56,10 +57,10 @@ void
 vmb_pthread(void)
 {
 
-	AZ(pthread_once(&mb_mtx_once, vmb_init));
+	PTOK(pthread_once(&mb_mtx_once, vmb_init));
 
-	AZ(pthread_mutex_lock(&mb_mtx));
-	AZ(pthread_mutex_unlock(&mb_mtx));
+	PTOK(pthread_mutex_lock(&mb_mtx));
+	PTOK(pthread_mutex_unlock(&mb_mtx));
 }
 
 #endif /* VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE */

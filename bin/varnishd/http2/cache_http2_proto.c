@@ -33,7 +33,6 @@
 
 #include "cache/cache_varnishd.h"
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -222,7 +221,7 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2,
 		r2->error = h2e;
 	if (r2->scheduled) {
 		if (r2->cond != NULL)
-			AZ(pthread_cond_signal(r2->cond));
+			PTOK(pthread_cond_signal(r2->cond));
 		r2 = NULL;
 	} else {
 		if (r2->state == H2_S_OPEN && h2->new_req == r2->req)
@@ -379,9 +378,9 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_Lock(&h2->sess->mtx);
 	r2->t_window += wu;
 	if (r2 == h2->req0)
-		AZ(pthread_cond_broadcast(h2->winupd_cond));
+		PTOK(pthread_cond_broadcast(h2->winupd_cond));
 	else if (r2->cond != NULL)
-		AZ(pthread_cond_signal(r2->cond));
+		PTOK(pthread_cond_signal(r2->cond));
 	Lck_Unlock(&h2->sess->mtx);
 	if (r2->t_window >= (1LL << 31))
 		return (H2SE_FLOW_CONTROL_ERROR);
@@ -797,7 +796,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	if (h2->error || r2->error) {
 		if (r2->cond)
-			AZ(pthread_cond_signal(r2->cond));
+			PTOK(pthread_cond_signal(r2->cond));
 		Lck_Unlock(&h2->sess->mtx);
 		return (h2->error ? h2->error : r2->error);
 	}
@@ -812,7 +811,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			    h2->rxf_stream);
 			r2->error = H2CE_PROTOCOL_ERROR;
 			if (r2->cond)
-				AZ(pthread_cond_signal(r2->cond));
+				PTOK(pthread_cond_signal(r2->cond));
 			Lck_Unlock(&h2->sess->mtx);
 			return (H2CE_PROTOCOL_ERROR);
 		}
@@ -835,7 +834,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			    " mismatch", h2->rxf_stream);
 			r2->error = H2SE_PROTOCOL_ERROR;
 			if (r2->cond)
-				AZ(pthread_cond_signal(r2->cond));
+				PTOK(pthread_cond_signal(r2->cond));
 			Lck_Unlock(&h2->sess->mtx);
 			return (H2SE_PROTOCOL_ERROR);
 		}
@@ -849,7 +848,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		    h2->rxf_stream);
 		r2->error = H2CE_FLOW_CONTROL_ERROR;
 		if (r2->cond)
-			AZ(pthread_cond_signal(r2->cond));
+			PTOK(pthread_cond_signal(r2->cond));
 		Lck_Unlock(&h2->sess->mtx);
 		return (H2CE_FLOW_CONTROL_ERROR);
 	}
@@ -872,7 +871,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		    h2->rxf_stream);
 		r2->error = H2SE_FLOW_CONTROL_ERROR;
 		if (r2->cond)
-			AZ(pthread_cond_signal(r2->cond));
+			PTOK(pthread_cond_signal(r2->cond));
 		Lck_Unlock(&h2->sess->mtx);
 		return (H2SE_FLOW_CONTROL_ERROR);
 	}
@@ -907,7 +906,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		if (h2->rxf_flags & H2FF_DATA_END_STREAM)
 			r2->state = H2_S_CLOS_REM;
 		if (r2->cond)
-			AZ(pthread_cond_signal(r2->cond));
+			PTOK(pthread_cond_signal(r2->cond));
 		Lck_Unlock(&h2->sess->mtx);
 		return (0);
 	}
@@ -946,7 +945,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			Lck_Lock(&h2->sess->mtx);
 			r2->error = H2SE_INTERNAL_ERROR;
 			if (r2->cond)
-				AZ(pthread_cond_signal(r2->cond));
+				PTOK(pthread_cond_signal(r2->cond));
 			Lck_Unlock(&h2->sess->mtx);
 			return (H2SE_INTERNAL_ERROR);
 		}
@@ -998,7 +997,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (h2->rxf_flags & H2FF_DATA_END_STREAM)
 		r2->state = H2_S_CLOS_REM;
 	if (r2->cond)
-		AZ(pthread_cond_signal(r2->cond));
+		PTOK(pthread_cond_signal(r2->cond));
 	Lck_Unlock(&h2->sess->mtx);
 
 	return (0);

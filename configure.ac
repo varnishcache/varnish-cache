@@ -623,6 +623,27 @@ if test "$ac_cv_have_tcp_fastopen" = yes; then
 fi
 LIBS="${save_LIBS}"
 
+AC_CHECK_FUNCS([close_range])
+
+# Check for working close_range()
+if test "$ac_cv_func_close_range" = yes; then
+AC_CACHE_CHECK([if close_range is working],
+  [ac_cv_have_working_close_range],
+  [AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <unistd.h>
+    ]],[[
+return (close_range(0, 2, 0));
+    ]])],
+    [ac_cv_have_working_close_range=yes],
+    [ac_cv_have_working_close_range=no])
+  ])
+fi
+if test "x$ac_cv_have_working_close_range" = xyes; then
+   AC_DEFINE([HAVE_WORKING_CLOSE_RANGE], [1],
+	     [Define if OS has working close_range()])
+fi
+
 # Run-time directory
 if test "${localstatedir}" = '${prefix}/var' ; then
    VARNISH_STATE_DIR='/var/run'
@@ -695,13 +716,6 @@ if test $? -ne 0 ; then
 fi
 
 # zlib-specific flags
-AX_CHECK_COMPILE_FLAG([-Wno-error=strict-prototypes],
-	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=strict-prototypes"])
-
-dnl https://github.com/madler/zlib/issues/633
-AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-non-prototype],
-	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=deprecated-non-prototype"])
-
 AC_SUBST(VGZ_CFLAGS)
 
 # Support for visibility attribute (zlib)

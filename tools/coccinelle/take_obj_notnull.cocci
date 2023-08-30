@@ -69,3 +69,19 @@ expression obj, objp, magic;
 ...
 - CHECK_OBJ_NOTNULL(obj, magic);
 + TAKE_OBJ_NOTNULL(obj, objp, magic);
+
+@@
+expression obj, priv, magic;
+@@
+
+- CAST_OBJ_NOTNULL(obj, *priv, magic);
+- *priv = NULL;
++ TAKE_OBJ_NOTNULL(obj, priv, magic);
+
+@@
+expression obj, priv, magic;
+@@
+
+- CAST_OBJ_NOTNULL(obj, priv, magic);
+- priv = NULL;
++ TAKE_OBJ_NOTNULL(obj, &priv, magic);

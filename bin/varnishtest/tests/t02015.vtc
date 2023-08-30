@@ -2,7 +2,7 @@ varnishtest "h2 ReqAcct"
 
 server s1 {
 	rxreq
-	txresp -bodylen 12345
+	txresp -noserver -bodylen 12345
 } -start
 
 varnish v1 -cliok "param.set feature +http2"

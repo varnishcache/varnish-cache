@@ -170,7 +170,7 @@ vrg_ifrange(struct req *req)
 		return (0);
 
 	/* the response needs a Date */
-	// rfc7232 fc7232,l,439,440
+	// rfc7232,l,439,440
 	if (!http_GetHdr(req->resp, H_Date, &p))
 		return (0);
 	d = VTIM_parse(p);

@@ -38,7 +38,6 @@
 
 #include "venc.h"
 #include "vct.h"
-#include "vsb.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -501,6 +500,12 @@ vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 	vcc_addtoken(tl, FNUM, sp, p, r);
 	if (q - p > 13 || r - q > 3) {
 		VSB_cat(tl->sb, "Too many digits for real.\n");
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+	if (*tl->t->e == 'e' || *tl->t->e == 'E') {
+		VSB_printf(tl->sb, "Unexpected character '%c'.\n", *tl->t->e);
+		tl->t->e++;
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);
 	}

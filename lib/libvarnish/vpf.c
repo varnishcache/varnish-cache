@@ -34,7 +34,7 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 
-#include <fcntl.h>
+#include <fcntl.h>	//lint !e537
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

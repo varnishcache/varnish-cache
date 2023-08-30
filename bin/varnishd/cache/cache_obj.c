@@ -107,7 +107,7 @@ obj_newboc(void)
 	ALLOC_OBJ(boc, BOC_MAGIC);
 	AN(boc);
 	Lck_New(&boc->mtx, lck_busyobj);
-	AZ(pthread_cond_init(&boc->cond, NULL));
+	PTOK(pthread_cond_init(&boc->cond, NULL));
 	boc->refcount = 1;
 	boc->transit_buffer = cache_param->transit_buffer;
 	return (boc);
@@ -120,7 +120,7 @@ obj_deleteboc(struct boc **p)
 
 	TAKE_OBJ_NOTNULL(boc, p, BOC_MAGIC);
 	Lck_Delete(&boc->mtx);
-	AZ(pthread_cond_destroy(&boc->cond));
+	PTOK(pthread_cond_destroy(&boc->cond));
 	free(boc->vary);
 	FREE_OBJ(boc);
 }
@@ -251,7 +251,7 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 		obj_extend_condwait(oc);
 		om->objextend(wrk, oc, l);
 		oc->boc->fetched_so_far += l;
-		AZ(pthread_cond_broadcast(&oc->boc->cond));
+		PTOK(pthread_cond_broadcast(&oc->boc->cond));
 	}
 	Lck_Unlock(&oc->boc->mtx);
 
@@ -279,7 +279,7 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 			assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
 			/* Signal the new client position */
 			oc->boc->delivered_so_far = l;
-			AZ(pthread_cond_signal(&oc->boc->cond));
+			PTOK(pthread_cond_signal(&oc->boc->cond));
 		}
 		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
@@ -315,7 +315,7 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
-	AZ(pthread_cond_broadcast(&oc->boc->cond));
+	PTOK(pthread_cond_broadcast(&oc->boc->cond));
 	Lck_Unlock(&oc->boc->mtx);
 }
 
@@ -332,7 +332,7 @@ ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 	Lck_Lock(&oc->boc->mtx);
 	/* wake up obj_extend_condwait() */
 	if (oc->flags & OC_F_CANCEL)
-		AZ(pthread_cond_signal(&oc->boc->cond));
+		PTOK(pthread_cond_signal(&oc->boc->cond));
 	while (1) {
 		if (oc->boc->state >= want)
 			break;
@@ -685,10 +685,10 @@ ObjSubscribeEvents(obj_event_f *func, void *priv, unsigned mask)
 	oev->func = func;
 	oev->priv = priv;
 	oev->mask = mask;
-	AZ(pthread_rwlock_wrlock(&oev_rwl));
+	PTOK(pthread_rwlock_wrlock(&oev_rwl));
 	VTAILQ_INSERT_TAIL(&oev_list, oev, list);
 	oev_mask |= mask;
-	AZ(pthread_rwlock_unlock(&oev_rwl));
+	PTOK(pthread_rwlock_unlock(&oev_rwl));
 	return ((uintptr_t)oev);
 }
 
@@ -700,7 +700,7 @@ ObjUnsubscribeEvents(uintptr_t *handle)
 
 	AN(handle);
 	AN(*handle);
-	AZ(pthread_rwlock_wrlock(&oev_rwl));
+	PTOK(pthread_rwlock_wrlock(&oev_rwl));
 	VTAILQ_FOREACH(oev, &oev_list, list) {
 		CHECK_OBJ_NOTNULL(oev, OEV_MAGIC);
 		if ((uintptr_t)oev == *handle)
@@ -712,7 +712,7 @@ ObjUnsubscribeEvents(uintptr_t *handle)
 	VTAILQ_REMOVE(&oev_list, oev2, list);
 	oev_mask = newmask;
 	AZ(newmask & ~OEV_MASK);
-	AZ(pthread_rwlock_unlock(&oev_rwl));
+	PTOK(pthread_rwlock_unlock(&oev_rwl));
 	FREE_OBJ(oev2);
 	*handle = 0;
 }
@@ -729,13 +729,13 @@ ObjSendEvent(struct worker *wrk, struct objcore *oc, unsigned event)
 	if (!(event & oev_mask))
 		return;
 
-	AZ(pthread_rwlock_rdlock(&oev_rwl));
+	PTOK(pthread_rwlock_rdlock(&oev_rwl));
 	VTAILQ_FOREACH(oev, &oev_list, list) {
 		CHECK_OBJ_NOTNULL(oev, OEV_MAGIC);
 		if (event & oev->mask)
 			oev->func(wrk, oev->priv, oc, event);
 	}
-	AZ(pthread_rwlock_unlock(&oev_rwl));
+	PTOK(pthread_rwlock_unlock(&oev_rwl));
 
 }
 
@@ -743,5 +743,5 @@ void
 ObjInit(void)
 {
 	VTAILQ_INIT(&oev_list);
-	AZ(pthread_rwlock_init(&oev_rwl, NULL));
+	PTOK(pthread_rwlock_init(&oev_rwl, NULL));
 }

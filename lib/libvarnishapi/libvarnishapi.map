@@ -162,3 +162,18 @@ LIBVARNISHAPI_3.0 {	/* 2021-09-15 release */
     local:
 	*;
 };
+
+LIBVARNISHAPI_3.1 {	/* 2023-09-15 release */
+    global:
+	# venc.c
+		VENC_Encode_Base64;
+		VENC_Decode_Base64;
+	# vsha256.c
+		VSHA256_Init;
+		VSHA256_Update;
+		VSHA256_Final;
+		VSHA256_Test;
+
+    local:
+	*;
+};

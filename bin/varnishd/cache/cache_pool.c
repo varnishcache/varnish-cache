@@ -116,17 +116,27 @@ void v_matchproto_(task_func_t)
 pool_stat_summ(struct worker *wrk, void *priv)
 {
 	struct VSC_main_wrk *src;
+	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->pool, POOL_MAGIC);
+	pp = wrk->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(priv);
 	src = priv;
+
 	Lck_Lock(&wstat_mtx);
 	VSC_main_Summ_wrk(VSC_C_main, src);
+
+	Lck_Lock(&pp->mtx);
+	VSC_main_Summ_pool(VSC_C_main, pp->stats);
+	Lck_Unlock(&pp->mtx);
+	memset(pp->stats, 0, sizeof pp->stats);
+
 	Lck_Unlock(&wstat_mtx);
 	memset(src, 0, sizeof *src);
-	AZ(wrk->pool->b_stat);
-	wrk->pool->b_stat = src;
+
+	AZ(pp->b_stat);
+	pp->b_stat = src;
 }
 
 /*--------------------------------------------------------------------
@@ -152,8 +162,8 @@ pool_mkpool(unsigned pool_no)
 	VTAILQ_INIT(&pp->poolsocks);
 	for (i = 0; i < TASK_QUEUE_RESERVE; i++)
 		VTAILQ_INIT(&pp->queues[i]);
-	AZ(pthread_cond_init(&pp->herder_cond, NULL));
-	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
+	PTOK(pthread_cond_init(&pp->herder_cond, NULL));
+	PTOK(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
 
 	while (VTAILQ_EMPTY(&pp->idle_queue))
 		(void)usleep(10000);
@@ -210,7 +220,7 @@ pool_poolherder(void *priv)
 				VSL(SLT_Debug, NO_VXID, "XXX Kill Pool %p", pp);
 				pp->die = 1;
 				VCA_DestroyPool(pp);
-				AZ(pthread_cond_signal(&pp->herder_cond));
+				PTOK(pthread_cond_signal(&pp->herder_cond));
 			}
 		}
 		(void)sleep(1);
@@ -226,8 +236,8 @@ pool_poolherder(void *priv)
 		}
 		if (ppx != NULL) {
 			VTAILQ_REMOVE(&pools, ppx, list);
-			AZ(pthread_join(ppx->herder_thr, &rvp));
-			AZ(pthread_cond_destroy(&ppx->herder_cond));
+			PTOK(pthread_join(ppx->herder_thr, &rvp));
+			PTOK(pthread_cond_destroy(&ppx->herder_cond));
 			free(ppx->a_stat);
 			free(ppx->b_stat);
 			SES_DestroyPool(ppx);
@@ -270,7 +280,7 @@ Pool_Init(void)
 
 	Lck_New(&wstat_mtx, lck_wstat);
 	Lck_New(&pool_mtx, lck_wq);
-	AZ(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
+	PTOK(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
 	while (!VSC_C_main->pools)
 		(void)usleep(10000);
 }

@@ -162,9 +162,9 @@ tunnel_is_open(struct tunnel *t)
 {
 	unsigned is_open;
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	is_open = (t->send_lane->buf_len >= 0 && t->recv_lane->buf_len >= 0);
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 	return (is_open);
 }
 
@@ -188,16 +188,16 @@ cmd_tunnel_pause(CMD_ARGS)
 	if (!tunnel_is_open(t))
 		vtc_fatal(vl, "Tunnel already closed");
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	if (t->state == TUNNEL_PAUSED) {
-		AZ(pthread_mutex_unlock(&t->mtx));
+		PTOK(pthread_mutex_unlock(&t->mtx));
 		vtc_fatal(vl, "Tunnel already paused");
 	}
 	assert(t->state == TUNNEL_RUNNING);
 	t->state = TUNNEL_PAUSED;
-	AZ(pthread_cond_signal(&t->cond));
-	AZ(pthread_cond_wait(&t->cond, &t->mtx));
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_cond_signal(&t->cond));
+	PTOK(pthread_cond_wait(&t->cond, &t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 }
 
 /**********************************************************************
@@ -225,9 +225,9 @@ cmd_tunnel_send(CMD_ARGS)
 	if (!tunnel_is_open(t))
 		vtc_fatal(vl, "Tunnel already closed");
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	if (t->state == TUNNEL_RUNNING) {
-		AZ(pthread_mutex_unlock(&t->mtx));
+		PTOK(pthread_mutex_unlock(&t->mtx));
 		vtc_fatal(vl, "Tunnel still running");
 	}
 	assert(t->state == TUNNEL_PAUSED);
@@ -237,9 +237,9 @@ cmd_tunnel_send(CMD_ARGS)
 		t->send_lane->wrk_len = len;
 	else
 		t->recv_lane->wrk_len = len;
-	AZ(pthread_cond_signal(&t->cond));
-	AZ(pthread_cond_wait(&t->cond, &t->mtx));
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_cond_signal(&t->cond));
+	PTOK(pthread_cond_wait(&t->cond, &t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 }
 
 /**********************************************************************
@@ -279,15 +279,15 @@ cmd_tunnel_resume(CMD_ARGS)
 	if (!tunnel_is_open(t))
 		vtc_fatal(vl, "Tunnel already closed");
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	if (t->state == TUNNEL_RUNNING) {
-		AZ(pthread_mutex_unlock(&t->mtx));
+		PTOK(pthread_mutex_unlock(&t->mtx));
 		vtc_fatal(vl, "Tunnel already running");
 	}
 	assert(t->state == TUNNEL_PAUSED);
 	t->state = TUNNEL_RUNNING;
-	AZ(pthread_cond_signal(&t->cond));
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_cond_signal(&t->cond));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 }
 
 static const struct cmds tunnel_cmds[] = {
@@ -316,11 +316,11 @@ tunnel_read(struct tunnel *t, struct vtclog *vl, const struct pollfd *pfd,
 	if (!(pfd->revents & POLLIN))
 		return;
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	AZ(lane->buf_len);
 	len = lane->wrk_len;
 	state = t->state;
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 
 	if (len == 0 && state == TUNNEL_PAUSED)
 		return;
@@ -332,9 +332,9 @@ tunnel_read(struct tunnel *t, struct vtclog *vl, const struct pollfd *pfd,
 	if (res < 0)
 		vtc_fatal(vl, "Read failed: %s", strerror(errno));
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	lane->buf_len = (res == 0) ? -1 : res;
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 }
 
 static void
@@ -357,14 +357,14 @@ tunnel_write(struct tunnel *t, struct vtclog *vl, struct tunnel_lane *lane,
 		p += res;
 	}
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	if (lane->wrk_len > 0 && lane->buf_len != -1) {
 		assert(lane->buf_len >= 0);
 		assert(lane->wrk_len >= (size_t)lane->buf_len);
 		lane->wrk_len -= lane->buf_len;
 	}
 	lane->buf_len = l;
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 }
 
 static void *
@@ -382,12 +382,12 @@ tunnel_poll_thread(void *priv)
 	pthread_cleanup_push(vtc_logclose, vl);
 
 	while (tunnel_is_open(t) && !vtc_stop) {
-		AZ(pthread_mutex_lock(&t->mtx));
+		PTOK(pthread_mutex_lock(&t->mtx));
 		/* NB: can be woken up by `tunnel tX -wait` */
 		while (t->state == TUNNEL_ACCEPT && !vtc_stop)
-			AZ(pthread_cond_wait(&t->cond, &t->mtx));
+			PTOK(pthread_cond_wait(&t->cond, &t->mtx));
 		state = t->state;
-		AZ(pthread_mutex_unlock(&t->mtx));
+		PTOK(pthread_mutex_unlock(&t->mtx));
 
 		if (vtc_stop)
 			break;
@@ -406,15 +406,15 @@ tunnel_poll_thread(void *priv)
 		tunnel_read(t, vl, &pfd[0], t->send_lane);
 		tunnel_read(t, vl, &pfd[1], t->recv_lane);
 
-		AZ(pthread_mutex_lock(&t->mtx));
+		PTOK(pthread_mutex_lock(&t->mtx));
 		if (t->state == TUNNEL_PAUSED && t->send_lane->wrk_len == 0 &&
 		    t->recv_lane->wrk_len == 0) {
 			AZ(t->send_lane->buf_len);
 			AZ(t->recv_lane->buf_len);
-			AZ(pthread_cond_signal(&t->cond));
-			AZ(pthread_cond_wait(&t->cond, &t->mtx));
+			PTOK(pthread_cond_signal(&t->cond));
+			PTOK(pthread_cond_wait(&t->cond, &t->mtx));
 		}
-		AZ(pthread_mutex_unlock(&t->mtx));
+		PTOK(pthread_mutex_unlock(&t->mtx));
 
 		if (vtc_stop)
 			break;
@@ -423,12 +423,12 @@ tunnel_poll_thread(void *priv)
 		tunnel_write(t, vl, t->recv_lane, "Receiving");
 	}
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	if (t->state != TUNNEL_SPEC_DONE && !vtc_stop) {
-		AZ(pthread_cond_signal(&t->cond));
-		AZ(pthread_cond_wait(&t->cond, &t->mtx));
+		PTOK(pthread_cond_signal(&t->cond));
+		PTOK(pthread_cond_wait(&t->cond, &t->mtx));
 	}
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 
 	pthread_cleanup_pop(0);
 	vtc_logclose(vl);
@@ -472,7 +472,7 @@ tunnel_accept(struct tunnel *t, struct vtclog *vl)
 	VTCP_blocking(afd);
 	VTCP_blocking(cfd);
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	t->asock = afd;
 	t->csock = cfd;
 	t->send_lane->buf_len = 0;
@@ -484,8 +484,8 @@ tunnel_accept(struct tunnel *t, struct vtclog *vl)
 		t->start_paused = 0;
 	} else
 		t->state = TUNNEL_RUNNING;
-	AZ(pthread_cond_signal(&t->cond));
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_cond_signal(&t->cond));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 }
 
 static void *
@@ -505,17 +505,17 @@ tunnel_spec_thread(void *priv)
 	tunnel_accept(t, vl);
 	parse_string(vl, t, t->spec);
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	state = t->state;
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 
 	if (state == TUNNEL_PAUSED && !vtc_stop)
 		parse_string(vl, t, "resume");
 
-	AZ(pthread_mutex_lock(&t->mtx));
+	PTOK(pthread_mutex_lock(&t->mtx));
 	t->state = TUNNEL_SPEC_DONE;
-	AZ(pthread_cond_signal(&t->cond));
-	AZ(pthread_mutex_unlock(&t->mtx));
+	PTOK(pthread_cond_signal(&t->cond));
+	PTOK(pthread_mutex_unlock(&t->mtx));
 
 	vtc_log(vl, 2, "Ending");
 	pthread_cleanup_pop(0);
@@ -548,11 +548,11 @@ tunnel_new(const char *name)
 	t->send_lane->wfd = &t->csock;
 	t->recv_lane->rfd = &t->csock;
 	t->recv_lane->wfd = &t->asock;
-	AZ(pthread_mutex_init(&t->mtx, NULL));
-	AZ(pthread_cond_init(&t->cond, NULL));
-	AZ(pthread_mutex_lock(&tunnel_mtx));
+	PTOK(pthread_mutex_init(&t->mtx, NULL));
+	PTOK(pthread_cond_init(&t->cond, NULL));
+	PTOK(pthread_mutex_lock(&tunnel_mtx));
 	VTAILQ_INSERT_TAIL(&tunnels, t, list);
-	AZ(pthread_mutex_unlock(&tunnel_mtx));
+	PTOK(pthread_mutex_unlock(&tunnel_mtx));
 	return (t);
 }
 
@@ -627,8 +627,8 @@ tunnel_start(struct tunnel *t)
 	t->send_lane->wrk_len = 0;
 	t->recv_lane->buf_len = 0;
 	t->recv_lane->wrk_len = 0;
-	AZ(pthread_create(&t->tpoll, NULL, tunnel_poll_thread, t));
-	AZ(pthread_create(&t->tspec, NULL, tunnel_spec_thread, t));
+	PTOK(pthread_create(&t->tpoll, NULL, tunnel_poll_thread, t));
+	PTOK(pthread_create(&t->tspec, NULL, tunnel_spec_thread, t));
 }
 
 static void
@@ -652,13 +652,13 @@ tunnel_wait(struct tunnel *t)
 	CHECK_OBJ_NOTNULL(t, TUNNEL_MAGIC);
 	vtc_log(t->vl, 2, "Waiting for tunnel");
 
-	AZ(pthread_cond_signal(&t->cond));
+	PTOK(pthread_cond_signal(&t->cond));
 
-	AZ(pthread_join(t->tspec, &res));
+	PTOK(pthread_join(t->tspec, &res));
 	if (res != NULL && !vtc_stop)
 		vtc_fatal(t->vl, "Tunnel spec returned \"%p\"", res);
 
-	AZ(pthread_join(t->tpoll, &res));
+	PTOK(pthread_join(t->tpoll, &res));
 	if (res != NULL && !vtc_stop)
 		vtc_fatal(t->vl, "Tunnel poll returned \"%p\"", res);
 
@@ -681,12 +681,12 @@ tunnel_reset(void)
 	struct tunnel *t;
 
 	while (1) {
-		AZ(pthread_mutex_lock(&tunnel_mtx));
+		PTOK(pthread_mutex_lock(&tunnel_mtx));
 		t = VTAILQ_FIRST(&tunnels);
 		CHECK_OBJ_ORNULL(t, TUNNEL_MAGIC);
 		if (t != NULL)
 			VTAILQ_REMOVE(&tunnels, t, list);
-		AZ(pthread_mutex_unlock(&tunnel_mtx));
+		PTOK(pthread_mutex_unlock(&tunnel_mtx));
 		if (t == NULL)
 			break;
 
@@ -718,11 +718,11 @@ cmd_tunnel(CMD_ARGS)
 
 	VTC_CHECK_NAME(vl, av[0], "Tunnel", 't');
 
-	AZ(pthread_mutex_lock(&tunnel_mtx));
+	PTOK(pthread_mutex_lock(&tunnel_mtx));
 	VTAILQ_FOREACH(t, &tunnels, list)
 		if (!strcmp(t->name, av[0]))
 			break;
-	AZ(pthread_mutex_unlock(&tunnel_mtx));
+	PTOK(pthread_mutex_unlock(&tunnel_mtx));
 	if (t == NULL)
 		t = tunnel_new(av[0]);
 	CHECK_OBJ_NOTNULL(t, TUNNEL_MAGIC);
@@ -771,5 +771,5 @@ void
 init_tunnel(void)
 {
 
-	AZ(pthread_mutex_init(&tunnel_mtx, NULL));
+	PTOK(pthread_mutex_init(&tunnel_mtx, NULL));
 }

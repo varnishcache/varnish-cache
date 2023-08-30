@@ -133,9 +133,18 @@ def varproto(s):
         fh.write(s + ";\n")
         varprotos[s] = True
 
+def var_is_wildcard(sym):
+    return sym[-2:] == '.*'
+
+def var_symbol_name(sym):
+    if var_is_wildcard(sym):
+        return sym[:-2]
+    return sym
+
 class vardef(object):
-    def __init__(self, nam, typ, rd, wr, wu, al, vlo, vhi):
-        self.nam = nam
+    def __init__(self, sym, typ, rd, wr, wu, al, vlo, vhi):
+        self.sym = sym
+        self.nam = var_symbol_name(sym)
         self.typ = typ
         self.rd = rd
         self.wr = wr
@@ -157,7 +166,7 @@ class vardef(object):
 
         # fo.write("\t{ \"%s\", %s,\n" % (nm, self.typ))
         fo.write("\tsym = VCC_MkSym(tl, \"%s\", SYM_MAIN," % self.nam)
-        if self.typ == "HEADER":
+        if var_is_wildcard(self.sym):
             fo.write(" SYM_NONE, %d, %d);\n" % (self.vlo, self.vhi))
             fo.write("\tAN(sym);\n")
             fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
@@ -165,20 +174,23 @@ class vardef(object):
             fo.write(" SYM_VAR, %d, %d);\n" % (self.vlo, self.vhi))
         fo.write("\tAN(sym);\n")
         fo.write("\tsym->type = %s;\n" % self.typ)
-        fo.write("\tsym->eval = vcc_Eval_Var;\n")
+        if self.typ == "HEADER" and not var_is_wildcard(self.sym):
+            fo.write("\tsym->eval = vcc_Eval_ProtectedHeader;\n")
+        else:
+            fo.write("\tsym->eval = vcc_Eval_Var;\n")
 
-        if self.typ == "HEADER":
+        if var_is_wildcard(self.sym):
             fo.write('\tsym->rname = "HDR_')
             fo.write(self.nam.split(".")[0].upper())
             fo.write('";\n')
-        elif self.rd:
+        elif self.rd and self.typ != "HEADER":
             fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
             varproto("VCL_" + self.typ + " VRT_r_%s(VRT_CTX)" % cnam)
         fo.write("\tsym->r_methods =\n")
         restrict(fo, self.rd)
         fo.write(";\n")
 
-        if self.typ == "HEADER":
+        if var_is_wildcard(self.sym):
             fo.write('\tsym->lname = "HDR_')
             fo.write(self.nam.split(".")[0].upper())
             fo.write('";\n')
@@ -225,8 +237,6 @@ def parse_var(ln):
     l1 = ln.pop(0).split("``")
     assert len(l1) in (1, 3)
     vn = l1[0].strip()
-    if vn[-2:] == '.*':
-        vn = vn[:-2]
     if len(l1) == 3:
         vlo, vhi = parse_vcl(l1[1])
     else:

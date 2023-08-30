@@ -60,7 +60,7 @@ vtc_log_set_cmd(struct vtclog *vl, const struct cmds *cmds)
 #define GET_VL(vl)					\
 	do {						\
 		CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);	\
-		AZ(pthread_mutex_lock(&vl->mtx));	\
+		PTOK(pthread_mutex_lock(&vl->mtx));	\
 		vl->act = 1;				\
 		VSB_clear(vl->vsb);			\
 	} while(0)
@@ -71,7 +71,7 @@ vtc_log_set_cmd(struct vtclog *vl, const struct cmds *cmds)
 		vtc_log_emit(vl);			\
 		VSB_clear(vl->vsb);			\
 		vl->act = 0;				\
-		AZ(pthread_mutex_unlock(&vl->mtx));	\
+		PTOK(pthread_mutex_unlock(&vl->mtx));	\
 	} while(0)
 
 
@@ -90,8 +90,8 @@ vtc_logopen(const char *fmt, ...)
 	AN(vl);
 	REPLACE(vl->id, buf);
 	vl->vsb = VSB_new_auto();
-	AZ(pthread_mutex_init(&vl->mtx, NULL));
-	AZ(pthread_setspecific(log_key, vl));
+	PTOK(pthread_mutex_init(&vl->mtx, NULL));
+	PTOK(pthread_setspecific(log_key, vl));
 	return (vl);
 }
 
@@ -102,9 +102,9 @@ vtc_logclose(void *arg)
 
 	CAST_OBJ_NOTNULL(vl, arg, VTCLOG_MAGIC);
 	if (pthread_getspecific(log_key) == vl)
-		AZ(pthread_setspecific(log_key, NULL));
+		PTOK(pthread_setspecific(log_key, NULL));
 	VSB_destroy(&vl->vsb);
-	AZ(pthread_mutex_destroy(&vl->mtx));
+	PTOK(pthread_mutex_destroy(&vl->mtx));
 	REPLACE(vl->id, NULL);
 	FREE_OBJ(vl);
 }
@@ -164,7 +164,7 @@ vtc_log_emit(const struct vtclog *vl)
 	if (l == 0)
 		return;
 	t_this = (int)round((VTIM_mono() - t0) * 1000);
-	AZ(pthread_mutex_lock(&vtclog_mtx));
+	PTOK(pthread_mutex_lock(&vtclog_mtx));
 	if (t_last != t_this) {
 		assert(vtclog_left > 25);
 		i = snprintf(vtclog_buf, vtclog_left,
@@ -178,7 +178,7 @@ vtc_log_emit(const struct vtclog *vl)
 	vtclog_buf += l;
 	*vtclog_buf = '\0';
 	vtclog_left -= l;
-	AZ(pthread_mutex_unlock(&vtclog_mtx));
+	PTOK(pthread_mutex_unlock(&vtclog_mtx));
 }
 
 void
@@ -323,6 +323,6 @@ vtc_loginit(char *buf, unsigned buflen)
 	t0 = VTIM_mono();
 	vtclog_buf = buf;
 	vtclog_left = buflen;
-	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
-	AZ(pthread_key_create(&log_key, NULL));
+	PTOK(pthread_mutex_init(&vtclog_mtx, NULL));
+	PTOK(pthread_key_create(&log_key, NULL));
 }

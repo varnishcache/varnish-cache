@@ -40,7 +40,6 @@
 
 #include "libvcc.h"
 #include "vjsn.h"
-#include "vsb.h"
 
 #include "vcc_vmod.h"
 

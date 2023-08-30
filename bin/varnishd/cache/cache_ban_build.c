@@ -40,7 +40,6 @@
 #include "vend.h"
 #include "vtim.h"
 #include "vnum.h"
-#include "vre.h"
 
 void BAN_Build_Init(void);
 void BAN_Build_Fini(void);
@@ -246,9 +245,12 @@ BAN_AddTest(struct ban_proto *bp,
 	if (bp->err != NULL)
 		return (bp->err);
 
-	for (pv = pvars; pv->name != NULL; pv++)
-		if (!strncmp(a1, pv->name, strlen(pv->name)))
+	for (pv = pvars; pv->name != NULL; pv++) {
+		if (!(pv->flag & BANS_FLAG_HTTP) && !strcmp(a1, pv->name))
 			break;
+		if ((pv->flag & BANS_FLAG_HTTP) && !strncmp(a1, pv->name, strlen(pv->name)))
+			break;
+	}
 
 	if (pv->name == NULL)
 		return (ban_error(bp,
@@ -258,6 +260,9 @@ BAN_AddTest(struct ban_proto *bp,
 
 	VSB_putc(bp->vsb, pv->tag);
 	if (pv->flag & BANS_FLAG_HTTP) {
+		if (strlen(a1 + strlen(pv->name)) < 1)
+			return (ban_error(bp,
+			    "Missing header name: \"%s\"", pv->name));
 		assert(BANS_HAS_ARG1_SPEC(pv->tag));
 		ban_parse_http(bp, a1 + strlen(pv->name));
 	}

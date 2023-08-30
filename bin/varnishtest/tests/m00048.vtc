@@ -79,3 +79,28 @@ client c1 -repeat 2 {
 	rxresp
 	expect resp.body == "Cbagb Snpgb, Pnrfne Genafvg!"
 } -run
+
+varnish v1 -vcl {
+	import debug;
+	backend none none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub vcl_synth {
+		set resp.body = "Ponto Facto, Caesar Transit!";
+		if (req.http.Rot13) {
+			set resp.filters += "rot13 debug.pedantic";
+		}
+		return (deliver);
+	}
+}
+
+client c1 -repeat 2 {
+	txreq
+	rxresp
+	expect resp.body == "Ponto Facto, Caesar Transit!"
+	txreq -hdr "Rot13: please"
+	rxresp
+	expect resp.body == "Cbagb Snpgb, Pnrfne Genafvg!"
+} -run

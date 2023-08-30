@@ -2,22 +2,19 @@ varnishtest "Wrong calculation of last storage segment length"
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 200 OK\r\n"
-	send "Transfer-encoding: chunked\r\n"
-	send "\r\n"
+	txresp -hdr "Transfer-encoding: chunked"
 	# This is chunksize (128k) + 2 to force to chunks to be allocated
 	chunkedlen 131074
 	chunkedlen 0
 } -start
 
-varnish v1 -vcl+backend {
-	sub vcl_deliver {
-		unset resp.http.content-length;
-	}
-} -start
+varnish v1 -vcl+backend "" -start
 
 client c1 {
 	txreq -proto HTTP/1.0
 	rxresp
+	# Chunked encoding streaming HTTP/1.0 client turns
+	# into EOF body delivery.
+	expect resp.http.connection == close
 	expect resp.bodylen == 131074
 } -run

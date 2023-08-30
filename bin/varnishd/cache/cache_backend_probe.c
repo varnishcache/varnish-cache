@@ -423,7 +423,7 @@ vbp_heap_insert(struct vbp_target *vt)
 	// Lck_AssertHeld(&vbp_mtx);
 	VBH_insert(vbp_heap, vt);
 	if (VBH_root(vbp_heap) == vt)
-		AZ(pthread_cond_signal(&vbp_cond));
+		PTOK(pthread_cond_signal(&vbp_cond));
 }
 
 /*--------------------------------------------------------------------
@@ -710,8 +710,12 @@ VBP_Remove(struct backend *be)
 	be->probe = NULL;
 	vt->backend = NULL;
 	if (vt->running) {
+		// task scheduled, it calls vbp_delete()
 		vt->running = -1;
 		vt = NULL;
+	} else if (vt->heap_idx != VBH_NOIDX) {
+		// task done, not yet rescheduled
+		VBH_delete(vbp_heap, vt->heap_idx);
 	}
 	Lck_Unlock(&vbp_mtx);
 	if (vt != NULL) {
@@ -761,6 +765,6 @@ VBP_Init(void)
 	Lck_New(&vbp_mtx, lck_probe);
 	vbp_heap = VBH_new(NULL, vbp_cmp, vbp_update);
 	AN(vbp_heap);
-	AZ(pthread_cond_init(&vbp_cond, NULL));
+	PTOK(pthread_cond_init(&vbp_cond, NULL));
 	WRK_BgThread(&thr, "backend-poller", vbp_thread, NULL);
 }

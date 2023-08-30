@@ -58,7 +58,7 @@ STV_next(void)
 	static struct stevedore *stv;
 	struct stevedore *r;
 
-	AZ(pthread_mutex_lock(&stv_mtx));
+	PTOK(pthread_mutex_lock(&stv_mtx));
 	if (!STV__iter(&stv))
 		AN(STV__iter(&stv));
 	if (stv == stv_transient) {
@@ -66,7 +66,7 @@ STV_next(void)
 		AN(STV__iter(&stv));
 	}
 	r = stv;
-	AZ(pthread_mutex_unlock(&stv_mtx));
+	PTOK(pthread_mutex_unlock(&stv_mtx));
 	AN(r);
 	return (r);
 }
@@ -179,7 +179,7 @@ STV_open(void)
 	char buf[1024];
 
 	ASSERT_CLI();
-	AZ(pthread_mutex_init(&stv_mtx, &mtxattr_errorcheck));
+	PTOK(pthread_mutex_init(&stv_mtx, &mtxattr_errorcheck));
 
 	/* This string was prepared for us before the fork, and should
 	 * point to a configured stevedore. */

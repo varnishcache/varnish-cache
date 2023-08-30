@@ -58,10 +58,10 @@
 
 #include "vdef.h"
 
-#include "b64.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"
+#include "venc.h"
 #include "vsb.h"
 #include "vut.h"
 #include "vqueue.h"
@@ -361,21 +361,24 @@ format_requestline(const struct format *format)
 static int v_matchproto_(format_f)
 format_auth(const struct format *format)
 {
-	char buf[128];
+	struct vsb *vsb = VSB_new_auto();
+	AN(vsb);
 	char *q;
 
 	if (CTX.frag[F_auth].gen != CTX.gen ||
-	    VB64_decode(buf, sizeof buf, CTX.frag[F_auth].b,
-	    CTX.frag[F_auth].e)) {
+	    VENC_Decode_Base64(vsb, CTX.frag[F_auth].b, CTX.frag[F_auth].e)) {
+		VSB_destroy(&vsb);
 		if (format->string == NULL)
 			return (-1);
 		VSB_quote(CTX.vsb, format->string, -1, CTX.quote_how);
 		return (0);
 	}
-	q = strchr(buf, ':');
+	AZ(VSB_finish(vsb));
+	q = strchr(VSB_data(vsb), ':');
 	if (q != NULL)
 		*q = '\0';
-	VSB_quote(CTX.vsb, buf, -1, CTX.quote_how);
+	VSB_quote(CTX.vsb, VSB_data(vsb), -1, CTX.quote_how);
+	VSB_destroy(&vsb);
 	return (1);
 }
 
@@ -1160,7 +1163,6 @@ main(int argc, char * const *argv)
 	VTAILQ_INIT(&CTX.watch_vsl);
 	CTX.vsb = VSB_new_auto();
 	AN(CTX.vsb);
-	VB64_init();
 	CTX.quote_how = VSB_QUOTE_ESCHEX;
 	REPLACE(CTX.missing_string, "-");
 	REPLACE(CTX.missing_int, "-");

@@ -46,6 +46,7 @@
 #include "vcli_serve.h"
 #include "vct.h"
 #include "vev.h"
+#include "vte.h"
 #include "vtim.h"
 
 struct vclstate {
@@ -826,7 +827,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 	struct vclprog *vp;
 	struct vcldep *vd;
 	const struct vclstate *vs;
-	struct vsb *vsb;
+	struct vte *vte;
 
 	/* NB: Shall generate same output as vcl_cli_list() */
 
@@ -840,29 +841,31 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 		}
 		free(p);
 	} else {
-		vsb = VSB_new_auto();
-		AN(vsb);
+		vte = VTE_new(7, 80);
+		AN(vte);
 
 		VTAILQ_FOREACH(vp, &vclhead, list) {
-			VSB_printf(vsb, "%s",
+			VTE_printf(vte, "%s",
 			    vp == mgt_vcl_active ? "active" : "available");
 			vs = vp->warm ?  VCL_STATE_WARM : VCL_STATE_COLD;
-			VSB_printf(vsb, "\t%s\t%s", vp->state->name, vs->name);
-			VSB_printf(vsb, "\t%6s\t%s", "-", vp->name);
+			VTE_printf(vte, "\t%s\t%s", vp->state->name, vs->name);
+			VTE_printf(vte, "\t%6s\t%s", "-", vp->name);
 			if (mcf_is_label(vp)) {
 				vd = VTAILQ_FIRST(&vp->dfrom);
 				AN(vd);
-				VSB_printf(vsb, "\t->\t%s", vd->to->name);
+				VTE_printf(vte, "\t->\t%s", vd->to->name);
 				if (vp->nto > 0)
-					VSB_printf(vsb, " (%d return(vcl)%s)",
+					VTE_printf(vte, " (%d return(vcl)%s)",
 					    vp->nto, vp->nto > 1 ? "'s" : "");
 			} else if (vp->nto > 0) {
-				VSB_printf(vsb, "\t<-\t(%d label%s)",
+				VTE_printf(vte, "\t<-\t(%d label%s)",
 				    vp->nto, vp->nto > 1 ? "s" : "");
 			}
-			VSB_cat(vsb, "\n");
+			VTE_cat(vte, "\n");
 		}
-		VCLI_VTE(cli, &vsb, 80);
+		AZ(VTE_finish(vte));
+		AZ(VTE_format(vte, VCLI_VTE_format, cli));
+		VTE_destroy(&vte);
 	}
 }
 
@@ -1012,23 +1015,25 @@ mcf_vcl_deps(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
 	struct vcldep *vd;
-	struct vsb *vsb;
+	struct vte *vte;
 
 	(void)av;
 	(void)priv;
 
-	vsb = VSB_new_auto();
-	AN(vsb);
+	vte = VTE_new(2, 80);
+	AN(vte);
 
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (VTAILQ_EMPTY(&vp->dfrom)) {
-			VSB_printf(vsb, "%s\n", vp->name);
+			VTE_printf(vte, "%s\n", vp->name);
 			continue;
 		}
 		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom)
-			VSB_printf(vsb, "%s\t%s\n", vp->name, vd->to->name);
+			VTE_printf(vte, "%s\t%s\n", vp->name, vd->to->name);
 	}
-	VCLI_VTE(cli, &vsb, 80);
+	AZ(VTE_finish(vte));
+	AZ(VTE_format(vte, VCLI_VTE_format, cli));
+	VTE_destroy(&vte);
 }
 
 static void v_matchproto_(cli_func_t)

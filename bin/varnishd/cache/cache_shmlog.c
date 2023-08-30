@@ -212,7 +212,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 
 	err = pthread_mutex_trylock(&vsl_mtx);
 	if (err == EBUSY) {
-		AZ(pthread_mutex_lock(&vsl_mtx));
+		PTOK(pthread_mutex_lock(&vsl_mtx));
 		VSC_C_main->shm_cont++;
 	} else {
 		AZ(err);
@@ -244,7 +244,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 		    vsl_ptr - vsl_head->log;
 	}
 
-	AZ(pthread_mutex_unlock(&vsl_mtx));
+	PTOK(pthread_mutex_unlock(&vsl_mtx));
 	/* Implicit VWMB() in mutex op ensures ENDMARKER and new table
 	   values are seen before new segment number */
 	vsl_head->segment_n = vsl_segment_n;
@@ -304,7 +304,7 @@ VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list ap)
 		vslr(tag, vxid, fmt, strlen(fmt) + 1);
 	} else {
 		n = vsnprintf(buf, mlen, fmt, ap);
-		n = vmin_t(unsigned, n, mlen - 1);
+		n = vmin(n, mlen - 1);
 		buf[n++] = '\0'; /* NUL-terminated */
 		vslr(tag, vxid, buf, n);
 	}
@@ -623,25 +623,25 @@ VSL_End(struct vsl_log *vsl)
 static void v_matchproto_(vsm_lock_f)
 vsm_vsc_lock(void)
 {
-	AZ(pthread_mutex_lock(&vsc_mtx));
+	PTOK(pthread_mutex_lock(&vsc_mtx));
 }
 
 static void v_matchproto_(vsm_lock_f)
 vsm_vsc_unlock(void)
 {
-	AZ(pthread_mutex_unlock(&vsc_mtx));
+	PTOK(pthread_mutex_unlock(&vsc_mtx));
 }
 
 static void v_matchproto_(vsm_lock_f)
 vsm_vsmw_lock(void)
 {
-	AZ(pthread_mutex_lock(&vsm_mtx));
+	PTOK(pthread_mutex_lock(&vsm_mtx));
 }
 
 static void v_matchproto_(vsm_lock_f)
 vsm_vsmw_unlock(void)
 {
-	AZ(pthread_mutex_unlock(&vsm_mtx));
+	PTOK(pthread_mutex_unlock(&vsm_mtx));
 }
 
 /*--------------------------------------------------------------------*/
@@ -653,14 +653,17 @@ VSM_Init(void)
 
 	assert(UINT_MAX % VSL_SEGMENTS == VSL_SEGMENTS - 1);
 
-	AZ(pthread_mutex_init(&vsl_mtx, &mtxattr_errorcheck));
-	AZ(pthread_mutex_init(&vsc_mtx, &mtxattr_errorcheck));
-	AZ(pthread_mutex_init(&vsm_mtx, &mtxattr_errorcheck));
+	PTOK(pthread_mutex_init(&vsl_mtx, &mtxattr_errorcheck));
+	PTOK(pthread_mutex_init(&vsc_mtx, &mtxattr_errorcheck));
+	PTOK(pthread_mutex_init(&vsm_mtx, &mtxattr_errorcheck));
 
 	vsc_lock = vsm_vsc_lock;
 	vsc_unlock = vsm_vsc_unlock;
 	vsmw_lock = vsm_vsmw_lock;
 	vsmw_unlock = vsm_vsmw_unlock;
+
+	heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
+	AN(heritage.proc_vsmw);
 
 	VSC_C_main = VSC_main_New(NULL, NULL, "");
 	AN(VSC_C_main);

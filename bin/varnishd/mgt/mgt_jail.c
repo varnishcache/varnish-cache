@@ -39,6 +39,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+//lint -efile(766, sys/statvfs.h)
+#include <sys/statvfs.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -163,6 +165,19 @@ VJ_make_workdir(const char *dname)
 		ARGV_ERR("Cannot create test-file in %s (%s)\n"
 		    "Check permissions (or delete old directory)\n",
 		    dname, VAS_errtxt(errno));
+
+#ifdef ST_NOEXEC
+	struct statvfs vfs[1];
+
+	/* deliberately ignore fstatvfs errors */
+	if (! fstatvfs(i, vfs) && vfs->f_flag & ST_NOEXEC) {
+		closefd(&i);
+		AZ(unlink("_.testfile"));
+		ARGV_ERR("Working directory %s (-n argument) "
+		    "can not reside on a file system mounted noexec\n", dname);
+	}
+#endif
+
 	closefd(&i);
 	AZ(unlink("_.testfile"));
 	VJ_master(JAIL_MASTER_LOW);
@@ -205,7 +220,7 @@ VJ_unlink(const char *fname, int ignore_enoent)
 	if (unlink(fname)) {
 		if (errno != ENOENT || !ignore_enoent)
 		    fprintf(stderr, "Could not delete '%s': %s\n",
-		        fname, strerror(errno));
+			fname, strerror(errno));
 	}
 	VJ_master(JAIL_MASTER_LOW);
 }

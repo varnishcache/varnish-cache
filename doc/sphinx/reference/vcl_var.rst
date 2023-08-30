@@ -353,6 +353,27 @@ req.http.*
 	headers present in IANA registries need to be quoted, so the
 	quoted syntax is discouraged but available for interoperability.
 
+	Some headers that cannot be tampered with for proper HTTP fetch
+	or delivery are read-only.
+
+
+req.http.content-length
+
+	Type: HEADER
+
+	Readable from: client
+
+	The content-length header field is protected, see protected_headers_.
+
+
+req.http.transfer-encoding
+
+	Type: HEADER
+
+	Readable from: client
+
+	The transfer-encoding header field is protected, see protected_headers_.
+
 
 .. _req.is_hitmiss:
 
@@ -529,7 +550,7 @@ req_top.http.*
 	HTTP headers of the top-level request in a tree of ESI requests.
 	Identical to req.http. in non-ESI requests.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
 
 
 .. _req_top.method:
@@ -649,7 +670,7 @@ bereq.body
 
 	The request body.
 
-	Unset will also remove ``bereq.http.Content-Length``.
+	Unset will also remove bereq.http.content-length_.
 
 .. _bereq.connect_timeout:
 
@@ -712,7 +733,27 @@ bereq.http.*
 
 	The headers to be sent to the backend.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
+
+
+.. _bereq.http.content-length:
+
+bereq.http.content-length
+
+	Type: HEADER
+
+	Readable from: client
+
+	The content-length header field is protected, see protected_headers_.
+
+
+bereq.http.transfer-encoding
+
+	Type: HEADER
+
+	Readable from: client
+
+	The transfer-encoding header field is protected, see protected_headers_.
 
 
 .. _bereq.is_bgfetch:
@@ -1116,7 +1157,25 @@ beresp.http.*
 
 	The HTTP headers returned from the server.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
+
+
+beresp.http.content-length
+
+	Type: HEADER
+
+	Readable from: client
+
+	The content-length header field is protected, see protected_headers_.
+
+
+beresp.http.transfer-encoding
+
+	Type: HEADER
+
+	Readable from: client
+
+	The transfer-encoding header field is protected, see protected_headers_.
 
 
 .. _beresp.keep:
@@ -1365,7 +1424,7 @@ obj.http.*
 
 	The HTTP headers stored in the object.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
 
 
 .. _obj.keep:
@@ -1548,7 +1607,25 @@ resp.http.*
 
 	The HTTP headers that will be returned.
 
-	See ``req.http.*`` for general notes.
+	See req.http_ for general notes.
+
+
+resp.http.content-length
+
+	Type: HEADER
+
+	Readable from: client
+
+	The content-length header field is protected, see protected_headers_.
+
+
+resp.http.transfer-encoding
+
+	Type: HEADER
+
+	Readable from: client
+
+	The transfer-encoding header field is protected, see protected_headers_.
 
 
 .. _resp.is_streaming:

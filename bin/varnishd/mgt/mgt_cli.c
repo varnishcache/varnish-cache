@@ -448,13 +448,10 @@ static int
 telnet_accept(const struct vev *ev, int what)
 {
 	struct vsb *vsb;
-	struct sockaddr_storage addr;
-	socklen_t addrlen;
 	int i;
 
 	(void)what;
-	addrlen = sizeof addr;
-	i = accept(ev->fd, (void *)&addr, &addrlen);
+	i = accept(ev->fd, NULL, NULL);
 	if (i < 0 && errno == EBADF)
 		return (1);
 	if (i < 0)

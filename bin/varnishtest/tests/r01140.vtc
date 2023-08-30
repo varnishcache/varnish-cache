@@ -4,18 +4,18 @@ server s1 {
 	# This response should almost completely fill the storage
 	rxreq
 	expect req.url == /url1
-	txresp -bodylen 1048400
+	txresp -noserver -bodylen 1048400
 
 	# The next one should not fit in the storage, ending up in transient
 	# with zero ttl (=shortlived)
 	rxreq
 	expect req.url == /url2
-	txresp -bodylen 1024
+	txresp -noserver -bodylen 1024
 
 	# And therefore this one should be fetched next
 	rxreq
 	expect req.url == /url2
-	txresp -bodylen 1025
+	txresp -noserver -bodylen 1025
 } -start
 
 varnish v1 -arg "-p nuke_limit=0 -p shortlived=0" \

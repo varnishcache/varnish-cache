@@ -57,7 +57,6 @@
 #include "vtim.h"
 
 #include "common/heritage.h"
-#include "common/vsmw.h"
 
 static pid_t		child_pid = -1;
 
@@ -90,6 +89,7 @@ static struct vlu	*child_std_vlu;
 static struct vsb *child_panic = NULL;
 
 static void mgt_reap_child(void);
+static int kill_child(void);
 
 /*=====================================================================
  * Panic string evacuation and handling
@@ -291,15 +291,26 @@ child_poker(const struct vev *e, int what)
  * Launch the child process
  */
 
+#define mgt_launch_err(cli, status, ...) do {		\
+		MGT_Complain(C_ERR, __VA_ARGS__);	\
+		if (cli == NULL)			\
+			break;				\
+		VCLI_Out(cli, __VA_ARGS__);		\
+		VCLI_SetResult(cli, status);		\
+	} while (0)
+
 static void
 mgt_launch_child(struct cli *cli)
 {
-	pid_t pid, pidr;
+	pid_t pid;
 	unsigned u;
 	char *p;
 	struct vev *e;
 	int i, cp[2];
 	struct rlimit rl[1];
+	vtim_dur dstart;
+	int bstart;
+	vtim_mono t0;
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -390,9 +401,6 @@ mgt_launch_child(struct cli *cli)
 
 		VJ_subproc(JAIL_SUBPROC_WORKER);
 
-		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
-		AN(heritage.proc_vsmw);
-
 		/*
 		 * We pass these two params because child_main needs them
 		 * well before it has found its own param struct.
@@ -428,15 +436,23 @@ mgt_launch_child(struct cli *cli)
 	AN(child_std_vlu);
 
 	/* Wait for cache/cache_cli.c::CLI_Run() to check in */
-	if (VCLI_ReadResult(child_cli_in, &u, NULL, mgt_param.cli_timeout)) {
+	bstart = mgt_param.startup_timeout >= mgt_param.cli_timeout;
+	dstart = bstart ? mgt_param.startup_timeout : mgt_param.cli_timeout;
+	t0 = VTIM_mono();
+	if (VCLI_ReadResult(child_cli_in, &u, NULL, dstart)) {
 		assert(u == CLIS_COMMS);
-		pidr = waitpid(pid, &i, 0);
-		assert(pidr == pid);
-		do {
-			i = VLU_Fd(child_std_vlu, child_output);
-		} while (i == 0);
-		MGT_Complain(C_ERR, "Child failed on launch");
-		exit(1);		// XXX Harsh ?
+		if (VTIM_mono() - t0 < dstart)
+			mgt_launch_err(cli, u, "Child failed on launch ");
+		else
+			mgt_launch_err(cli, u, "Child failed on launch "
+			    "within %s_timeout=%.2fs%s",
+			    bstart ? "startup" : "cli", dstart,
+			    bstart ? "" : " (tip: set startup_timeout)");
+		child_pid = pid;
+		(void)kill_child();
+		mgt_reap_child();
+		child_state = CH_STOPPED;
+		return;
 	} else {
 		assert(u == CLIS_OK);
 		fprintf(stderr, "Child launched OK\n");
@@ -467,8 +483,7 @@ mgt_launch_child(struct cli *cli)
 	child_pid = pid;
 
 	if (mgt_push_vcls(cli, &u, &p)) {
-		VCLI_SetResult(cli, u);
-		MGT_Complain(C_ERR, "Child (%jd) Pushing vcls failed:\n%s",
+		mgt_launch_err(cli, u, "Child (%jd) Pushing vcls failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);
 		MCH_Stop_Child();
@@ -476,8 +491,7 @@ mgt_launch_child(struct cli *cli)
 	}
 
 	if (mgt_cli_askchild(&u, &p, "start\n")) {
-		VCLI_SetResult(cli, u);
-		MGT_Complain(C_ERR, "Child (%jd) Acceptor start failed:\n%s",
+		mgt_launch_err(cli, u, "Child (%jd) Acceptor start failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);
 		MCH_Stop_Child();
@@ -543,15 +557,18 @@ mgt_reap_child(void)
 	vsb = VSB_new_auto();
 	XXXAN(vsb);
 
+	(void)VFIL_nonblocking(child_output);
 	/* Wait for child to die */
 	for (i = 0; i < mgt_param.cli_timeout * 10; i++) {
+		(void)child_listener(NULL, VEV__RD);
 		r = waitpid(child_pid, &status, WNOHANG);
 		if (r == child_pid)
 			break;
 		(void)usleep(100000);
 	}
 	if (r == 0) {
-		VSB_printf(vsb, "Child (%jd) not dying, killing", (intmax_t)r);
+		VSB_printf(vsb, "Child (%jd) not dying (waitpid = %jd),"
+		    " killing\n", (intmax_t)child_pid, (intmax_t)r);
 
 		/* Kick it Jim... */
 		(void)kill_child();

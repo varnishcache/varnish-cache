@@ -769,7 +769,7 @@ cmd_http_gunzip(CMD_ARGS)
 
 static char* const *
 http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
-    char *body, unsigned nohost, unsigned nodate)
+    char *body, unsigned nohost, unsigned nodate, unsigned noserver, unsigned nouseragent)
 {
 	long bodylen = 0;
 	char *b, *c;
@@ -795,6 +795,10 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 				nohost = 1;
 			if (!strncasecmp(av[1], "Date:", 5))
 				nodate = 1;
+			if (!strncasecmp(av[1], "Server:", 7))
+				noserver = 1;
+			if (!strncasecmp(av[1], "User-Agent:", 11))
+				nouseragent = 1;
 			VSB_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 		} else if (!strcmp(*av, "-hdrlen")) {
@@ -859,6 +863,10 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		macro_cat(vl, hp->vsb, "date", NULL);
 		VSB_cat(hp->vsb, nl);
 	}
+	if (!noserver)
+		VSB_printf(hp->vsb, "Server: %s%s", hp->sess->name, nl);
+	if (!nouseragent)
+		VSB_printf(hp->vsb, "User-Agent: %s%s", hp->sess->name, nl);
 	if (body != NULL && !nolen)
 		VSB_printf(hp->vsb, "Content-Length: %ld%s", bodylen, nl);
 	VSB_cat(hp->vsb, nl);
@@ -898,6 +906,12 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *
  *         \-reason STRING (txresp only)
  *                 What message to put in the status line (default: "OK").
+ *
+ *         \-noserver (txresp only)
+ *                 Don't include a Server header with the id of the server.
+ *
+ *         \-nouseragent (txreq only)
+ *                 Don't include a User-Agent header with the id of the client.
  *
  *         These three switches can appear in any order but must come before the
  *         following ones.
@@ -960,6 +974,7 @@ cmd_http_txresp(CMD_ARGS)
 	const char *status = "200";
 	const char *reason = "OK";
 	char* body = NULL;
+	unsigned noserver = 0;
 
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
@@ -980,6 +995,9 @@ cmd_http_txresp(CMD_ARGS)
 			reason = av[1];
 			av++;
 			continue;
+		} else if (!strcmp(*av, "-noserver")) {
+			noserver = 1;
+			continue;
 		} else
 			break;
 	}
@@ -989,7 +1007,7 @@ cmd_http_txresp(CMD_ARGS)
 	/* send a "Content-Length: 0" header unless something else happens */
 	REPLACE(body, "");
 
-	av = http_tx_parse_args(av, vl, hp, body, 1, 0);
+	av = http_tx_parse_args(av, vl, hp, body, 1, 0, noserver, 1);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txresp spec: %s\n", *av);
 
@@ -1185,6 +1203,7 @@ cmd_http_txreq(CMD_ARGS)
 	const char *proto = "HTTP/1.1";
 	const char *up = NULL;
 	unsigned nohost;
+	unsigned nouseragent = 0;
 
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
@@ -1210,6 +1229,8 @@ cmd_http_txreq(CMD_ARGS)
 		} else if (!hp->sfd && !strcmp(*av, "-up")) {
 			up = av[1];
 			av++;
+		} else if (!strcmp(*av, "-nouseragent")) {
+			nouseragent = 1;
 		} else
 			break;
 	}
@@ -1221,7 +1242,7 @@ cmd_http_txreq(CMD_ARGS)
 				"HTTP2-Settings: %s%s", nl, nl, up, nl);
 
 	nohost = strcmp(proto, "HTTP/1.1") != 0;
-	av = http_tx_parse_args(av, vl, hp, NULL, nohost, 1);
+	av = http_tx_parse_args(av, vl, hp, NULL, nohost, 1, 1, nouseragent);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txreq spec: %s\n", *av);
 	http_write(hp, 4, "txreq");

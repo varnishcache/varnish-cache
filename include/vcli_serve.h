@@ -109,5 +109,5 @@ cli_func_t	VCLS_func_help_json;
 cli_func_t	VCLS_func_ping;
 cli_func_t	VCLS_func_ping_json;
 
-/* From libvarnish/vte.c */
-void VCLI_VTE(struct cli *cli, struct vsb **src, int width);
+/* VTE integration */
+int VCLI_VTE_format(void *priv, const char *fmt, ...) v_printflike_(2, 3);

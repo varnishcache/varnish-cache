@@ -83,8 +83,8 @@ barrier_new(const char *name, struct vtclog *vl)
 		    "Barrier %s can only be created on the top thread", name);
 	REPLACE(b->name, name);
 
-	AZ(pthread_mutex_init(&b->mtx, NULL));
-	AZ(pthread_cond_init(&b->cond, NULL));
+	PTOK(pthread_mutex_init(&b->mtx, NULL));
+	PTOK(pthread_cond_init(&b->cond, NULL));
 	b->waiters = 0;
 	b->expected = 0;
 	VTAILQ_INSERT_TAIL(&barriers, b, list);
@@ -120,10 +120,10 @@ barrier_cond(struct barrier *b, const char *av, struct vtclog *vl)
 {
 
 	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
-	AZ(pthread_mutex_lock(&b->mtx));
+	PTOK(pthread_mutex_lock(&b->mtx));
 	barrier_expect(b, av, vl);
 	b->type = BARRIER_COND;
-	AZ(pthread_mutex_unlock(&b->mtx));
+	PTOK(pthread_mutex_unlock(&b->mtx));
 }
 
 static void *
@@ -142,15 +142,15 @@ barrier_sock_thread(void *priv)
 	CAST_OBJ_NOTNULL(b, priv, BARRIER_MAGIC);
 	assert(b->type == BARRIER_SOCK);
 
-	AZ(pthread_mutex_lock(&b->mtx));
+	PTOK(pthread_mutex_lock(&b->mtx));
 
 	vl = vtc_logopen("%s", b->name);
 	pthread_cleanup_push(vtc_logclose, vl);
 
 	sock = VTCP_listen_on(default_listen_addr, NULL, b->expected, &err);
 	if (sock < 0) {
-		AZ(pthread_cond_signal(&b->cond));
-		AZ(pthread_mutex_unlock(&b->mtx));
+		PTOK(pthread_cond_signal(&b->cond));
+		PTOK(pthread_mutex_unlock(&b->mtx));
 		vtc_fatal(vl, "Barrier(%s) %s fails: %s (errno=%d)",
 		    b->name, err, strerror(errno), errno);
 	}
@@ -167,8 +167,8 @@ barrier_sock_thread(void *priv)
 	else
 		macro_def(vl, b->name, "sock", "[%s]:%s", abuf, pbuf);
 
-	AZ(pthread_cond_signal(&b->cond));
-	AZ(pthread_mutex_unlock(&b->mtx));
+	PTOK(pthread_cond_signal(&b->cond));
+	PTOK(pthread_mutex_unlock(&b->mtx));
 
 	conns = calloc(b->expected, sizeof *conns);
 	AN(conns);
@@ -249,16 +249,16 @@ barrier_sock(struct barrier *b, const char *av, struct vtclog *vl)
 {
 
 	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
-	AZ(pthread_mutex_lock(&b->mtx));
+	PTOK(pthread_mutex_lock(&b->mtx));
 	barrier_expect(b, av, vl);
 	b->type = BARRIER_SOCK;
 
 	/* NB. We can use the BARRIER_COND's pthread_cond_t to wait until the
 	 *     socket is ready for convenience.
 	 */
-	AZ(pthread_create(&b->sock_thread, NULL, barrier_sock_thread, b));
-	AZ(pthread_cond_wait(&b->cond, &b->mtx));
-	AZ(pthread_mutex_unlock(&b->mtx));
+	PTOK(pthread_create(&b->sock_thread, NULL, barrier_sock_thread, b));
+	PTOK(pthread_cond_wait(&b->cond, &b->mtx));
+	PTOK(pthread_mutex_unlock(&b->mtx));
 }
 
 static void
@@ -269,10 +269,10 @@ barrier_cyclic(struct barrier *b, struct vtclog *vl)
 
 	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
 
-	AZ(pthread_mutex_lock(&b->mtx));
+	PTOK(pthread_mutex_lock(&b->mtx));
 	t = b->type;
 	w = b->waiters;
-	AZ(pthread_mutex_unlock(&b->mtx));
+	PTOK(pthread_mutex_unlock(&b->mtx));
 
 	if (t == BARRIER_NONE)
 		vtc_fatal(vl,
@@ -282,9 +282,9 @@ barrier_cyclic(struct barrier *b, struct vtclog *vl)
 		vtc_fatal(vl,
 		    "Barrier(%s) use error: already in use", b->name);
 
-	AZ(pthread_mutex_lock(&b->mtx));
+	PTOK(pthread_mutex_lock(&b->mtx));
 	b->cyclic = 1;
-	AZ(pthread_mutex_unlock(&b->mtx));
+	PTOK(pthread_mutex_unlock(&b->mtx));
 }
 
 /**********************************************************************
@@ -300,7 +300,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
 	assert(b->type == BARRIER_COND);
 
-	AZ(pthread_mutex_lock(&b->mtx));
+	PTOK(pthread_mutex_lock(&b->mtx));
 	w = b->waiters;
 	assert(w <= b->expected);
 
@@ -310,20 +310,20 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 		b->waiters = ++w;
 
 	c = b->cond_cycle;
-	AZ(pthread_mutex_unlock(&b->mtx));
+	PTOK(pthread_mutex_unlock(&b->mtx));
 
 	if (w < 0)
 		vtc_fatal(vl,
 		    "Barrier(%s) use error: more waiters than the %u expected",
 		    b->name, b->expected);
 
-	AZ(pthread_mutex_lock(&b->mtx));
+	PTOK(pthread_mutex_lock(&b->mtx));
 	if (w == b->expected) {
 		vtc_log(vl, 4, "Barrier(%s) wake %u", b->name, b->expected);
 		b->cond_cycle++;
 		if (b->cyclic)
 			b->waiters = 0;
-		AZ(pthread_cond_broadcast(&b->cond));
+		PTOK(pthread_cond_broadcast(&b->cond));
 	} else {
 		vtc_log(vl, 4, "Barrier(%s) wait %u of %u",
 		    b->name, b->waiters, b->expected);
@@ -334,7 +334,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 		} while (!vtc_stop && !vtc_error && r == ETIMEDOUT &&
 		    c == b->cond_cycle);
 	}
-	AZ(pthread_mutex_unlock(&b->mtx));
+	PTOK(pthread_mutex_unlock(&b->mtx));
 }
 
 static void
@@ -457,13 +457,13 @@ cmd_barrier(CMD_ARGS)
 			case BARRIER_COND:
 				break;
 			case BARRIER_SOCK:
-				AZ(pthread_join(b->sock_thread, NULL));
+				PTOK(pthread_join(b->sock_thread, NULL));
 				break;
 			default:
 				WRONG("Wrong barrier type");
 			}
 			if (r == 0)
-				AZ(pthread_mutex_unlock(&b->mtx));
+				PTOK(pthread_mutex_unlock(&b->mtx));
 		}
 		return;
 	}

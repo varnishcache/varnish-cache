@@ -268,7 +268,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 		kase = LOWER;
 
 	if (b->encoding[enc][kase] == NULL) {
-		AZ(pthread_mutex_lock(&b->lock));
+		PTOK(pthread_mutex_lock(&b->lock));
 		if (b->encoding[enc][kase] == NULL) {
 			ssize_t len = func[enc].encode_l(b->blob.len);
 
@@ -296,7 +296,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 				}
 			}
 		}
-		AZ(pthread_mutex_unlock(&b->lock));
+		PTOK(pthread_mutex_unlock(&b->lock));
 	}
 	return (b->encoding[enc][kase]);
 }
@@ -324,7 +324,7 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 			}
 		}
 
-	AZ(pthread_mutex_destroy(&b->lock));
+	PTOK(pthread_mutex_destroy(&b->lock));
 	FREE_OBJ(b);
 }
 

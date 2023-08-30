@@ -193,7 +193,7 @@ sharddir_new(struct sharddir **sharddp, const char *vcl_name,
 	*sharddp = shardd;
 	shardd->name = vcl_name;
 	shardd->param = param;
-	AZ(pthread_rwlock_init(&shardd->mtx, NULL));
+	PTOK(pthread_rwlock_init(&shardd->mtx, NULL));
 }
 
 void
@@ -218,7 +218,7 @@ sharddir_delete(struct sharddir **sharddp)
 
 	TAKE_OBJ_NOTNULL(shardd, sharddp, SHARDDIR_MAGIC);
 	shardcfg_delete(shardd);
-	AZ(pthread_rwlock_destroy(&shardd->mtx));
+	PTOK(pthread_rwlock_destroy(&shardd->mtx));
 	FREE_OBJ(shardd);
 }
 
@@ -226,21 +226,21 @@ void
 sharddir_rdlock(struct sharddir *shardd)
 {
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
-	AZ(pthread_rwlock_rdlock(&shardd->mtx));
+	PTOK(pthread_rwlock_rdlock(&shardd->mtx));
 }
 
 void
 sharddir_wrlock(struct sharddir *shardd)
 {
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
-	AZ(pthread_rwlock_wrlock(&shardd->mtx));
+	PTOK(pthread_rwlock_wrlock(&shardd->mtx));
 }
 
 void
 sharddir_unlock(struct sharddir *shardd)
 {
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
-	AZ(pthread_rwlock_unlock(&shardd->mtx));
+	PTOK(pthread_rwlock_unlock(&shardd->mtx));
 }
 
 static inline void

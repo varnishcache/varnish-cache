@@ -187,7 +187,7 @@ shell {
 varnish v1 -clierr 300 "vcl.load f1 ${tmpdir}/f1"
 
 shell -exit 1 -expect {failing as requested} {
-	varnishadm -n ${tmpdir}/v1 vcl.load f1 ${tmpdir}/f1
+	varnishadm -t 10 -n ${tmpdir}/v1 vcl.load f1 ${tmpdir}/f1
 }
 
 varnish v1 -cliok "param.set vcc_feature +allow_inline_c"

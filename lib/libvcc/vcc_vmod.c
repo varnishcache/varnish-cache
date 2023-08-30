@@ -42,7 +42,6 @@
 #include "vfil.h"
 #include "vjsn.h"
 #include "vmod_abi.h"
-#include "vsb.h"
 
 #include "vcc_vmod.h"
 

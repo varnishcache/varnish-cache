@@ -32,7 +32,6 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -439,6 +438,7 @@ VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
 {
 	struct symtab *st;
 	struct symbol *sym;
+	const struct symbol *parent;
 
 	AN(tl);
 	AN(b);
@@ -451,6 +451,14 @@ VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
 	st = vcc_symtab_str(tl->syms[ns->id], b, NULL, ID);
 	AN(st);
 	sym = vcc_sym_in_tab(tl, st, kind, vlo, vhi);
+	if (sym != NULL) {
+		assert(sym->kind == SYM_VAR);
+		parent = sym->eval_priv;
+		AN(parent);
+		AN(parent->wildcard);
+		assert(sym->type == parent->type);
+		return (sym);
+	}
 	AZ(sym);
 	sym = vcc_new_symbol(tl, st, kind, vlo, vhi);
 	AN(sym);
@@ -513,11 +521,21 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_ns_t ns, vcc_kind_t kind)
 void
 VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type)
 {
+	vcc_kind_t kind;
 	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
 	AN(type);
 	AN(type->global_pfx);
+
+	kind = VCC_HandleKind(type);
+
+	if (sym->lname != NULL) {
+		AN(sym->rname);
+		assert(sym->type == type);
+		assert(sym->kind == kind);
+		return;
+	}
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -536,7 +554,7 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type)
 	VSB_destroy(&vsb);
 
 	sym->type = type;
-	sym->kind = VCC_HandleKind(sym->type);
+	sym->kind = kind;
 	if (sym->kind != SYM_NONE) {
 		AZ(VCT_invalid_name(sym->rname, NULL));
 		if (type == SUB)

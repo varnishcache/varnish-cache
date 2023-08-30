@@ -118,7 +118,7 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 	bt->name = name;
 	bt->func = func;
 	bt->priv = priv;
-	AZ(pthread_create(thr, NULL, wrk_bgthread, bt));
+	PTOK(pthread_create(thr, NULL, wrk_bgthread, bt));
 }
 
 /*--------------------------------------------------------------------*/
@@ -146,7 +146,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	memset(&ds, 0, sizeof ds);
 	w->stats = &ds;
 	THR_SetWorker(w);
-	AZ(pthread_cond_init(&w->cond, NULL));
+	PTOK(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);
 	VPI_wrk_init(w, vpi, sizeof vpi);
@@ -160,7 +160,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	VSL(SLT_WorkThread, NO_VXID, "%p end", w);
 	if (w->wpriv->vcl != NULL)
 		VCL_Rel(&w->wpriv->vcl);
-	AZ(pthread_cond_destroy(&w->cond));
+	PTOK(pthread_cond_destroy(&w->cond));
 	HSH_Cleanup(w);
 	Pool_Sumstat(w);
 }
@@ -193,7 +193,7 @@ wrk_addstat(const struct worker *wrk, const struct pool_task *tp, unsigned locke
 			Lck_Unlock(&pp->mtx);
 	}
 
-	return (tp == NULL ? 0 : 1);
+	return (tp != NULL);
 }
 
 void
@@ -291,7 +291,7 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio prio, task_func_t *func,
 	Lck_Unlock(&pp->mtx);
 	// see signaling_note at the top for explanation
 	if (retval)
-		AZ(pthread_cond_signal(&wrk2->cond));
+		PTOK(pthread_cond_signal(&wrk2->cond));
 	return (retval);
 }
 
@@ -331,7 +331,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 		wrk->task->priv = task->priv;
 		Lck_Unlock(&pp->mtx);
 		// see signaling_note at the top for explanation
-		AZ(pthread_cond_signal(&wrk->cond));
+		PTOK(pthread_cond_signal(&wrk->cond));
 		return (0);
 	}
 
@@ -343,15 +343,20 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 	} else if (!TASK_QUEUE_LIMITED(prio) ||
 	    pp->lqueue + pp->nthr < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit) {
-		pp->nqueued++;
+		pp->stats->sess_queued++;
 		pp->lqueue++;
 		VTAILQ_INSERT_TAIL(&pp->queues[prio], task, list);
-		AZ(pthread_cond_signal(&pp->herder_cond));
+		PTOK(pthread_cond_signal(&pp->herder_cond));
 	} else {
+		/* NB: This is counter-intuitive but when we drop a REQ
+		 * task, it is an HTTP/1 request and we effectively drop
+		 * the whole session. It is otherwise an h2 stream with
+		 * STR priority in which case we are dropping a request.
+		 */
 		if (prio == TASK_QUEUE_REQ)
-			pp->sdropped++;
+			pp->stats->sess_dropped++;
 		else
-			pp->rdropped++;
+			pp->stats->req_dropped++;
 		retval = -1;
 	}
 	Lck_Unlock(&pp->mtx);
@@ -533,17 +538,16 @@ pool_breed(struct pool *qp)
 	pthread_attr_t tp_attr;
 	struct pool_info *pi;
 
-	AZ(pthread_attr_init(&tp_attr));
-	AZ(pthread_attr_setdetachstate(&tp_attr, PTHREAD_CREATE_DETACHED));
+	PTOK(pthread_attr_init(&tp_attr));
+	PTOK(pthread_attr_setdetachstate(&tp_attr, PTHREAD_CREATE_DETACHED));
 
 	/* Set the stacksize for worker threads we create */
 	if (cache_param->wthread_stacksize != UINT_MAX)
-		AZ(pthread_attr_setstacksize(&tp_attr,
-		    cache_param->wthread_stacksize));
+		PTOK(pthread_attr_setstacksize(&tp_attr, cache_param->wthread_stacksize));
 
 	ALLOC_OBJ(pi, POOL_INFO_MAGIC);
 	AN(pi);
-	AZ(pthread_attr_getstacksize(&tp_attr, &pi->stacksize));
+	PTOK(pthread_attr_getstacksize(&tp_attr, &pi->stacksize));
 	pi->qp = qp;
 
 	errno = pthread_create(&tp, &tp_attr, pool_thread, pi);
@@ -567,7 +571,7 @@ pool_breed(struct pool *qp)
 			(void)sched_yield();
 	}
 
-	AZ(pthread_attr_destroy(&tp_attr));
+	PTOK(pthread_attr_destroy(&tp_attr));
 }
 
 /*--------------------------------------------------------------------
@@ -651,12 +655,6 @@ pool_herder(void *priv)
 			t_idle = VTIM_real() - cache_param->wthread_timeout;
 
 			Lck_Lock(&pp->mtx);
-			/* XXX: unsafe counters */
-			VSC_C_main->sess_queued += pp->nqueued;
-			VSC_C_main->sess_dropped += pp->sdropped;
-			VSC_C_main->req_dropped += pp->rdropped;
-			pp->nqueued = pp->sdropped = pp->rdropped = 0;
-
 			wrk = NULL;
 			pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
 			if (pt != NULL) {
@@ -671,7 +669,7 @@ pool_herder(void *priv)
 					    wrk->task, list);
 					pp->nidle--;
 					wrk->task->func = pool_kiss_of_death;
-					AZ(pthread_cond_signal(&wrk->cond));
+					PTOK(pthread_cond_signal(&wrk->cond));
 				} else {
 					delay = wrk->lastused - t_idle;
 					wrk = NULL;
