@@ -104,16 +104,16 @@
 #endif
 
 /* Local functions. */
-local z_crc_t multmodp OF((z_crc_t a, z_crc_t b));
-local z_crc_t x2nmodp OF((z_off64_t n, unsigned k));
+local z_crc_t multmodp (z_crc_t a, z_crc_t b);
+local z_crc_t x2nmodp (z_off64_t n, unsigned k);
 
 #if defined(W) && (!defined(ARMCRC32) || defined(DYNAMIC_CRC_TABLE))
-   local z_word_t byte_swap OF((z_word_t word));
+   local z_word_t byte_swap (z_word_t word);
 #endif
 
 #if defined(W) && !defined(ARMCRC32)
-    local z_crc_t crc_word OF((z_word_t data));
-    local z_word_t crc_word_big OF((z_word_t data));
+    local z_crc_t crc_word (z_word_t data);
+    local z_word_t crc_word_big (z_word_t data);
 #endif
 
 #if defined(W) && (!defined(ARMCRC32) || defined(DYNAMIC_CRC_TABLE))
@@ -123,7 +123,7 @@ local z_crc_t x2nmodp OF((z_off64_t n, unsigned k));
   instruction, if one is available. This assumes that word_t is either 32 bits
   or 64 bits.
  */
-local z_word_t byte_swap OF((z_word_t word));
+local z_word_t byte_swap (z_word_t word);
 
 local z_word_t byte_swap(
     z_word_t word
@@ -156,17 +156,17 @@ local z_word_t byte_swap(
 
 local z_crc_t FAR crc_table[256];
 local z_crc_t FAR x2n_table[32];
-local void make_crc_table OF((void));
+local void make_crc_table (void);
 #ifdef W
    local z_word_t FAR crc_big_table[256];
    local z_crc_t FAR crc_braid_table[W][256];
    local z_word_t FAR crc_braid_big_table[W][256];
-   local void braid OF((z_crc_t [][256], z_word_t [][256], int, int));
+   local void braid (z_crc_t [][256], z_word_t [][256], int, int);
 #endif
 #ifdef MAKECRCH
-   local void write_table OF((FILE *, const z_crc_t FAR *, int));
-   local void write_table32hi OF((FILE *, const z_word_t FAR *, int));
-   local void write_table64 OF((FILE *, const z_word_t FAR *, int));
+   local void write_table (FILE *, const z_crc_t FAR *, int);
+   local void write_table32hi (FILE *, const z_word_t FAR *, int);
+   local void write_table64 (FILE *, const z_word_t FAR *, int);
 #endif /* MAKECRCH */
 
 /*
@@ -179,7 +179,7 @@ local void make_crc_table OF((void));
 
 /* Definition of once functionality. */
 typedef struct once_s once_t;
-local void once OF((once_t *, void (*)(void)));
+local void once (once_t *, void (*)(void));
 
 /* Check for the availability of atomics. */
 #if defined(__STDC__) && __STDC_VERSION__ >= 201112L && \
@@ -225,7 +225,7 @@ struct once_s {
 
 /* Test and set. Alas, not atomic, but tries to minimize the period of
    vulnerability. */
-local int test_and_set OF((int volatile *));
+local int test_and_set (int volatile *);
 local int test_and_set(flag)
     int volatile *flag;
 {
@@ -728,7 +728,7 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
   least-significant byte of the word as the first byte of data, without any pre
   or post conditioning. This is used to combine the CRCs of each braid.
  */
-local z_crc_t crc_word OF((z_word_t data));
+local z_crc_t crc_word (z_word_t data);
 
 local z_crc_t crc_word(
     z_word_t data
@@ -740,7 +740,7 @@ local z_crc_t crc_word(
     return (z_crc_t)data;
 }
 
-local z_word_t crc_word_big OF((z_word_t data));
+local z_word_t crc_word_big (z_word_t data);
 
 local z_word_t crc_word_big(
     z_word_t data
