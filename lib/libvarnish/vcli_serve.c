@@ -695,7 +695,7 @@ VCLI_JSON_str(struct cli *cli, const char *s)
 
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
 	VSB_putc(cli->sb, '"');
-	VSB_quote(cli->sb, s, -1, VSB_QUOTE_JSON);
+	VSB_quote(cli->sb, s, -1, VSB_QUOTE_VJSON);
 	VSB_putc(cli->sb, '"');
 }
 

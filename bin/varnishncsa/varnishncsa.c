@@ -578,7 +578,7 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 
 	ALLOC_OBJ(w, VSL_WATCH_MAGIC);
 	AN(w);
-	if (VSL_tagflags[tag] && CTX.quote_how != VSB_QUOTE_JSON)
+	if (VSL_tagflags[tag] && CTX.quote_how != VSB_QUOTE_VJSON)
 		VUT_Error(vut, 1, "Tag %s can contain control characters",
 		    VSL_tags[tag]);
 	w->tag = tag;
@@ -972,7 +972,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		while (skip == 0 && 1 == VSL_Next(t->c)) {
 			tag = VSL_TAG(t->c->rec.ptr);
 			if (VSL_tagflags[tag] &&
-			    CTX.quote_how != VSB_QUOTE_JSON)
+			    CTX.quote_how != VSB_QUOTE_VJSON)
 				continue;
 
 			b = VSL_CDATA(t->c->rec.ptr);
@@ -1200,7 +1200,7 @@ main(int argc, char * const *argv)
 		case 'j':
 			REPLACE(CTX.missing_string, "");
 			REPLACE(CTX.missing_int, "0");
-			CTX.quote_how = VSB_QUOTE_JSON;
+			CTX.quote_how = VSB_QUOTE_VJSON;
 			break;
 		case 'w':
 			/* Write to file */

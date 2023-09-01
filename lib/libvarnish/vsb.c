@@ -533,11 +533,11 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 	int nl;
 
 	nl = how &
-	    (VSB_QUOTE_JSON|VSB_QUOTE_HEX|VSB_QUOTE_CSTR|VSB_QUOTE_UNSAFE);
+	    (VSB_QUOTE_VJSON|VSB_QUOTE_HEX|VSB_QUOTE_CSTR|VSB_QUOTE_UNSAFE);
 	AZ(nl & (nl - 1)); // Only one bit can be set
 
 	if (how & VSB_QUOTE_ESCHEX)
-		AZ(how & (VSB_QUOTE_JSON|VSB_QUOTE_HEX));
+		AZ(how & (VSB_QUOTE_VJSON|VSB_QUOTE_HEX));
 
 	if (how & VSB_QUOTE_UNSAFE)
 		how |= VSB_QUOTE_NONL;
@@ -573,7 +573,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		    *q == '"' ||
 		    *q == '\\' ||
 		    (*q == '?' && (how & VSB_QUOTE_CSTR)) ||
-		    (*q > 0x7e && !(how & VSB_QUOTE_JSON))
+		    (*q > 0x7e && !(how & VSB_QUOTE_VJSON))
 		) {
 			quote++;
 			break;
@@ -598,7 +598,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		switch (*q) {
 		case '?':
 			/* Avoid C Trigraph insanity */
-			if (how & VSB_QUOTE_CSTR && !(how & VSB_QUOTE_JSON))
+			if (how & VSB_QUOTE_CSTR && !(how & VSB_QUOTE_VJSON))
 				(void)VSB_putc(s, '\\');
 			(void)VSB_putc(s, *q);
 			break;
@@ -611,7 +611,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		case '\n':
 			if (how & VSB_QUOTE_CSTR) {
 				VSB_printf(s, "\\n\"\n%s\"", pfx);
-			} else if (how & VSB_QUOTE_JSON) {
+			} else if (how & VSB_QUOTE_VJSON) {
 				VSB_cat(s, "\\n");
 			} else if (how & VSB_QUOTE_NONL) {
 				VSB_putc(s, *q);
@@ -632,9 +632,9 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		default:
 			if (0x20 <= *q && *q <= 0x7e)
 				VSB_putc(s, *q);
-			else if (*q > 0x7e && (how & VSB_QUOTE_JSON))
+			else if (*q > 0x7e && (how & VSB_QUOTE_VJSON))
 				VSB_putc(s, *q);
-			else if (how & VSB_QUOTE_JSON)
+			else if (how & VSB_QUOTE_VJSON)
 				VSB_printf(s, "\\u%04x", *q);
 			else if (how & VSB_QUOTE_ESCHEX)
 				VSB_printf(s, "\\x%02x", *q);

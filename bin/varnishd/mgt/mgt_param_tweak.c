@@ -420,7 +420,7 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 		VSB_quote(vsb, *p, -1, 0);
 	} else if (arg == JSON_FMT) {
 		VSB_putc(vsb, '"');
-		VSB_quote(vsb, *p, -1, VSB_QUOTE_JSON);
+		VSB_quote(vsb, *p, -1, VSB_QUOTE_VJSON);
 		VSB_putc(vsb, '"');
 	} else {
 		REPLACE(*p, arg);

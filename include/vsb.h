@@ -87,7 +87,7 @@ void		 VSB_destroy(struct vsb **);
 	 * Basic "show me the string" mode
 	 * All output is a single line
 	 */
-#define VSB_QUOTE_JSON		2
+#define VSB_QUOTE_VJSON		2
 	/*
 	 * JSON-like output suitable for inclusion between "..."
 	 * Quotes <0x20 as \u%04x
@@ -120,7 +120,7 @@ void		 VSB_destroy(struct vsb **);
 #define VSB_QUOTE_ESCHEX	32
 	/*
 	 * Use \x%02x instead of \%03o
-	 * Not valid with VSB_QUOTE_JSON and VSB_QUOTE_HEX
+	 * Not valid with VSB_QUOTE_VJSON and VSB_QUOTE_HEX
 	 */
 
 void		 VSB_quote_pfx(struct vsb *, const char*, const void *,

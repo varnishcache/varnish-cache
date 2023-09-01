@@ -84,30 +84,30 @@ static struct tc tcs[] = {
 		"PFX\"\\x00\\n\"\nPFX\"~\\x7f\\xff\"",
 	},
 	/*
-	 * VSB_QUOTE_JSON puts >0x7e literally
+	 * VSB_QUOTE_VJSON puts >0x7e literally
 	 */
 	{
-		VSB_QUOTE_JSON,
+		VSB_QUOTE_VJSON,
 		4, "\xf0\x9f\x90\xb0",
 		"PFX\xf0\x9f\x90\xb0",
 	},
 	/*
-	 * VSB_QUOTE_JSON encodes <0x20 as \u00XX, which looks like
+	 * VSB_QUOTE_VJSON encodes <0x20 as \u00XX, which looks like
 	 * unicode codepoints in the JSON standard, but are just
 	 * individual bytes
 	 */
 	{
-		VSB_QUOTE_JSON,
+		VSB_QUOTE_VJSON,
 		5, "\"\x01\x02\x03\x04",
 		"PFX\\\"\\u0001\\u0002\\u0003\\u0004",
 	},
 	{
-		VSB_QUOTE_JSON,
+		VSB_QUOTE_VJSON,
 		5, "\x00\n\x7e\x7f\xff",
 		"PFX\\u0000\\n~\x7f\xff",
 	},
 	{
-		VSB_QUOTE_JSON | VSB_QUOTE_NONL,
+		VSB_QUOTE_VJSON | VSB_QUOTE_NONL,
 		5, "\x00\n\x7e\x7f\xff",
 		"PFX\\u0000\\n~\x7f\xff\n",
 	},
@@ -170,8 +170,8 @@ main(int argc, char *argv[])
 				VSB_cat(vsbo, "\n\t0");
 			if (tc->how & VSB_QUOTE_NONL)
 				VSB_cat(vsbo, "\n\tVSB_QUOTE_NONL");
-			if (tc->how & VSB_QUOTE_JSON)
-				VSB_cat(vsbo, "\n\tVSB_QUOTE_JSON");
+			if (tc->how & VSB_QUOTE_VJSON)
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_VJSON");
 			if (tc->how & VSB_QUOTE_HEX)
 				VSB_cat(vsbo, "\n\tVSB_QUOTE_HEX");
 			if (tc->how & VSB_QUOTE_CSTR)
