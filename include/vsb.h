@@ -89,9 +89,9 @@ void		 VSB_destroy(struct vsb **);
 	 */
 #define VSB_QUOTE_JSON		2
 	/*
-	 * Output suitable for inclusion between "..." in JSON
-	 * Uses JSON \u%04x quoting.
-	 * Anything above 0x7e had better be UTF-8
+	 * JSON-like output suitable for inclusion between "..."
+	 * Quotes <0x20 as \u%04x
+	 * Keeps >0x7e unquoted
 	 */
 #define VSB_QUOTE_HEX		4
 	/*
