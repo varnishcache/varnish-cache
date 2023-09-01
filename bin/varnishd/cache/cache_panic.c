@@ -726,7 +726,7 @@ pan_argv(struct vsb *vsb)
 	VSB_indent(vsb, 2);
 	for (i = 0; i < heritage.argc; i++) {
 		VSB_printf(vsb, "[%d] = ", i);
-		VSB_quote(vsb, heritage.argv[i], -1, VSB_QUOTE_CSTR);
+		AZ(VSB_quote(vsb, heritage.argv[i], -1, VSB_QUOTE_CSTR));
 		VSB_cat(vsb, ",\n");
 	}
 	VSB_indent(vsb, -2);

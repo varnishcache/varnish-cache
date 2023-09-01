@@ -82,7 +82,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	for (p = sym->name; *p != '\0'; p++) {
 		if (!vct_istchar(*p)) {
 			VSB_cat(tl->sb, "Invalid character '");
-			VSB_quote(tl->sb, p, 1, VSB_QUOTE_PLAIN);
+			AZ(VSB_quote(tl->sb, p, 1, VSB_QUOTE_PLAIN));
 			VSB_cat(tl->sb, "' in header name.\n");
 			tl->err = 1;
 			return;

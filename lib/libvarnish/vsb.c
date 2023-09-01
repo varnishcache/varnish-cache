@@ -524,13 +524,16 @@ vsb_quote_hex(struct vsb *s, const uint8_t *u, size_t len)
 	}
 }
 
-void
-VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
+int
+VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how,
+    const void **err)
 {
 	const uint8_t *p = v;
 	const uint8_t *q;
 	int quote = 0;
 	int nl;
+
+	(void)err;	// TODO
 
 	nl = how &
 	    (VSB_QUOTE_VJSON|VSB_QUOTE_HEX|VSB_QUOTE_CSTR|VSB_QUOTE_UNSAFE);
@@ -553,7 +556,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 	}
 
 	if (len == 0)
-		return;
+		return (0);
 
 	VSB_cat(s, pfx);
 
@@ -561,7 +564,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		vsb_quote_hex(s, v, len);
 		if (how & VSB_QUOTE_NONL)
 			VSB_putc(s, '\n');
-		return;
+		return (0);
 	}
 
 	if (how & VSB_QUOTE_CSTR)
@@ -587,7 +590,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			(void)VSB_putc(s, '\n');
 		if (how & VSB_QUOTE_CSTR)
 			VSB_putc(s, '"');
-		return;
+		return (0);
 	}
 
 	nl = 0;
@@ -647,12 +650,13 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		VSB_putc(s, '"');
 	if ((how & VSB_QUOTE_NONL) && !nl)
 		VSB_putc(s, '\n');
+	return (0);
 }
 
-void
+int
 VSB_quote(struct vsb *s, const void *v, int len, int how)
 {
-	VSB_quote_pfx(s, "", v, len, how);
+	return (VSB_quote_pfx(s, "", v, len, how, NULL));
 }
 
 /*

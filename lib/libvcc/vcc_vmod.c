@@ -343,13 +343,13 @@ vcc_emit_setup(struct vcc *tl, const struct vmod_import *vim)
 	VSB_printf(ifp->ini, "\t    sizeof(%s),\n", vim->func_name);
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
 	VSB_cat(ifp->ini, "\t    ");
-	VSB_quote(ifp->ini, vim->path, -1, VSB_QUOTE_CSTR);
+	AZ(VSB_quote(ifp->ini, vim->path, -1, VSB_QUOTE_CSTR));
 	VSB_cat(ifp->ini, ",\n");
 	AN(vim->file_id);
 	VSB_printf(ifp->ini, "\t    \"%s\",\n", vim->file_id);
 	if (vim->from_vext) {
 		VSB_cat(ifp->ini, "\t    ");
-		VSB_quote(ifp->ini, vim->path, -1, VSB_QUOTE_CSTR);
+		AZ(VSB_quote(ifp->ini, vim->path, -1, VSB_QUOTE_CSTR));
 		VSB_cat(ifp->ini, "\n");
 	} else {
 		VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",

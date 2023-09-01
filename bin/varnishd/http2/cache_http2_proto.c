@@ -256,16 +256,16 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 	if (p != NULL)
 		VSB_cat(vsb, p);
 	else
-		VSB_quote(vsb, b + 3, 1, VSB_QUOTE_HEX);
+		AZ(VSB_quote(vsb, b + 3, 1, VSB_QUOTE_HEX));
 
 	u = vbe32dec(b) >> 8;
 	VSB_printf(vsb, "[%u] ", u);
-	VSB_quote(vsb, b + 4, 1, VSB_QUOTE_HEX);
+	AZ(VSB_quote(vsb, b + 4, 1, VSB_QUOTE_HEX));
 	VSB_putc(vsb, ' ');
-	VSB_quote(vsb, b + 5, 4, VSB_QUOTE_HEX);
+	AZ(VSB_quote(vsb, b + 5, 4, VSB_QUOTE_HEX));
 	if (u > 0) {
 		VSB_putc(vsb, ' ');
-		VSB_quote(vsb, b + 9, len - 9, VSB_QUOTE_HEX);
+		AZ(VSB_quote(vsb, b + 9, len - 9, VSB_QUOTE_HEX));
 	}
 	AZ(VSB_finish(vsb));
 	Lck_Lock(&h2->sess->mtx);

@@ -256,7 +256,7 @@ varnishlog_thread(void *priv)
 				if (vsb == NULL)
 					vsb = VSB_new_auto();
 				VSB_clear(vsb);
-				VSB_quote(vsb, data, len, VSB_QUOTE_HEX);
+				AZ(VSB_quote(vsb, data, len, VSB_QUOTE_HEX));
 				AZ(VSB_finish(vsb));
 				/* +2 to skip "0x" */
 				vtc_log(v->vl, 4, "vsl| %10ju %-15s %c [%s]",

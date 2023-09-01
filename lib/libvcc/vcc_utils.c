@@ -102,7 +102,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 	Fh(tl, 0, "static struct vre *%s;\n", buf);
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini, "\tVPI_re_init(&%s, ",buf);
-	VSB_quote(ifp->ini, VSB_data(pattern), -1, VSB_QUOTE_CSTR);
+	AZ(VSB_quote(ifp->ini, VSB_data(pattern), -1, VSB_QUOTE_CSTR));
 	VSB_cat(ifp->ini, ");");
 	VSB_printf(ifp->fin, "\t\tVPI_re_fini(%s);", buf);
 	VSB_destroy(&pattern);

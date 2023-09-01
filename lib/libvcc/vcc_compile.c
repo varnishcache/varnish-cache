@@ -340,7 +340,7 @@ EncToken(struct vsb *sb, const struct token *t)
 {
 
 	assert(t->tok == CSTR);
-	VSB_quote(sb, t->dec, -1, VSB_QUOTE_CSTR);
+	AZ(VSB_quote(sb, t->dec, -1, VSB_QUOTE_CSTR));
 }
 
 /*--------------------------------------------------------------------
@@ -363,7 +363,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 	VSB_cat(vsb, "\nstatic const char *srcname[VGC_NSRCS] = {\n");
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		VSB_cat(vsb, "\t");
-		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
+		AZ(VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR));
 		VSB_cat(vsb, ",\n");
 	}
 	VSB_cat(vsb, "};\n");
@@ -371,9 +371,9 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 	VSB_printf(vsb, "\nstatic const char *srcbody[%u] = {\n", tl->nsources);
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		VSB_cat(vsb, "    /* ");
-		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
+		AZ(VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR));
 		VSB_cat(vsb, " */\n");
-		VSB_quote_pfx(vsb, "\t", sp->b, sp->e - sp->b, VSB_QUOTE_CSTR);
+		AZ(VSB_quote_pfx(vsb, "\t", sp->b, sp->e - sp->b, VSB_QUOTE_CSTR, NULL));
 		VSB_cat(vsb, ",\n");
 	}
 	VSB_cat(vsb, "};\n\n");

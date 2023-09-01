@@ -143,7 +143,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	}
 	VSB_clear(cli_buf);
 	for (i = 1; av[i] != NULL; i++) {
-		VSB_quote(cli_buf, av[i], strlen(av[i]), 0);
+		AZ(VSB_quote(cli_buf, av[i], strlen(av[i]), 0));
 		VSB_putc(cli_buf, ' ');
 	}
 	VSB_putc(cli_buf, '\n');

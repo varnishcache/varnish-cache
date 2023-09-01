@@ -80,28 +80,34 @@ void		 VSB_destroy(struct vsb **);
 
 /*
  * VSB_quote[_pfx] has four major modes, and two modifiers
+ *
+ * Return != 0 for error, _pfx also sets err to the first error byte
  */
 
 #define VSB_QUOTE_PLAIN		0
 	/*
 	 * Basic "show me the string" mode
 	 * All output is a single line
+	 * Never fails
 	 */
 #define VSB_QUOTE_VJSON		2
 	/*
 	 * JSON-like output suitable for inclusion between "..."
 	 * Quotes <0x20 as \u%04x
 	 * Keeps >0x7e unquoted
+	 * Never fails
 	 */
 #define VSB_QUOTE_HEX		4
 	/*
 	 * Hex dump, single line.
 	 * All zero data is compressed to "0x0...0"
+	 * Never fails
 	 */
 #define VSB_QUOTE_CSTR		8
 	/*
 	 * C lanuage source code literal string(s)
 	 * Breaks strings at \n (expecting string concatenation)
+	 * Never fails
 	 */
 #define VSB_QUOTE_UNSAFE	16
 	/*
@@ -109,23 +115,26 @@ void		 VSB_destroy(struct vsb **);
 	 * " and \ are not quoted
 	 * Splits output to new line at '\n'
 	 * Implies VSB_QUOTE_NONL
+	 * Never fails
 	 */
 
 #define VSB_QUOTE_NONL		1
 	/*
 	 * If the output does not end in \n, append \n
 	 * Can be combined with all other modes.
+	 * Never fails
 	 */
 
 #define VSB_QUOTE_ESCHEX	32
 	/*
 	 * Use \x%02x instead of \%03o
 	 * Not valid with VSB_QUOTE_VJSON and VSB_QUOTE_HEX
+	 * Never fails
 	 */
 
-void		 VSB_quote_pfx(struct vsb *, const char*, const void *,
-		     int len, int how);
-void		 VSB_quote(struct vsb *, const void *, int len, int how);
+int		 VSB_quote_pfx(struct vsb *, const char*, const void *,
+		    int len, int how, const void **);
+int		 VSB_quote(struct vsb *, const void *, int len, int how);
 void		 VSB_indent(struct vsb *, int);
 int		 VSB_tofile(const struct vsb *, int fd);
 #ifdef __cplusplus

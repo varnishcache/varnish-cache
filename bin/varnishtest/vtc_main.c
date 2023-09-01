@@ -328,8 +328,7 @@ tst_cb(const struct vev *ve, int what)
 		p = strchr(jp->bp->buf, '\0');
 		if (p > jp->bp->buf && p[-1] != '\n')
 			VSB_putc(cbvsb, '\n');
-		VSB_quote_pfx(cbvsb, "*    diag  0.0 ",
-		    VSB_data(jp->bp->diag), -1, VSB_QUOTE_NONL);
+		AZ(VSB_quote_pfx(cbvsb, "*    diag  0.0 ", VSB_data(jp->bp->diag), -1, VSB_QUOTE_NONL, NULL));
 		AZ(VSB_finish(cbvsb));
 		rel_buf(&jp->bp);
 
@@ -900,7 +899,7 @@ main(int argc, char * const *argv)
 			break;
 		case 'p':
 			VSB_cat(params_vsb, " -p ");
-			VSB_quote(params_vsb, optarg, -1, 0);
+			AZ(VSB_quote(params_vsb, optarg, -1, 0));
 			break;
 		case 'q':
 			if (vtc_verbosity > 0)

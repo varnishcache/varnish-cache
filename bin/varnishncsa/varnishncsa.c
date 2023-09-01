@@ -205,9 +205,9 @@ vsb_fcat(struct vsb *vsb, const struct fragment *f, const char *dflt)
 {
 	if (f->gen == CTX.gen) {
 		assert(f->b <= f->e);
-		VSB_quote(vsb, f->b, f->e - f->b, CTX.quote_how);
+		AZ(VSB_quote(vsb, f->b, f->e - f->b, CTX.quote_how));
 	} else if (dflt)
-		VSB_quote(vsb, dflt, -1, CTX.quote_how);
+		AZ(VSB_quote(vsb, dflt, -1, CTX.quote_how));
 	else
 		return (-1);
 	return (0);
@@ -253,7 +253,7 @@ format_fragment(const struct format *format)
 	if (format->frag->gen != CTX.gen) {
 		if (format->string == NULL)
 			return (-1);
-		VSB_quote(CTX.vsb, format->string, -1, CTX.quote_how);
+		AZ(VSB_quote(CTX.vsb, format->string, -1, CTX.quote_how));
 		return (0);
 	}
 	AZ(vsb_fcat(CTX.vsb, format->frag, NULL));
@@ -370,14 +370,14 @@ format_auth(const struct format *format)
 		VSB_destroy(&vsb);
 		if (format->string == NULL)
 			return (-1);
-		VSB_quote(CTX.vsb, format->string, -1, CTX.quote_how);
+		AZ(VSB_quote(CTX.vsb, format->string, -1, CTX.quote_how));
 		return (0);
 	}
 	AZ(VSB_finish(vsb));
 	q = strchr(VSB_data(vsb), ':');
 	if (q != NULL)
 		*q = '\0';
-	VSB_quote(CTX.vsb, VSB_data(vsb), -1, CTX.quote_how);
+	AZ(VSB_quote(CTX.vsb, VSB_data(vsb), -1, CTX.quote_how));
 	VSB_destroy(&vsb);
 	return (1);
 }

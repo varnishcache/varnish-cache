@@ -147,24 +147,24 @@ main(int argc, char *argv[])
 	AN(vsbo);
 
 	for (tc = tcs; tc->in; tc++) {
-		VSB_quote_pfx(vsb, "PFX", tc->in, tc->inlen, tc->how);
+		AZ(VSB_quote_pfx(vsb, "PFX", tc->in, tc->inlen, tc->how, NULL));
 		assert(VSB_finish(vsb) == 0);
 
 		VSB_clear(vsbo);
 		VSB_printf(vsbo, "0x%02x: ", tc->how);
-		VSB_quote(vsbo, tc->in, tc->inlen, VSB_QUOTE_HEX);
+		AZ(VSB_quote(vsbo, tc->in, tc->inlen, VSB_QUOTE_HEX));
 		VSB_cat(vsbo, " -> ");
-		VSB_quote(vsbo, VSB_data(vsb), -1, VSB_QUOTE_HEX);
+		AZ(VSB_quote(vsbo, VSB_data(vsb), -1, VSB_QUOTE_HEX));
 		VSB_cat(vsbo, " (");
-		VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_ESCHEX);
+		AZ(VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_ESCHEX));
 		VSB_cat(vsbo, ")");
 		if (strcmp(VSB_data(vsb), tc->out)) {
 			VSB_cat(vsbo, "\nShould have been:\n\t");
-			VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_HEX);
+			AZ(VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_HEX));
 			VSB_cat(vsbo, "\nThat's:\n\t");
-			VSB_quote(vsbo, VSB_data(vsb), -1, VSB_QUOTE_ESCHEX);
+			AZ(VSB_quote(vsbo, VSB_data(vsb), -1, VSB_QUOTE_ESCHEX));
 			VSB_cat(vsbo, "\nvs:\n\t");
-			VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_ESCHEX);
+			AZ(VSB_quote(vsbo, tc->out, -1, VSB_QUOTE_ESCHEX));
 			VSB_printf(vsbo, "\nFlags 0x%02x = ", tc->how);
 			if (!tc->how)
 				VSB_cat(vsbo, "\n\t0");

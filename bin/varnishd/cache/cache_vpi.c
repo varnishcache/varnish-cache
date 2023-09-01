@@ -146,7 +146,7 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 	VSB_printf(vsb, "pos = %u,\n", ref->pos);
 	if (src != NULL) {
 		VSB_cat(vsb, "src = ");
-		VSB_quote(vsb, src, w, VSB_QUOTE_CSTR);
+		AZ(VSB_quote(vsb, src, w, VSB_QUOTE_CSTR));
 		VSB_putc(vsb, '\n');
 	} else {
 		VSB_printf(vsb, "token = \"%s\"\n", ref->token);

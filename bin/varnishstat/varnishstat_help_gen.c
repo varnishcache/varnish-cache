@@ -71,7 +71,7 @@ main(void)
 		n = strchr(p, '\n');
 		if (n != NULL && n > p) {
 			VSB_putc(vsb, '\t');
-			VSB_quote(vsb, p, (int)(n - p), VSB_QUOTE_CSTR);
+			AZ(VSB_quote(vsb, p, (int)(n - p), VSB_QUOTE_CSTR));
 			VSB_cat(vsb, ",\n");
 			u++;
 		}

@@ -693,7 +693,7 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 	AN(test->str);
 	AZ(VSB_printf(test->str, "%s %s %s %s ", av[0], av[1], av[2], av[3]));
 	if (av[4])
-		VSB_quote(test->str, av[4], -1, 0);
+		AZ(VSB_quote(test->str, av[4], -1, 0));
 	AZ(VSB_finish(test->str));
 	test->skip_max = skip_max;
 	test->vxid = vxid;

@@ -559,7 +559,7 @@ VCP_Panic(struct vsb *vsb, struct conn_pool *cp)
 	if (PAN_dump_struct(vsb, cp, CONN_POOL_MAGIC, "conn_pool"))
 		return;
 	VSB_cat(vsb, "ident = ");
-	VSB_quote(vsb, cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX);
+	AZ(VSB_quote(vsb, cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX));
 	VSB_cat(vsb, ",\n");
 	vcp_panic_endpoint(vsb, cp->endpoint);
 	VSB_indent(vsb, -2);
