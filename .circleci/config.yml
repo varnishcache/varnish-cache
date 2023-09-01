@@ -404,6 +404,10 @@ workflows:
           dist: debian
           release: bullseye
       - build:
+          name: build_debian_bookworm
+          dist: debian
+          release: bookworm
+      - build:
           name: build_ubuntu_bionic
           dist: ubuntu
           release: bionic
@@ -435,6 +439,7 @@ workflows:
                 - debian:stretch
                 - debian:buster
                 - debian:bullseye
+                - debian:bookworm
                 - centos:7
                 - almalinux:8
                 - almalinux:9
