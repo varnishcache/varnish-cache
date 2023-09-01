@@ -83,6 +83,24 @@ static struct tc tcs[] = {
 		5, "\x00\n\x7e\x7f\xff",
 		"PFX\"\\x00\\n\"\nPFX\"~\\x7f\\xff\"",
 	},
+	/*
+	 * VSB_QUOTE_JSON puts >0x7e literally
+	 */
+	{
+		VSB_QUOTE_JSON,
+		4, "\xf0\x9f\x90\xb0",
+		"PFX\xf0\x9f\x90\xb0",
+	},
+	/*
+	 * VSB_QUOTE_JSON encodes <0x20 as \u00XX, which looks like
+	 * unicode codepoints in the JSON standard, but are just
+	 * individual bytes
+	 */
+	{
+		VSB_QUOTE_JSON,
+		5, "\"\x01\x02\x03\x04",
+		"PFX\\\"\\u0001\\u0002\\u0003\\u0004",
+	},
 	{
 		VSB_QUOTE_JSON,
 		5, "\x00\n\x7e\x7f\xff",
