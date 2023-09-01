@@ -419,6 +419,10 @@ workflows:
           name: build_debian_bullseye
           dist: debian
           release: bullseye
+      - build:
+          name: build_debian_bookworm
+          dist: debian
+          release: bookworm
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
       # oldest ubuntu goes 32bit
       - build:
@@ -461,6 +465,7 @@ workflows:
                 - ubuntu:jammy
                 - debian:buster
                 - debian:bullseye
+                - debian:bookworm
                 - centos:7
                 - centos:stream
                 - almalinux:8
