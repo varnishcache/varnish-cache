@@ -32,5 +32,5 @@
 
 /* mgt_acceptor.c */
 
-void MAC_Arg(const char *);
-int MAC_reopen_sockets(void);
+void VCA_Arg(const char *);
+int VCA_reopen_sockets(void);
