@@ -32,6 +32,6 @@
 
 /* cache_acceptor.c */
 
-void VCA_Init(void);
-void VCA_Start(struct cli *cli);
-void VCA_Shutdown(void);
+void ACC_Init(void);
+void ACC_Start(struct cli *cli);
+void ACC_Shutdown(void);

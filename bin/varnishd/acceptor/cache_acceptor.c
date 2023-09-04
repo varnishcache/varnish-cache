@@ -51,8 +51,8 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-static pthread_t	VCA_thread;
-static vtim_dur vca_pace = 0.0;
+static pthread_t	ACC_thread;
+static vtim_dur acc_pace = 0.0;
 static struct lock pace_mtx;
 static unsigned pool_accepting;
 static pthread_mutex_t shut_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -148,10 +148,10 @@ static const unsigned enable_tcp_nodelay = 1;
 
 /*--------------------------------------------------------------------
  * lacking a better place, we put some generic periodic updates
- * into the vca_acct() loop which we are running anyway
+ * into the acc_acct() loop which we are running anyway
  */
 static void
-vca_periodic(vtim_real t0)
+acc_periodic(vtim_real t0)
 {
 	vtim_real now;
 
@@ -168,7 +168,7 @@ vca_periodic(vtim_real t0)
  */
 
 static int
-vca_sock_opt_init(void)
+acc_sock_opt_init(void)
 {
 	struct sock_opt *so;
 	union sock_arg tmp;
@@ -225,7 +225,7 @@ vca_sock_opt_init(void)
 }
 
 static void
-vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
+acc_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 {
 	struct conn_heritage *ch;
 	struct sock_opt *so;
@@ -266,7 +266,7 @@ vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 }
 
 static void
-vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
+acc_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 {
 	struct conn_heritage *ch;
 	struct sock_opt *so;
@@ -321,40 +321,40 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
  */
 
 static void
-vca_pace_check(void)
+acc_pace_check(void)
 {
 	vtim_dur p;
 
-	if (vca_pace == 0.0)
+	if (acc_pace == 0.0)
 		return;
 	Lck_Lock(&pace_mtx);
-	p = vca_pace;
+	p = acc_pace;
 	Lck_Unlock(&pace_mtx);
 	if (p > 0.0)
 		VTIM_sleep(p);
 }
 
 static void
-vca_pace_bad(void)
+acc_pace_bad(void)
 {
 
 	Lck_Lock(&pace_mtx);
-	vca_pace += cache_param->acceptor_sleep_incr;
-	if (vca_pace > cache_param->acceptor_sleep_max)
-		vca_pace = cache_param->acceptor_sleep_max;
+	acc_pace += cache_param->acceptor_sleep_incr;
+	if (acc_pace > cache_param->acceptor_sleep_max)
+		acc_pace = cache_param->acceptor_sleep_max;
 	Lck_Unlock(&pace_mtx);
 }
 
 static void
-vca_pace_good(void)
+acc_pace_good(void)
 {
 
-	if (vca_pace == 0.0)
+	if (acc_pace == 0.0)
 		return;
 	Lck_Lock(&pace_mtx);
-	vca_pace *= cache_param->acceptor_sleep_decay;
-	if (vca_pace < cache_param->acceptor_sleep_incr)
-		vca_pace = 0.0;
+	acc_pace *= cache_param->acceptor_sleep_decay;
+	if (acc_pace < cache_param->acceptor_sleep_incr)
+		acc_pace = 0.0;
 	Lck_Unlock(&pace_mtx);
 }
 
@@ -365,7 +365,7 @@ vca_pace_good(void)
  */
 
 static void
-vca_mk_tcp(const struct wrk_accept *wa,
+acc_mk_tcp(const struct wrk_accept *wa,
     struct sess *sp, char *laddr, char *lport, char *raddr, char *rport)
 {
 	struct suckaddr *sa = NULL;
@@ -389,7 +389,7 @@ vca_mk_tcp(const struct wrk_accept *wa,
 }
 
 static void
-vca_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
+acc_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 	   char *raddr, char *rport)
 {
 	struct suckaddr *sa = NULL;
@@ -413,7 +413,7 @@ vca_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 }
 
 static void v_matchproto_(task_func_t)
-vca_make_session(struct worker *wrk, void *arg)
+acc_make_session(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
 	struct req *req;
@@ -445,9 +445,9 @@ vca_make_session(struct worker *wrk, void *arg)
 	assert((size_t)wa->acceptaddrlen <= vsa_suckaddr_len);
 
 	if (wa->acceptlsock->uds)
-		vca_mk_uds(wa, sp, laddr, lport, raddr, rport);
+		acc_mk_uds(wa, sp, laddr, lport, raddr, rport);
 	else
-		vca_mk_tcp(wa, sp, laddr, lport, raddr, rport);
+		acc_mk_tcp(wa, sp, laddr, lport, raddr, rport);
 
 	AN(wa->acceptlsock->name);
 	VSL(SLT_Begin, sp->vxid, "sess 0 %s",
@@ -456,14 +456,14 @@ vca_make_session(struct worker *wrk, void *arg)
 	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
 
-	vca_pace_good();
+	acc_pace_good();
 	wrk->stats->sess_conn++;
 
 	if (wa->acceptlsock->test_heritage) {
-		vca_sock_opt_test(wa->acceptlsock, sp);
+		acc_sock_opt_test(wa->acceptlsock, sp);
 		wa->acceptlsock->test_heritage = 0;
 	}
-	vca_sock_opt_set(wa->acceptlsock, sp);
+	acc_sock_opt_set(wa->acceptlsock, sp);
 
 	req = Req_New(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -482,7 +482,7 @@ vca_make_session(struct worker *wrk, void *arg)
  */
 
 static void v_matchproto_(task_func_t)
-vca_accept_task(struct worker *wrk, void *arg)
+acc_accept_task(struct worker *wrk, void *arg)
 {
 	struct wrk_accept wa;
 	struct poolsock *ps;
@@ -507,7 +507,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
 		wa.acceptlsock = ls;
 
-		vca_pace_check();
+		acc_pace_check();
 
 		wa.acceptaddrlen = sizeof wa.acceptaddr;
 		do {
@@ -534,20 +534,20 @@ vca_accept_task(struct worker *wrk, void *arg)
 				break;
 			case EMFILE:
 				wrk->stats->sess_fail_emfile++;
-				vca_pace_bad();
+				acc_pace_bad();
 				break;
 			case EBADF:
 				wrk->stats->sess_fail_ebadf++;
-				vca_pace_bad();
+				acc_pace_bad();
 				break;
 			case ENOBUFS:
 			case ENOMEM:
 				wrk->stats->sess_fail_enomem++;
-				vca_pace_bad();
+				acc_pace_bad();
 				break;
 			default:
 				wrk->stats->sess_fail_other++;
-				vca_pace_bad();
+				acc_pace_bad();
 				break;
 			}
 
@@ -572,7 +572,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 		wa.acceptsock = i;
 
 		if (!Pool_Task_Arg(wrk, TASK_QUEUE_REQ,
-		    vca_make_session, &wa, sizeof wa)) {
+		    acc_make_session, &wa, sizeof wa)) {
 			/*
 			 * We couldn't get another thread, so we will handle
 			 * the request in this worker thread, but first we
@@ -581,7 +581,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 			 */
 			if (!ps->pool->die) {
 				AZ(Pool_Task(wrk->pool, ps->task,
-				    TASK_QUEUE_VCA));
+				    TASK_QUEUE_ACC));
 				return;
 			}
 		}
@@ -600,7 +600,7 @@ vca_accept_task(struct worker *wrk, void *arg)
  */
 
 void
-VCA_NewPool(struct pool *pp)
+ACC_NewPool(struct pool *pp)
 {
 	struct listen_sock *ls;
 	struct poolsock *ps;
@@ -609,16 +609,16 @@ VCA_NewPool(struct pool *pp)
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
 		AN(ps);
 		ps->lsock = ls;
-		ps->task->func = vca_accept_task;
+		ps->task->func = acc_accept_task;
 		ps->task->priv = ps;
 		ps->pool = pp;
 		VTAILQ_INSERT_TAIL(&pp->poolsocks, ps, list);
-		AZ(Pool_Task(pp, ps->task, TASK_QUEUE_VCA));
+		AZ(Pool_Task(pp, ps->task, TASK_QUEUE_ACC));
 	}
 }
 
 void
-VCA_DestroyPool(struct pool *pp)
+ACC_DestroyPool(struct pool *pp)
 {
 	struct poolsock *ps;
 
@@ -631,7 +631,7 @@ VCA_DestroyPool(struct pool *pp)
 /*--------------------------------------------------------------------*/
 
 static void * v_matchproto_()
-vca_acct(void *arg)
+acc_acct(void *arg)
 {
 	struct listen_sock *ls;
 	vtim_real t0;
@@ -643,19 +643,19 @@ vca_acct(void *arg)
 	(void)arg;
 
 	t0 = VTIM_real();
-	vca_periodic(t0);
+	acc_periodic(t0);
 
 	pool_accepting = 1;
 
 	while (1) {
 		(void)sleep(1);
-		if (vca_sock_opt_init()) {
+		if (acc_sock_opt_init()) {
 			PTOK(pthread_mutex_lock(&shut_mtx));
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock == -2)
-					continue;	// VCA_Shutdown
+					continue;	// ACC_Shutdown
 				assert (ls->sock > 0);
-				vca_sock_opt_set(ls, NULL);
+				acc_sock_opt_set(ls, NULL);
 				/* If one of the options on a socket has
 				 * changed, also force a retest of whether
 				 * the values are inherited to the
@@ -670,7 +670,7 @@ vca_acct(void *arg)
 			}
 			PTOK(pthread_mutex_unlock(&shut_mtx));
 		}
-		vca_periodic(t0);
+		acc_periodic(t0);
 	}
 	NEEDLESS(return (NULL));
 }
@@ -678,11 +678,11 @@ vca_acct(void *arg)
 /*--------------------------------------------------------------------*/
 
 void
-VCA_Start(struct cli *cli)
+ACC_Start(struct cli *cli)
 {
 	struct listen_sock *ls;
 
-	(void)vca_sock_opt_init();
+	(void)acc_sock_opt_init();
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
@@ -703,14 +703,14 @@ VCA_Start(struct cli *cli)
 		    sizeof *ls->conn_heritage);
 		AN(ls->conn_heritage);
 		ls->test_heritage = 1;
-		vca_sock_opt_set(ls, NULL);
+		acc_sock_opt_set(ls, NULL);
 		if (cache_param->accept_filter && VTCP_filter_http(ls->sock))
 			VSL(SLT_Error, NO_VXID,
 			    "Kernel filtering: sock=%d, errno=%d %s",
 			    ls->sock, errno, VAS_errtxt(errno));
 	}
 
-	PTOK(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
+	PTOK(pthread_create(&ACC_thread, NULL, acc_acct, NULL));
 }
 
 /*--------------------------------------------------------------------*/
@@ -748,21 +748,21 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static struct cli_proto vca_cmds[] = {
+static struct cli_proto acc_cmds[] = {
 	{ CLICMD_DEBUG_LISTEN_ADDRESS,	"d", ccf_listen_address },
 	{ NULL }
 };
 
 void
-VCA_Init(void)
+ACC_Init(void)
 {
 
-	CLI_AddFuncs(vca_cmds);
-	Lck_New(&pace_mtx, lck_vcapace);
+	CLI_AddFuncs(acc_cmds);
+	Lck_New(&pace_mtx, lck_accpace);
 }
 
 void
-VCA_Shutdown(void)
+ACC_Shutdown(void)
 {
 	struct listen_sock *ls;
 	int i;

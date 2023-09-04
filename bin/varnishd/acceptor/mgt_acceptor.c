@@ -79,13 +79,13 @@ static VTAILQ_HEAD(,listen_arg) listen_args =
     VTAILQ_HEAD_INITIALIZER(listen_args);
 
 static int
-mac_vus_bind(void *priv, const struct sockaddr_un *uds)
+acc_vus_bind(void *priv, const struct sockaddr_un *uds)
 {
 	return (VUS_bind(uds, priv));
 }
 
 static int
-mac_opensocket(struct listen_sock *ls)
+acc_opensocket(struct listen_sock *ls)
 {
 	int fail;
 	const char *err;
@@ -98,7 +98,7 @@ mac_opensocket(struct listen_sock *ls)
 	if (!ls->uds)
 		ls->sock = VTCP_bind(ls->addr, NULL);
 	else
-		ls->sock = VUS_resolver(ls->endpoint, mac_vus_bind, NULL, &err);
+		ls->sock = VUS_resolver(ls->endpoint, acc_vus_bind, NULL, &err);
 	fail = errno;
 	if (ls->sock < 0) {
 		AN(fail);
@@ -124,14 +124,14 @@ mac_opensocket(struct listen_sock *ls)
  */
 
 int
-MAC_reopen_sockets(void)
+ACC_reopen_sockets(void)
 {
 	struct listen_sock *ls;
 	int err, fail = 0;
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		VJ_master(JAIL_MASTER_PRIVPORT);
-		err = mac_opensocket(ls);
+		err = acc_opensocket(ls);
 		VJ_master(JAIL_MASTER_LOW);
 		if (err == 0)
 			continue;
@@ -162,7 +162,7 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 	ls->perms = la->perms;
 	ls->uds = VUS_is(la->endpoint);
 	VJ_master(JAIL_MASTER_PRIVPORT);
-	fail = mac_opensocket(ls);
+	fail = acc_opensocket(ls);
 	VJ_master(JAIL_MASTER_LOW);
 	if (fail) {
 		VSA_free(&ls->addr);
@@ -177,7 +177,7 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 }
 
 static int v_matchproto_(vss_resolved_f)
-mac_tcp(void *priv, const struct suckaddr *sa)
+acc_tcp(void *priv, const struct suckaddr *sa)
 {
 	struct listen_arg *la;
 	struct listen_sock *ls;
@@ -217,7 +217,7 @@ mac_tcp(void *priv, const struct suckaddr *sa)
 }
 
 static int v_matchproto_(vus_resolved_f)
-mac_uds(void *priv, const struct sockaddr_un *uds)
+acc_uds(void *priv, const struct sockaddr_un *uds)
 {
 	struct listen_arg *la;
 	struct listen_sock *ls;
@@ -240,7 +240,7 @@ mac_uds(void *priv, const struct sockaddr_un *uds)
 }
 
 void
-MAC_Arg(const char *spec)
+ACC_Arg(const char *spec)
 {
 	char **av;
 	struct listen_arg *la;
@@ -371,9 +371,9 @@ MAC_Arg(const char *spec)
 		AZ(la->perms);
 
 	if (VUS_is(la->endpoint))
-		error = VUS_resolver(av[1], mac_uds, la, &err);
+		error = VUS_resolver(av[1], acc_uds, la, &err);
 	else
-		error = VSS_resolver(av[1], "80", mac_tcp, la, &err);
+		error = VSS_resolver(av[1], "80", acc_tcp, la, &err);
 
 	if (VTAILQ_EMPTY(&la->socks) || error)
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
