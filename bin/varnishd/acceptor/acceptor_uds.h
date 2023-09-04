@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2023 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Asad Sajjad Ahmed <asadsa@varnish-software.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -30,18 +31,16 @@
  *
  */
 
-/* mgt_acceptor.c */
+struct listen_arg;
 
-struct listen_arg {
-	unsigned			magic;
-#define LISTEN_ARG_MAGIC		0xbb2fc333
-	VTAILQ_ENTRY(listen_arg)	list;
-	const char			*endpoint;
-	const char			*name;
-	VTAILQ_HEAD(,listen_sock)	socks;
-	const struct transport		*transport;
-	const struct uds_perms		*perms;
+struct uds_perms {
+	unsigned	magic;
+#define UDS_PERMS_MAGIC 0x84fb5635
+	mode_t		mode;
+	uid_t		uid;
+	gid_t		gid;
 };
 
-void ACC_Arg(const char *);
-int ACC_reopen_sockets(void);
+int acc_uds_config(void);
+int acc_uds_open(char **, struct listen_arg *, const char **);
+int acc_uds_reopen(void);
