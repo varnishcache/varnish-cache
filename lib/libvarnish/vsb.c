@@ -626,9 +626,6 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		case '\t':
 			VSB_cat(s, "\\t");
 			break;
-		case '\v':
-			VSB_cat(s, "\\v");
-			break;
 		default:
 			if (0x20 <= *q && *q <= 0x7e)
 				VSB_putc(s, *q);
