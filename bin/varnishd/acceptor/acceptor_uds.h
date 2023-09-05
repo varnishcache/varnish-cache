@@ -44,3 +44,10 @@ struct uds_perms {
 int acc_uds_config(void);
 int acc_uds_open(char **, struct listen_arg *, const char **);
 int acc_uds_reopen(void);
+
+void acc_uds_init(void);
+void acc_uds_start(struct cli *cli);
+void acc_uds_event(struct cli *cli, enum acc_event event);
+void acc_uds_accept(struct pool *pp);
+void acc_uds_update(pthread_mutex_t *shut_mtx);
+void acc_uds_shutdown(void);

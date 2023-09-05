@@ -41,6 +41,9 @@
 
 #include "cache/cache_varnishd.h"
 #include "acceptor/cache_acceptor.h"
+#include "acceptor/acceptor_priv.h"
+#include "acceptor/acceptor_tcp.h"
+#include "acceptor/acceptor_uds.h"
 
 #include "cache/cache_transport.h"
 #include "cache/cache_pool.h"
@@ -52,99 +55,10 @@
 #include "vtim.h"
 
 static pthread_t	ACC_thread;
-static vtim_dur acc_pace = 0.0;
-static struct lock pace_mtx;
-static unsigned pool_accepting;
+vtim_dur acc_pace = 0.0;
+struct lock pace_mtx;
+unsigned pool_accepting;
 static pthread_mutex_t shut_mtx = PTHREAD_MUTEX_INITIALIZER;
-
-struct wrk_accept {
-	unsigned		magic;
-#define WRK_ACCEPT_MAGIC	0x8c4b4d59
-
-	/* Accept stuff */
-	struct sockaddr_storage	acceptaddr;
-	socklen_t		acceptaddrlen;
-	int			acceptsock;
-	struct listen_sock	*acceptlsock;
-};
-
-struct poolsock {
-	unsigned			magic;
-#define POOLSOCK_MAGIC			0x1b0a2d38
-	VTAILQ_ENTRY(poolsock)		list;
-	struct listen_sock		*lsock;
-	struct pool_task		task[1];
-	struct pool			*pool;
-};
-
-/*--------------------------------------------------------------------
- * TCP options we want to control
- */
-
-union sock_arg {
-	struct linger	lg;
-	struct timeval	tv;
-	int		i;
-};
-
-static struct sock_opt {
-	int		level;
-	int		optname;
-	const char	*strname;
-	unsigned	mod;
-	socklen_t	sz;
-	union sock_arg	arg[1];
-} sock_opts[] = {
-	/* Note: Setting the mod counter to something not-zero is needed
-	 * to force the setsockopt() calls on startup */
-#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, 1, sizeof(typ) },
-
-	SOCK_OPT(SOL_SOCKET, SO_LINGER, struct linger)
-	SOCK_OPT(SOL_SOCKET, SO_KEEPALIVE, int)
-	SOCK_OPT(SOL_SOCKET, SO_SNDTIMEO, struct timeval)
-	SOCK_OPT(SOL_SOCKET, SO_RCVTIMEO, struct timeval)
-
-	SOCK_OPT(IPPROTO_TCP, TCP_NODELAY, int)
-
-#if defined(HAVE_TCP_KEEP)
-	SOCK_OPT(IPPROTO_TCP, TCP_KEEPIDLE, int)
-	SOCK_OPT(IPPROTO_TCP, TCP_KEEPCNT, int)
-	SOCK_OPT(IPPROTO_TCP, TCP_KEEPINTVL, int)
-#elif defined(HAVE_TCP_KEEPALIVE)
-	SOCK_OPT(IPPROTO_TCP, TCP_KEEPALIVE, int)
-#endif
-
-#undef SOCK_OPT
-};
-
-static const int n_sock_opts = sizeof sock_opts / sizeof sock_opts[0];
-
-struct conn_heritage {
-	unsigned	sess_set;
-	unsigned	listen_mod;
-};
-
-/*--------------------------------------------------------------------
- * We want to get out of any kind of trouble-hit TCP connections as fast
- * as absolutely possible, so we set them LINGER disabled, so that even if
- * there are outstanding write data on the socket, a close(2) will return
- * immediately.
- */
-static const struct linger disable_so_linger = {
-	.l_onoff	=	0,
-};
-
-/*
- * We turn on keepalives by default to assist in detecting clients that have
- * hung up on connections returning from waitinglists
- */
-
-static const unsigned enable_so_keepalive = 1;
-
-/* We disable Nagle's algorithm in favor of low latency setups.
- */
-
-static const unsigned enable_tcp_nodelay = 1;
 
 /*--------------------------------------------------------------------
  * lacking a better place, we put some generic periodic updates
@@ -162,165 +76,11 @@ acc_periodic(vtim_real t0)
 }
 
 /*--------------------------------------------------------------------
- * Some kernels have bugs/limitations with respect to which options are
- * inherited from the accept/listen socket, so we have to keep track of
- * which, if any, sockopts we have to set on the accepted socket.
- */
-
-static int
-acc_sock_opt_init(void)
-{
-	struct sock_opt *so;
-	union sock_arg tmp;
-	int n, chg = 0;
-	size_t sz;
-
-	memset(&tmp, 0, sizeof tmp);
-
-	for (n = 0; n < n_sock_opts; n++) {
-		so = &sock_opts[n];
-
-#define SET_VAL(nm, so, fld, val)					\
-	do {								\
-		if (!strcmp(#nm, so->strname)) {			\
-			assert(so->sz == sizeof so->arg->fld);		\
-			so->arg->fld = (val);				\
-		}							\
-	} while (0)
-
-#define NEW_VAL(nm, so, fld, val)					\
-	do {								\
-		if (!strcmp(#nm, so->strname)) {			\
-			sz = sizeof tmp.fld;				\
-			assert(so->sz == sz);				\
-			tmp.fld = (val);				\
-			if (memcmp(&so->arg->fld, &(tmp.fld), sz)) {	\
-				memcpy(&so->arg->fld, &(tmp.fld), sz);	\
-				so->mod++;				\
-				chg = 1;				\
-			}						\
-		}							\
-	} while (0)
-
-		SET_VAL(SO_LINGER, so, lg, disable_so_linger);
-		SET_VAL(SO_KEEPALIVE, so, i, enable_so_keepalive);
-		NEW_VAL(SO_SNDTIMEO, so, tv,
-		    VTIM_timeval(cache_param->idle_send_timeout));
-		NEW_VAL(SO_RCVTIMEO, so, tv,
-		    VTIM_timeval(cache_param->timeout_idle));
-		SET_VAL(TCP_NODELAY, so, i, enable_tcp_nodelay);
-#if defined(HAVE_TCP_KEEP)
-		NEW_VAL(TCP_KEEPIDLE, so, i,
-		    (int)cache_param->tcp_keepalive_time);
-		NEW_VAL(TCP_KEEPCNT, so, i,
-		    (int)cache_param->tcp_keepalive_probes);
-		NEW_VAL(TCP_KEEPINTVL, so, i,
-		    (int)cache_param->tcp_keepalive_intvl);
-#elif defined(HAVE_TCP_KEEPALIVE)
-		NEW_VAL(TCP_KEEPALIVE, so, i,
-		    (int)cache_param->tcp_keepalive_time);
-#endif
-	}
-	return (chg);
-}
-
-static void
-acc_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
-{
-	struct conn_heritage *ch;
-	struct sock_opt *so;
-	union sock_arg tmp;
-	socklen_t l;
-	int i, n;
-
-	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
-	for (n = 0; n < n_sock_opts; n++) {
-		so = &sock_opts[n];
-		ch = &ls->conn_heritage[n];
-		if (ch->sess_set) {
-			VSL(SLT_Debug, sp->vxid,
-			    "sockopt: Not testing nonhereditary %s for %s=%s",
-			    so->strname, ls->name, ls->endpoint);
-			continue;
-		}
-		if (so->level == IPPROTO_TCP && ls->uds) {
-			VSL(SLT_Debug, sp->vxid,
-			    "sockopt: Not testing incompatible %s for %s=%s",
-			    so->strname, ls->name, ls->endpoint);
-			continue;
-		}
-		memset(&tmp, 0, sizeof tmp);
-		l = so->sz;
-		i = getsockopt(sp->fd, so->level, so->optname, &tmp, &l);
-		if (i == 0 && memcmp(&tmp, so->arg, so->sz)) {
-			VSL(SLT_Debug, sp->vxid,
-			    "sockopt: Test confirmed %s non heredity for %s=%s",
-			    so->strname, ls->name, ls->endpoint);
-			ch->sess_set = 1;
-		}
-		if (i && errno != ENOPROTOOPT)
-			VTCP_Assert(i);
-	}
-}
-
-static void
-acc_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
-{
-	struct conn_heritage *ch;
-	struct sock_opt *so;
-	vxid_t vxid;
-	int n, sock;
-
-	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-
-	if (sp != NULL) {
-		CHECK_OBJ(sp, SESS_MAGIC);
-		sock = sp->fd;
-		vxid = sp->vxid;
-	} else {
-		sock = ls->sock;
-		vxid = NO_VXID;
-	}
-
-	for (n = 0; n < n_sock_opts; n++) {
-		so = &sock_opts[n];
-		ch = &ls->conn_heritage[n];
-		if (so->level == IPPROTO_TCP && ls->uds) {
-			VSL(SLT_Debug, vxid,
-			    "sockopt: Not setting incompatible %s for %s=%s",
-			    so->strname, ls->name, ls->endpoint);
-			continue;
-		}
-		if (sp == NULL && ch->listen_mod == so->mod) {
-			VSL(SLT_Debug, vxid,
-			    "sockopt: Not setting unmodified %s for %s=%s",
-			    so->strname, ls->name, ls->endpoint);
-			continue;
-		}
-		if  (sp != NULL && !ch->sess_set) {
-			VSL(SLT_Debug, sp->vxid,
-			    "sockopt: %s may be inherited for %s=%s",
-			    so->strname, ls->name, ls->endpoint);
-			continue;
-		}
-		VSL(SLT_Debug, vxid,
-		    "sockopt: Setting %s for %s=%s",
-		    so->strname, ls->name, ls->endpoint);
-		VTCP_Assert(setsockopt(sock,
-		    so->level, so->optname, so->arg, so->sz));
-		if (sp == NULL)
-			ch->listen_mod = so->mod;
-	}
-}
-
-/*--------------------------------------------------------------------
  * If accept(2)'ing fails, we pace ourselves to relive any resource
  * shortage if possible.
  */
 
-static void
+void
 acc_pace_check(void)
 {
 	vtim_dur p;
@@ -334,7 +94,7 @@ acc_pace_check(void)
 		VTIM_sleep(p);
 }
 
-static void
+void
 acc_pace_bad(void)
 {
 
@@ -345,7 +105,7 @@ acc_pace_bad(void)
 	Lck_Unlock(&pace_mtx);
 }
 
-static void
+void
 acc_pace_good(void)
 {
 
@@ -359,242 +119,6 @@ acc_pace_good(void)
 }
 
 /*--------------------------------------------------------------------
- * The pool-task for a newly accepted session
- *
- * Called from assigned worker thread
- */
-
-static void
-acc_mk_tcp(const struct wrk_accept *wa,
-    struct sess *sp, char *laddr, char *lport, char *raddr, char *rport)
-{
-	struct suckaddr *sa = NULL;
-	ssize_t sz;
-
-	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
-	AN(sa);
-	assert(sz == vsa_suckaddr_len);
-	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
-	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
-
-	VTCP_name(sa, raddr, VTCP_ADDRBUFSIZE, rport, VTCP_PORTBUFSIZE);
-	AN(SES_Set_String_Attr(sp, SA_CLIENT_IP, raddr));
-	AN(SES_Set_String_Attr(sp, SA_CLIENT_PORT, rport));
-
-
-	AN(SES_Reserve_local_addr(sp, &sa, &sz));
-	AN(VSA_getsockname(sp->fd, sa, sz));
-	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_LOCAL_ADDR];
-	VTCP_name(sa, laddr, VTCP_ADDRBUFSIZE, lport, VTCP_PORTBUFSIZE);
-}
-
-static void
-acc_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
-	   char *raddr, char *rport)
-{
-	struct suckaddr *sa = NULL;
-	ssize_t sz;
-
-	(void) wa;
-	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
-	AN(sa);
-	assert(sz == vsa_suckaddr_len);
-	AZ(SES_Set_remote_addr(sp, bogo_ip));
-	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
-	sp->sattr[SA_LOCAL_ADDR] = sp->sattr[SA_REMOTE_ADDR];
-	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_REMOTE_ADDR];
-	AN(SES_Set_String_Attr(sp, SA_CLIENT_IP, "0.0.0.0"));
-	AN(SES_Set_String_Attr(sp, SA_CLIENT_PORT, "0"));
-
-	strcpy(laddr, "0.0.0.0");
-	strcpy(raddr, "0.0.0.0");
-	strcpy(lport, "0");
-	strcpy(rport, "0");
-}
-
-static void v_matchproto_(task_func_t)
-acc_make_session(struct worker *wrk, void *arg)
-{
-	struct sess *sp;
-	struct req *req;
-	struct wrk_accept *wa;
-	char laddr[VTCP_ADDRBUFSIZE];
-	char lport[VTCP_PORTBUFSIZE];
-	char raddr[VTCP_ADDRBUFSIZE];
-	char rport[VTCP_PORTBUFSIZE];
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
-
-	VTCP_blocking(wa->acceptsock);
-
-	/* Turn accepted socket into a session */
-	AN(WS_Reservation(wrk->aws));
-	sp = SES_New(wrk->pool);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	wrk->stats->s_sess++;
-
-	sp->t_open = VTIM_real();
-	sp->t_idle = sp->t_open;
-	sp->vxid = VXID_Get(wrk, VSL_CLIENTMARKER);
-
-	sp->fd = wa->acceptsock;
-	wa->acceptsock = -1;
-	sp->listen_sock = wa->acceptlsock;
-
-	assert((size_t)wa->acceptaddrlen <= vsa_suckaddr_len);
-
-	if (wa->acceptlsock->uds)
-		acc_mk_uds(wa, sp, laddr, lport, raddr, rport);
-	else
-		acc_mk_tcp(wa, sp, laddr, lport, raddr, rport);
-
-	AN(wa->acceptlsock->name);
-	VSL(SLT_Begin, sp->vxid, "sess 0 %s",
-	    wa->acceptlsock->transport->name);
-	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
-	    raddr, rport, wa->acceptlsock->name, laddr, lport,
-	    sp->t_open, sp->fd);
-
-	acc_pace_good();
-	wrk->stats->sess_conn++;
-
-	if (wa->acceptlsock->test_heritage) {
-		acc_sock_opt_test(wa->acceptlsock, sp);
-		wa->acceptlsock->test_heritage = 0;
-	}
-	acc_sock_opt_set(wa->acceptlsock, sp);
-
-	req = Req_New(sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	req->htc->rfd = &sp->fd;
-
-	SES_SetTransport(wrk, sp, req, wa->acceptlsock->transport);
-	WS_Release(wrk->aws, 0);
-}
-
-/*--------------------------------------------------------------------
- * This function accepts on a single socket for a single thread pool.
- *
- * As long as we can stick the accepted connection to another thread
- * we do so, otherwise we put the socket back on the "BACK" pool
- * and handle the new connection ourselves.
- */
-
-static void v_matchproto_(task_func_t)
-acc_accept_task(struct worker *wrk, void *arg)
-{
-	struct wrk_accept wa;
-	struct poolsock *ps;
-	struct listen_sock *ls;
-	int i;
-	char laddr[VTCP_ADDRBUFSIZE];
-	char lport[VTCP_PORTBUFSIZE];
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(ps, arg, POOLSOCK_MAGIC);
-	ls = ps->lsock;
-	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-
-	while (!pool_accepting)
-		VTIM_sleep(.1);
-
-	/* Dont hold on to (possibly) discarded VCLs */
-	if (wrk->wpriv->vcl != NULL)
-		VCL_Rel(&wrk->wpriv->vcl);
-
-	while (!ps->pool->die) {
-		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
-		wa.acceptlsock = ls;
-
-		acc_pace_check();
-
-		wa.acceptaddrlen = sizeof wa.acceptaddr;
-		do {
-			i = accept(ls->sock, (void*)&wa.acceptaddr,
-			    &wa.acceptaddrlen);
-		} while (i < 0 && errno == EAGAIN && !ps->pool->die);
-
-		if (i < 0 && ps->pool->die)
-			break;
-
-		if (i < 0 && ls->sock == -2) {
-			/* Shut down in progress */
-			sleep(2);
-			continue;
-		}
-
-		if (i < 0) {
-			switch (errno) {
-			case ECONNABORTED:
-				wrk->stats->sess_fail_econnaborted++;
-				break;
-			case EINTR:
-				wrk->stats->sess_fail_eintr++;
-				break;
-			case EMFILE:
-				wrk->stats->sess_fail_emfile++;
-				acc_pace_bad();
-				break;
-			case EBADF:
-				wrk->stats->sess_fail_ebadf++;
-				acc_pace_bad();
-				break;
-			case ENOBUFS:
-			case ENOMEM:
-				wrk->stats->sess_fail_enomem++;
-				acc_pace_bad();
-				break;
-			default:
-				wrk->stats->sess_fail_other++;
-				acc_pace_bad();
-				break;
-			}
-
-			i = errno;
-			wrk->stats->sess_fail++;
-
-			if (wa.acceptlsock->uds) {
-				bstrcpy(laddr, "0.0.0.0");
-				bstrcpy(lport, "0");
-			} else {
-				VTCP_myname(ls->sock, laddr, VTCP_ADDRBUFSIZE,
-				    lport, VTCP_PORTBUFSIZE);
-			}
-
-			VSL(SLT_SessError, NO_VXID, "%s %s %s %d %d \"%s\"",
-			    wa.acceptlsock->name, laddr, lport,
-			    ls->sock, i, VAS_errtxt(i));
-			(void)Pool_TrySumstat(wrk);
-			continue;
-		}
-
-		wa.acceptsock = i;
-
-		if (!Pool_Task_Arg(wrk, TASK_QUEUE_REQ,
-		    acc_make_session, &wa, sizeof wa)) {
-			/*
-			 * We couldn't get another thread, so we will handle
-			 * the request in this worker thread, but first we
-			 * must reschedule the listening task so it will be
-			 * taken up by another thread again.
-			 */
-			if (!ps->pool->die) {
-				AZ(Pool_Task(wrk->pool, ps->task,
-				    TASK_QUEUE_ACC));
-				return;
-			}
-		}
-		if (!ps->pool->die && DO_DEBUG(DBG_SLOW_ACCEPTOR))
-			VTIM_sleep(2.0);
-
-	}
-
-	VSL(SLT_Debug, NO_VXID, "XXX Accept thread dies %p", ps);
-	FREE_OBJ(ps);
-}
-
-/*--------------------------------------------------------------------
  * Called when a worker and attached thread pool is created, to
  * allocate the tasks which will listen to sockets for that pool.
  */
@@ -602,19 +126,9 @@ acc_accept_task(struct worker *wrk, void *arg)
 void
 ACC_NewPool(struct pool *pp)
 {
-	struct listen_sock *ls;
-	struct poolsock *ps;
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
-		AN(ps);
-		ps->lsock = ls;
-		ps->task->func = acc_accept_task;
-		ps->task->priv = ps;
-		ps->pool = pp;
-		VTAILQ_INSERT_TAIL(&pp->poolsocks, ps, list);
-		AZ(Pool_Task(pp, ps->task, TASK_QUEUE_ACC));
-	}
+	acc_tcp_accept(pp);
+	acc_uds_accept(pp);
 }
 
 void
@@ -633,7 +147,6 @@ ACC_DestroyPool(struct pool *pp)
 static void * v_matchproto_()
 acc_acct(void *arg)
 {
-	struct listen_sock *ls;
 	vtim_real t0;
 
 	// XXX Actually a mis-nomer now because the accept happens in a pool
@@ -649,29 +162,11 @@ acc_acct(void *arg)
 
 	while (1) {
 		(void)sleep(1);
-		if (acc_sock_opt_init()) {
-			PTOK(pthread_mutex_lock(&shut_mtx));
-			VTAILQ_FOREACH(ls, &heritage.socks, list) {
-				if (ls->sock == -2)
-					continue;	// ACC_Shutdown
-				assert (ls->sock > 0);
-				acc_sock_opt_set(ls, NULL);
-				/* If one of the options on a socket has
-				 * changed, also force a retest of whether
-				 * the values are inherited to the
-				 * accepted sockets. This should then
-				 * catch any false positives from previous
-				 * tests that could happen if the set
-				 * value of an option happened to just be
-				 * the OS default for that value, and
-				 * wasn't actually inherited from the
-				 * listening socket. */
-				ls->test_heritage = 1;
-			}
-			PTOK(pthread_mutex_unlock(&shut_mtx));
-		}
+		acc_tcp_update(&shut_mtx);
+		acc_uds_update(&shut_mtx);
 		acc_periodic(t0);
 	}
+
 	NEEDLESS(return (NULL));
 }
 
@@ -680,35 +175,11 @@ acc_acct(void *arg)
 void
 ACC_Start(struct cli *cli)
 {
-	struct listen_sock *ls;
 
-	(void)acc_sock_opt_init();
+	ASSERT_CLI();
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
-		assert (ls->sock > 0);	// We know where stdin is
-		if (cache_param->tcp_fastopen &&
-		    VTCP_fastopen(ls->sock, cache_param->listen_depth))
-			VSL(SLT_Error, NO_VXID,
-			    "Kernel TCP Fast Open: sock=%d, errno=%d %s",
-			    ls->sock, errno, VAS_errtxt(errno));
-		if (listen(ls->sock, cache_param->listen_depth)) {
-			VCLI_SetResult(cli, CLIS_CANT);
-			VCLI_Out(cli, "Listen failed on socket '%s': %s",
-			    ls->endpoint, VAS_errtxt(errno));
-			return;
-		}
-		AZ(ls->conn_heritage);
-		ls->conn_heritage = calloc(n_sock_opts,
-		    sizeof *ls->conn_heritage);
-		AN(ls->conn_heritage);
-		ls->test_heritage = 1;
-		acc_sock_opt_set(ls, NULL);
-		if (cache_param->accept_filter && VTCP_filter_http(ls->sock))
-			VSL(SLT_Error, NO_VXID,
-			    "Kernel filtering: sock=%d, errno=%d %s",
-			    ls->sock, errno, VAS_errtxt(errno));
-	}
+	acc_tcp_start(cli);
+	acc_uds_start(cli);
 
 	PTOK(pthread_create(&ACC_thread, NULL, acc_acct, NULL));
 }
@@ -721,7 +192,6 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	struct listen_sock *ls;
 	char h[VTCP_ADDRBUFSIZE], p[VTCP_PORTBUFSIZE];
 
-	(void)cli;
 	(void)av;
 	(void)priv;
 
@@ -735,14 +205,12 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 		VTIM_sleep(.1);
 
 	PTOK(pthread_mutex_lock(&shut_mtx));
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (!ls->uds) {
 			VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
 			VCLI_Out(cli, "%s %s %s\n", ls->name, h, p);
 		}
 		else
 			VCLI_Out(cli, "%s %s -\n", ls->name, ls->endpoint);
-	}
 	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 
@@ -759,20 +227,17 @@ ACC_Init(void)
 
 	CLI_AddFuncs(acc_cmds);
 	Lck_New(&pace_mtx, lck_accpace);
+	acc_tcp_init();
+	acc_uds_init();
 }
 
 void
 ACC_Shutdown(void)
 {
-	struct listen_sock *ls;
-	int i;
 
 	PTOK(pthread_mutex_lock(&shut_mtx));
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		i = ls->sock;
-		ls->sock = -2;
-		(void)close(i);
-	}
+	acc_tcp_shutdown();
+	acc_uds_shutdown();
 	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 
