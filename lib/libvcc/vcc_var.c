@@ -41,7 +41,7 @@
 /*--------------------------------------------------------------------*/
 
 void
-vcc_Header_Fh(struct vcc *tl, struct symbol *sym)
+vcc_Header_Fh(const struct vcc *tl, const struct symbol *sym)
 {
 	const struct symbol *parent;
 

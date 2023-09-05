@@ -456,7 +456,7 @@ char *vcc_Dup_be(const char *b, const char *e);
 int vcc_Has_vcl_prefix(const char *b);
 
 /* vcc_var.c */
-void vcc_Header_Fh(struct vcc *, struct symbol *);
+void vcc_Header_Fh(const struct vcc *, const struct symbol *);
 sym_wildcard_t vcc_Var_Wildcard;
 
 /* vcc_vmod.c */
