@@ -1,11 +1,9 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2023 Varnish Software AS
+ * Copyright (c) 2006-2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
- * Author: Asad Sajjad Ahmed <asadsa@varnish-software.com>
- *
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -32,15 +30,38 @@
  *
  */
 
-struct listen_arg;
+struct sockaddr_storage;
+struct pool_task;
 
-int vca_tcp_config(void);
-int vca_tcp_open(char **, struct listen_arg *, const char **);
-int vca_tcp_reopen(void);
+enum vca_event {
+	VCA_EVENT_LADDR,
+};
 
-void vca_tcp_init(void);
-void vca_tcp_start(struct cli *cli);
-void vca_tcp_event(struct cli *cli, enum vca_event event);
-void vca_tcp_accept(struct pool *pp);
-void vca_tcp_update(pthread_mutex_t *shut_mtx);
-void vca_tcp_shutdown(void);
+struct wrk_accept {
+	unsigned		magic;
+#define WRK_ACCEPT_MAGIC	0x8c4b4d59
+
+	/* Accept stuff */
+	struct sockaddr_storage	acceptaddr;
+	socklen_t		acceptaddrlen;
+	int			acceptsock;
+	struct listen_sock	*acceptlsock;
+};
+
+struct poolsock {
+	unsigned			magic;
+#define POOLSOCK_MAGIC			0x1b0a2d38
+	VTAILQ_ENTRY(poolsock)		list;
+	struct listen_sock		*lsock;
+	struct pool_task		task[1];
+	struct pool			*pool;
+};
+
+struct conn_heritage {
+	unsigned	sess_set;
+	unsigned	listen_mod;
+};
+
+void vca_pace_check(void);
+void vca_pace_bad(void);
+void vca_pace_good(void);
