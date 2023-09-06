@@ -156,12 +156,10 @@ struct vcf {
 
 /* Prototypes etc ----------------------------------------------------*/
 
-/* cache_acceptor.c */
-void VCA_Init(void);
-void VCA_Start(struct cli *cli);
-void VCA_Shutdown(void);
-
 /* cache_backend.c */
+struct backend;
+
+/* cache_backend_cfg.c */
 void VBE_InitCfg(void);
 
 /* cache_ban.c */

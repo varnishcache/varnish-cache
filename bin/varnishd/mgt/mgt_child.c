@@ -47,6 +47,8 @@
 #include <sys/resource.h>
 
 #include "mgt.h"
+#include "acceptor/cache_acceptor.h"
+#include "acceptor/mgt_acceptor.h"
 
 #include "vapi/vsig.h"
 
@@ -616,7 +618,7 @@ mgt_reap_child(void)
 
 	/* XXX number of retries? interval? */
 	for (i = 0; i < 3; i++) {
-		if (MAC_reopen_sockets() == 0)
+		if (VCA_reopen_sockets() == 0)
 			break;
 		/* error already logged */
 		(void)sleep(1);

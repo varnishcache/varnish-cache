@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
+#include "acceptor/cache_acceptor.h"
 
 #include <signal.h>
 #include <stdio.h>
