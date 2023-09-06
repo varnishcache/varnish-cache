@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
+#include "acceptor/cache_acceptor.h"
 
 #include <signal.h>
 #include <stdio.h>
@@ -385,7 +386,7 @@ ccf_child_start(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-	VCA_Start(cli);
+	ACC_Start(cli);
 }
 
 static struct cli_proto child_cmds[] = {
@@ -457,7 +458,7 @@ child_main(int sigmagic, size_t altstksz)
 	HSH_Init(heritage.hash);
 	BAN_Init();
 
-	VCA_Init();
+	ACC_Init();
 
 	STV_open();
 
@@ -482,7 +483,7 @@ child_main(int sigmagic, size_t altstksz)
 	if (shutdown_delay > 0)
 		VTIM_sleep(shutdown_delay);
 
-	VCA_Shutdown();
+	ACC_Shutdown();
 	BAN_Shutdown();
 	EXP_Shutdown();
 	STV_close();

@@ -68,11 +68,6 @@ extern int		exit_status;
 
 extern const char * const builtin_vcl;
 
-/* mgt_acceptor.c */
-
-void MAC_Arg(const char *);
-int MAC_reopen_sockets(void);
-
 /* mgt_child.c */
 void MCH_Init(void);
 int MCH_Running(void);

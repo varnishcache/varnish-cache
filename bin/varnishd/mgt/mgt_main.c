@@ -46,6 +46,8 @@
 #include <sys/socket.h>
 
 #include "mgt/mgt.h"
+#include "acceptor/cache_acceptor.h"
+#include "acceptor/mgt_acceptor.h"
 #include "common/heritage.h"
 
 #include "hash/hash_slinger.h"
@@ -744,6 +746,7 @@ main(int argc, char * const *argv)
 
 	/* Various initializations */
 	VTAILQ_INIT(&heritage.socks);
+	ACC_Config();
 	mgt_evb = VEV_New();
 	AN(mgt_evb);
 
@@ -762,7 +765,7 @@ main(int argc, char * const *argv)
 	VTAILQ_FOREACH(alp, &arglist, list) {
 		switch(alp->arg[0]) {
 		case 'a':
-			MAC_Arg(alp->val);
+			ACC_Arg(alp->val);
 			break;
 		case 'f':
 			if (*alp->val != '\0')
@@ -892,7 +895,7 @@ main(int argc, char * const *argv)
 	alp->priv = create_pid_file(&pid, "%s/_.pid", workdir);
 
 	if (VTAILQ_EMPTY(&heritage.socks))
-		MAC_Arg(":80\0");	// XXX: extra NUL for FlexeLint
+		ACC_Arg(":80\0");	// XXX: extra NUL for FlexeLint
 
 	assert(!VTAILQ_EMPTY(&heritage.socks));
 

@@ -169,7 +169,7 @@ pool_mkpool(unsigned pool_no)
 		(void)usleep(10000);
 
 	SES_NewPool(pp, pool_no);
-	VCA_NewPool(pp);
+	ACC_NewPool(pp);
 
 	return (pp);
 }
@@ -219,7 +219,7 @@ pool_poolherder(void *priv)
 			if (!pp->die) {
 				VSL(SLT_Debug, NO_VXID, "XXX Kill Pool %p", pp);
 				pp->die = 1;
-				VCA_DestroyPool(pp);
+				ACC_DestroyPool(pp);
 				PTOK(pthread_cond_signal(&pp->herder_cond));
 			}
 		}

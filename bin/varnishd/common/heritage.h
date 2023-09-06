@@ -118,7 +118,7 @@ void child_main(int, size_t);
 /* cache/cache_vcl.c */
 int VCL_TestLoad(const char *);
 
-/* cache/cache_acceptor.c */
+/* acceptor/cache_acceptor.c */
 struct transport;
 void XPORT_Init(void);
 const struct transport *XPORT_Find(const char *name);

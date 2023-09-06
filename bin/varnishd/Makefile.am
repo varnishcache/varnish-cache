@@ -10,7 +10,12 @@ AM_CPPFLAGS = \
 sbin_PROGRAMS = varnishd
 
 varnishd_SOURCES = \
-	cache/cache_acceptor.c \
+	acceptor/cache_acceptor.c \
+	acceptor/cache_acceptor_tcp.c \
+	acceptor/cache_acceptor_uds.c \
+	acceptor/mgt_acceptor.c \
+	acceptor/mgt_acceptor_tcp.c \
+	acceptor/mgt_acceptor_uds.c \
 	cache/cache_backend.c \
 	cache/cache_backend_probe.c \
 	cache/cache_ban.c \
@@ -77,7 +82,6 @@ varnishd_SOURCES = \
 	http2/cache_http2_proto.c \
 	http2/cache_http2_send.c \
 	http2/cache_http2_session.c \
-	mgt/mgt_acceptor.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
 	mgt/mgt_jail.c \
@@ -131,6 +135,11 @@ nodist_varnishd_SOURCES = \
 	builtin_vcl.c
 
 noinst_HEADERS = \
+	acceptor/acceptor_priv.h \
+	acceptor/acceptor_tcp.h \
+	acceptor/acceptor_uds.h \
+	acceptor/cache_acceptor.h \
+	acceptor/mgt_acceptor.h \
 	cache/cache_ban.h \
 	cache/cache_conn_pool.h \
 	cache/cache_esi.h \
