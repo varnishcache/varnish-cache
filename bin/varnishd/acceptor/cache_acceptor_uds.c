@@ -310,8 +310,7 @@ acc_uds_event(struct cli *cli, struct listen_sock *ls, enum acc_event event)
 }
 
 static void
-acc_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
-	   char *raddr, char *rport)
+acc_mk_uds(struct wrk_accept *wa, struct sess *sp)
 {
 	struct suckaddr *sa = NULL;
 	ssize_t sz;
@@ -326,20 +325,11 @@ acc_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	AN(SES_Set_String_Attr(sp, SA_CLIENT_IP, "0.0.0.0"));
 	AN(SES_Set_String_Attr(sp, SA_CLIENT_PORT, "0"));
-
-	strcpy(laddr, "0.0.0.0");
-	strcpy(raddr, "0.0.0.0");
-	strcpy(lport, "0");
-	strcpy(rport, "0");
 }
 
 static void v_matchproto_(task_func_t)
 acc_make_session(struct worker *wrk, void *arg)
 {
-	char laddr[VTCP_ADDRBUFSIZE];
-	char lport[VTCP_PORTBUFSIZE];
-	char raddr[VTCP_ADDRBUFSIZE];
-	char rport[VTCP_PORTBUFSIZE];
 	struct wrk_accept *wa;
 	struct sess *sp;
 	struct req *req;
@@ -365,14 +355,13 @@ acc_make_session(struct worker *wrk, void *arg)
 
 	assert((size_t)wa->acceptaddrlen <= vsa_suckaddr_len);
 
-	acc_mk_uds(wa, sp, laddr, lport, raddr, rport);
+	acc_mk_uds(wa, sp);
 
 	AN(wa->acceptlsock->name);
 	VSL(SLT_Begin, sp->vxid, "sess 0 %s",
 	    wa->acceptlsock->transport->name);
-	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
-	    raddr, rport, wa->acceptlsock->name, laddr, lport,
-	    sp->t_open, sp->fd);
+	VSL(SLT_SessOpen, sp->vxid, "0.0.0.0 0 %s 0.0.0.0 0 %.6f %d",
+	    wa->acceptlsock->name, sp->t_open, sp->fd);
 
 	acc_pace_good();
 	wrk->stats->sess_conn++;
