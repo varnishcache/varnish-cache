@@ -175,6 +175,7 @@ VCA_Add(struct acceptor *vca)
 	if (VCA_Find(vca->name) != NULL)
 		ARGV_ERR("Acceptor '%s' already exist\n", vca->name);
 
+	VTAILQ_INIT(&vca->socks);
 	VTAILQ_INSERT_TAIL(&acceptors, vca, list);
 
 	if (vca->config())

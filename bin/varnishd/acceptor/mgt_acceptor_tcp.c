@@ -99,10 +99,10 @@ vca_tcp_open_cb(void *priv, const struct suckaddr *sa)
 
 	CAST_OBJ_NOTNULL(la, priv, LISTEN_ARG_MAGIC);
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &TCP_acceptor.socks, vcalist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 
-		if (!ls->uds && !VSA_Compare(sa, ls->addr))
+		if (!VSA_Compare(sa, ls->addr))
 			ARGV_ERR("-a arguments %s and %s have same address\n",
 			    ls->endpoint, la->endpoint);
 	}
@@ -156,6 +156,7 @@ vca_tcp_open_cb(void *priv, const struct suckaddr *sa)
 
 	VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
+	VTAILQ_INSERT_TAIL(&TCP_acceptor.socks, ls, vcalist);
 
 	return (0);
 }
@@ -204,11 +205,8 @@ vca_tcp_reopen(void)
 	struct listen_sock *ls;
 	int err, fail = 0;
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &TCP_acceptor.socks, vcalist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-
-		if (ls->uds)
-			continue;
 
 		VJ_master(JAIL_MASTER_PRIVPORT);
 		err = vca_tcp_opensocket(ls);

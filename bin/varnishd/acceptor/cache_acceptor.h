@@ -59,6 +59,7 @@ struct acceptor {
 	unsigned			magic;
 #define ACCEPTOR_MAGIC			0x0611847c
 	VTAILQ_ENTRY(acceptor)		list;
+	VTAILQ_HEAD(,listen_sock)	socks;
 	const char			*name;
 
 	acceptor_config_f		*config;
