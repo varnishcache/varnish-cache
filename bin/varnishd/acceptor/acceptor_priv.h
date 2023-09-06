@@ -33,10 +33,6 @@
 struct sockaddr_storage;
 struct pool_task;
 
-enum vca_event {
-	VCA_EVENT_LADDR,
-};
-
 struct wrk_accept {
 	unsigned		magic;
 #define WRK_ACCEPT_MAGIC	0x8c4b4d59

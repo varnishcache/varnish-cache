@@ -268,7 +268,7 @@ vca_tcp_sockopt_set(const struct listen_sock *ls, const struct sess *sp)
 	}
 }
 
-void
+static void
 vca_tcp_init(void)
 {
 
@@ -310,7 +310,7 @@ vca_tcp_listen(struct cli *cli, struct listen_sock *ls)
 	return (0);
 }
 
-void
+static void
 vca_tcp_start(struct cli *cli)
 {
 	struct listen_sock *ls;
@@ -330,13 +330,10 @@ vca_tcp_start(struct cli *cli)
 	}
 }
 
-void
+static void
 vca_tcp_event(struct cli *cli, struct listen_sock *ls, enum vca_event event)
 {
 	char h[VTCP_ADDRBUFSIZE], p[VTCP_PORTBUFSIZE];
-
-	if (ls->uds)
-		return;
 
 	switch (event) {
 	case VCA_EVENT_LADDR:
@@ -554,7 +551,7 @@ vca_tcp_accept_task(struct worker *wrk, void *arg)
 	FREE_OBJ(ps);
 }
 
-void
+static void
 vca_tcp_accept(struct pool *pp)
 {
 	struct listen_sock *ls;
@@ -577,7 +574,7 @@ vca_tcp_accept(struct pool *pp)
 	}
 }
 
-void
+static void
 vca_tcp_update(pthread_mutex_t *shut_mtx)
 {
 	struct listen_sock *ls;
@@ -610,7 +607,7 @@ vca_tcp_update(pthread_mutex_t *shut_mtx)
 	PTOK(pthread_mutex_unlock(shut_mtx));
 }
 
-void
+static void
 vca_tcp_shutdown(void)
 {
 	struct listen_sock *ls;
@@ -627,3 +624,17 @@ vca_tcp_shutdown(void)
 		(void)close(i);
 	}
 }
+
+struct acceptor TCP_acceptor = {
+	.magic		= ACCEPTOR_MAGIC,
+	.name		= "tcp",
+	.config		= vca_tcp_config,
+	.init		= vca_tcp_init,
+	.open		= vca_tcp_open,
+	.reopen		= vca_tcp_reopen,
+	.start		= vca_tcp_start,
+	.event		= vca_tcp_event,
+	.accept		= vca_tcp_accept,
+	.update		= vca_tcp_update,
+	.shutdown	= vca_tcp_shutdown,
+};

@@ -57,6 +57,36 @@
 static VTAILQ_HEAD(,listen_arg) listen_args =
     VTAILQ_HEAD_INITIALIZER(listen_args);
 
+static VTAILQ_HEAD(,acceptor) acceptors = VTAILQ_HEAD_INITIALIZER(acceptors);
+
+int
+VCA__iter(struct acceptor ** const pvca)
+{
+
+	AN(pvca);
+	CHECK_OBJ_ORNULL(*pvca, ACCEPTOR_MAGIC);
+	if (*pvca != NULL)
+		*pvca = VTAILQ_NEXT(*pvca, list);
+	else
+		*pvca = VTAILQ_FIRST(&acceptors);
+	return (*pvca != NULL);
+}
+
+static struct acceptor *
+VCA_Find(const char *name)
+{
+	struct acceptor *vca;
+
+	VCA_Foreach(vca) {
+		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+
+		if (!strcmp(vca->name, name))
+			return (vca);
+	}
+
+	return (NULL);
+}
+
 /*=====================================================================
  * Reopen the accept sockets to get rid of listen status.
  * returns the highest errno encountered, 0 for success
@@ -65,12 +95,19 @@ static VTAILQ_HEAD(,listen_arg) listen_args =
 int
 VCA_reopen_sockets(void)
 {
-	int fail, fail2;
+	struct acceptor *vca;
+	int fail;
+	int err;
 
-	fail = vca_tcp_open();
-	fail2 = vca_uds_open();
+	fail = 0;
 
-	return (vmax(fail, fail2));
+	VCA_Foreach(vca) {
+		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+		err = vca->reopen();
+		fail = vmax(fail, err);
+	}
+
+	return (fail);
 }
 
 /*--------------------------------------------------------------------*/
@@ -78,6 +115,7 @@ VCA_reopen_sockets(void)
 void
 VCA_Arg(const char *spec)
 {
+	struct acceptor *vca;
 	char **av;
 	struct listen_arg *la;
 	const char *err;
@@ -104,13 +142,49 @@ VCA_Arg(const char *spec)
 	la->name = name;
 
 	if (VUS_is(la->endpoint))
-		error = vca_uds_open(av[1], la, &err);
+		vca = VCA_Find("uds");
 	else
-		error = vca_tcp_open(av[1], la, &err);
+		vca = VCA_Find("tcp");
+
+	AN(vca);
+	error = vca->open(av, la, &err);
 
 	if (error)
 		ARGV_ERR("Got no socket(s) for %s (%s)\n", av[1], err);
 	else if (VTAILQ_EMPTY(&la->socks))
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
 	VAV_Free(av);
+}
+
+void
+VCA_Add(struct acceptor *vca)
+{
+
+	CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+	AN(vca->name);
+	AN(vca->config);
+	AN(vca->init);
+	AN(vca->open);
+	AN(vca->reopen);
+	AN(vca->start);
+	AN(vca->event);
+	AN(vca->accept);
+	AN(vca->update);
+	AN(vca->shutdown);
+
+	if (VCA_Find(vca->name) != NULL)
+		ARGV_ERR("Acceptor '%s' already exist\n", vca->name);
+
+	VTAILQ_INSERT_TAIL(&acceptors, vca, list);
+
+	if (vca->config())
+		ARGV_ERR("Acceptor '%s' failed to initialize\n", vca->name);
+}
+
+void
+VCA_Config(void)
+{
+
+	VCA_Add(&TCP_acceptor);
+	VCA_Add(&UDS_acceptor);
 }

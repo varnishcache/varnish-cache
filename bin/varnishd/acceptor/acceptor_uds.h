@@ -44,10 +44,3 @@ struct uds_perms {
 int vca_uds_config(void);
 int vca_uds_open(char **, struct listen_arg *, const char **);
 int vca_uds_reopen(void);
-
-void vca_uds_init(void);
-void vca_uds_start(struct cli *cli);
-void vca_uds_event(struct cli *cli, enum vca_event event);
-void vca_uds_accept(struct pool *pp);
-void vca_uds_update(pthread_mutex_t *shut_mtx);
-void vca_uds_shutdown(void);

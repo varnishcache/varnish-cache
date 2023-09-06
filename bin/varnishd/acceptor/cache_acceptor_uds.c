@@ -242,7 +242,7 @@ vca_uds_sockopt_set(const struct listen_sock *ls, const struct sess *sp)
 	}
 }
 
-void
+static void
 vca_uds_init(void)
 {
 
@@ -278,7 +278,7 @@ vca_uds_listen(struct cli *cli, struct listen_sock *ls)
 	return (0);
 }
 
-void
+static void
 vca_uds_start(struct cli *cli)
 {
 	struct listen_sock *ls;
@@ -298,12 +298,9 @@ vca_uds_start(struct cli *cli)
 	}
 }
 
-void
+static void
 vca_uds_event(struct cli *cli, struct listen_sock *ls, enum vca_event event)
 {
-
-	if (!ls->uds)
-		return;
 
 	switch (event) {
 	case VCA_EVENT_LADDR:
@@ -508,7 +505,7 @@ vca_uds_accept_task(struct worker *wrk, void *arg)
 	FREE_OBJ(ps);
 }
 
-void
+static void
 vca_uds_accept(struct pool *pp)
 {
 	struct listen_sock *ls;
@@ -531,7 +528,7 @@ vca_uds_accept(struct pool *pp)
 	}
 }
 
-void
+static void
 vca_uds_update(pthread_mutex_t *shut_mtx)
 {
 	struct listen_sock *ls;
@@ -564,7 +561,7 @@ vca_uds_update(pthread_mutex_t *shut_mtx)
 	PTOK(pthread_mutex_unlock(shut_mtx));
 }
 
-void
+static void
 vca_uds_shutdown(void)
 {
 	struct listen_sock *ls;
@@ -581,3 +578,17 @@ vca_uds_shutdown(void)
 		(void)close(i);
 	}
 }
+
+struct acceptor UDS_acceptor = {
+	.magic		= ACCEPTOR_MAGIC,
+	.name		= "uds",
+	.config		= vca_uds_config,
+	.init		= vca_uds_init,
+	.open		= vca_uds_open,
+	.reopen		= vca_uds_reopen,
+	.start		= vca_uds_start,
+	.event		= vca_uds_event,
+	.accept		= vca_uds_accept,
+	.update		= vca_uds_update,
+	.shutdown	= vca_uds_shutdown,
+};

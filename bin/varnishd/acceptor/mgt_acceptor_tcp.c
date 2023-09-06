@@ -111,6 +111,7 @@ vca_tcp_open_cb(void *priv, const struct suckaddr *sa)
 	AN(ls);
 
 	ls->sock = -1;
+	ls->vca = &TCP_acceptor;
 
 	ls->addr = VSA_Clone(sa);
 	AN(ls->addr);

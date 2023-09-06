@@ -37,10 +37,3 @@ struct listen_arg;
 int vca_tcp_config(void);
 int vca_tcp_open(char **, struct listen_arg *, const char **);
 int vca_tcp_reopen(void);
-
-void vca_tcp_init(void);
-void vca_tcp_start(struct cli *cli);
-void vca_tcp_event(struct cli *cli, enum vca_event event);
-void vca_tcp_accept(struct pool *pp);
-void vca_tcp_update(pthread_mutex_t *shut_mtx);
-void vca_tcp_shutdown(void);

@@ -42,8 +42,6 @@
 #include "cache/cache_varnishd.h"
 #include "acceptor/cache_acceptor.h"
 #include "acceptor/acceptor_priv.h"
-#include "acceptor/acceptor_tcp.h"
-#include "acceptor/acceptor_uds.h"
 
 #include "cache/cache_transport.h"
 #include "cache/cache_pool.h"
@@ -126,9 +124,12 @@ vca_pace_good(void)
 void
 VCA_NewPool(struct pool *pp)
 {
+	struct acceptor *vca;
 
-	vca_tcp_accept(pp);
-	vca_uds_accept(pp);
+	VCA_Foreach(vca) {
+		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+		vca->accept(pp);
+	}
 }
 
 void
@@ -147,6 +148,7 @@ VCA_DestroyPool(struct pool *pp)
 static void * v_matchproto_()
 vca_acct(void *arg)
 {
+	struct acceptor *vca;
 	vtim_real t0;
 
 	// XXX Actually a misnomer now because the accept happens in a pool
@@ -162,8 +164,12 @@ vca_acct(void *arg)
 
 	while (1) {
 		(void)sleep(1);
-		vca_tcp_update(&shut_mtx);
-		vca_uds_update(&shut_mtx);
+
+		VCA_Foreach(vca) {
+			CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+			vca->update(&shut_mtx);
+		}
+
 		vca_periodic(t0);
 	}
 
@@ -175,11 +181,14 @@ vca_acct(void *arg)
 void
 VCA_Start(struct cli *cli)
 {
+	struct acceptor *vca;
 
 	ASSERT_CLI();
 
-	vca_tcp_start(cli);
-	vca_uds_start(cli);
+	VCA_Foreach(vca) {
+		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+		vca->start(cli);
+	}
 
 	PTOK(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
 }
@@ -190,7 +199,6 @@ static void v_matchproto_(cli_func_t)
 ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 {
 	struct listen_sock *ls;
-	char h[VTCP_ADDRBUFSIZE], p[VTCP_PORTBUFSIZE];
 
 	(void)av;
 	(void)priv;
@@ -205,12 +213,17 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 		VTIM_sleep(.1);
 
 	PTOK(pthread_mutex_lock(&shut_mtx));
-		if (!ls->uds) {
-			VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
-			VCLI_Out(cli, "%s %s %s\n", ls->name, h, p);
-		}
-		else
-			VCLI_Out(cli, "%s %s -\n", ls->name, ls->endpoint);
+
+	/*
+	 * Varnishtest expects the list of listen sockets to come out in the
+	 * same order as it is specified on the command line.
+	 */
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+		CHECK_OBJ_NOTNULL(ls->vca, ACCEPTOR_MAGIC);
+		ls->vca->event(cli, ls, VCA_EVENT_LADDR);
+	}
+
 	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 
@@ -224,20 +237,29 @@ static struct cli_proto vca_cmds[] = {
 void
 VCA_Init(void)
 {
+	struct acceptor *vca;
 
 	CLI_AddFuncs(vca_cmds);
 	Lck_New(&pace_mtx, lck_vcapace);
-	vca_tcp_init();
-	vca_uds_init();
+
+	VCA_Foreach(vca) {
+		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+		vca->init();
+	}
 }
 
 void
 VCA_Shutdown(void)
 {
+	struct acceptor *vca;
 
 	PTOK(pthread_mutex_lock(&shut_mtx));
-	vca_tcp_shutdown();
-	vca_uds_shutdown();
+
+	VCA_Foreach(vca) {
+		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
+		vca->shutdown();
+	}
+
 	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 
