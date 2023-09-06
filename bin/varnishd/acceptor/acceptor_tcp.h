@@ -37,10 +37,3 @@ struct listen_arg;
 int acc_tcp_config(void);
 int acc_tcp_open(char **, struct listen_arg *, const char **);
 int acc_tcp_reopen(void);
-
-void acc_tcp_init(void);
-void acc_tcp_start(struct cli *cli);
-void acc_tcp_event(struct cli *cli, enum acc_event event);
-void acc_tcp_accept(struct pool *pp);
-void acc_tcp_update(pthread_mutex_t *shut_mtx);
-void acc_tcp_shutdown(void);

@@ -57,6 +57,36 @@
 static VTAILQ_HEAD(,listen_arg) listen_args =
     VTAILQ_HEAD_INITIALIZER(listen_args);
 
+static VTAILQ_HEAD(,acceptor) acceptors = VTAILQ_HEAD_INITIALIZER(acceptors);
+
+int
+ACC__iter(struct acceptor ** const pacc)
+{
+
+	AN(pacc);
+	CHECK_OBJ_ORNULL(*pacc, ACCEPTOR_MAGIC);
+	if (*pacc != NULL)
+		*pacc = VTAILQ_NEXT(*pacc, list);
+	else
+		*pacc = VTAILQ_FIRST(&acceptors);
+	return (*pacc != NULL);
+}
+
+static struct acceptor *
+ACC_Find(const char *name)
+{
+	struct acceptor *acc;
+
+	ACC_Foreach(acc) {
+		CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+
+		if (!strcmp(acc->name, name))
+			return (acc);
+	}
+
+	return (NULL);
+}
+
 /*=====================================================================
  * Reopen the accept sockets to get rid of listen status.
  * returns the highest errno encountered, 0 for success
@@ -65,12 +95,19 @@ static VTAILQ_HEAD(,listen_arg) listen_args =
 int
 ACC_reopen_sockets(void)
 {
-	int fail, fail2;
+	struct acceptor *acc;
+	int fail;
+	int err;
 
-	fail = acc_tcp_open();
-	fail2 = acc_uds_open();
+	fail = 0;
 
-	return (vmax(fail, fail2));
+	ACC_Foreach(acc) {
+		CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+		err = acc->reopen();
+		fail = vmax(fail, err);
+	}
+
+	return (fail);
 }
 
 /*--------------------------------------------------------------------*/
@@ -78,6 +115,7 @@ ACC_reopen_sockets(void)
 void
 ACC_Arg(const char *spec)
 {
+	struct acceptor *acc;
 	char **av;
 	struct listen_arg *la;
 	const char *err;
@@ -104,11 +142,47 @@ ACC_Arg(const char *spec)
 	la->name = name;
 
 	if (VUS_is(la->endpoint))
-		error = acc_uds_open(av[1], la, &err);
+		acc = ACC_Find("uds");
 	else
-		error = acc_tcp_open(av[1], la, &err);
+		acc = ACC_Find("tcp");
+
+	AN(acc);
+	error = acc->open(av, la, &err);
 
 	if (VTAILQ_EMPTY(&la->socks) || error)
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
 	VAV_Free(av);
+}
+
+void
+ACC_Add(struct acceptor *acc)
+{
+
+	CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+	AN(acc->name);
+	AN(acc->config);
+	AN(acc->init);
+	AN(acc->open);
+	AN(acc->reopen);
+	AN(acc->start);
+	AN(acc->event);
+	AN(acc->accept);
+	AN(acc->update);
+	AN(acc->shutdown);
+
+	if (ACC_Find(acc->name) != NULL)
+		ARGV_ERR("Acceptor '%s' already exist\n", acc->name);
+
+	VTAILQ_INSERT_TAIL(&acceptors, acc, list);
+
+	if (acc->config())
+		ARGV_ERR("Acceptor '%s' failed to initialize\n", acc->name);
+}
+
+void
+ACC_Config(void)
+{
+
+	ACC_Add(&TCP_acceptor);
+	ACC_Add(&UDS_acceptor);
 }

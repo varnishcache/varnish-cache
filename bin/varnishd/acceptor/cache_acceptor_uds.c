@@ -242,7 +242,7 @@ acc_uds_sockopt_set(const struct listen_sock *ls, const struct sess *sp)
 	}
 }
 
-void
+static void
 acc_uds_init(void)
 {
 
@@ -278,7 +278,7 @@ acc_uds_listen(struct cli *cli, struct listen_sock *ls)
 	return (0);
 }
 
-void
+static void
 acc_uds_start(struct cli *cli)
 {
 	struct listen_sock *ls;
@@ -298,12 +298,9 @@ acc_uds_start(struct cli *cli)
 	}
 }
 
-void
+static void
 acc_uds_event(struct cli *cli, struct listen_sock *ls, enum acc_event event)
 {
-
-	if (!ls->uds)
-		return;
 
 	switch (event) {
 	case ACC_EVENT_LADDR:
@@ -508,7 +505,7 @@ acc_uds_accept_task(struct worker *wrk, void *arg)
 	FREE_OBJ(ps);
 }
 
-void
+static void
 acc_uds_accept(struct pool *pp)
 {
 	struct listen_sock *ls;
@@ -531,7 +528,7 @@ acc_uds_accept(struct pool *pp)
 	}
 }
 
-void
+static void
 acc_uds_update(pthread_mutex_t *shut_mtx)
 {
 	struct listen_sock *ls;
@@ -564,7 +561,7 @@ acc_uds_update(pthread_mutex_t *shut_mtx)
 	PTOK(pthread_mutex_unlock(shut_mtx));
 }
 
-void
+static void
 acc_uds_shutdown(void)
 {
 	struct listen_sock *ls;
@@ -581,3 +578,17 @@ acc_uds_shutdown(void)
 		(void)close(i);
 	}
 }
+
+struct acceptor UDS_acceptor = {
+	.magic		= ACCEPTOR_MAGIC,
+	.name		= "uds",
+	.config		= acc_uds_config,
+	.init		= acc_uds_init,
+	.open		= acc_uds_open,
+	.reopen		= acc_uds_reopen,
+	.start		= acc_uds_start,
+	.event		= acc_uds_event,
+	.accept		= acc_uds_accept,
+	.update		= acc_uds_update,
+	.shutdown	= acc_uds_shutdown,
+};

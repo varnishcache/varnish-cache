@@ -43,5 +43,8 @@ struct listen_arg {
 	const struct uds_perms		*perms;
 };
 
+void ACC_Add(struct acceptor *acc);
+void ACC_Config(void);
+
 void ACC_Arg(const char *);
 int ACC_reopen_sockets(void);

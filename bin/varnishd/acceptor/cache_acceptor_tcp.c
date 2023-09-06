@@ -268,7 +268,7 @@ acc_tcp_sockopt_set(const struct listen_sock *ls, const struct sess *sp)
 	}
 }
 
-void
+static void
 acc_tcp_init(void)
 {
 
@@ -310,7 +310,7 @@ acc_tcp_listen(struct cli *cli, struct listen_sock *ls)
 	return (0);
 }
 
-void
+static void
 acc_tcp_start(struct cli *cli)
 {
 	struct listen_sock *ls;
@@ -330,13 +330,10 @@ acc_tcp_start(struct cli *cli)
 	}
 }
 
-void
+static void
 acc_tcp_event(struct cli *cli, struct listen_sock *ls, enum acc_event event)
 {
 	char h[VTCP_ADDRBUFSIZE], p[VTCP_PORTBUFSIZE];
-
-	if (ls->uds)
-		return;
 
 	switch (event) {
 	case ACC_EVENT_LADDR:
@@ -554,7 +551,7 @@ acc_tcp_accept_task(struct worker *wrk, void *arg)
 	FREE_OBJ(ps);
 }
 
-void
+static void
 acc_tcp_accept(struct pool *pp)
 {
 	struct listen_sock *ls;
@@ -577,7 +574,7 @@ acc_tcp_accept(struct pool *pp)
 	}
 }
 
-void
+static void
 acc_tcp_update(pthread_mutex_t *shut_mtx)
 {
 	struct listen_sock *ls;
@@ -610,7 +607,7 @@ acc_tcp_update(pthread_mutex_t *shut_mtx)
 	PTOK(pthread_mutex_unlock(shut_mtx));
 }
 
-void
+static void
 acc_tcp_shutdown(void)
 {
 	struct listen_sock *ls;
@@ -627,3 +624,17 @@ acc_tcp_shutdown(void)
 		(void)close(i);
 	}
 }
+
+struct acceptor TCP_acceptor = {
+	.magic		= ACCEPTOR_MAGIC,
+	.name		= "tcp",
+	.config		= acc_tcp_config,
+	.init		= acc_tcp_init,
+	.open		= acc_tcp_open,
+	.reopen		= acc_tcp_reopen,
+	.start		= acc_tcp_start,
+	.event		= acc_tcp_event,
+	.accept		= acc_tcp_accept,
+	.update		= acc_tcp_update,
+	.shutdown	= acc_tcp_shutdown,
+};

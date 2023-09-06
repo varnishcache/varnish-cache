@@ -31,7 +31,49 @@
  */
 
 /* cache_acceptor.c */
+struct listen_sock;
+struct listen_arg;
+struct pool;
 
 void ACC_Init(void);
 void ACC_Start(struct cli *cli);
 void ACC_Shutdown(void);
+
+enum acc_event {
+	ACC_EVENT_LADDR,
+};
+
+typedef int acceptor_config_f(void);
+typedef void acceptor_init_f(void);
+typedef int acceptor_open_f(char **, struct listen_arg *,
+    const char **);
+typedef int acceptor_reopen_f(void);
+typedef void acceptor_start_f(struct cli *);
+typedef void acceptor_event_f(struct cli *, struct listen_sock *,
+    enum acc_event);
+typedef void acceptor_accept_f(struct pool *);
+typedef void acceptor_update_f(pthread_mutex_t *);
+typedef void acceptor_shutdown_f(void);
+
+struct acceptor {
+	unsigned			magic;
+#define ACCEPTOR_MAGIC			0x0611847c
+	VTAILQ_ENTRY(acceptor)		list;
+	const char			*name;
+
+	acceptor_config_f		*config;
+	acceptor_init_f			*init;
+	acceptor_open_f			*open;
+	acceptor_reopen_f		*reopen;
+	acceptor_start_f		*start;
+	acceptor_event_f		*event;
+	acceptor_accept_f		*accept;
+	acceptor_update_f		*update;
+	acceptor_shutdown_f		*shutdown;
+};
+
+#define ACC_Foreach(arg) for (arg = NULL; ACC__iter(&arg);)
+int ACC__iter(struct acceptor ** const pp);
+
+extern struct acceptor TCP_acceptor;
+extern struct acceptor UDS_acceptor;

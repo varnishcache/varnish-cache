@@ -42,8 +42,6 @@
 #include "cache/cache_varnishd.h"
 #include "acceptor/cache_acceptor.h"
 #include "acceptor/acceptor_priv.h"
-#include "acceptor/acceptor_tcp.h"
-#include "acceptor/acceptor_uds.h"
 
 #include "cache/cache_transport.h"
 #include "cache/cache_pool.h"
@@ -126,9 +124,12 @@ acc_pace_good(void)
 void
 ACC_NewPool(struct pool *pp)
 {
+	struct acceptor *acc;
 
-	acc_tcp_accept(pp);
-	acc_uds_accept(pp);
+	ACC_Foreach(acc) {
+		CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+		acc->accept(pp);
+	}
 }
 
 void
@@ -147,6 +148,7 @@ ACC_DestroyPool(struct pool *pp)
 static void * v_matchproto_()
 acc_acct(void *arg)
 {
+	struct acceptor *acc;
 	vtim_real t0;
 
 	// XXX Actually a mis-nomer now because the accept happens in a pool
@@ -162,8 +164,12 @@ acc_acct(void *arg)
 
 	while (1) {
 		(void)sleep(1);
-		acc_tcp_update(&shut_mtx);
-		acc_uds_update(&shut_mtx);
+
+		ACC_Foreach(acc) {
+			CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+			acc->update(&shut_mtx);
+		}
+
 		acc_periodic(t0);
 	}
 
@@ -175,11 +181,14 @@ acc_acct(void *arg)
 void
 ACC_Start(struct cli *cli)
 {
+	struct acceptor *acc;
 
 	ASSERT_CLI();
 
-	acc_tcp_start(cli);
-	acc_uds_start(cli);
+	ACC_Foreach(acc) {
+		CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+		acc->start(cli);
+	}
 
 	PTOK(pthread_create(&ACC_thread, NULL, acc_acct, NULL));
 }
@@ -190,7 +199,6 @@ static void v_matchproto_(cli_func_t)
 ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 {
 	struct listen_sock *ls;
-	char h[VTCP_ADDRBUFSIZE], p[VTCP_PORTBUFSIZE];
 
 	(void)av;
 	(void)priv;
@@ -205,12 +213,17 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 		VTIM_sleep(.1);
 
 	PTOK(pthread_mutex_lock(&shut_mtx));
-		if (!ls->uds) {
-			VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
-			VCLI_Out(cli, "%s %s %s\n", ls->name, h, p);
-		}
-		else
-			VCLI_Out(cli, "%s %s -\n", ls->name, ls->endpoint);
+
+	/*
+	 * Varnishtest expects the list of listen sockets to come out in the
+	 * same order as it is specified on the command line.
+	 */
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+		CHECK_OBJ_NOTNULL(ls->acc, ACCEPTOR_MAGIC);
+		ls->acc->event(cli, ls, ACC_EVENT_LADDR);
+	}
+
 	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 
@@ -224,20 +237,29 @@ static struct cli_proto acc_cmds[] = {
 void
 ACC_Init(void)
 {
+	struct acceptor *acc;
 
 	CLI_AddFuncs(acc_cmds);
 	Lck_New(&pace_mtx, lck_accpace);
-	acc_tcp_init();
-	acc_uds_init();
+
+	ACC_Foreach(acc) {
+		CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+		acc->init();
+	}
 }
 
 void
 ACC_Shutdown(void)
 {
+	struct acceptor *acc;
 
 	PTOK(pthread_mutex_lock(&shut_mtx));
-	acc_tcp_shutdown();
-	acc_uds_shutdown();
+
+	ACC_Foreach(acc) {
+		CHECK_OBJ_NOTNULL(acc, ACCEPTOR_MAGIC);
+		acc->shutdown();
+	}
+
 	PTOK(pthread_mutex_unlock(&shut_mtx));
 }
 

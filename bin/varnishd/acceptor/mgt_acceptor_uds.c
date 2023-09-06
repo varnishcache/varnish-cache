@@ -129,6 +129,7 @@ acc_uds_open_cb(void *priv, const struct sockaddr_un *uds)
 	AN(ls);
 
 	ls->sock = -1;
+	ls->acc = &UDS_acceptor;
 
 	ls->addr = VSA_Clone(bogo_ip);
 	AN(ls->addr);
