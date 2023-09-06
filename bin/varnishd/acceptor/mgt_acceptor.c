@@ -173,6 +173,7 @@ ACC_Add(struct acceptor *acc)
 	if (ACC_Find(acc->name) != NULL)
 		ARGV_ERR("Acceptor '%s' already exist\n", acc->name);
 
+	VTAILQ_INIT(&acc->socks);
 	VTAILQ_INSERT_TAIL(&acceptors, acc, list);
 
 	if (acc->config())

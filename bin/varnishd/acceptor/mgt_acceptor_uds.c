@@ -117,10 +117,10 @@ acc_uds_open_cb(void *priv, const struct sockaddr_un *uds)
 	CAST_OBJ_NOTNULL(la, priv, LISTEN_ARG_MAGIC);
 	(void) uds;
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &UDS_acceptor.socks, acclist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 
-		if (ls->uds && strcmp(ls->endpoint, la->endpoint) == 0)
+		if (strcmp(ls->endpoint, la->endpoint) == 0)
 			ARGV_ERR("-a arguments %s and %s have same address\n",
 			    ls->endpoint, la->endpoint);
 	}
@@ -156,6 +156,7 @@ acc_uds_open_cb(void *priv, const struct sockaddr_un *uds)
 
 	VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
+	VTAILQ_INSERT_TAIL(&UDS_acceptor.socks, ls, acclist);
 
 	return (0);
 }
@@ -280,11 +281,8 @@ acc_uds_reopen(void)
 	struct listen_sock *ls;
 	int err, fail = 0;
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &UDS_acceptor.socks, acclist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-
-		if (!ls->uds)
-			continue;
 
 		VJ_master(JAIL_MASTER_PRIVPORT);
 		err = acc_uds_opensocket(ls);

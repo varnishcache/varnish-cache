@@ -287,11 +287,8 @@ acc_uds_start(struct cli *cli)
 
 	(void)acc_uds_sockopt_init();
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &UDS_acceptor.socks, acclist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-
-		if (!ls->uds)
-			continue;
 
 		if (acc_uds_listen(cli, ls))
 			return;
@@ -511,11 +508,8 @@ acc_uds_accept(struct pool *pp)
 	struct listen_sock *ls;
 	struct poolsock *ps;
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &UDS_acceptor.socks, acclist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-
-		if (!ls->uds)
-			continue;
 
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
 		AN(ps);
@@ -538,11 +532,11 @@ acc_uds_update(pthread_mutex_t *shut_mtx)
 
 	PTOK(pthread_mutex_lock(shut_mtx));
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &UDS_acceptor.socks, acclist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 
-		if (ls->sock == -2 || !ls->uds)
-			continue;	// ACC_Shutdown || TCP
+		if (ls->sock == -2)
+			continue;	// ACC_Shutdown
 		assert (ls->sock > 0);
 		acc_uds_sockopt_set(ls, NULL);
 		/* If one of the options on a socket has
@@ -567,11 +561,8 @@ acc_uds_shutdown(void)
 	struct listen_sock *ls;
 	int i;
 
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+	VTAILQ_FOREACH(ls, &UDS_acceptor.socks, acclist) {
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-
-		if (!ls->uds)
-			continue;
 
 		i = ls->sock;
 		ls->sock = -2;
