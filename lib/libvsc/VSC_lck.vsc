@@ -34,6 +34,10 @@
 	:level:	debug
 	:oneliner:	Lock Operations
 
+.. varnish_vsc:: dur_us
+	:type:	counter
+	:level:	debug
+	:oneliner:	Lock duration
 
 .. varnish_vsc:: dbg_busy
 	:type:	counter

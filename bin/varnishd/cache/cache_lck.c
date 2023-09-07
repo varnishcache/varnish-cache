@@ -54,6 +54,7 @@ struct ilck {
 	pthread_t		owner;
 	const char		*w;
 	struct VSC_lck		*stat;
+	vtim_dur		taken_us;
 };
 
 /*--------------------------------------------------------------------*/
@@ -127,6 +128,7 @@ Lck__Lock(struct lock *lck, const char *p, int l)
 		ilck->stat->dbg_busy++;
 	ilck->stat->locks++;
 	ilck->owner = pthread_self();
+	ilck->taken_us = 1e6L * VTIM_mono();
 	ilck->held = 1;
 }
 
@@ -141,6 +143,7 @@ Lck__Unlock(struct lock *lck, const char *p, int l)
 	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	assert(pthread_equal(ilck->owner, pthread_self()));
+	ilck->stat->dur_us += 1e6L * VTIM_mono() - ilck->taken_us;
 	AN(ilck->held);
 	ilck->held = 0;
 	/*
@@ -180,6 +183,7 @@ Lck__Trylock(struct lock *lck, const char *p, int l)
 		ilck->held = 1;
 		ilck->stat->locks++;
 		ilck->owner = pthread_self();
+		ilck->taken_us = 1e6L * VTIM_mono();
 	} else if (DO_DEBUG(DBG_LCK))
 		ilck->stat->dbg_try_fail++;
 	return (r);
@@ -234,6 +238,7 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);
 	assert(pthread_equal(ilck->owner, pthread_self()));
+	ilck->stat->dur_us += 1e6L * VTIM_mono() - ilck->taken_us;
 	ilck->held = 0;
 	if (when == 0) {
 		errno = pthread_cond_wait(cond, &ilck->mtx);
@@ -278,6 +283,7 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 	AZ(ilck->held);
 	ilck->held = 1;
 	ilck->owner = pthread_self();
+	ilck->taken_us = 1e6L * VTIM_mono();
 	return (errno);
 }
 
