@@ -30,6 +30,7 @@ client c1 {
 	stream 1 {
 		txreq -url ""
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -37,6 +38,7 @@ client c1 {
 	stream 1 {
 		txreq -scheme ""
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -44,6 +46,7 @@ client c1 {
 	stream 1 {
 		txreq -req ""
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -51,8 +54,9 @@ varnish v1 -vsl_catchup
 
 client c1 {
 	stream 1 {
-		txreq -hdr "fo o" " bar"
+		txreq -hdr "foo" " bar"
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -60,6 +64,7 @@ client c1 {
 	stream 1 {
 		txreq -hdr "foo" " "
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -67,6 +72,7 @@ client c1 {
 	stream 1 {
 		txreq -hdr ":foo" "bar"
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -74,6 +80,7 @@ client c1 {
 	stream 1 {
 		txreq -hdr "foo" "b\x0car"
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -81,6 +88,7 @@ client c1 {
 	stream 1 {
 		txreq -hdr "f o" "bar"
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -88,6 +96,7 @@ client c1 {
 	stream 1 {
 		txreq -hdr "f: o" "bar"
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
 
@@ -95,5 +104,22 @@ client c1 {
 	stream 1 {
 		txreq -hdr "foo" "bar "
 		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr "foo" "	bar"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr "foo" "bar	"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
 	} -run
 } -run
