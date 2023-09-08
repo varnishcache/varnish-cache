@@ -169,7 +169,7 @@ pool_mkpool(unsigned pool_no)
 		(void)usleep(10000);
 
 	SES_NewPool(pp, pool_no);
-	VCA_NewPool(pp);
+	VCA_NewPool(pp, pool_no);
 
 	return (pp);
 }

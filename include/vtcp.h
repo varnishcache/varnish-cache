@@ -61,6 +61,7 @@ int VTCP_open(const char *addr, const char *def_port, vtim_dur timeout,
     const char **err);
 void VTCP_close(int *s);
 int VTCP_bind(const struct suckaddr *addr, const char **errp);
+int VTCP_bind_reuseport(const struct suckaddr *addr, const char **errp);
 int VTCP_listen(const struct suckaddr *addr, int depth, const char **errp);
 int VTCP_listen_on(const char *addr, const char *def_port, int depth,
     const char **errp);

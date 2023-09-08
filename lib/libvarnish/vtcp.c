@@ -470,6 +470,82 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 	return (sd);
 }
 
+int
+VTCP_bind_reuseport(const struct suckaddr *sa, const char **errp)
+{
+	int sd, val, e;
+	socklen_t sl;
+	const struct sockaddr *so;
+	int proto;
+
+	if (errp != NULL)
+		*errp = NULL;
+
+	proto = VSA_Get_Proto(sa);
+	sd = socket(proto, SOCK_STREAM, 0);
+	if (sd < 0) {
+		if (errp != NULL)
+			*errp = "socket(2)";
+		return (-1);
+	}
+	val = 1;
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
+		if (errp != NULL)
+			*errp = "setsockopt(SO_REUSEADDR, 1)";
+		e = errno;
+		closefd(&sd);
+		errno = e;
+		return (-1);
+	}
+#ifdef HAVE_REUSEPORT_LB
+	val = 1;
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEPORT_LB,
+	    &val, sizeof val) != 0) {
+		if (errp != NULL)
+			*errp = "setsockopt(SO_REUSEPORT_LB, 1)";
+		e = errno;
+		closefd(&sd);
+		errno = e;
+		return (-1);
+	}
+#elif HAVE_REUSEPORT
+	val = 1;
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof val) != 0) {
+		if (errp != NULL)
+			*errp = "setsockopt(SO_REUSEPORT, 1)";
+		e = errno;
+		closefd(&sd);
+		errno = e;
+		return (-1);
+	}
+#else
+	WRONG("SO_REUSEPORT[_LB] not available (set -p reuseport=off)");
+#endif
+#ifdef IPV6_V6ONLY
+	/* forcibly use separate sockets for IPv4 and IPv6 */
+	val = 1;
+	if (proto == AF_INET6 &&
+	    setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof val) != 0) {
+		if (errp != NULL)
+			*errp = "setsockopt(IPV6_V6ONLY, 1)";
+		e = errno;
+		closefd(&sd);
+		errno = e;
+		return (-1);
+	}
+#endif
+	so = VSA_Get_Sockaddr(sa, &sl);
+	if (bind(sd, so, sl) != 0) {
+		if (errp != NULL)
+			*errp = "bind(2)";
+		e = errno;
+		closefd(&sd);
+		errno = e;
+		return (-1);
+	}
+	return (sd);
+}
+
 /*--------------------------------------------------------------------
  * Given a struct suckaddr, open a socket of the appropriate type, bind it
  * to the requested address, and start listening.
