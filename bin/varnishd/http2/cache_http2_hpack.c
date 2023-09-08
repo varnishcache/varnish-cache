@@ -103,7 +103,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 	for (p = b + namelen; p < b + len; p++) {
 		switch(state) {
 		case FLD_VALUE_FIRST:
-			if (*p == ' ' || *p == 0x09) {
+			if (vct_issp(*p)) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal field value start %.*s",
 				    (int)(len > 20 ? 20 : len), b);
@@ -123,7 +123,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			WRONG("http2 field value validation state");
 		}
 	}
-	if (state == FLD_VALUE && b[len - 1] <= 0x20) {
+	if (state == FLD_VALUE && vct_issp(b[len - 1])) {
 		VSLb(hp->vsl, SLT_BogoHeader,
 		    "Illegal field value (end) %.*s",
 		    (int)(len > 20 ? 20 : len), b);
