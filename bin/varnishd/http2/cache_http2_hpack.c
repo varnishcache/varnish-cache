@@ -112,9 +112,9 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			state = FLD_VALUE;
 			/* FALL_THROUGH */
 		case FLD_VALUE:
-			if (*p != 0x09 && (*p < 0x20 || *p == 0x7f)) {
+			if (!vct_ishdrval(*p)) {
 				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Illegal field value (control) %.*s",
+				    "Illegal field value %.*s",
 				    (int)(len > 20 ? 20 : len), b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
