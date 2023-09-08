@@ -75,12 +75,6 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 				break;
 			/* FALL_THROUGH */
 		case FLD_NAME:
-			if (*p <= 0x20 || *p >= 0x7f) {
-				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Illegal field header name (control): %.*s",
-				    (int)(len > 20 ? 20 : len), b);
-				return (H2SE_PROTOCOL_ERROR);
-			}
 			if (isupper(*p)) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal field header name (upper-case): %.*s",
