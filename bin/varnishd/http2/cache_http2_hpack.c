@@ -44,6 +44,12 @@ static h2_error
 h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 {
 	const char *p;
+	enum {
+		FLD_NAME_FIRST,
+		FLD_NAME,
+		FLD_VALUE_FIRST,
+		FLD_VALUE
+	} state;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	AN(b);
@@ -60,15 +66,15 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 	// VSLb(hp->vsl, SLT_Debug, "CHDR [%.*s] [%.*s]",
 	//     (int)namelen, b, (int)(len - namelen), b + namelen);
 
-	int state = 0;
+	state = FLD_NAME_FIRST;
 	for (p = b; p < b + namelen - 2; p++) {
 		switch(state) {
-		case 0:	/* First char of field */
-			state = 1;
+		case FLD_NAME_FIRST:
+			state = FLD_NAME;
 			if (*p == ':')
 				break;
 			/* FALL_THROUGH */
-		case 1: /* field name */
+		case FLD_NAME:
 			if (*p <= 0x20 || *p >= 0x7f) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal field header name (control): %.*s",
@@ -93,19 +99,19 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 		}
 	}
 
-	state = 2;
+	state = FLD_VALUE_FIRST;
 	for (p = b + namelen; p < b + len; p++) {
 		switch(state) {
-		case 2: /* First char of field */
+		case FLD_VALUE_FIRST:
 			if (*p == ' ' || *p == 0x09) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal field value start %.*s",
 				    (int)(len > 20 ? 20 : len), b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
-			state = 3;
+			state = FLD_VALUE;
 			/* FALL_THROUGH */
-		case 3: /* field value character */
+		case FLD_VALUE:
 			if (*p != 0x09 && (*p < 0x20 || *p == 0x7f)) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal field value (control) %.*s",
@@ -117,7 +123,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			WRONG("http2 field value validation state");
 		}
 	}
-	if (state == 3 && b[len - 1] <= 0x20) {
+	if (state == FLD_VALUE && b[len - 1] <= 0x20) {
 		VSLb(hp->vsl, SLT_BogoHeader,
 		    "Illegal field value (end) %.*s",
 		    (int)(len > 20 ? 20 : len), b);
