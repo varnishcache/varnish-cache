@@ -1295,8 +1295,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 		if (r2->stream == h2->rxf_stream)
 			break;
 
-	if (h2->new_req != NULL &&
-	    !(r2 && h2->new_req == r2->req && h2f == H2_F_CONTINUATION))
+	if (h2->new_req != NULL && h2f != H2_F_CONTINUATION)
 		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
 
 	h2e = h2f->rxfunc(wrk, h2, r2);
