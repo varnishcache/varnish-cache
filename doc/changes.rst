@@ -1,7 +1,10 @@
 ..
-	Copyright (c) 2011-2021 Varnish Software AS
+	Copyright (c) 2011-2023 Varnish Software AS
+	Copyright 2016-2023 UPLEX - Nils Goroll Systemoptimierung
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
+
+.. role:: ref(emphasis)
 
 ===================
 About this document
@@ -38,14 +41,115 @@ Varnish Cache NEXT (2023-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
-* The ``VSHA256_*`` functions have been added to libvarnishapi.
+* The ``VSB_quote_pfx()`` (and, consequently, ``VSB_quote()``) function
+  no longer produces ``\v`` for a vertical tab. This improves
+  compatibility with JSON.
+
+* The bundled *zlib* has been updated to match *zlib 1.3*.
+
+* The ``VSHA256_*`` functions have been added to libvarnishapi (3946_).
+
+* Tabulation of the ``vcl.list`` CLI output has been modified
+  slightly.
+
+* VCL now supports "protected headers", which can neither be set nor unset.
+
+* The ``Content-Length`` and ``Transfer-Encoding`` headers are now
+  protected. For the common use case of ``unset
+  xxx.http.Content-Length`` to dismiss a body, ``unset xxx.body``
+  should be used.
+
+* Error handling of numeric literals in exponent notation has been
+  improved in the VCL compiler (3971_).
+
+* Finalization of the storage private state of busy objects has been
+  fixed. This bug could trigger a panic when ``vcl_synth {}`` was used
+  to replace the object body and storage was changed from one of the
+  built-in storage engines to a storage engine from an extension (3953_).
+
+* HTTP/2 header field validation is now more strict with respect to
+  allowed characters (3952_).
+
+* A bug has been fixed in the filter handling code which could trigger
+  a panic when ``resp.filters`` was used from ``vcl_synth {}`` (3968_).
+
+* The utility macros ``ALLOC_OBJ_EXTRA()`` and ``ALLOC_FLEX_OBJ()``
+  have been added to ``miniobj.h`` to simplify allocation of objects
+  larger than a struct and such with a flexible array.
+
+* The ``varnishapi`` version has been increased to 3.1 and the
+  functions ``VENC_Encode_Base64()`` and ``VENC_Decode_Base64()`` are
+  now exposed.
 
 * Two bugs in the ban expression parser have been fixed where one of them
   could lead to a panic if a ban expression with an empty header name was
-  issued (3962_)
+  issued (3962_).
+
+* The ``v_cold`` macro has been added to add ``__attribute__((cold))``
+  on compilers supporting it. It is used for ``VRT_fail()`` to mark
+  failure code paths as cold.
+
+* ``varnishtest`` now generates ``User-Agent`` request and ``Server``
+  response headers with the respective client and server name by
+  default. The ``txreq -nouseragent`` and ``txresp -noserver`` options
+  disable addition of these headers.
+
+* Error handling of invalid header names has been improved in the VCL
+  Compiler (3960_).
+
+* A race condition has been fixed in the backend probe code which
+  could trigger a panic with dynamic backends (dyn100_).
+
+* A bug has been fixed in the ESI code which would prevent use of
+  internal status codes >1000 as their modulus 1000 value (3958_).
+
+* The ``varnishd_args_prepend`` and ``varnishd_args_append`` macros
+  have been added to ``varnishtest`` to add arguments to ``varnishd``
+  invocations before and after the defaults.
+
+* A bug has been fixed where ``varnishd`` would hang indefinitely when
+  the worker process would not come up within ``cli_timeout`` (3940_).
+
+* The ``startup_timeout`` parameter now specifically replaces
+  ``cli_timeout`` for the initial startup only (3940_).
+
+* On Linux, ``close_range()`` is now used if available (3905_).
+
+* Error reporting has been improved if the working directory
+  (``varnishd -n`` argument) resides on a file system mounted
+  ``noexec`` (3943_).
+
+* The number of backtrace levels in panic reports has been increased
+  from 10 to 20.
+
+* The ``PTOK()`` macro has been added to ``vas.h`` to simplify error
+  checking of ``pthread_*`` POSIX functions.
+
+* In ``varnishtest``, the basename of the test directory is now
+  available as the ``vtcid`` macro to serve as a unique string across
+  concurrently running tests.
+
+* In ``struct vsmwseg`` and ``struct vsm_fantom``, the ``class``
+  member has been renamed to ``category``.
+
+* ESI ``onerror=abort`` handling has been fixed when ``max_esi_depth``
+  is reached (3938_).
+
+* A spurious *Could not delete 'vcl\_...'* error message has been
+  removed (3925_).
 
 * A bug has been fixed where ``unset bereq.body`` had no effect when
   used with a cached body (3914_)
+
+* ``.vcc`` files of VMODs are now installed to
+  ``/usr/share/varnish/vcc`` (or equivalent) to enable re-use by other
+  tools like code editors.
+
+* The :ref:`vcl-step(7)` manual page has been added to document the
+  VCL state machines.
+
+* ``HSH_Cancel()`` has been moved to ``VDP_Close()`` to enable
+  transports to keep references to objects.
 
 * VCL tracing now needs to be explicitly activated by setting the
   ``req.trace`` or ``bereq.trace`` VCL variables, which are
@@ -80,20 +184,30 @@ Varnish Cache NEXT (2023-09-15)
   logged under the ``Error`` tag as ``Failed to create object object
   from %s %s``.
 
-* ``varnishtest`` gained the macro ``varnishd_args`` to globally
-  append additional arguments to the ``varnishd`` command line. Macros
-  in this macro's value will be expanded.
-
 * The limit on the size of ``varnishtest`` macros has been raised to
   2KB.
 
 * The newly introduced abstract socket support was incompatible with
   other implementations, this has been fixed (3908_).
 
+.. _3905: https://github.com/varnishcache/varnish-cache/issues/3905
 .. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
 .. _3911: https://github.com/varnishcache/varnish-cache/issues/3911
 .. _3914: https://github.com/varnishcache/varnish-cache/pull/3914
+.. _3925: https://github.com/varnishcache/varnish-cache/issues/3925
+.. _3938: https://github.com/varnishcache/varnish-cache/issues/3938
+.. _3940: https://github.com/varnishcache/varnish-cache/issues/3940
+.. _3943: https://github.com/varnishcache/varnish-cache/issues/3943
+.. _3946: https://github.com/varnishcache/varnish-cache/issues/3946
+.. _3952: https://github.com/varnishcache/varnish-cache/issues/3952
+.. _3953: https://github.com/varnishcache/varnish-cache/issues/3953
+.. _3958: https://github.com/varnishcache/varnish-cache/issues/3958
+.. _3960: https://github.com/varnishcache/varnish-cache/issues/3960
 .. _3962: https://github.com/varnishcache/varnish-cache/issues/3962
+.. _3968: https://github.com/varnishcache/varnish-cache/issues/3968
+.. _3971: https://github.com/varnishcache/varnish-cache/issues/3971
+
+.. _dyn100: https://github.com/nigoroll/libvmod-dynamic/issues/100
 
 ================================
 Varnish Cache 7.3.0 (2023-03-15)
