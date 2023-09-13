@@ -1358,7 +1358,7 @@ cmd_sendhex(CMD_ARGS)
  *	header should be added to the table, shouldn't, or mustn't be
  *	compressed if/when retransmitted.
  *
- *	INT is the idex of the header name to use.
+ *	INT is the index of the header name to use.
  *
  *	The third argument informs about the Huffman encoding: yes (huf) or
  *	no (plain).
