@@ -1,4 +1,4 @@
-varnishtest "Empty pseudo-headers"
+varnishtest "Empty and invalid headers"
 
 server s1 {
 	rxreq
@@ -47,6 +47,14 @@ client c1 {
 		txreq -req ""
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -hdr "empty" ""
+		rxresp
+		expect resp.status == 200
 	} -run
 } -run
 
