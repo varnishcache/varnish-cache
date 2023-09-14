@@ -1,8 +1,8 @@
 .. _whatsnew_changes_7.3:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **7.3**
-%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish 7.3
+%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
 new version, see :ref:`whatsnew_upgrading_7.3`.
@@ -18,8 +18,6 @@ varnishd
 
 Parameters
 ~~~~~~~~~~
-
-**XXX changes in -p parameters**
 
 There is a new parameter ``transit_buffer`` disabled by default to limit the
 amount of storage used for uncacheable responses. This is useful in situations
@@ -76,8 +74,6 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
-**XXX new, deprecated or removed variables, or changed semantics**
-
 The variables ``req.xid``, ``bereq.xid`` and ``sess.xid`` are now integers
 instead of strings, but should remain usable without a VCL change in a string
 context.
@@ -119,12 +115,8 @@ after the probe times out.
 VMODs
 =====
 
-**XXX changes in the bundled VMODs**
-
 varnishlog
 ==========
-
-**XXX changes concerning varnishlog(1) and/or vsl(7)**
 
 The in-memory and on-disk format of VSL records changed to allow 64bit
 VXID numbers. The new binary format is **not compatible** with
@@ -141,20 +133,11 @@ find the client IP address.
 varnishadm
 ==========
 
-**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
-
 The ``debug.xid`` command generally used by ``varnishtest`` now sets
 up the next VXID directly.
 
-varnishstat
-===========
-
-**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
-
 varnishtest
 ===========
-
-**XXX changes concerning varnishtest(1) and/or vtc(7)**
 
 It is now possible to send special keys NPAGE, PPAGE, HOME and END to a
 process.
@@ -167,9 +150,6 @@ available for HTTP/2 checks.
 
 Changes for developers and VMOD authors
 =======================================
-
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
 
 There is a new convenience macro ``WS_TASK_ALLOC_OBJ()`` to allocate objects
 from the current tasks' workspace.
