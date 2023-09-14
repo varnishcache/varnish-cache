@@ -22,7 +22,7 @@ released versions of Varnish, see the chapters listed below.**
 
 .. toctree::
    :maxdepth: 2
- 
+
    changes-trunk
    upgrading-trunk
 
@@ -35,8 +35,8 @@ Varnish 7.3
    changes-7.3
    upgrading-7.3
 
-Varnish **7.2**
----------------
+Varnish 7.2
+-----------
 
 .. toctree::
    :maxdepth: 2
@@ -44,8 +44,8 @@ Varnish **7.2**
    changes-7.2
    upgrading-7.2
 
-Varnish **7.1**
----------------
+Varnish 7.1
+-----------
 
 .. toctree::
    :maxdepth: 2
