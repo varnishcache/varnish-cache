@@ -8,26 +8,27 @@ released versions of Varnish, see:** :ref:`whats-new-index`
 Upgrading to Varnish **$NEXT_RELEASE**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-**XXX: how to upgrade from previous deployments to this
-version. Limited to work that has to be done for an upgrade, new
-features are listed in "Changes". Explicitly mention what does *not*
-have to be changed, especially in VCL. May include, but is not limited
-to:**
+Important VCL Changes
+=====================
 
-* Elements of VCL that have been removed or are deprecated, or whose
-  semantics have changed.
+When upgrading from Varnish-Cache 7.3, there is only one breaking
+change to consider in VCL:
 
-* -p parameters that have been removed or are deprecated, or whose
-  semantics have changed.
+The ``Content-Length`` and ``Transfer-Encoding`` headers are now
+*protected*, they can neither be changed nor unset. This change was
+implemented to avoid de-sync issues from accidental, inadequate
+modifications of these headers.
 
-* Changes in the CLI.
+For the common use case of ``unset (be)req.http.Content-Length`` to
+dismiss a request body, ``unset (be)req.body`` should be used.
 
-* Changes in the output or interpretation of stats or the log, including
-  changes affecting varnishncsa/-hist/-top.
+Parameter Changes
+=================
 
-* Changes that may be necessary in VTCs or in the use of varnishtest.
-
-* Changes in public APIs that may require changes in VMODs or VAPI/VUT
-  clients.
+The new ``varnishd`` parameter ``startup_timeout`` now specifically
+replaces ``cli_timeout`` for the initial startup only. In cases where
+``cli_timeout`` was increased specifically to accommodate long startup
+times (e.g. for storage engine initialization), ``startup_timeout``
+should be used.
 
 *eof*
