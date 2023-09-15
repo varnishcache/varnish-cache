@@ -19,7 +19,7 @@ varnishd
 HTTP/2 header field validation is now more strict with respect to
 allowed characters.
 
-The :ref:`vcl-steps(7)` manual page has been added to document the VCL
+The :ref:`vcl-step(7)` manual page has been added to document the VCL
 state machines.
 
 VCL Tracing

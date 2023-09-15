@@ -6,7 +6,7 @@
 
 .. role:: ref(emphasis)
 
-.. _vcl-steps(7):
+.. _vcl-step(7):
 
 =========
 VCL-steps

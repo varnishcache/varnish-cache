@@ -145,7 +145,7 @@ Varnish Cache NEXT (2023-09-15)
   ``/usr/share/varnish/vcc`` (or equivalent) to enable re-use by other
   tools like code editors.
 
-* The :ref:`vcl-steps(7)` manual page has been added to document the
+* The :ref:`vcl-step(7)` manual page has been added to document the
   VCL state machines.
 
 * ``HSH_Cancel()`` has been moved to ``VDP_Close()`` to enable
