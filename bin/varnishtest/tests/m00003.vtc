@@ -96,7 +96,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
 varnish v1 -errvcl {VMOD wants ABI version 1.0} { import wrong; }
 
 #############################################################
-# NB: in the tests below "17" should track VRT_MAJOR_VERSION
+# NB: in the tests below "18" should track VRT_MAJOR_VERSION
 
 filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
 filewrite -a ${tmpdir}/libvmod_wrong.so {
@@ -108,7 +108,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
-	    "17",
+	    "18",
 	    "0"
 	], [
 	    "$FOOBAR"
@@ -128,7 +128,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
-	    "17",
+	    "18",
 	    "0"
 	]
     ]
@@ -146,7 +146,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
-	    "17",
+	    "18",
 	    "0"
 	], [
 	    "$CPROTO"
@@ -168,7 +168,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
 	    "Vmod_vmod_std_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
-	    "17",
+	    "18",
 	    "0"
 	], [
 	    "$CPROTO", "/* blabla */"
