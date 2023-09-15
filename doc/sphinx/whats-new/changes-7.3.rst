@@ -112,9 +112,6 @@ Probes have a new ``.expect_close`` attribute defaulting to ``true``, matching
 the current behavior. Setting it to ``false`` will defer final checks until
 after the probe times out.
 
-VMODs
-=====
-
 varnishlog
 ==========
 
