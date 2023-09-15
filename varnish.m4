@@ -124,8 +124,10 @@ AC_DEFUN([_VARNISH_CHECK_DEVEL], [
 # _VARNISH_CHECK_PYTHON
 # ---------------------
 AC_DEFUN([_VARNISH_CHECK_PYTHON], [
+dnl _AM_PYTHON_INTERPRETER_LIST should be removed after the next release of aclocal
+dnl see: https://bugs.gnu.org/53530
 	m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-		[python3.10 python3.9 python3.8 python3.7 python3.6 dnl
+		[python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 dnl
 		python3.5 python3.4 python3 python])
 	AM_PATH_PYTHON([3.4], [], [
 		AC_MSG_ERROR([Python >= 3.4 is required.])

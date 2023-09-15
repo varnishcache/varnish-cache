@@ -100,7 +100,7 @@ AC_SUBST([VMOD_DIR])
 
 AC_DEFUN([VARNISH_VMODTOOL],
 [
-AC_CHECK_PROGS(PYTHON, [python3.10 python3.9 python3.8 python3.7 python3.6 dnl
+AC_CHECK_PROGS(PYTHON, [python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 dnl
  python3.5 python3.4 python3 python, "no"])
 if test "x$PYTHON" = "xno"; then
   AC_MSG_ERROR([Python >= 3.4 is needed to build, please install python.])
