@@ -88,7 +88,11 @@ AC_CHECK_PROGS([DOT], [dot])
 _VARNISH_VMOD_LDFLAGS
 
 # Check for python.
-_VARNISH_CHECK_PYTHON
+AC_ARG_WITH([python],
+  AS_HELP_STRING([--with-python=PATH], [Location of python (auto)]),
+  [PYTHON="$withval"],
+  [_VARNISH_CHECK_PYTHON])
+
 
 # Check for libraries.
 _VARNISH_SEARCH_LIBS(pthread, pthread_create, [thr pthread c_r])
