@@ -233,14 +233,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	req->t_resp = W_TIM_real(wrk);
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 
-	if (FEATURE(FEATURE_VALIDATE_CLIENT_RESPONSES) &&
-	    req->esi_level == 0 && wrk->vpi->handling == VCL_RET_DELIVER &&
-	    HTTP_ValidateResp(req->resp)) {
-		VSLb(req->vsl, SLT_VCL_Error,
-		    "Response failed HTTP validation");
-		wrk->vpi->handling = VCL_RET_FAIL;
-	}
-
 	assert(req->restarts <= cache_param->max_restarts);
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
@@ -344,13 +336,6 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	AZ(VSB_finish(synth_body));
 
-	if (FEATURE(FEATURE_VALIDATE_CLIENT_RESPONSES) &&
-	    req->esi_level == 0 && wrk->vpi->handling == VCL_RET_DELIVER &&
-	    HTTP_ValidateResp(req->resp)) {
-		VSLb(req->vsl, SLT_VCL_Error,
-		    "Synthetic response failed HTTP validation");
-		wrk->vpi->handling = VCL_RET_FAIL;
-	}
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
 	while (wrk->vpi->handling == VCL_RET_FAIL) {

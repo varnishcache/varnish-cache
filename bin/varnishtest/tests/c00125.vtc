@@ -110,3 +110,14 @@ client c4 {
 	expect resp.status == 503
 	# No expect_close as this will be a regular 503 object delivery
 } -run
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c5 {
+	stream 1 {
+		txreq -hdr "do_deliver_proto" "true"
+		rxresp
+		expect resp.status == 503
+
+	} -run
+} -run

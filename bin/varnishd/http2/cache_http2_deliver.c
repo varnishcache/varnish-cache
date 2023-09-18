@@ -332,6 +332,13 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		sendbody = 0;
 	}
 
+	if (FEATURE(FEATURE_VALIDATE_CLIENT_RESPONSES) && HTTP_ValidateResp(req->resp)) {
+		VSLb(req->vsl, SLT_VCL_Error,
+                   "Response failed HTTP validation");
+		req->doclose = SC_TX_ERROR;
+		req->transport->minimal_response(req, 503);
+		return;
+	}
 	AZ(req->wrk->v1l);
 
 	r2->t_send = req->t_prev;

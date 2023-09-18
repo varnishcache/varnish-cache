@@ -409,12 +409,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(bo->vsl->wid));
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
-	if (FEATURE(FEATURE_VALIDATE_BACKEND_REQUESTS) &&
-	    wrk->vpi->handling == VCL_RET_FETCH && HTTP_ValidateReq(bo->bereq)) {
-		VSLb(bo->vsl, SLT_VCL_Error,
-		    "Backend request failed HTTP validation");
-		wrk->vpi->handling = VCL_RET_FAIL;
-	}
 
 	if (wrk->vpi->handling == VCL_RET_ABANDON ||
 	    wrk->vpi->handling == VCL_RET_FAIL)
