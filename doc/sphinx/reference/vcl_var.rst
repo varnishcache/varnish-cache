@@ -1614,7 +1614,7 @@ resp.http.content-length
 
 	Type: HEADER
 
-	Readable from: client
+	Readable from: vcl_deliver, vcl_synth
 
 	The content-length header field is protected, see protected_headers_.
 
@@ -1623,7 +1623,7 @@ resp.http.transfer-encoding
 
 	Type: HEADER
 
-	Readable from: client
+	Readable from: vcl_deliver, vcl_synth
 
 	The transfer-encoding header field is protected, see protected_headers_.
 
