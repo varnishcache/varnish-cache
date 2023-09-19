@@ -964,7 +964,7 @@ main(int argc, char * const *argv)
 		mgt_eric_im_done(eric_fd, u);
 
 	if (u)
-		exit(u);
+		_exit(u);
 
 	/* Failure is no longer an option */
 
