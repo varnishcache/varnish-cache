@@ -35,6 +35,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 7.4.1 (2023-09-19)
+================================
+
+* Fix the scope of bereq protected headers (3984_).
+
+.. _3984: https://github.com/varnishcache/varnish-cache/issues/3984
+
+================================
 Varnish Cache 7.4.0 (2023-09-15)
 ================================
 
