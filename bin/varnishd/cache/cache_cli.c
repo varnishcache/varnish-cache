@@ -44,7 +44,6 @@
 #include "vcli_serve.h"
 
 pthread_t		cli_thread;
-static struct lock	cli_mtx;
 static int		add_check;
 static struct VCLS	*cache_cls;
 
@@ -65,9 +64,7 @@ CLI_AddFuncs(struct cli_proto *p)
 {
 
 	AZ(add_check);
-	Lck_Lock(&cli_mtx);
 	VCLS_AddFunc(cache_cls, p);
-	Lck_Unlock(&cli_mtx);
 }
 
 static void
@@ -87,7 +84,6 @@ cli_cb_before(const struct cli *cli, struct cli_proto *clp, const char * const *
 		AZ(VSB_finish(cli->cmd));
 	}
 	VSL(SLT_CLI, NO_VXID, "Rd %s", VSB_data(cli->cmd));
-	Lck_Lock(&cli_mtx);
 	VCL_Poll();
 }
 
@@ -99,7 +95,6 @@ cli_cb_after(const struct cli *cli, struct cli_proto *clp, const char * const *a
 	(void)av;
 	const char *h = "(hidden)";
 
-	Lck_Unlock(&cli_mtx);
 	if (clp == NULL ||
 	    DO_DEBUG(DBG_CLI_SHOW_SENSITIVE) ||
 	    !(clp->desc->flags & CLI_F_SENSITIVE)) {
@@ -149,7 +144,6 @@ void
 CLI_Init(void)
 {
 
-	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
 	cache_cls = VCLS_New(heritage.cls);

@@ -33,7 +33,6 @@
 
 LOCK(ban)
 LOCK(busyobj)
-LOCK(cli)
 LOCK(director)
 LOCK(exp)
 LOCK(hcb)
