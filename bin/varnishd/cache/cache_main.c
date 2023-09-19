@@ -462,6 +462,9 @@ child_main(int sigmagic, size_t altstksz)
 		SMP_Ready();
 #endif
 
+	if (DO_DEBUG(DBG_STARTUP_PANIC))
+		WRONG("startup_panic");
+
 	CLI_Run();
 
 	if (shutdown_delay > 0)
