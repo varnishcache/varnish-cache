@@ -1164,7 +1164,7 @@ beresp.http.content-length
 
 	Type: HEADER
 
-	Readable from: client
+	Readable from: vcl_backend_response, vcl_backend_error
 
 	The content-length header field is protected, see protected_headers_.
 
@@ -1173,7 +1173,7 @@ beresp.http.transfer-encoding
 
 	Type: HEADER
 
-	Readable from: client
+	Readable from: vcl_backend_response, vcl_backend_error
 
 	The transfer-encoding header field is protected, see protected_headers_.
 
