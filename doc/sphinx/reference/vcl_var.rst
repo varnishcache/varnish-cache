@@ -742,7 +742,7 @@ bereq.http.content-length
 
 	Type: HEADER
 
-	Readable from: client
+	Readable from: backend
 
 	The content-length header field is protected, see protected_headers_.
 
@@ -751,7 +751,7 @@ bereq.http.transfer-encoding
 
 	Type: HEADER
 
-	Readable from: client
+	Readable from: backend
 
 	The transfer-encoding header field is protected, see protected_headers_.
 
