@@ -1,0 +1,57 @@
+varnishtest "Access protected headers"
+
+varnish v1 -vcl {
+	backend be none;
+
+	sub access_req {
+		if (req.http.content-length || req.http.content-encoding) {}
+	}
+	sub access_resp {
+		if (resp.http.content-length || resp.http.content-encoding) {}
+	}
+	sub access_bereq {
+		if (bereq.http.content-length || bereq.http.content-encoding) {}
+	}
+	sub access_beresp {
+		if (beresp.http.content-length || beresp.http.content-encoding) {}
+	}
+
+	sub vcl_recv {
+		call access_req;
+	}
+	sub vcl_hash {
+		call access_req;
+	}
+	sub vcl_purge {
+		call access_req;
+	}
+	sub vcl_miss {
+		call access_req;
+	}
+	sub vcl_pass {
+		call access_req;
+	}
+	sub vcl_hit {
+		call access_req;
+	}
+	sub vcl_synth {
+		call access_req;
+		call access_resp;
+	}
+	sub vcl_deliver {
+		call access_req;
+		call access_resp;
+	}
+
+	sub vcl_backend_fetch {
+		call access_bereq;
+	}
+	sub vcl_backend_error {
+		call access_bereq;
+		call access_beresp;
+	}
+	sub vcl_backend_response {
+		call access_bereq;
+		call access_beresp;
+	}
+}
