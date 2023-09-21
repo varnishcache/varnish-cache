@@ -4,16 +4,16 @@ varnish v1 -vcl {
 	backend be none;
 
 	sub access_req {
-		if (req.http.content-length || req.http.content-encoding) {}
+		if (req.http.content-length || req.http.transfer-encoding) {}
 	}
 	sub access_resp {
-		if (resp.http.content-length || resp.http.content-encoding) {}
+		if (resp.http.content-length || resp.http.transfer-encoding) {}
 	}
 	sub access_bereq {
-		if (bereq.http.content-length || bereq.http.content-encoding) {}
+		if (bereq.http.content-length || bereq.http.transfer-encoding) {}
 	}
 	sub access_beresp {
-		if (beresp.http.content-length || beresp.http.content-encoding) {}
+		if (beresp.http.content-length || beresp.http.transfer-encoding) {}
 	}
 
 	sub vcl_recv {
