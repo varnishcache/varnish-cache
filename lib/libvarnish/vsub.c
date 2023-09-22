@@ -38,9 +38,7 @@
 #include <stdlib.h>		// Solaris closefrom(3c)
 #include <string.h>
 #include <unistd.h>		// BSD/Linux close_range(2)
-#ifdef HAVE_WORKING_CLOSE_RANGE
-#elif HAVE_CLOSEFROM
-#else
+#ifndef HAVE_CLOSEFROM
 #  include <dirent.h>
 #endif
 
@@ -67,13 +65,14 @@ VSUB_closefrom(int fd)
 
 	assert(fd >= 0);
 
-#ifdef HAVE_WORKING_CLOSE_RANGE
-	AZ(close_range(fd, ~0U, 0));
-	return;
-#elif HAVE_CLOSEFROM
+#ifdef HAVE_CLOSEFROM
 	closefrom(fd);
 	return;
 #else
+#  ifdef HAVE_WORKING_CLOSE_RANGE
+	if (close_range(fd, ~0U, 0) == 0)
+		return;
+#  endif
 	char buf[128];
 	int i, maxfd = 0;
 	DIR *d;
