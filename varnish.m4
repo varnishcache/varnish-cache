@@ -31,7 +31,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # varnish.m4 - Macros to build against Varnish.         -*- Autoconf -*-
-# serial 11 (varnish-6.5.0)
+# serial 12 (varnish-x.y.z)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -124,13 +124,7 @@ AC_DEFUN([_VARNISH_CHECK_DEVEL], [
 # _VARNISH_CHECK_PYTHON
 # ---------------------
 AC_DEFUN([_VARNISH_CHECK_PYTHON], [
-	m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-		[python3.10 python3.9 python3.8 python3.7 python3.6 dnl
-		python3.5 python3.4 python3 python])
-	AM_PATH_PYTHON([3.4], [], [
-		AC_MSG_ERROR([Python >= 3.4 is required.])
-	])
-
+	AM_PATH_PYTHON([3.4], [], [AC_MSG_ERROR([Python >= 3.4 is required.])])
 ])
 
 # _VARNISH_VMOD_LDFLAGS
