@@ -670,11 +670,23 @@ VSB_indent(struct vsb *s, int i)
 int
 VSB_tofile(const struct vsb *s, int fd)
 {
+	const char *p;
 	ssize_t r;
+	size_t sz;
 
 	assert_VSB_integrity(s);
 	assert_VSB_state(s, VSB_FINISHED);
 	assert(s->s_len >= 0);
-	r = write(fd, s->s_buf, s->s_len);
-	return (r == s->s_len ? 0 : -1);
+	r = 0;
+	p = s->s_buf;
+	sz = (typeof(sz))s->s_len;
+	while (sz > 0) {
+		r = write(fd, p, sz);
+		if (r < 0)
+			return (-1);
+		assert(r <= sz);
+		p += r;
+		sz -= r;
+	}
+	return (r >= 0 ? 0 : -1);
 }
