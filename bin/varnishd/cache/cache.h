@@ -359,6 +359,7 @@ struct objcore {
 	VTAILQ_ENTRY(objcore)	lru_list;
 	VTAILQ_ENTRY(objcore)	ban_list;
 	VSTAILQ_ENTRY(objcore)	exp_list;
+	VTAILQ_HEAD(, req)	waitinglist;
 	struct ban		*ban;
 };
 
@@ -490,8 +491,8 @@ struct req {
 
 	struct objcore		*body_oc;
 
-	/* The busy objhead we sleep on */
-	struct objhead		*hash_objhead;
+	/* The busy objcore we sleep on */
+	struct objcore		*hash_oc;
 
 	/* Built Vary string == workspace reservation */
 	uint8_t			*vary_b;

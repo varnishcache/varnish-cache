@@ -922,7 +922,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	stale = bo->stale_oc;
 	oc->t_origin = now;
-	if (!VTAILQ_EMPTY(&oc->objhead->waitinglist)) {
+	if (!VTAILQ_EMPTY(&oc->waitinglist)) {
 		/*
 		 * If there is a waitinglist, it means that there is no
 		 * grace-able object, so cache the error return for a

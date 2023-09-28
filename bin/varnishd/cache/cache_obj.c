@@ -142,6 +142,7 @@ ObjNew(const struct worker *wrk)
 	wrk->stats->n_objectcore++;
 	oc->last_lru = NAN;
 	oc->flags = OC_F_BUSY;
+	VTAILQ_INIT(&oc->waitinglist);
 
 	oc->boc = obj_newboc();
 
@@ -160,6 +161,7 @@ ObjDestroy(const struct worker *wrk, struct objcore **p)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oc, p, OBJCORE_MAGIC);
+	assert(VTAILQ_EMPTY(&oc->waitinglist));
 	if (oc->boc != NULL)
 		obj_deleteboc(&oc->boc);
 	FREE_OBJ(oc);
