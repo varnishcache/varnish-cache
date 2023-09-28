@@ -70,17 +70,17 @@ server s6 {
 
 varnish v1 -arg "-p thread_pools=1" -arg "-p thread_pool_min=30" -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -arg "-p debug=+waitinglist" -vcl+backend {
 	sub vcl_backend_fetch {
-		if (bereq.http.client == "1") {
+		if (bereq.http.user-agent == "c1") {
 			set bereq.backend = s1;
-		} else if (bereq.http.client == "2") {
+		} else if (bereq.http.user-agent == "c2") {
 			set bereq.backend = s2;
-		} else if (bereq.http.client == "3") {
+		} else if (bereq.http.user-agent == "c3") {
 			set bereq.backend = s3;
-		} else if (bereq.http.client == "4") {
+		} else if (bereq.http.user-agent == "c4") {
 			set bereq.backend = s4;
-		} else if (bereq.http.client == "5") {
+		} else if (bereq.http.user-agent == "c5") {
 			set bereq.backend = s5;
-		} else if (bereq.http.client == "6") {
+		} else if (bereq.http.user-agent == "c6") {
 			set bereq.backend = s6;
 		}
 	}
@@ -90,7 +90,7 @@ varnish v1 -arg "-p thread_pools=1" -arg "-p thread_pool_min=30" -arg "-p rush_e
 } -start
 
 client c1 {
-	txreq -url /hfp -hdr "Client: 1"
+	txreq
 	rxresp
 } -start
 
@@ -98,32 +98,32 @@ client c1 {
 barrier b1 sync
 
 client c2 {
-	txreq -url /hfp -hdr "Client: 2"
+	txreq
 	rxresp
 } -start
 
 client c3 {
-	txreq -url /hfp -hdr "Client: 3"
+	txreq
 	rxresp
 } -start
 
 client c4 {
-	txreq -url /hfp -hdr "Client: 4"
+	txreq
 	rxresp
 } -start
 
 client c5 {
-	txreq -url /hfp -hdr "Client: 5"
+	txreq
 	rxresp
 } -start
 
 client c6 {
-	txreq -url /hfp -hdr "Client: 6"
+	txreq
 	rxresp
 } -start
 
 # Wait until c2-c6 are on the waitinglist
-delay 1
+varnish v1 -vsl_catchup
 varnish v1 -expect busy_sleep == 5
 
 # Open up the response headers from s1, and as a result HSH_Unbusy
