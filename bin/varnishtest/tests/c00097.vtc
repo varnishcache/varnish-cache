@@ -53,7 +53,7 @@ client c4 {
 } -start
 
 # Wait until c2-c4 are on the waitinglist
-delay 1
+varnish v1 -vsl_catchup
 varnish v1 -expect busy_sleep == 3
 
 # Open up the response headers from s1, and as a result HSH_Unbusy
