@@ -730,6 +730,7 @@ hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r, int max)
 		req = VTAILQ_FIRST(&oc->waitinglist);
 		if (req == NULL)
 			break;
+		assert(oc->refcnt > 1);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		wrk->stats->busy_wakeup++;
 		AZ(req->wrk);
@@ -994,10 +995,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
-	if (!VTAILQ_EMPTY(&oc->waitinglist)) {
-		assert(oc->refcnt > 1);
-		hsh_rush1(wrk, oc, &rush, HSH_RUSH_POLICY);
-	}
+	hsh_rush1(wrk, oc, &rush, HSH_RUSH_POLICY);
 	Lck_Unlock(&oh->mtx);
 	EXP_Insert(wrk, oc); /* Does nothing unless EXP_RefNewObjcore was
 			      * called */
