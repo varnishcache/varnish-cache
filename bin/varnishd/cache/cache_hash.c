@@ -705,6 +705,7 @@ static void
 hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r, int max)
 {
 	int i;
+	unsigned xid = 0;
 	struct req *req;
 
 	if (max == 0)
@@ -727,6 +728,13 @@ hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r, int max)
 		req = VTAILQ_FIRST(&oc->waitinglist);
 		if (req == NULL)
 			break;
+
+		if (DO_DEBUG(DBG_WAITINGLIST)) {
+			xid = VXID(req->vsl->wid);
+			VSLb(wrk->vsl, SLT_Debug,
+			    "waiting list rush for req %u", xid);
+		}
+
 		assert(oc->refcnt > 0);
 		oc->refcnt++;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
