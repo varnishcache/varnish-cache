@@ -670,8 +670,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		/*
 		 * The objcore reference transfers to the req, we get it
 		 * back when the req comes off the waiting list and calls
-		 * us again
+		 * us again. The reference counter increase is deferred to
+		 * the rush hour.
 		 */
+		assert(busy_oc->refcnt > 0);
 		AZ(req->hash_oc);
 		req->hash_oc = busy_oc;
 		req->wrk = NULL;
@@ -691,11 +693,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 
 	if (oc != NULL)
 		*ocp = oc;
-
-	if (busy_oc != NULL) {
-		assert(busy_oc->refcnt > 0);
-		busy_oc->refcnt++;
-	}
 
 	return (lr);
 }
@@ -730,7 +727,8 @@ hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r, int max)
 		req = VTAILQ_FIRST(&oc->waitinglist);
 		if (req == NULL)
 			break;
-		assert(oc->refcnt > 1);
+		assert(oc->refcnt > 0);
+		oc->refcnt++;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		wrk->stats->busy_wakeup++;
 		AZ(req->wrk);
