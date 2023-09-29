@@ -365,9 +365,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *exp_oc;
+	struct objcore *busy_oc;
 	const struct vcf_return *vr;
 	vtim_real exp_t_origin;
-	int busy_found;
 	const uint8_t *vary;
 	intmax_t boc_progress;
 	unsigned xid = 0;
@@ -417,7 +417,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	}
 
 	assert(oh->refcnt > 0);
-	busy_found = 0;
+	busy_oc = NULL;
 	exp_oc = NULL;
 	exp_t_origin = 0.0;
 	VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
@@ -434,6 +434,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 
 		CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
 		if (oc->flags & OC_F_BUSY) {
+			if (busy_oc != NULL)
+				continue;
 			if (req->hash_ignore_busy)
 				continue;
 
@@ -444,7 +446,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				continue;
 			}
 
-			busy_found = 1;
+			busy_oc = oc;
 			continue;
 		}
 
@@ -547,7 +549,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	else
 		boc_progress = -1;
 
-	if (!busy_found) {
+	if (busy_oc == NULL) {
 		*bocp = hsh_insert_busyobj(wrk, oh);
 
 		if (exp_oc != NULL) {
@@ -564,7 +566,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		return (HSH_MISS);
 	}
 
-	AN(busy_found);
+	CHECK_OBJ_NOTNULL(busy_oc, OBJCORE_MAGIC);
 	if (exp_oc != NULL && EXP_Ttl_grace(req, exp_oc) >= req->t_req) {
 		/* we do not wait on the busy object if in grace */
 		exp_oc->refcnt++;
