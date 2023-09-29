@@ -284,17 +284,16 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
     struct ban *ban)
 {
 	struct objhead *oh;
-	struct rush rush;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	AN(digest);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ban);
+	assert(VTAILQ_EMPTY(&oc->waitinglist));
 	AN(oc->flags & OC_F_BUSY);
 	AZ(oc->flags & OC_F_PRIVATE);
 	assert(oc->refcnt == 1);
-	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	hsh_prealloc(wrk);
 
@@ -320,10 +319,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
-	if (!VTAILQ_EMPTY(&oc->waitinglist))
-		hsh_rush1(wrk, oc, &rush, HSH_RUSH_POLICY);
 	Lck_Unlock(&oh->mtx);
-	hsh_rush2(wrk, &rush);
 
 	EXP_Insert(wrk, oc);
 }
