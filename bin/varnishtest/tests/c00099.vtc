@@ -68,7 +68,10 @@ server s6 {
 	chunkedlen 0
 } -start
 
-varnish v1 -arg "-p thread_pools=1" -arg "-p thread_pool_min=30" -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -arg "-p debug=+waitinglist" -vcl+backend {
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set rush_exponent 2"
+varnish v1 -cliok "param.set debug +syncvsl,+waitinglist"
+varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 		if (bereq.http.user-agent == "c1") {
 			set bereq.backend = s1;
@@ -97,32 +100,63 @@ client c1 {
 # This makes sure that c1->s1 is done first
 barrier b1 sync
 
+# This will ensure that c{2..6} enter c1's waiting list in order.
+logexpect l2 -v v1 -g raw {
+	expect * * ReqHeader	"User-Agent: c2"
+	expect * = Debug	"on waiting list"
+} -start
+logexpect l3 -v v1 -g raw {
+	expect * * ReqHeader	"User-Agent: c3"
+	expect * = Debug	"on waiting list"
+} -start
+logexpect l4 -v v1 -g raw {
+	expect * * ReqHeader	"User-Agent: c4"
+	expect * = Debug	"on waiting list"
+} -start
+logexpect l5 -v v1 -g raw {
+	expect * * ReqHeader	"User-Agent: c5"
+	expect * = Debug	"on waiting list"
+} -start
+logexpect l6 -v v1 -g raw {
+	expect * * ReqHeader	"User-Agent: c6"
+	expect * = Debug	"on waiting list"
+} -start
+
 client c2 {
 	txreq
 	rxresp
 } -start
+
+logexpect l2 -wait
 
 client c3 {
 	txreq
 	rxresp
 } -start
 
+logexpect l3 -wait
+
 client c4 {
 	txreq
 	rxresp
 } -start
+
+logexpect l4 -wait
 
 client c5 {
 	txreq
 	rxresp
 } -start
 
+logexpect l5 -wait
+
 client c6 {
 	txreq
 	rxresp
 } -start
 
-# Wait until c2-c6 are on the waitinglist
+logexpect l6 -wait
+
 varnish v1 -vsl_catchup
 varnish v1 -expect busy_sleep == 5
 
@@ -135,3 +169,19 @@ client c3 -wait
 client c4 -wait
 client c5 -wait
 client c6 -wait
+
+varnish v1 -vsl_catchup
+
+# Check the effect of rush_exponent=2, with limited VXID guarantees.
+
+logexpect l1 -v v1 -g raw -d 1 -q "vxid != 0" -i Debug {
+	expect * 1002	Debug "waiting list rush for req 1004"
+	expect 0 =	Debug "waiting list rush for req 1006"
+
+	# triggered by 1004 or 1006
+	expect * *	Debug "waiting list rush for req 1008"
+	expect 0 =	Debug "waiting list rush for req 1010"
+
+	# trigerred by any VXID except 1002
+	expect * *	Debug "waiting list rush for req 1012"
+} -run

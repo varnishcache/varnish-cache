@@ -382,6 +382,42 @@ hsh_rush_match(struct req *req)
 	return (VRY_Match(req, vary));
 }
 
+static void
+hsh_rush_move(struct objcore *new_oc, struct objcore *old_oc)
+{
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(new_oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(old_oc, OBJCORE_MAGIC);
+
+	if (old_oc == NULL || VTAILQ_EMPTY(&old_oc->waitinglist))
+		return;
+
+	assert(old_oc->objhead == new_oc->objhead);
+	assert(old_oc->refcnt > 0);
+	assert(new_oc->refcnt > 0);
+	Lck_AssertHeld(&old_oc->objhead->mtx);
+
+	/* NB: req holds a weak reference of its hash_oc, so no reference
+	 * counting is needed when moving to the new_oc. An actual old_oc
+	 * reference should be held by either the fetch task rushing its
+	 * waiting list at unbusy time, or a rushed request exponentially
+	 * rushing other requests from the waiting list.
+	 */
+	VTAILQ_FOREACH(req, &old_oc->waitinglist, w_list) {
+		CHECK_OBJ(req, REQ_MAGIC);
+		assert(req->hash_oc == old_oc);
+		req->hash_oc = new_oc;
+	}
+
+	/* NB: The double concatenation of lists allows requests that were
+	 * waiting for the old_oc show up first in the waiting list of the
+	 * new_oc.
+	 */
+	VTAILQ_CONCAT(&old_oc->waitinglist, &new_oc->waitinglist, w_list);
+	VTAILQ_CONCAT(&new_oc->waitinglist, &old_oc->waitinglist, w_list);
+}
+
 /*---------------------------------------------------------------------
  */
 
@@ -551,6 +587,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *busy_oc;
+	struct objcore *rush_oc;
+	struct rush rush;
 	intmax_t boc_progress;
 	unsigned xid = 0;
 	float dttl = 0.0;
@@ -591,17 +629,42 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		 * This req came off the waiting list, and brings an
 		 * incompatible hash_oc refcnt with it.
 		 */
-		CHECK_OBJ_NOTNULL(req->hash_oc->objhead, OBJHEAD_MAGIC);
-		oh = req->hash_oc->objhead;
-		/* XXX: can we avoid grabbing the oh lock twice here? */
-		(void)HSH_DerefObjCore(wrk, &req->hash_oc, HSH_RUSH_POLICY);
+		TAKE_OBJ_NOTNULL(rush_oc, &req->hash_oc, OBJCORE_MAGIC);
+		oh = rush_oc->objhead;
 		Lck_Lock(&oh->mtx);
 	} else {
 		AN(wrk->wpriv->nobjhead);
 		oh = hash->lookup(wrk, req->digest, &wrk->wpriv->nobjhead);
+		rush_oc = NULL;
 	}
 
 	lr = hsh_objhead_lookup(oh, req, &oc, &busy_oc);
+
+	INIT_OBJ(&rush, RUSH_MAGIC);
+
+	if (rush_oc != NULL && !VTAILQ_EMPTY(&rush_oc->waitinglist)) {
+		switch (lr) {
+		case HSH_HIT:
+		case HSH_GRACE:
+			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+			AZ(oc->flags);
+			hsh_rush_move(oc, rush_oc);
+			hsh_rush1(wrk, oc, &rush, HSH_RUSH_POLICY);
+			assert(VTAILQ_EMPTY(&oc->waitinglist));
+			break;
+		case HSH_BUSY:
+			CHECK_OBJ_NOTNULL(busy_oc, OBJCORE_MAGIC);
+			hsh_rush_move(busy_oc, rush_oc);
+			break;
+		default:
+			/* The remaining stragglers will be passed on to the
+			 * next busy object or woken up as per rush_exponent
+			 * when the rush_oc reference is dropped.
+			 */
+			break;
+		}
+	}
+
 	switch (lr) {
 	case HSH_MISS:
 	case HSH_MISS_EXP:
@@ -611,6 +674,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		AZ(busy_oc);
 		*bocp = hsh_insert_busyobj(wrk, oh);
+		hsh_rush_move(*bocp, rush_oc);
 		Lck_Unlock(&oh->mtx);
 		break;
 	case HSH_HITMISS:
@@ -620,6 +684,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		xid = VXID(ObjGetXID(wrk, oc));
 		dttl = EXP_Dttl(req, oc);
 		*bocp = hsh_insert_busyobj(wrk, oh);
+		hsh_rush_move(*bocp, rush_oc);
 		Lck_Unlock(&oh->mtx);
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
@@ -664,8 +729,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		CHECK_OBJ_NOTNULL(busy_oc, OBJCORE_MAGIC);
 		AZ(req->hash_ignore_busy);
 
-		/* There are one or more busy objects, wait for them */
-		VTAILQ_INSERT_TAIL(&busy_oc->waitinglist, req, w_list);
+		if (rush_oc != NULL)
+			VTAILQ_INSERT_HEAD(&busy_oc->waitinglist, req, w_list);
+		else
+			VTAILQ_INSERT_TAIL(&busy_oc->waitinglist, req, w_list);
 
 		/*
 		 * The objcore reference transfers to the req, we get it
@@ -693,6 +760,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 
 	if (oc != NULL)
 		*ocp = oc;
+
+	if (rush_oc != NULL) {
+		hsh_rush2(wrk, &rush);
+		(void)HSH_DerefObjCore(wrk, &rush_oc, HSH_RUSH_POLICY);
+	}
 
 	return (lr);
 }
