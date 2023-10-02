@@ -75,8 +75,7 @@ struct rush {
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
-static void hsh_rush1(const struct worker *, struct objcore *,
-    struct rush *, int);
+static void hsh_rush1(const struct worker *, struct objcore *, struct rush *);
 static void hsh_rush2(struct worker *, struct rush *);
 static int hsh_deref_objhead(struct worker *wrk, struct objhead **poh);
 static int hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh);
@@ -649,7 +648,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			AZ(oc->flags);
 			hsh_rush_move(oc, rush_oc);
-			hsh_rush1(wrk, oc, &rush, HSH_RUSH_POLICY);
+			hsh_rush1(wrk, oc, &rush);
 			assert(VTAILQ_EMPTY(&oc->waitinglist));
 			break;
 		case HSH_BUSY:
@@ -763,7 +762,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 
 	if (rush_oc != NULL) {
 		hsh_rush2(wrk, &rush);
-		(void)HSH_DerefObjCore(wrk, &rush_oc, HSH_RUSH_POLICY);
+		(void)HSH_DerefObjCore(wrk, &rush_oc);
 	}
 
 	return (lr);
@@ -774,21 +773,14 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
  */
 
 static void
-hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r, int max)
+hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r)
 {
-	int i;
+	int max, i;
 	unsigned xid = 0;
 	struct req *req;
 
-	if (max == 0)
-		return;
-	if (max == HSH_RUSH_POLICY) {
-		AZ(oc->flags & OC_F_BUSY);
-		if (oc->flags != 0)
-			max = cache_param->rush_exponent;
-		else
-			max = INT_MAX;
-	}
+	AZ(oc->flags & OC_F_BUSY);
+	max = oc->flags != 0 ? cache_param->rush_exponent : INT_MAX;
 	assert(max > 0);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -927,7 +919,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 		for (i = 0; i < j; i++) {
 			CHECK_OBJ_NOTNULL(ocp[i], OBJCORE_MAGIC);
 			EXP_Rearm(ocp[i], ttl_now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(wrk, &ocp[i], 0);
+			(void)HSH_DerefObjCore(wrk, &ocp[i]);
 			AZ(ocp[i]);
 			total++;
 		}
@@ -1073,7 +1065,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
-	hsh_rush1(wrk, oc, &rush, HSH_RUSH_POLICY);
+	hsh_rush1(wrk, oc, &rush);
 	Lck_Unlock(&oh->mtx);
 	EXP_Insert(wrk, oc); /* Does nothing unless EXP_RefNewObjcore was
 			      * called */
@@ -1204,7 +1196,7 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
  */
 
 int
-HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
+HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 {
 	struct objcore *oc;
 	struct objhead *oh;
@@ -1226,7 +1218,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	if (!VTAILQ_EMPTY(&oc->waitinglist)) {
 		assert(oc->refcnt > 0);
-		hsh_rush1(wrk, oc, &rush, rushmax);
+		hsh_rush1(wrk, oc, &rush);
 	}
 	Lck_Unlock(&oh->mtx);
 	hsh_rush2(wrk, &rush);
