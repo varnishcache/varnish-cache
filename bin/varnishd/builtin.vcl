@@ -209,6 +209,10 @@ sub vcl_backend_response {
 	return (deliver);
 }
 
+sub vcl_backend_refresh {
+	return (merge);
+}
+
 sub vcl_builtin_backend_response {
 	call vcl_beresp_range;
 	if (bereq.uncacheable) {
