@@ -684,9 +684,9 @@ VSB_tofile(const struct vsb *s, int fd)
 		r = write(fd, p, sz);
 		if (r < 0)
 			return (-1);
-		assert(r <= sz);
+		assert((typeof(sz))r <= sz);
 		p += r;
 		sz -= r;
 	}
-	return (r >= 0 ? 0 : -1);
+	return (0);
 }
