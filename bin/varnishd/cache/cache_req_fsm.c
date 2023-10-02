@@ -46,7 +46,6 @@
 #include "cache_transport.h"
 #include "vcc_interface.h"
 
-#include "hash/hash_slinger.h"
 #include "http1/cache_http1.h"
 #include "storage/storage.h"
 #include "vcl.h"

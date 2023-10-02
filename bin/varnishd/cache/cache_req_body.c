@@ -41,7 +41,6 @@
 
 #include "vtim.h"
 #include "storage/storage.h"
-#include "hash/hash_slinger.h"
 
 /*----------------------------------------------------------------------
  * Pull the req.body in via/into a objcore
