@@ -51,15 +51,6 @@ struct hash_slinger {
 	hash_deref_f		*deref;
 };
 
-enum lookup_e {
-	HSH_MISS,
-	HSH_BUSY,
-	HSH_HIT,
-	HSH_HITMISS,
-	HSH_HITPASS,
-	HSH_GRACE
-};
-
 /* mgt_hash.c */
 void HSH_config(const char *);
 

@@ -56,6 +56,15 @@ struct objhead {
 #define hoh_head _u.n.u_n_hoh_head
 };
 
+enum lookup_e {
+	HSH_MISS,
+	HSH_HITMISS,
+	HSH_HITPASS,
+	HSH_HIT,
+	HSH_GRACE,
+	HSH_BUSY,
+};
+
 void HSH_Fail(struct objcore *);
 void HSH_Kill(struct objcore *);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *,
