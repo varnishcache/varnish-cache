@@ -541,7 +541,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		Lck_Unlock(&oh->mtx);
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
-		return (HSH_HITMISS);
+		return (HSH_HITMISS_EXP);
 	}
 
 	if (exp_oc != NULL && exp_oc->boc != NULL)
@@ -552,18 +552,22 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	if (busy_oc == NULL) {
 		*bocp = hsh_insert_busyobj(wrk, oh);
 
-		if (exp_oc != NULL) {
-			exp_oc->refcnt++;
-			*ocp = exp_oc;
-			if (EXP_Ttl_grace(req, exp_oc) >= req->t_req) {
-				exp_oc->hits++;
-				Lck_Unlock(&oh->mtx);
-				Req_LogHit(wrk, req, exp_oc, boc_progress);
-				return (HSH_GRACE);
-			}
+		if (exp_oc == NULL) {
+			Lck_Unlock(&oh->mtx);
+			return (HSH_MISS);
 		}
+
+		exp_oc->refcnt++;
+		*ocp = exp_oc;
+		if (EXP_Ttl_grace(req, exp_oc) >= req->t_req) {
+			exp_oc->hits++;
+			Lck_Unlock(&oh->mtx);
+			Req_LogHit(wrk, req, exp_oc, boc_progress);
+			return (HSH_GRACE);
+		}
+
 		Lck_Unlock(&oh->mtx);
-		return (HSH_MISS);
+		return (HSH_MISS_EXP);
 	}
 
 	CHECK_OBJ_NOTNULL(busy_oc, OBJCORE_MAGIC);

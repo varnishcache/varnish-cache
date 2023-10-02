@@ -590,25 +590,32 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	AZ(req->objcore);
-	if (lr == HSH_MISS || lr == HSH_HITMISS) {
+	switch (lr) {
+	case HSH_HITMISS:
+	case HSH_HITMISS_EXP:
+		req->is_hitmiss = 1;
+		/* FALL_THROUGH */
+	case HSH_MISS:
+	case HSH_MISS_EXP:
 		AN(busy);
 		AN(busy->flags & OC_F_BUSY);
 		req->objcore = busy;
 		req->stale_oc = oc;
 		req->req_step = R_STP_MISS;
-		if (lr == HSH_HITMISS)
-			req->is_hitmiss = 1;
 		return (REQ_FSM_MORE);
-	}
-	if (lr == HSH_HITPASS) {
+	case HSH_HITPASS:
 		AZ(busy);
 		AZ(oc);
 		req->req_step = R_STP_PASS;
 		req->is_hitpass = 1;
 		return (REQ_FSM_MORE);
+	case HSH_HIT:
+	case HSH_GRACE:
+		break;
+	case HSH_BUSY:
+	default:
+		WRONG("Invalid lookup result");
 	}
-
-	assert(lr == HSH_HIT || lr == HSH_GRACE);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
@@ -1067,7 +1074,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	req->hash_always_miss = 1;
 	lr = HSH_Lookup(req, &oc, &boc);
-	assert (lr == HSH_MISS);
+	assert(lr == HSH_MISS);
 	AZ(oc);
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
 	VRY_Finish(req, DISCARD);

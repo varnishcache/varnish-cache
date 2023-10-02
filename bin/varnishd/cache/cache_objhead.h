@@ -58,7 +58,9 @@ struct objhead {
 
 enum lookup_e {
 	HSH_MISS,
+	HSH_MISS_EXP,
 	HSH_HITMISS,
+	HSH_HITMISS_EXP,
 	HSH_HITPASS,
 	HSH_HIT,
 	HSH_GRACE,
