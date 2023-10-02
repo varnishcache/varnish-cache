@@ -75,8 +75,6 @@ struct rush {
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
-static void hsh_rush1(const struct worker *, struct objcore *, struct rush *);
-static void hsh_rush2(struct worker *, struct rush *);
 static int hsh_deref_objhead(struct worker *wrk, struct objhead **poh);
 static int hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh);
 
@@ -345,6 +343,80 @@ hsh_insert_busyobj(const struct worker *wrk, struct objhead *oh)
 	oc->objhead = oh;
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, hsh_list);
 	return (oc);
+}
+
+/*---------------------------------------------------------------------
+ * Pick the req's we are going to rush from the waiting list
+ */
+
+static void
+hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r)
+{
+	int max, i;
+	unsigned xid = 0;
+	struct req *req;
+
+	AZ(oc->flags & OC_F_BUSY);
+	max = oc->flags != 0 ? cache_param->rush_exponent : INT_MAX;
+	assert(max > 0);
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
+	VTAILQ_INIT(&r->reqs);
+	Lck_AssertHeld(&oc->objhead->mtx);
+	for (i = 0; i < max; i++) {
+		req = VTAILQ_FIRST(&oc->waitinglist);
+		if (req == NULL)
+			break;
+
+		if (DO_DEBUG(DBG_WAITINGLIST)) {
+			xid = VXID(req->vsl->wid);
+			VSLb(wrk->vsl, SLT_Debug,
+			    "waiting list rush for req %u", xid);
+		}
+
+		assert(oc->refcnt > 0);
+		oc->refcnt++;
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		wrk->stats->busy_wakeup++;
+		AZ(req->wrk);
+		VTAILQ_REMOVE(&oc->waitinglist, req, w_list);
+		VTAILQ_INSERT_TAIL(&r->reqs, req, w_list);
+		req->waitinglist = 0;
+	}
+}
+
+/*---------------------------------------------------------------------
+ * Rush req's that came from waiting list.
+ */
+
+static void
+hsh_rush2(struct worker *wrk, struct rush *r)
+{
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
+
+	while (!VTAILQ_EMPTY(&r->reqs)) {
+		req = VTAILQ_FIRST(&r->reqs);
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		VTAILQ_REMOVE(&r->reqs, req, w_list);
+		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
+		if (req->transport->reembark != NULL) {
+			// For ESI includes
+			req->transport->reembark(wrk, req);
+		} else {
+			/*
+			 * We ignore the queue limits which apply to new
+			 * requests because if we fail to reschedule there
+			 * may be vmod_privs to cleanup and we need a proper
+			 * workerthread for that.
+			 */
+			AZ(Pool_Task(req->sp->pool, req->task, TASK_QUEUE_RUSH));
+		}
+	}
 }
 
 /*---------------------------------------------------------------------
@@ -766,80 +838,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	}
 
 	return (lr);
-}
-
-/*---------------------------------------------------------------------
- * Pick the req's we are going to rush from the waiting list
- */
-
-static void
-hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r)
-{
-	int max, i;
-	unsigned xid = 0;
-	struct req *req;
-
-	AZ(oc->flags & OC_F_BUSY);
-	max = oc->flags != 0 ? cache_param->rush_exponent : INT_MAX;
-	assert(max > 0);
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
-	VTAILQ_INIT(&r->reqs);
-	Lck_AssertHeld(&oc->objhead->mtx);
-	for (i = 0; i < max; i++) {
-		req = VTAILQ_FIRST(&oc->waitinglist);
-		if (req == NULL)
-			break;
-
-		if (DO_DEBUG(DBG_WAITINGLIST)) {
-			xid = VXID(req->vsl->wid);
-			VSLb(wrk->vsl, SLT_Debug,
-			    "waiting list rush for req %u", xid);
-		}
-
-		assert(oc->refcnt > 0);
-		oc->refcnt++;
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		wrk->stats->busy_wakeup++;
-		AZ(req->wrk);
-		VTAILQ_REMOVE(&oc->waitinglist, req, w_list);
-		VTAILQ_INSERT_TAIL(&r->reqs, req, w_list);
-		req->waitinglist = 0;
-	}
-}
-
-/*---------------------------------------------------------------------
- * Rush req's that came from waiting list.
- */
-
-static void
-hsh_rush2(struct worker *wrk, struct rush *r)
-{
-	struct req *req;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
-
-	while (!VTAILQ_EMPTY(&r->reqs)) {
-		req = VTAILQ_FIRST(&r->reqs);
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		VTAILQ_REMOVE(&r->reqs, req, w_list);
-		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (req->transport->reembark != NULL) {
-			// For ESI includes
-			req->transport->reembark(wrk, req);
-		} else {
-			/*
-			 * We ignore the queue limits which apply to new
-			 * requests because if we fail to reschedule there
-			 * may be vmod_privs to cleanup and we need a proper
-			 * workerthread for that.
-			 */
-			AZ(Pool_Task(req->sp->pool, req->task, TASK_QUEUE_RUSH));
-		}
-	}
 }
 
 /*---------------------------------------------------------------------
