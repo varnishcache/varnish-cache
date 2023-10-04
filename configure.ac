@@ -372,11 +372,11 @@ fi
 
 AM_CONDITIONAL([WITH_UNWIND], [test "$have_unwind" = yes])
 
-# white lie - we don't actually test it
-AC_MSG_CHECKING([whether daemon() works])
 case $target in
 *-*-darwin*)
+	# white lie - we don't actually test it
 	# present but not functional
+	AC_MSG_CHECKING([whether daemon() works])
 	AC_MSG_RESULT([no])
 	ac_cv_func_daemon=no
 	;;
