@@ -726,10 +726,13 @@ AC_CACHE_CHECK([whether we have support for visibility attributes],
 		[AC_LANG_PROGRAM([[
 			int __attribute__((visibility ("hidden"))) foo;
 		]],[])],
-	[AC_DEFINE([HAVE_HIDDEN], [1],
-		[Define to 1 if visibility attribute hidden is available.])
-	])
+		[ac_cv_have_viz=yes],
+		[ac_cv_have_viz=no])
 ])
+
+AS_IF([test $ac_cv_have_viz = yes], [
+	AC_DEFINE([HAVE_HIDDEN], [1],
+		[Define to 1 if visibility attribute hidden is available.])])
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
