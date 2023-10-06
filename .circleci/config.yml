@@ -82,9 +82,9 @@ jobs:
                   touch .is_weekly
                   # If version is "trunk", override version to add date
                   if grep 'AC_INIT.*trunk.*' ./configure.ac; then
-                      sed -i -e "s/AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])/AC_INIT([\1], [$(date +%Y%m%d)], [\3])/" ./configure.ac
+                      sed -i -e "s/AC_INIT(\[\(.*\)\],\[\(.*\)\],\[\(.*\)\])/AC_INIT([\1],[$(date +%Y%m%d)],[\3])/" ./configure.ac
                   else
-                      sed -i -e "s/AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])/AC_INIT([\1], [\2-$(date +%Y%m%d)], [\3])/" ./configure.ac
+                      sed -i -e "s/AC_INIT(\[\(.*\)\],\[\(.*\)\],\[\(.*\)\])/AC_INIT([\1],[\2-$(date +%Y%m%d)],[\3])/" ./configure.ac
                   fi
                   ./autogen.des
                   make dist -j 16
