@@ -308,7 +308,7 @@ h2h_decode_fini(const struct h2_sess *h2)
  *		       Violation of field name/value charsets
  */
 h2_error
-h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
+h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l, struct h2_req *r2)
 {
 	struct http *hp;
 	struct h2h_decode *d;
@@ -380,6 +380,8 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			    d->out_u);
 			if (d->error)
 				break;
+			if (d->out_u > cache_param->http_req_hdr_len)
+				r2->hpack_err = 1;
 			d->error = h2h_addhdr(hp, d->out, d->namelen, d->out_u);
 			if (d->error)
 				break;
