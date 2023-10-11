@@ -44,6 +44,7 @@ typedef void vtr_sess_panic_f (struct vsb *, const struct sess *);
 typedef void vtr_req_panic_f (struct vsb *, const struct req *);
 typedef void vtr_req_fail_f (struct req *, stream_close_t);
 typedef void vtr_reembark_f (struct worker *, struct req *);
+typedef int vtr_poll_f (struct req *);
 typedef int vtr_minimal_response_f (struct req *, uint16_t status);
 
 struct transport {
@@ -64,6 +65,7 @@ struct transport {
 	vtr_sess_panic_f		*sess_panic;
 	vtr_req_panic_f			*req_panic;
 	vtr_reembark_f			*reembark;
+	vtr_poll_f			*poll;
 	vtr_minimal_response_f		*minimal_response;
 
 	VTAILQ_ENTRY(transport)		list;
