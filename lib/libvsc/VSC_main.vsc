@@ -350,7 +350,9 @@
 	:oneliner:	Requests reset
 
 	Number of times a client left before the VCL processing of its
-	requests completed.
+	requests completed. For HTTP/2 sessions, either the stream was
+	reset by an RST_STREAM frame from the client, or a stream or
+	connection error occurred.
 
 .. varnish_vsc:: n_object
 	:type:	gauge
