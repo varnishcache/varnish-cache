@@ -220,7 +220,12 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	(void)par;
 
 	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcmp(arg, "none")) {
+		if (!strcmp(arg, "default")) {
+			AZ(bit_tweak(vsb, mgt_param.feature_bits,
+				FEATURE_Reserved,
+				"+vcl_req_reset",
+				feature_tags, "feature bit", "+"));
+		}else if (!strcmp(arg, "none")) {
 			memset(mgt_param.feature_bits,
 			    0, sizeof mgt_param.feature_bits);
 		} else {
@@ -272,6 +277,6 @@ struct parspec VSL_parspec[] = {
 #define FEATURE_BIT(U, l, d, ld) "\n\t" #l "\t" d
 #include "tbl/feature_bits.h"
 #undef FEATURE_BIT
-		, 0, "none", "" },
+		, 0, "default", "" },
 	{ NULL, NULL, NULL }
 };
