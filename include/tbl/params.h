@@ -1810,7 +1810,9 @@ PARAM_PRE
 PARAM_BITS(
 	/* name */	feature,
 	/* fld */	feature_bits,
-	/* def */	"+validate_headers",
+	/* def */
+	"+validate_headers,"
+	"+vcl_req_reset",
 	/* descr */
 	"Enable/Disable various minor features.\n"
 	"\tdefault\tSet default value\n"
