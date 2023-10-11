@@ -72,7 +72,8 @@ Restart
 	Client request is being restarted.
 
 Reset
-        The client closed its connection or reset its stream. Request
+        The client closed its connection, reset its stream or caused
+        a stream error that forced Varnish to reset the stream. Request
         processing is interrupted and considered failed.
 
 Pipe handling timestamps
