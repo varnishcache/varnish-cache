@@ -525,7 +525,8 @@ startup::
   vcl.use main
 
 Every line in the file, including the last line, must be terminated by
-a newline or carriage return.
+a newline or carriage return or is otherwise considered truncated, which
+is a fatal error.
 
 If a command in the file is prefixed with '-', failure will not abort
 the startup.
