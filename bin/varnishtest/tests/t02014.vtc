@@ -5,6 +5,9 @@ barrier b2 sock 3
 barrier b3 sock 3
 barrier b4 sock 3
 
+barrier b2_err cond 2
+barrier b3_err cond 2
+
 server s1 {
 	rxreq
 	txresp -bodylen 66300
@@ -64,6 +67,13 @@ client c1 {
 	stream 0 -wait
 } -run
 
+varnish v1 -vsl_catchup
+
+logexpect l2 -v v1 -g raw {
+	expect * * ReqMethod GET
+	expect * = VCL_call DELIVER
+} -start
+
 client c2 {
 	stream 0 {
 		barrier b2 sync
@@ -71,6 +81,7 @@ client c2 {
 
 	stream 1 {
 		txreq -hdr barrier ${b2_sock}
+		barrier b2_err sync
 		txdata -data "fail"
 		rxrst
 		expect rst.err == STREAM_CLOSED
@@ -78,7 +89,17 @@ client c2 {
 	} -run
 
 	stream 0 -wait
-} -run
+} -start
+
+logexpect l2 -wait
+barrier b2_err sync
+
+client c2 -wait
+
+logexpect l3 -v v1 -g raw {
+	expect * * ReqMethod POST
+	expect * = VCL_call DELIVER
+} -start
 
 client c3 {
 	stream 0 {
@@ -96,6 +117,7 @@ client c3 {
 	stream 1 {
 		txreq -req "POST" -hdr barrier ${b3_sock} -nostrend
 		txdata -data "ok"
+		barrier b3_err sync
 		txdata -data "fail"
 		rxrst
 		expect rst.err == STREAM_CLOSED
@@ -117,4 +139,9 @@ client c3 {
 	} -run
 
 	stream 0 -wait
-} -run
+} -start
+
+logexpect l3 -wait
+barrier b3_err sync
+
+client c3 -wait
