@@ -83,6 +83,12 @@ FEATURE_BIT(HTTP_DATE_POSTEL,	http_date_postel,
     "like Date:, Last-Modified:, Expires: etc."
 )
 
+FEATURE_BIT(VCL_REQ_RESET,			vcl_req_reset,
+    "Stop processing client VCL once the client is gone.",
+    "Stop processing client VCL once the client is gone. "
+    "When this happens MAIN.req_reset is incremented."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

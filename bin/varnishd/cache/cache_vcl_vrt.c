@@ -37,8 +37,10 @@
 #include "cache_varnishd.h"
 
 #include "vcl.h"
+#include "vtim.h"
 
 #include "cache_director.h"
+#include "cache_transport.h"
 #include "cache_vcl.h"
 
 /*--------------------------------------------------------------------*/
@@ -338,6 +340,35 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
  * The workspace argument is where random VCL stuff gets space from.
  */
 
+static int
+req_poll(struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(req->top, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->top->transport, TRANSPORT_MAGIC);
+
+	/* NB: Since a fail transition leads to vcl_synth, the request may be
+	 * short-circuited twice.
+	 */
+	if (req->req_reset) {
+		wrk->handling = VCL_RET_FAIL;
+		return (-1);
+	}
+
+	if (!FEATURE(FEATURE_VCL_REQ_RESET))
+		return (0);
+	if (req->top->transport->poll == NULL)
+		return (0);
+	if (req->top->transport->poll(req->top) >= 0)
+		return (0);
+
+	VSLb_ts_req(req, "Reset", W_TIM_real(wrk));
+	wrk->stats->req_reset++;
+	wrk->handling = VCL_RET_FAIL;
+	req->req_reset = 1;
+	return (-1);
+}
+
 static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
     void *specific, unsigned method, vcl_func_f *func)
@@ -351,6 +382,8 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(req->vcl, VCL_MAGIC);
+		if (req_poll(wrk, req))
+			return;
 		VCL_Req2Ctx(&ctx, req);
 	}
 	if (bo != NULL) {

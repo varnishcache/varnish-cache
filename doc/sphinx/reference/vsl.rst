@@ -71,6 +71,10 @@ Resp
 Restart
 	Client request is being restarted.
 
+Reset
+        The client closed its connection or reset its stream. Request
+        processing is interrupted and considered failed.
+
 Pipe handling timestamps
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

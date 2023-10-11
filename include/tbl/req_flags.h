@@ -39,6 +39,7 @@ REQ_FLAG(is_hitpass,		1, 0, "")
 REQ_FLAG(waitinglist,		0, 0, "")
 REQ_FLAG(want100cont,		0, 0, "")
 REQ_FLAG(late100cont,		0, 0, "")
+REQ_FLAG(req_reset,		0, 0, "")
 #undef REQ_FLAG
 
 /*lint -restore */
