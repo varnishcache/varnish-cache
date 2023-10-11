@@ -314,9 +314,41 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  */
 
+static h2_error
+h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	vtim_real now;
+	vtim_dur d;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	ASSERT_RXTHR(h2);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	if (cache_param->h2_rapid_reset_limit == 0)
+		return (0);
+
+	now = VTIM_real();
+	d = now - h2->last_rst;
+	h2->rst_budget += cache_param->h2_rapid_reset_limit * d /
+	    cache_param->h2_rapid_reset_period;
+	h2->rst_budget = vmin_t(double, h2->rst_budget,
+	    cache_param->h2_rapid_reset_limit);
+	h2->last_rst = now;
+
+	if (h2->rst_budget < 1.0) {
+		Lck_Lock(&h2->sess->mtx);
+		VSLb(h2->vsl, SLT_Error, "H2: Hit RST limit. Closing session.");
+		Lck_Unlock(&h2->sess->mtx);
+		return (H2CE_ENHANCE_YOUR_CALM);
+	}
+	h2->rst_budget -= 1.0;
+	return (0);
+}
+
 static h2_error v_matchproto_(h2_rxframe_f)
 h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+	h2_error h2e;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
@@ -326,8 +358,9 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2CE_FRAME_SIZE_ERROR);
 	if (r2 == NULL)
 		return (0);
+	h2e = h2_rapid_reset(wrk, h2, r2);
 	h2_kill_req(wrk, h2, r2, h2_streamerror(vbe32dec(h2->rxf_data)));
-	return (0);
+	return (h2e);
 }
 
 /**********************************************************************

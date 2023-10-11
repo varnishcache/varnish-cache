@@ -1896,6 +1896,38 @@ PARAM(
 )
 #endif
 
+PARAM(
+	/* name */	h2_rapid_reset_limit,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"0",
+	/* units */	NULL,
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"HTTP2 RST Allowance.\n\n"
+	"Specifies the maximum number of allowed stream resets issued by "
+	"a client over a time period before the connection is closed. Setting "
+	"this parameter to 0 disables the limit.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+
+PARAM(
+	/* name */	h2_rapid_reset_period,
+	/* typ */	timeout,
+	/* min */	"1.000",
+	/* max */	NULL,
+	/* default */	"60.000",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL|WIZARD,
+	/* s-text */
+	"HTTP2 sliding window duration for h2_rapid_reset_limit.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
 #undef PARAM
 
 /*lint -restore */
