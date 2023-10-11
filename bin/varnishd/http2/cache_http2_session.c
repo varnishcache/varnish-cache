@@ -438,6 +438,16 @@ h2_new_session(struct worker *wrk, void *arg)
 	wrk->vsl = NULL;
 }
 
+static int v_matchproto_(vtr_poll_f)
+h2_poll(struct req *req)
+{
+	struct h2_req *r2;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	return (r2->error ? -1 : 1);
+}
+
 struct transport HTTP2_transport = {
 	.name =			"HTTP/2",
 	.magic =		TRANSPORT_MAGIC,
@@ -447,4 +457,5 @@ struct transport HTTP2_transport = {
 	.req_body =		h2_req_body,
 	.req_fail =		h2_req_fail,
 	.sess_panic =		h2_sess_panic,
+	.poll =			h2_poll,
 };
