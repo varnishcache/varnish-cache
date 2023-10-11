@@ -169,3 +169,23 @@ shell -err -expect {Cannot read -f file} {
 }
 
 # varnishd -spersistent is tested in p00000.vtc
+
+# Test that incomplete CLI commands in -I causes failure
+
+process p1 {
+	echo -n foobar > ${tmpdir}/_foobar
+	exec varnishd -n ${tmpdir}/v0 -d -a :0 -I ${tmpdir}/_foobar 2>&1
+} -expect-exit 2 -start
+
+process p1 -expect-text 0 0 "-I file had incomplete CLI command at the end"
+process p1 -screen-dump
+process p1 -wait
+
+process p1 {
+	echo 'foobar << blabla > ${tmpdir}/_foobar
+	exec varnishd -n ${tmpdir}/v0 -d -a :0 -I ${tmpdir}/_foobar 2>&1
+} -expect-exit 2 -start
+
+process p1 -expect-text 0 0 "-I file had incomplete CLI command at the end"
+process p1 -screen-dump
+process p1 -wait

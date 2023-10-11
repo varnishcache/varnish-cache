@@ -522,6 +522,13 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
+	if (cfd->cli->cmd != NULL) {
+		(void)VSB_finish(cfd->cli->cmd);
+		cfd->cli->result = CLIS_TRUNCATED;
+		if (cs->after != NULL)
+			cs->after(cfd->cli);
+		VSB_destroy(&cfd->cli->cmd);
+	}
 	cs->nfd--;
 	VSB_destroy(&cfd->cli->sb);
 	if (cfd->closefunc != NULL)
