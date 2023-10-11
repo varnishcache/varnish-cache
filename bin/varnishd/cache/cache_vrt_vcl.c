@@ -42,6 +42,7 @@
 #include "vbm.h"
 
 #include "cache_director.h"
+#include "cache_transport.h"
 #include "cache_vcl.h"
 #include "vcc_interface.h"
 
@@ -522,6 +523,40 @@ VRT_VCL_Allow_Discard(struct vclref **refp)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static int
+req_poll(struct worker *wrk, struct req *req)
+{
+	struct req *top;
+
+	/* NB: Since a fail transition leads to vcl_synth, the request may be
+	 * short-circuited twice.
+	 */
+	if (req->req_reset) {
+		wrk->vpi->handling = VCL_RET_FAIL;
+		return (-1);
+	}
+
+	top = req->top->topreq;
+	CHECK_OBJ_NOTNULL(top, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(top->transport, TRANSPORT_MAGIC);
+
+	if (!FEATURE(FEATURE_VCL_REQ_RESET))
+		return (0);
+	if (top->transport->poll == NULL)
+		return (0);
+	if (top->transport->poll(top) >= 0)
+		return (0);
+
+	VSLb_ts_req(req, "Reset", W_TIM_real(wrk));
+	wrk->stats->req_reset++;
+	wrk->vpi->handling = VCL_RET_FAIL;
+	req->req_reset = 1;
+	return (-1);
+}
+
+/*--------------------------------------------------------------------
  * Method functions to call into VCL programs.
  *
  * Either the request or busyobject must be specified, but not both.
@@ -552,6 +587,8 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(req->vcl, VCL_MAGIC);
 		CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
+		if (req_poll(wrk, req))
+			return;
 		VCL_Req2Ctx(&ctx, req);
 	}
 	assert(ctx.now != 0);
