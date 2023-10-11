@@ -428,6 +428,7 @@ cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 			if (*cfd->match == '\0' && (*p == '\r' || *p == '\n')) {
 				AZ(VSB_finish(cfd->last_arg));
 				// NB: VAV lib internals trusted
+				cfd->match = NULL;
 				REPLACE(cfd->argv[cfd->argc - 1], NULL);
 				REPLACE(cfd->argv[cfd->argc - 2], NULL);
 				cfd->argv[cfd->argc - 2] =
@@ -522,7 +523,12 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
-	if (cfd->cli->cmd != NULL) {
+	if (cfd->match != NULL) {
+		cfd->cli->result = CLIS_TRUNCATED;
+		if (cs->after != NULL)
+			cs->after(cfd->cli);
+		VSB_destroy(&cfd->last_arg);
+	} else if (cfd->cli->cmd != NULL) {
 		(void)VSB_finish(cfd->cli->cmd);
 		cfd->cli->result = CLIS_TRUNCATED;
 		if (cs->after != NULL)

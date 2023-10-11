@@ -181,11 +181,11 @@ process p1 -expect-text 0 0 "-I file had incomplete CLI command at the end"
 process p1 -screen-dump
 process p1 -wait
 
-process p1 {
-	echo 'foobar << blabla > ${tmpdir}/_foobar
+process p2 {
+	echo 'foobar << blabla' > ${tmpdir}/_foobar
 	exec varnishd -n ${tmpdir}/v0 -d -a :0 -I ${tmpdir}/_foobar 2>&1
 } -expect-exit 2 -start
 
-process p1 -expect-text 0 0 "-I file had incomplete CLI command at the end"
-process p1 -screen-dump
-process p1 -wait
+process p2 -expect-text 0 0 "-I file had incomplete CLI command at the end"
+process p2 -screen-dump
+process p2 -wait
