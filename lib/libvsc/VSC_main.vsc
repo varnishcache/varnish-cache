@@ -345,6 +345,13 @@
 	Number of times an HTTP/2 stream was refused because the queue was
 	too long already. See also parameter thread_queue_limit.
 
+.. varnish_vsc:: req_reset
+	:group: wrk
+	:oneliner:	Requests reset
+
+	Number of times a client left before the VCL processing of its
+	requests completed.
+
 .. varnish_vsc:: n_object
 	:type:	gauge
 	:group: wrk

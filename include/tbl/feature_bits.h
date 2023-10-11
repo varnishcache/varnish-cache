@@ -91,6 +91,11 @@ FEATURE_BIT(TRACE,			trace,
     "Required for tracing vcl_init / vcl_fini"
 )
 
+FEATURE_BIT(VCL_REQ_RESET,			vcl_req_reset,
+    "Stop processing client VCL once the client is gone. "
+    "When this happens MAIN.req_reset is incremented."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */
