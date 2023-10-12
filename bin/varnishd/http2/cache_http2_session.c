@@ -127,6 +127,9 @@ h2_init_sess(struct sess *sp,
 	h2_local_settings(&h2->local_settings);
 	h2->remote_settings = H2_proto_settings;
 	h2->decode = decode;
+	h2->rst_budget = cache_param->h2_rapid_reset_limit;
+	h2->last_rst = sp->t_open;
+	AZ(isnan(h2->last_rst));
 
 	AZ(VHT_Init(h2->dectbl, h2->local_settings.header_table_size));
 
