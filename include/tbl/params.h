@@ -1257,6 +1257,34 @@ PARAM_SIMPLE(
 	"HTTP2 maximum size of an uncompressed header list."
 )
 
+PARAM_SIMPLE(
+	/* name */	h2_rapid_reset_limit,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"0",
+	/* units */	NULL,
+	/* descr */
+	"HTTP2 RST Allowance.\n"
+	"Specifies the maximum number of allowed stream resets issued by\n"
+	"a client over a time period before the connection is closed.\n"
+	"Setting this parameter to 0 disables the limit.",
+	/* flags */	EXPERIMENTAL,
+)
+
+PARAM_SIMPLE(
+	/* name */	h2_rapid_reset_period,
+	/* typ */	timeout,
+	/* min */	"1.000",
+	/* max */	NULL,
+	/* def */	"60.000",
+	/* units */	"seconds",
+	/* descr */
+	"HTTP2 sliding window duration for h2_rapid_reset_limit.",
+	/* flags */	EXPERIMENTAL|WIZARD,
+)
+
+
 /*--------------------------------------------------------------------
  * Memory pool parameters
  */
