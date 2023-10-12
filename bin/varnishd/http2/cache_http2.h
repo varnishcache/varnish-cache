@@ -193,6 +193,8 @@ struct h2_sess {
 	VTAILQ_HEAD(,h2_req)		txqueue;
 
 	h2_error			error;
+	double				rst_budget;
+	vtim_real			last_rst;
 };
 
 #define ASSERT_RXTHR(h2) do {assert(h2->rxthr == pthread_self());} while(0)
