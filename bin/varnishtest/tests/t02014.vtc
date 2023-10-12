@@ -1,6 +1,9 @@
 varnishtest "Exercise h/2 sender flow control code"
 
-barrier b1 sock 3 -cyclic
+barrier b1 sock 3
+barrier b2 sock 3
+barrier b3 sock 3
+barrier b4 sock 3
 
 server s1 {
 	rxreq
@@ -23,7 +26,9 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_deliver {
-		vtc.barrier_sync("${b1_sock}");
+		if (req.http.barrier) {
+			vtc.barrier_sync(req.http.barrier);
+		}
 	}
 } -start
 
@@ -43,7 +48,7 @@ client c1 {
 	} -start
 
 	stream 1 {
-		txreq
+		txreq -hdr barrier ${b1_sock}
 		barrier b1 sync
 		delay .5
 		txwinup -size 256
@@ -61,15 +66,15 @@ client c1 {
 
 client c2 {
 	stream 0 {
-		barrier b1 sync
+		barrier b2 sync
 	} -start
 
 	stream 1 {
-		txreq
+		txreq -hdr barrier ${b2_sock}
 		txdata -data "fail"
 		rxrst
 		expect rst.err == STREAM_CLOSED
-		barrier b1 sync
+		barrier b2 sync
 	} -run
 
 	stream 0 -wait
@@ -77,8 +82,8 @@ client c2 {
 
 client c3 {
 	stream 0 {
-		barrier b1 sync
-		barrier b1 sync
+		barrier b3 sync
+		barrier b4 sync
 		delay .5
 		txwinup -size 256
 		delay .5
@@ -89,17 +94,17 @@ client c3 {
 	} -start
 
 	stream 1 {
-		txreq -req "POST" -nostrend
+		txreq -req "POST" -hdr barrier ${b3_sock} -nostrend
 		txdata -data "ok"
 		txdata -data "fail"
 		rxrst
 		expect rst.err == STREAM_CLOSED
-		barrier b1 sync
+		barrier b3 sync
 	} -run
 
 	stream 3 {
-		txreq
-		barrier b1 sync
+		txreq -hdr barrier ${b4_sock}
+		barrier b4 sync
 		delay .5
 		txwinup -size 256
 		delay .5
