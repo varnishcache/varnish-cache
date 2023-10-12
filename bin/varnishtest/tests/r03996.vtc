@@ -1,0 +1,49 @@
+varnishtest "h2 rapid reset"
+
+barrier b1 sock 5
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set h2_rapid_reset_limit 3"
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+		vtc.barrier_sync("${b1_sock}");
+	}
+
+} -start
+
+client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.err == ENHANCE_YOUR_CALM
+	} -start
+
+	stream 1 {
+		txreq
+		txrst
+	} -run
+	stream 3 {
+		txreq
+		txrst
+	} -run
+	stream 5 {
+		txreq
+		txrst
+	} -run
+	stream 7 {
+		txreq
+		txrst
+	} -run
+
+	barrier b1 sync
+	stream 0 -wait
+} -run
+
