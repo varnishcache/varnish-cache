@@ -136,10 +136,10 @@ On the local system, `varnishadm` can retrieve the filename from
 shared memory, but on remote systems, you need to give `varnishadm`
 a copy of the secret file, with the -S argument.
 
-If you want to disable -S/PSK authentication, specify '-S' with
-an empty argument to varnishd::
+If you want to disable -S/PSK authentication, use an ``-S none``
+argument to varnishd::
 
-	varnishd [...] -S "" [...]
+	varnishd [...] -S none [...]
 
 Parameters
 ^^^^^^^^^^
