@@ -148,42 +148,6 @@ VRT_STATUS_L(beresp)
 VRT_STATUS_R(beresp)
 
 /*--------------------------------------------------------------------
- * Pulling things out of the packed object->http
- */
-
-VCL_INT
-VRT_r_obj_status(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-
-	return (HTTP_GetStatusPack(ctx->req->wrk, ctx->req->objcore));
-}
-
-VCL_STRING
-VRT_r_obj_proto(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
-	    H__Proto));
-}
-
-VCL_STRING
-VRT_r_obj_reason(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
-	    H__Reason));
-}
-
-/*--------------------------------------------------------------------
  * beresp bool-fields
  */
 
@@ -530,28 +494,73 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-VCL_STEVEDORE
-VRT_r_obj_storage(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	AN(ctx->req->objcore->stobj);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore->stobj->stevedore,
-	    STEVEDORE_MAGIC);
-	return (ctx->req->objcore->stobj->stevedore);
+#define VRT_OC_VAR_R(obj, which, which_magic, field)		\
+VCL_STEVEDORE							\
+VRT_r_##obj##_storage(VRT_CTX)					\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+	AN(ctx->which->field->stobj);				\
+	CHECK_OBJ_NOTNULL(ctx->which->field->stobj->stevedore,	\
+	    STEVEDORE_MAGIC);					\
+	return (ctx->which->field->stobj->stevedore);		\
+}								\
+								\
+VCL_BOOL							\
+VRT_r_##obj##_can_esi(VRT_CTX)					\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+	return (ObjHasAttr(ctx->which->wrk, ctx->which->field,	\
+	    OA_ESIDATA));					\
+}								\
+								\
+VCL_BOOL							\
+VRT_r_##obj##_uncacheable(VRT_CTX)				\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+								\
+	return (ctx->which->field->flags & OC_F_HFM ? 1 : 0);	\
+}								\
+								\
+VCL_INT								\
+VRT_r_##obj##_status(VRT_CTX)					\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+								\
+	return (HTTP_GetStatusPack(ctx->which->wrk,		\
+	    ctx->which->field));				\
+}								\
+								\
+VCL_STRING							\
+VRT_r_##obj##_proto(VRT_CTX)					\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+								\
+	return (HTTP_GetHdrPack(ctx->which->wrk,		\
+	    ctx->which->field, H__Proto));			\
+}								\
+								\
+VCL_STRING							\
+VRT_r_##obj##_reason(VRT_CTX)					\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+								\
+	return (HTTP_GetHdrPack(ctx->which->wrk,		\
+	    ctx->which->field, H__Reason));			\
 }
 
-/*--------------------------------------------------------------------*/
-
-VCL_BOOL
-VRT_r_obj_can_esi(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	return (ObjHasAttr(ctx->req->wrk, ctx->req->objcore, OA_ESIDATA));
-}
+VRT_OC_VAR_R(obj, req, REQ_MAGIC, objcore);
 
 /*--------------------------------------------------------------------*/
 
@@ -998,16 +1007,6 @@ VRT_r_obj_hits(VRT_CTX)
 	if (ctx->method == VCL_MET_HIT)
 		return (ctx->req->objcore->hits);
 	return (ctx->req->is_hit ? ctx->req->objcore->hits : 0);
-}
-
-VCL_BOOL
-VRT_r_obj_uncacheable(VRT_CTX)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	return (ctx->req->objcore->flags & OC_F_HFM ? 1 : 0);
 }
 
 /*--------------------------------------------------------------------*/
