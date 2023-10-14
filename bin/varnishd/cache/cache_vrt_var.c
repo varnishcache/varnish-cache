@@ -561,6 +561,7 @@ VRT_r_##obj##_reason(VRT_CTX)					\
 }
 
 VRT_OC_VAR_R(obj, req, REQ_MAGIC, objcore);
+VRT_OC_VAR_R(obj_stale, bo, BUSYOBJ_MAGIC, stale_oc);
 
 /*--------------------------------------------------------------------*/
 
@@ -800,9 +801,13 @@ VRT_r_##which##_##fld(VRT_CTX)					\
 
 /*lint -save -e835 */	// Zero right hand arg to '-'
 
+VRT_DO_EXP_R(obj_stale, ctx->bo->stale_oc, ttl,
+    ttl_now(ctx) - ctx->bo->stale_oc->t_origin)
 VRT_DO_EXP_R(obj, ctx->req->objcore, ttl,
     ttl_now(ctx) - ctx->req->objcore->t_origin)
+VRT_DO_EXP_R(obj_stale, ctx->bo->stale_oc, grace, 0)
 VRT_DO_EXP_R(obj, ctx->req->objcore, grace, 0)
+VRT_DO_EXP_R(obj_stale, ctx->bo->stale_oc, keep, 0)
 VRT_DO_EXP_R(obj, ctx->req->objcore, keep, 0)
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore, ttl,
     ttl_now(ctx) - ctx->bo->fetch_objcore->t_origin)
@@ -834,6 +839,7 @@ VRT_DO_TIME_R(resp, req, t_resp)
 VRT_DO_TIME_R(bereq, bo, t_first)
 VRT_DO_TIME_R(beresp, bo, t_resp)
 VRT_DO_TIME_R(obj, req->objcore, t_origin)
+VRT_DO_TIME_R(obj_stale, bo->stale_oc, t_origin)
 
 /*--------------------------------------------------------------------
  */
@@ -848,6 +854,7 @@ VRT_r_##which##_##age(VRT_CTX)					\
 	return (ttl_now(ctx) - oc->t_origin);			\
 }
 
+VRT_DO_AGE_R(obj_stale, ctx->bo->stale_oc)
 VRT_DO_AGE_R(obj, ctx->req->objcore)
 VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore)
 
@@ -1007,6 +1014,28 @@ VRT_r_obj_hits(VRT_CTX)
 	if (ctx->method == VCL_MET_HIT)
 		return (ctx->req->objcore->hits);
 	return (ctx->req->is_hit ? ctx->req->objcore->hits : 0);
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_INT
+VRT_r_obj_stale_hits(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->stale_oc, OBJCORE_MAGIC);
+
+	return (ctx->bo->stale_oc->hits);
+}
+
+VCL_BOOL
+VRT_r_obj_stale_is_valid(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->stale_oc, OBJCORE_MAGIC);
+
+	return (!(ctx->bo->stale_oc->flags & OC_F_DYING));
 }
 
 /*--------------------------------------------------------------------*/

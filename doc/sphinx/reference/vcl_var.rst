@@ -1429,6 +1429,176 @@ beresp.was_304
 	to our conditional fetch from the backend and turned
 	that into ``beresp.status = 200``
 
+obj_stale
+---------
+
+This is the stale object we had in cache. It cannot be modified.
+
+.. _obj_stale.age:
+
+obj_stale.age
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The age of the stale object.
+
+
+.. _obj_stale.can_esi:
+
+obj_stale.can_esi
+
+	Type: BOOL
+
+	Readable from: vcl_backend_refresh
+
+	If the stale object can be ESI processed, that is if setting
+	``resp.do_esi`` or adding ``esi`` to ``resp.filters`` in
+	``vcl_deliver {}`` would cause the response body to be ESI
+	processed.
+
+
+.. _obj_stale.grace:
+
+obj_stale.grace
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The stale object's grace period in seconds.
+
+
+.. _obj_stale.hits:
+
+obj_stale.hits
+
+	Type: INT
+
+	Readable from: vcl_backend_refresh
+
+	The count of cache-hits on this stale object.
+
+	In `vcl_deliver` a value of 0 indicates a cache miss.
+
+
+.. _obj_stale.http:
+
+obj_stale.http.*
+
+	Type: HEADER
+
+	Readable from: vcl_backend_refresh
+
+	The HTTP headers stored in the stale object.
+
+	See req.http_ for general notes.
+
+
+.. _obj_stale.keep:
+
+obj_stale.keep
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The stale object's keep period in seconds.
+
+
+.. _obj_stale.proto:
+
+obj_stale.proto
+
+	Type: STRING
+
+	Readable from: vcl_backend_refresh
+
+	The HTTP protocol version stored in the stale object.
+
+
+.. _obj_stale.reason:
+
+obj_stale.reason
+
+	Type: STRING
+
+	Readable from: vcl_backend_refresh
+
+
+	The HTTP reason phrase stored in the stale object.
+
+
+.. _obj_stale.status:
+
+obj_stale.status
+
+	Type: INT
+
+	Readable from: vcl_backend_refresh
+
+
+	The HTTP status code stored in the stale object.
+
+	More information in the `HTTP response status`_ section.
+
+
+.. _obj_stale.storage:
+
+obj_stale.storage
+
+	Type: STEVEDORE
+
+	Readable from: vcl_backend_refresh
+
+	The storage backend where this stale object is stored.
+
+
+.. _obj_stale.time:
+
+obj_stale.time
+
+	Type: TIME
+
+	Readable from: vcl_backend_refresh
+
+	The time the stale object was created from the perspective of the
+	server which generated it. This will roughly be equivalent to
+	``now`` - ``obj.age``.
+
+
+.. _obj_stale.ttl:
+
+obj_stale.ttl
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The stale object's time to live, in seconds.
+
+
+.. _obj_stale.uncacheable:
+
+obj_stale.uncacheable
+
+	Type: BOOL
+
+	Readable from: vcl_backend_refresh
+
+	Whether the stale object is uncacheable (pass, hit-for-pass or
+	hit-for-miss).
+
+.. _obj_stale.is_valid:
+
+obj_stale.is_valid
+
+	Type: BOOL
+
+	Readable from: vcl_backend_refresh
+
+	Whether the stale object is still valid.
 
 obj
 ---

@@ -58,6 +58,19 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * XX.X (unreleased)
+ *	VRT_r_obj_stale_age() added
+ *	VRT_r_obj_stale_can_esi() added
+ *	VRT_r_obj_stale_grace() added
+ *	VRT_r_obj_stale_hits() added
+ *	VRT_r_obj_stale_keep() added
+ *	VRT_r_obj_stale_proto() added
+ *	VRT_r_obj_stale_reason() added
+ *	VRT_r_obj_stale_status() added
+ *	VRT_r_obj_stale_storage() added
+ *	VRT_r_obj_stale_time() added
+ *	VRT_r_obj_stale_ttl() added
+ *	VRT_r_obj_stale_uncacheable() added
+ *	enum gethdr_e has new value HDR_OBJ_STALE
  *	typedef hdr_t added
  *	struct gethdr_s.what changed to hdr_t
  *	VRT_VSC_Alloc() renamed to VRT_VSC_Allocv()
@@ -727,7 +740,8 @@ enum gethdr_e {
 	HDR_RESP,
 	HDR_OBJ,
 	HDR_BEREQ,
-	HDR_BERESP
+	HDR_BERESP,
+	HDR_OBJ_STALE
 };
 
 typedef const struct {
