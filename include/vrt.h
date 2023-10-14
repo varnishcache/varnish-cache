@@ -58,6 +58,19 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2025-03-15)
+ *	VRT_r_obj_stale_age() added
+ *	VRT_r_obj_stale_can_esi() added
+ *	VRT_r_obj_stale_grace() added
+ *	VRT_r_obj_stale_hits() added
+ *	VRT_r_obj_stale_keep() added
+ *	VRT_r_obj_stale_proto() added
+ *	VRT_r_obj_stale_reason() added
+ *	VRT_r_obj_stale_status() added
+ *	VRT_r_obj_stale_storage() added
+ *	VRT_r_obj_stale_time() added
+ *	VRT_r_obj_stale_ttl() added
+ *	VRT_r_obj_stale_uncacheable() added
+ *	enum gethdr_e has new value HDR_OBJ_STALE
  * 20.1 (2024-11-08 7.6.1)
  *	VDI_EVENT_SICK added to enum vcl_event_e
  * 20.0 (2024-09-13)
@@ -684,7 +697,8 @@ enum gethdr_e {
 	HDR_RESP,
 	HDR_OBJ,
 	HDR_BEREQ,
-	HDR_BERESP
+	HDR_BERESP,
+	HDR_OBJ_STALE
 };
 
 struct gethdr_s {
