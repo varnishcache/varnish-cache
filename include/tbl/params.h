@@ -1258,7 +1258,9 @@ PARAM_SIMPLE(
 )
 
 #define H2_RR_INFO \
-	"Changes to this parameter affect the default for new HTTP2 sessions"
+	"Changes to this parameter affect the default for new HTTP2 " \
+	"sessions. vmod_h2(3) can be used to adjust it from VCL."
+
 PARAM_SIMPLE(
 	/* name */	h2_rapid_reset,
 	/* typ */	timeout,
