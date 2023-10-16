@@ -329,7 +329,7 @@ PARAM(
 	/* typ */	bytes_u,
 	/* min */	"128b",
 	/* max */	"99999999b",
-	/* default */	"48k",
+	/* def */	"64k",
 	/* units */	"bytes",
 	/* flags */	0,
 	/* s-text */
