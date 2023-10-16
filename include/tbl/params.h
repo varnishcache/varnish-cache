@@ -316,7 +316,7 @@ PARAM_SIMPLE(
 	/* type */	bytes_u,
 	/* min */	"128b",
 	/* max */	"99999999b",
-	/* def */	"48k",
+	/* def */	"64k",
 	/* units */	"bytes",
 	/* descr */
 	"Maximum size of CLI response.  If the response exceeds this "
