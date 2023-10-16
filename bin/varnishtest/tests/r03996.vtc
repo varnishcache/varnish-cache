@@ -11,6 +11,7 @@ server s1 {
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set h2_rapid_reset_limit 3"
+varnish v1 -cliok "param.set h2_rapid_reset 5"
 
 varnish v1 -vcl+backend {
 	import vtc;
