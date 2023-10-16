@@ -1897,6 +1897,24 @@ PARAM(
 #endif
 
 PARAM(
+	/* name */	h2_rapid_reset,
+	/* typ */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"1.0",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"The upper threshold for how soon an http/2 RST_STREAM frame has "
+	"to be parsed after a HEADERS frame for it to be treated as "
+	"suspect and subjected to the rate limits specified by "
+	"h2_rapid_reset_limit and h2_rapid_reset_period.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+
+PARAM(
 	/* name */	h2_rapid_reset_limit,
 	/* typ */	uint,
 	/* min */	"0",
