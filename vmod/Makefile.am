@@ -24,6 +24,7 @@ vmod_LTLIBRARIES =
 vmod_vcc_files =
 
 include $(srcdir)/automake_boilerplate_blob.am
+include $(srcdir)/automake_boilerplate_h2.am
 include $(srcdir)/automake_boilerplate_cookie.am
 include $(srcdir)/automake_boilerplate_debug.am
 include $(srcdir)/automake_boilerplate_directors.am
