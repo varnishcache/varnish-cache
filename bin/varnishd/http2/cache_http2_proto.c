@@ -332,6 +332,11 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (0);
 
 	now = VTIM_real();
+	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
+	AN(r2->req->t_first);
+	if (now - r2->req->t_first > cache_param->h2_rapid_reset)
+		return (0);
+
 	d = now - h2->last_rst;
 	h2->rst_budget += cache_param->h2_rapid_reset_limit * d /
 	    cache_param->h2_rapid_reset_period;
