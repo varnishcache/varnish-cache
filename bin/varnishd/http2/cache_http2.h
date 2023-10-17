@@ -194,6 +194,13 @@ struct h2_sess {
 	VTAILQ_HEAD(,h2_req)		txqueue;
 
 	h2_error			error;
+
+	// rst rate limit parameters, copied from h2_* parameters
+	vtim_dur			rapid_reset;
+	int64_t				rapid_reset_limit;
+	vtim_dur			rapid_reset_period;
+
+	// rst rate limit state
 	double				rst_budget;
 	vtim_real			last_rst;
 };
