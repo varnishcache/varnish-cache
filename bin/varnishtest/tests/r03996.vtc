@@ -47,3 +47,4 @@ client c1 {
 	stream 0 -wait
 } -run
 
+varnish v1 -expect sc_rapid_reset == 1
