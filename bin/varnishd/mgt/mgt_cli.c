@@ -160,7 +160,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	cmd = mgt_cmd_lookup(av[1]);
-	if (cmd != NULL && cmd->flags & CLI_F_INTERNAL) {
+	if (cmd != NULL && VCLS_CMD_IS(cmd, INTERNAL)) {
 		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
 		VCLI_SetResult(cli, CLIS_UNKNOWN);
 		return;
@@ -371,9 +371,7 @@ mgt_cli_cb_before(const struct cli *cli, struct cli_proto *clp, const char * con
 	if (cli->priv == stderr)
 		fprintf(stderr, "> %s\n", VSB_data(cli->cmd));
 
-	if (cmd != NULL &&
-	    !MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE) &&
-	    (cmd->flags & CLI_F_SENSITIVE)) {
+	if (VCLS_IsSensitive(cmd, MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
 		d = (*VSB_data(cli->cmd) == '-');
 		VSB_clear(cli->cmd);
 		VSB_printf(cli->cmd, "%s", d ? "-" : "");
@@ -394,14 +392,12 @@ mgt_cli_cb_after(const struct cli *cli, struct cli_proto *clp, const char * cons
 
 	if (av) {
 		cmd = (clp == NULL ? mgt_cmd_lookup(av[1]) : clp->desc);
-		if (cmd == NULL ||
-		    MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE)  ||
-		    !(cmd->flags & CLI_F_SENSITIVE)) {
-			MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
-			    cli->ident, cli->result, VSB_data(cli->sb));
-		} else {
+		if (VCLS_IsSensitive(cmd, MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
 			MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
 			    cli->ident, cli->result, "(hidden)");
+		} else {
+			MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
+			    cli->ident, cli->result, VSB_data(cli->sb));
 		}
 	}
 	if (cli->priv != stderr)
@@ -756,7 +752,7 @@ mgt_DumpRstCli(void)
 		cp = cmds[z];
 		if (!strncmp(cp->request, "debug.", 6))
 			continue;
-		if (cp->flags & CLI_F_INTERNAL)
+		if (VCLS_CMD_IS(cp, INTERNAL))
 			continue;
 		printf(".. _ref_cli_");
 		for (p = cp->request; *p; p++)

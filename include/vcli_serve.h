@@ -47,6 +47,9 @@ enum cli_flags {
 #include "tbl/cli_flags.h"
 };
 
+#define VCLS_CMD_IS(cmd, FLAG) ((cmd)->flags & CLI_F_##FLAG)
+#define VCLS_PROTO_IS(clp, FLAG) VCLS_CMD_IS((clp)->desc, FLAG)
+
 struct cli_cmd_desc {
 	/* Must match CLI_CMD macro in include/tbl/cli_cmds.h */
 	const char			*request;
@@ -105,6 +108,7 @@ typedef void cls_cbc_f(const struct cli*, struct cli_proto *, const char * const
 struct VCLS *VCLS_New(struct VCLS *);
 void VCLS_SetHooks(struct VCLS *, cls_cbc_f *, cls_cbc_f *);
 void VCLS_SetLimit(struct VCLS *, volatile unsigned *);
+unsigned VCLS_IsSensitive(const struct cli_cmd_desc *, unsigned);
 struct cli *VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);
 void VCLS_AddFunc(struct VCLS *cs, struct cli_proto *clp);

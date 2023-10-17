@@ -74,8 +74,7 @@ cli_cb_before(const struct cli *cli, struct cli_proto *clp, const char * const *
 	(void)av;
 
 	if (clp != NULL &&
-	    !DO_DEBUG(DBG_CLI_SHOW_SENSITIVE) &&
-	    (clp->desc->flags & CLI_F_SENSITIVE)) {
+	    VCLS_IsSensitive(clp->desc, DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
 		VSB_clear(cli->cmd);
 		if (clp->logfunc != NULL)
 			clp->logfunc(cli, av, cli->cmd);
@@ -95,14 +94,13 @@ cli_cb_after(const struct cli *cli, struct cli_proto *clp, const char * const *a
 	(void)av;
 	const char *h = "(hidden)";
 
-	if (clp == NULL ||
-	    DO_DEBUG(DBG_CLI_SHOW_SENSITIVE) ||
-	    !(clp->desc->flags & CLI_F_SENSITIVE)) {
-		VSL(SLT_CLI, NO_VXID, "Wr %03u %zd %s",
-		    cli->result, VSB_len(cli->sb), VSB_data(cli->sb));
-	} else {
+	if (clp != NULL &&
+	    VCLS_IsSensitive(clp->desc, DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
 		VSL(SLT_CLI, NO_VXID, "Wr %03u %zd %s",
 		    cli->result, strlen(h), h);
+	} else {
+		VSL(SLT_CLI, NO_VXID, "Wr %03u %zd %s",
+		    cli->result, VSB_len(cli->sb), VSB_data(cli->sb));
 	}
 }
 

@@ -180,15 +180,15 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 		}
 	}
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
-		if ((clp->desc->flags & CLI_F_AUTH) && !cli->auth)
+		if (VCLS_PROTO_IS(clp, AUTH) && !cli->auth)
 			continue;
-		if (clp->desc->flags & CLI_F_INTERNAL)
+		if (VCLS_PROTO_IS(clp, INTERNAL))
 			continue;
 		if (av[0] != NULL && !strcmp(clp->desc->request, av[0])) {
 			help_helper(cli, clp, av);
 			return;
 		} else if (av[0] == NULL) {
-			d = clp->desc->flags & CLI_F_DEBUG ? 2 : 1;
+			d = VCLS_PROTO_IS(clp, DEBUG) ? 2 : 1;
 			if (filter & d)
 				help_helper(cli, clp, av);
 		}
@@ -213,9 +213,9 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 	VCLI_JSON_begin(cli, 2, av);
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		sep = "";
-		if ((clp->desc->flags & CLI_F_AUTH) && !cli->auth)
+		if (VCLS_PROTO_IS(clp, AUTH) && !cli->auth)
 			continue;
-		if (clp->desc->flags & CLI_F_INTERNAL)
+		if (VCLS_PROTO_IS(clp, INTERNAL))
 			continue;
 		VCLI_Out(cli, ",\n  {\n");
 		VSB_indent(cli->sb, 2);
@@ -325,7 +325,7 @@ cls_lookup(char * const *av, struct cli *cli, struct VCLS *cs, enum cmd_error_e 
 
 
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
-		if ((clp->desc->flags & CLI_F_AUTH) && !cli->auth)
+		if (VCLS_PROTO_IS(clp, AUTH) && !cli->auth)
 			continue;
 		if (!strcmp(clp->desc->request, av[1]))
 			break;
@@ -389,7 +389,7 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 			case (CMD_ERR_UNKNOWN):
 				break;
 			default:
-				if (cs->wildcard && (!(cs->wildcard->desc->flags & CLI_F_AUTH) || cli->auth))
+				if (cs->wildcard && (!VCLS_PROTO_IS(cs->wildcard, AUTH) || cli->auth))
 					cls_dispatch(cli, cs->wildcard, av, na);
 				break;
 		}
@@ -714,6 +714,15 @@ VCLS_Destroy(struct VCLS **csp)
 		VTAILQ_REMOVE(&cs->funcs, clp, list);
 	}
 	FREE_OBJ(cs);
+}
+
+unsigned
+VCLS_IsSensitive(const struct cli_cmd_desc *cmd, unsigned show) {
+
+	if (cmd == NULL || show)
+		return 0;
+
+	return VCLS_CMD_IS(cmd, SENSITIVE);
 }
 
 /**********************************************************************
