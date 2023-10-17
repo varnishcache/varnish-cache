@@ -46,6 +46,7 @@
 #include "vtcp.h"
 #include "vtim.h"
 
+#define H2_CUSTOM_ERRORS
 #define H2EC1(U,v,r,d) const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1,r}};
 #define H2EC2(U,v,r,d) const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0,r}};
 #define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
@@ -345,7 +346,7 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Error, "H2: Hit RST limit. Closing session.");
 		Lck_Unlock(&h2->sess->mtx);
-		return (H2CE_ENHANCE_YOUR_CALM);
+		return (H2CE_RAPID_RESET);
 	}
 	h2->rst_budget -= 1.0;
 	return (0);
