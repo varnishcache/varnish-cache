@@ -1,0 +1,25 @@
+varnishtest "test cli flags"
+
+server s0 {} -start
+
+varnish v1 -vcl+backend {} -start
+
+#internal commands should not be listed in the command list
+shell -err {varnishadm -n ${v1_name} help -a | grep debug.cld_internal}
+shell -err {varnishadm -n ${v1_name} help -j | grep debug.cld_internal}
+
+varnish v1 -clierr 101 "help debug.cld_internal"
+
+#internal commands should not be executed
+varnish v1 -cliexpect "Unknown request." "debug.cld_internal"
+
+#internal commands must be executable by MGT
+varnish v1 -cliexpect {\(200\) This is an internal command} "debug.internal"
+
+#sensitive commands should be logged according to their own implementation
+varnish v1 -cliok "debug.sensitive user secret"
+shell {varnishlog -n ${v1_name} -g raw -d -i CLI | grep "Rd debug.sensitive user XXXXX"}
+shell {varnishlog -n ${v1_name} -g raw -d -i CLI | grep "Wr 200 8 (hidden)"}
+varnish v1 -cliok "param.set debug +cli_show_sensitive"
+varnish v1 -cliok "debug.sensitive user secret"
+shell {varnishlog -n ${v1_name} -g raw -d -i CLI | grep "debug.sensitive user secret"}

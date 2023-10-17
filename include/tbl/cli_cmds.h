@@ -472,6 +472,34 @@ CLI_CMD(DEBUG_PERSISTENT,
 	0, 2
 )
 
+CLI_CMD(DEBUG_SENSITIVE,
+	"debug.sensitive",
+	"debug.sensitive <id> <secret>",
+	"Output should not be logged.\n",
+	"",
+	CLI_F_DEBUG|
+	CLI_F_SENSITIVE,
+	2, 2
+)
+
+CLI_CMD(DEBUG_CLD_INTERNAL,
+	"debug.cld_internal",
+	"debug.cld_internal",
+	"May only be issued by MGT process.\n",
+	"",
+	CLI_F_INTERNAL,
+	0, 0
+)
+
+CLI_CMD(DEBUG_INTERNAL,
+	"debug.internal",
+	"debug.internal",
+	"Used to call cld_internal.\n",
+	"",
+	CLI_F_DEBUG,
+	0, 0
+)
+
 CLI_CMD(STORAGE_LIST,
 	"storage.list",
 	"storage.list [-j]",

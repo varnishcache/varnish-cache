@@ -261,10 +261,43 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 	VRND_SeedTestable(seed);
 }
 
+static void v_matchproto_(cli_func_t)
+cli_debug_sensitive(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)priv;
+	(void)av;
+	VCLI_Out(cli, "This should be logged nowhere");
+}
+
+static void v_matchproto_(cmd_log_func_t)
+cli_debug_sensitive_log(const struct cli* cli, const char * const *av, struct vsb *vsb)
+{
+
+	(void)cli;
+
+	AN(av);
+	AN(vsb);
+
+	VSB_printf(vsb, "%s %s XXXXX", av[1]!=NULL ? av[1] : "(null)",
+	    av[2] != NULL ? av[2] : "(null)");
+}
+
+static void v_matchproto_(cli_func_t)
+cli_debug_internal(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)priv;
+	(void)av;
+	VCLI_Out(cli, "This is an internal command");
+}
+
 static struct cli_proto debug_cmds[] = {
 	{ CLICMD_DEBUG_XID,		cli_debug_xid },
 	{ CLICMD_DEBUG_SHUTDOWN_DELAY,	cli_debug_shutdown_delay },
 	{ CLICMD_DEBUG_SRANDOM,		cli_debug_srandom },
+	{ CLICMD_DEBUG_SENSITIVE,	cli_debug_sensitive, NULL,  cli_debug_sensitive_log},
+	{ CLICMD_DEBUG_CLD_INTERNAL,	cli_debug_internal },
 	{ NULL }
 };
 

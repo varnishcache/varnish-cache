@@ -115,8 +115,32 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 	abort();
 }
 
+static void v_matchproto_(cli_func_t)
+mcf_debug_internal(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+	unsigned i, s;
+	char *r;
+	if (!MCH_Running()) {
+		VCLI_Out(cli, "Child is not running");
+		return;
+	}
+
+	i = mgt_cli_askchild(&s, &r, "debug.cld_internal\n");
+	VCLI_SetResult(cli, s);
+	if (i) {
+		VCLI_Out(cli, "Child returned Error: (%d)", s);
+		return;
+	}
+	VCLI_Out(cli, "Child answered: (%d) %s", s, r);
+	free(r);
+}
+
 static struct cli_proto cli_debug[] = {
 	{ CLICMD_DEBUG_PANIC_MASTER,		mcf_panic },
+	{ CLICMD_DEBUG_INTERNAL,		mcf_debug_internal },
 	{ NULL }
 };
 
