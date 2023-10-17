@@ -1257,6 +1257,8 @@ PARAM_SIMPLE(
 	"HTTP2 maximum size of an uncompressed header list."
 )
 
+#define H2_RR_INFO \
+	"Changes to this parameter affect the default for new HTTP2 sessions"
 PARAM_SIMPLE(
 	/* name */	h2_rapid_reset,
 	/* typ */	timeout,
@@ -1268,8 +1270,8 @@ PARAM_SIMPLE(
 	"The upper threshold for how soon an http/2 RST_STREAM frame has "
 	"to be parsed after a HEADERS frame for it to be treated as "
 	"suspect and subjected to the rate limits specified by "
-	"h2_rapid_reset_limit and h2_rapid_reset_period.",
-	/* flags */	EXPERIMENTAL,
+	"h2_rapid_reset_limit and h2_rapid_reset_period.\n" H2_RR_INFO,
+	/* flags */	EXPERIMENTAL|DELAYED_EFFECT,
 )
 
 PARAM_SIMPLE(
@@ -1283,8 +1285,8 @@ PARAM_SIMPLE(
 	"HTTP2 RST Allowance.\n"
 	"Specifies the maximum number of allowed stream resets issued by\n"
 	"a client over a time period before the connection is closed.\n"
-	"Setting this parameter to 0 disables the limit.",
-	/* flags */	EXPERIMENTAL,
+	"Setting this parameter to 0 disables the limit.\n" H2_RR_INFO,
+	/* flags */	EXPERIMENTAL|DELAYED_EFFECT,
 )
 
 PARAM_SIMPLE(
@@ -1295,8 +1297,8 @@ PARAM_SIMPLE(
 	/* def */	"60.000",
 	/* units */	"seconds",
 	/* descr */
-	"HTTP2 sliding window duration for h2_rapid_reset_limit.",
-	/* flags */	EXPERIMENTAL|WIZARD,
+	"HTTP2 sliding window duration for h2_rapid_reset_limit.\n" H2_RR_INFO,
+	/* flags */	EXPERIMENTAL|DELAYED_EFFECT|WIZARD,
 )
 
 /*--------------------------------------------------------------------

@@ -127,7 +127,12 @@ h2_init_sess(struct sess *sp,
 	h2_local_settings(&h2->local_settings);
 	h2->remote_settings = H2_proto_settings;
 	h2->decode = decode;
-	h2->rst_budget = cache_param->h2_rapid_reset_limit;
+
+	h2->rapid_reset = cache_param->h2_rapid_reset;
+	h2->rapid_reset_limit = cache_param->h2_rapid_reset_limit;
+	h2->rapid_reset_period = cache_param->h2_rapid_reset_period;
+
+	h2->rst_budget = h2->rapid_reset_limit;
 	h2->last_rst = sp->t_open;
 	AZ(isnan(h2->last_rst));
 
