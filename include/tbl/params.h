@@ -1258,6 +1258,20 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	h2_rapid_reset,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"1.000",
+	/* units */	"seconds",
+	/* descr */
+       "The upper threshold for how rapid an http/2 RST has to come for "
+       "it to be treated as suspect and subjected to the rate limits "
+       "specified by h2_rapid_reset_limit and h2_rapid_reset_period.",
+	/* flags */	EXPERIMENTAL,
+)
+
+PARAM_SIMPLE(
 	/* name */	h2_rapid_reset_limit,
 	/* typ */	uint,
 	/* min */	"0",
@@ -1283,7 +1297,6 @@ PARAM_SIMPLE(
 	"HTTP2 sliding window duration for h2_rapid_reset_limit.",
 	/* flags */	EXPERIMENTAL|WIZARD,
 )
-
 
 /*--------------------------------------------------------------------
  * Memory pool parameters
