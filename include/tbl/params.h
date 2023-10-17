@@ -1251,10 +1251,10 @@ PARAM_SIMPLE(
 	/* def */	"1.000",
 	/* units */	"seconds",
 	/* descr */
-	"The upper threshold for how rapid an http/2 RST has to come after "
-	"a HEADERS frame for it to be treated as suspect and subjected to "
-	"the rate limits specified by h2_rapid_reset_limit and "
-	"h2_rapid_reset_period.",
+	"The upper threshold for how soon an http/2 RST_STREAM frame has "
+	"to be parsed after a HEADERS frame for it to be treated as "
+	"suspect and subjected to the rate limits specified by "
+	"h2_rapid_reset_limit and h2_rapid_reset_period.",
 	/* flags */	EXPERIMENTAL,
 )
 
