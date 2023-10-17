@@ -54,3 +54,5 @@ client c1 {
 	barrier b2 sync
 	stream 0 -wait
 } -run
+
+varnish v1 -expect sc_rapid_reset == 1

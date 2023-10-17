@@ -145,5 +145,17 @@ H2_ERROR(
 	/* descr */	"Use HTTP/1.1 for the request"
 )
 
+#ifdef H2_CUSTOM_ERRORS
+H2_ERROR(
+       /* name */      RAPID_RESET,
+       /* val */       11, /* ENHANCE_YOUR_CALM */
+       /* types */     1,
+       /* reason */    SC_RAPID_RESET,
+       /* descr */     "http/2 rapid reset detected"
+)
+
+#  undef H2_CUSTOM_ERRORS
+#endif
+
 #undef H2_ERROR
 /*lint -restore */

@@ -601,6 +601,14 @@
 
 	Number of session closes with Error VCL_FAILURE (VCL failure)
 
+.. varnish_vsc:: sc_rapid_reset
+       :level: diag
+       :oneliner:      Session Err RAPID_RESET
+
+       Number of times we failed an http/2 session because it hit its
+       configured limits for the number of permitted rapid stream
+       resets.
+
 .. varnish_vsc:: client_resp_500
 	:level: diag
 	:group: wrk
