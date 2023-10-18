@@ -1919,7 +1919,7 @@ PARAM(
 	/* typ */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"0",
+	/* default */	"100",
 	/* units */	NULL,
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
