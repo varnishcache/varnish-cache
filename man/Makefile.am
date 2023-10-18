@@ -21,7 +21,8 @@ dist_man_MANS = \
 	vmod_vtc.3 \
 	vmod_blob.3 \
 	vmod_unix.3 \
-	vmod_proxy.3
+	vmod_proxy.3 \
+	vmod_h2.3
 
 CLEANFILES = $(dist_man_MANS)
 
@@ -107,6 +108,9 @@ vmod_unix.3: $(top_builddir)/lib/libvmod_unix/vmod_unix.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
 vmod_proxy.3: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.man.rst
+	${RST2MAN} $(RST2ANY_FLAGS) $? $@
+
+vmod_h2.3: $(top_builddir)/lib/libvmod_h2/vmod_h2.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
 .NOPATH: $(dist_man_MANS)

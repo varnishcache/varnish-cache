@@ -12,4 +12,5 @@ SUBDIRS = \
 	libvmod_vtc \
 	libvmod_blob \
 	libvmod_unix \
-	libvmod_proxy
+	libvmod_proxy \
+	libvmod_h2

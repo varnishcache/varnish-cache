@@ -1,0 +1,90 @@
+varnishtest "VMOD h2 basics"
+
+varnish v1 -arg "-p feature=+http2" -vcl {
+	import h2;
+
+	backend proforma none;
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.http2-is = h2.is();
+		set resp.body = "";
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.http2-is == false
+} -start
+
+client c2 {
+	stream 7 {
+		txreq
+		rxresp
+		expect resp.status == 200
+		expect resp.http.http2-is == true
+	} -run
+} -start
+
+client c1 -wait
+client c2 -wait
+
+# coverage
+varnish v1 -vcl {
+	import h2;
+
+	backend proforma none;
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.rapid-reset-o = h2.rapid_reset(10ms);
+		set resp.http.rapid-reset-n = h2.rapid_reset();
+		set resp.http.rapid-reset-limit-o = h2.rapid_reset_limit(10);
+		set resp.http.rapid-reset-limit-n = h2.rapid_reset_limit();
+		set resp.http.rapid-reset-period-o = h2.rapid_reset_period(10s);
+		set resp.http.rapid-reset-period-n = h2.rapid_reset_period();
+		set resp.http.rapid-reset-budget = h2.rapid_reset_budget();
+		set resp.body = "";
+		return (deliver);
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.rapid-reset-o == -1.000
+	expect resp.http.rapid-reset-n == -1.000
+	expect resp.http.rapid-reset-limit-o == -1
+	expect resp.http.rapid-reset-limit-n == -1
+	expect resp.http.rapid-reset-period-o == -1.000
+	expect resp.http.rapid-reset-period-n == -1.000
+	expect resp.http.rapid-reset-budget == -1.000
+} -start
+
+client c2 {
+	stream 7 {
+		txreq
+		rxresp
+		expect resp.status == 200
+		expect resp.http.rapid-reset-o == 1.000
+		expect resp.http.rapid-reset-n == 0.010
+		expect resp.http.rapid-reset-limit-o == 100
+		expect resp.http.rapid-reset-limit-n == 10
+		expect resp.http.rapid-reset-period-o == 60.000
+		expect resp.http.rapid-reset-period-n == 10.000
+		expect resp.http.rapid-reset-budget == 10.000
+	} -run
+} -start
+
+client c1 -wait
+client c2 -wait
