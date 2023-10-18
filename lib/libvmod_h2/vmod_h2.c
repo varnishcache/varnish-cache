@@ -43,7 +43,12 @@ h2get(VRT_CTX)
 	uintptr_t *up;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC); // $Restrict client
+	if (ctx->req == NULL) {
+		VRT_fail(ctx,
+		    "vmod_h2 can only be called from client-side VCL.");
+		return (NULL);
+	}
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->transport != &H2_transport)
 		return (NULL);
 	AZ(SES_Get_proto_priv(ctx->req->sp, &up));
