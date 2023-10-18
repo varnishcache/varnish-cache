@@ -34,12 +34,16 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-================================
-Varnish Cache 7.4.0 (2023-09-15)
-================================
+===============================
+Varnish Cache NEXT (2024-03-15)
+===============================
 
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
+
+================================
+Varnish Cache 7.4.0 (2023-09-15)
+================================
 
 * The ``VSB_quote_pfx()`` (and, consequently, ``VSB_quote()``) function
   no longer produces ``\v`` for a vertical tab. This improves

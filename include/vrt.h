@@ -57,6 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * NEXT (2024-03-15)
  * 18.0 (2023-09-15)
  *	[cache_filter.h] struct vdp gained priv1 member
  *	VRT_trace() added
