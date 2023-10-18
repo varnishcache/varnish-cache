@@ -65,6 +65,8 @@ vmod_ ## name(VRT_CTX, struct VARGS(name) *args)	\
 	struct h2_sess *h2 = h2get(ctx);		\
 	type r;						\
 							\
+	(void)args;					\
+							\
 	if (h2 == NULL)					\
 		return (-1);				\
 							\
