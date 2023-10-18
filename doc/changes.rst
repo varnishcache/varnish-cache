@@ -41,6 +41,87 @@ Varnish Cache NEXT (2024-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The ``vcl_req_reset`` feature (controllable through the ``feature``
+  parameter, see `varnishd(1)`) has been added and enabled by default
+  to terminate client side VCL processing early when the client is
+  gone.
+
+  *req_reset* events trigger a VCL failure and are reported to
+  `vsl(7)` as ``Timestamp: Reset`` and accounted to ``main.req_reset``
+  in `vsc` as visible through ``varnishstat(1)``.
+
+  In particular, this feature is used to reduce resource consumption
+  of HTTP/2 "rapid reset" attacks (see below).
+
+  Note, in particular, that *req_reset* events may lead to client
+  tasks for which no VCL is called ever. Presumably, this is thus the
+  first time that valid `vcl(7)` client transactions may not contain
+  any ``VCL_call`` records.
+
+* Added mitigation options and visibility for HTTP/2 "rapid reset"
+  attacks (CVE-2023-44487_, 3996_, 3997_, 3998_, 3999_).
+
+  Global rate limit controls have been added as parameters, which can
+  be overridden per HTTP/2 session from VCL using the new vmod ``h2``:
+
+  * The ``h2_rapid_reset`` parameter and ``h2.rapid_reset()`` function
+    define a threshold duration for an ``RST_STREAM`` to be classified
+    as "rapid": If an ``RST_STREAM`` frame is parsed sooner than this
+    duration after a ``HEADERS`` frame, it is accounted against the
+    rate limit described below.
+
+    The default is one second.
+
+  * The ``h2_rapid_reset_limit`` parameter and
+    ``h2.rapid_reset_limit()`` function define how many "rapid" resets
+    may be received during the time span defined by the
+    ``h2_rapid_reset_period`` parameter / ``h2.rapid_reset_period()``
+    function before the HTTP/2 connection is forcibly closed with a
+    ``GOAWAY`` and all ongoing VCL client tasks of the connection are
+    aborted.
+
+    The defaults are 100 and 60 seconds, corresponding to an allowance
+    of 100 "rapid" resets per minute.
+
+  * The ``h2.rapid_reset_budget()`` function can be used to query the
+    number of currently allowed "rapid" resets.
+
+  * Sessions closed due to rapid reset rate limiting are reported as
+    ``SessClose RAPID_RESET`` in `vsl(7)` and accounted to
+    ``main.sc_rapid_reset`` in `vsc` as visible through
+    ``varnishstat(1)``.
+
+* The ``cli_limit`` parameter default has been increased from 48KB to
+  64KB.
+
+* ``VSUB_closefrom()`` now falls back to the base implementation not
+  only if ``close_range()`` was determined to be unusable at compile
+  time, but also at run time. That is to say, even if
+  ``close_range()`` is compiled in, the fallback to the naive
+  implementation remains.
+
+* Fixed ``varnishd -I`` error reporting when a final newline or
+  carriage return is missing in the CLI command file (3995_).
+
+* Improved and updated the build system with respect to autoconf and
+  automake.
+
+* Improved ``VSB_tofile()`` error reporting, added support for partial
+  writes and support of VSBs larger than INT_MAX.
+
+* Improved HPACK header validation.
+
+* Fixed scopes of protected headers (3984_).
+
+.. _CVE-2023-44487: https://nvd.nist.gov/vuln/detail/CVE-2023-44487
+
+.. _3984: https://github.com/varnishcache/varnish-cache/issues/3984
+.. _3995: https://github.com/varnishcache/varnish-cache/issues/3995
+.. _3996: https://github.com/varnishcache/varnish-cache/issues/3996
+.. _3997: https://github.com/varnishcache/varnish-cache/pull/3997
+.. _3998: https://github.com/varnishcache/varnish-cache/pull/3998
+.. _3999: https://github.com/varnishcache/varnish-cache/pull/3999
+
 ================================
 Varnish Cache 7.4.0 (2023-09-15)
 ================================
