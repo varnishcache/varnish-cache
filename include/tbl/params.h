@@ -1896,6 +1896,10 @@ PARAM(
 )
 #endif
 
+#define H2_RR_INFO \
+	"Changes to this parameter affect the default for new HTTP2 " \
+	"sessions."
+
 PARAM(
 	/* name */	h2_rapid_reset,
 	/* typ */	timeout,
@@ -1903,12 +1907,12 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"1.0",
 	/* units */	"seconds",
-	/* flags */	EXPERIMENTAL,
+	/* flags */	EXPERIMENTAL | DELAYED_EFFECT,
 	/* s-text */
 	"The upper threshold for how soon an http/2 RST_STREAM frame has "
 	"to be parsed after a HEADERS frame for it to be treated as "
 	"suspect and subjected to the rate limits specified by "
-	"h2_rapid_reset_limit and h2_rapid_reset_period.",
+	"h2_rapid_reset_limit and h2_rapid_reset_period." H2_RR_INFO,
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -1921,12 +1925,12 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"100",
 	/* units */	NULL,
-	/* flags */	EXPERIMENTAL,
+	/* flags */	EXPERIMENTAL | DELAYED_EFFECT,
 	/* s-text */
 	"HTTP2 RST Allowance.\n\n"
 	"Specifies the maximum number of allowed stream resets issued by "
 	"a client over a time period before the connection is closed. Setting "
-	"this parameter to 0 disables the limit.",
+	"this parameter to 0 disables the limit." H2_RR_INFO,
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -1939,9 +1943,9 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"60.000",
 	/* units */	"seconds",
-	/* flags */	EXPERIMENTAL|WIZARD,
+	/* flags */	EXPERIMENTAL | DELAYED_EFFECT | WIZARD,
 	/* s-text */
-	"HTTP2 sliding window duration for h2_rapid_reset_limit.",
+	"HTTP2 sliding window duration for h2_rapid_reset_limit." H2_RR_INFO,
 	/* l-text */	"",
 	/* func */	NULL
 )
