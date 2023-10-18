@@ -1,6 +1,7 @@
 varnishtest "h2 rapid reset"
 
-barrier b1 sock 5
+barrier b1 sock 2 -cyclic
+barrier b2 sock 5 -cyclic
 
 server s1 {
 	rxreq
@@ -16,12 +17,50 @@ varnish v1 -vcl+backend {
 	import vtc;
 
 	sub vcl_recv {
-		vtc.barrier_sync("${b1_sock}");
+		if (req.http.barrier) {
+			vtc.barrier_sync(req.http.barrier);
+		}
+		vtc.barrier_sync("${b2_sock}");
 	}
 
 } -start
 
 client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.err == ENHANCE_YOUR_CALM
+	} -start
+
+	stream 1 {
+		txreq -hdr barrier ${b1_sock}
+		barrier b1 sync
+		txrst
+	} -run
+	stream 3 {
+		txreq -hdr barrier ${b1_sock}
+		barrier b1 sync
+		txrst
+	} -run
+	stream 5 {
+		txreq -hdr barrier ${b1_sock}
+		barrier b1 sync
+		txrst
+	} -run
+	stream 7 {
+		txreq -hdr barrier ${b1_sock}
+		barrier b1 sync
+		txrst
+	} -run
+
+	barrier b2 sync
+	stream 0 -wait
+} -run
+
+varnish v1 -expect sc_rapid_reset == 1
+
+varnish v1 -cliok "param.set feature -vcl_req_reset"
+
+client c2 {
 	stream 0 {
 		rxgoaway
 		expect goaway.err == ENHANCE_YOUR_CALM
@@ -44,8 +83,8 @@ client c1 {
 		txrst
 	} -run
 
-	barrier b1 sync
+	barrier b2 sync
 	stream 0 -wait
 } -run
 
-varnish v1 -expect sc_rapid_reset == 1
+varnish v1 -expect sc_rapid_reset == 2
