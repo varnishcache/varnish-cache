@@ -30,10 +30,13 @@ client c1 {
 		barrier b1 sync
 		txrst
 	} -run
+	expect_close
 } -start
 
 logexpect l1 -wait
 barrier b2 sync
+
+client c1 -wait
 
 varnish v1 -vsl_catchup
 varnish v1 -expect req_reset == 1
