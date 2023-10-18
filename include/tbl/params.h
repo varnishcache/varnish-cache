@@ -1281,7 +1281,7 @@ PARAM_SIMPLE(
 	/* typ */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* def */	"0",
+	/* def */	"100",
 	/* units */	NULL,
 	/* descr */
 	"HTTP2 RST Allowance.\n"
