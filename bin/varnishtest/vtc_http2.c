@@ -2632,8 +2632,16 @@ stream_thread(void *priv)
 static struct stream *
 stream_new(const char *name, struct http *h)
 {
-	char *p;
+	char *p, buf[20];
 	struct stream *s;
+
+	if (!strcmp("next", name)) {
+		if (h->last_stream > 0)
+			bprintf(buf, "%d", h->last_stream + 2);
+		else
+			bprintf(buf, "%d", 1);
+		name = buf;
+	}
 
 	ALLOC_OBJ(s, STREAM_MAGIC);
 	AN(s);
@@ -2656,6 +2664,7 @@ stream_new(const char *name, struct http *h)
 
 	CHECK_OBJ_NOTNULL(h, HTTP_MAGIC);
 	s->hp = h;
+	h->last_stream = s->id;
 
 	//bprintf(s->connect, "%s", "${v1_sock}");
 	PTOK(pthread_mutex_lock(&h->mtx));
@@ -2761,7 +2770,8 @@ stream_run(struct stream *s)
  *	stream ID [SPEC] [ACTION]
  *
  * ID is the HTTP/2 stream number, while SPEC describes what will be
- * done in that stream.
+ * done in that stream. If ID has the value ``next``, the actual stream
+ * number is computed based on the last one.
  *
  * Note that, when parsing a stream action, if the entity isn't operating
  * in HTTP/2 mode, these spec is ran before::
@@ -2830,7 +2840,7 @@ cmd_stream(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-')
-			vtc_fatal(vl, "Unknown client argument: %s", *av);
+			vtc_fatal(vl, "Unknown stream argument: %s", *av);
 		REPLACE(s->spec, *av);
 	}
 }

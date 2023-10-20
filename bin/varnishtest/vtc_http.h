@@ -86,6 +86,7 @@ struct http {
 
 	pthread_t		tp;
 	VTAILQ_HEAD(, stream)   streams;
+	unsigned		last_stream;
 	pthread_mutex_t		mtx;
 	pthread_cond_t          cond;
 	struct hpk_ctx		*encctx;
