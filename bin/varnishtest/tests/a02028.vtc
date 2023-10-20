@@ -1,0 +1,24 @@
+varnishtest "Automatic stream numbers"
+
+server s1 {
+	loop 4 {
+		stream next {
+			rxreq
+			txresp
+		} -run
+	}
+} -start
+
+client c1 -connect ${s1_sock} {
+	loop 3 {
+		stream next {
+			txreq
+			rxresp
+		} -run
+	}
+
+	stream 7 {
+		txreq
+		rxresp
+	} -run
+} -run
