@@ -44,13 +44,13 @@ client c1 {
 
 logexpect l1 -wait
 
-# coverage for idle_send_timeout with c2
+# coverage for h2_window_timeout with c2
 
-varnish v1 -cliok "param.set idle_send_timeout 1"
+varnish v1 -cliok "param.set h2_window_timeout 1"
 varnish v1 -cliok "param.reset send_timeout"
 
 logexpect l2 -v v1 {
-	expect * * Debug "Hit idle_send_timeout"
+	expect * * Debug "Hit h2_window_timeout"
 } -start
 
 client c2 {
@@ -79,12 +79,12 @@ client c2 {
 
 logexpect l2 -wait
 
-# coverage for idle_send_timeout change with c3
+# coverage for h2_window_timeout change with c3
 
 barrier b3 cond 2
 
 logexpect l3 -v v1 {
-	expect * * Debug "Hit idle_send_timeout"
+	expect * * Debug "Hit h2_window_timeout"
 } -start
 
 client c3 {
@@ -113,7 +113,7 @@ client c3 {
 } -start
 
 barrier b3 sync
-varnish v1 -cliok "param.reset idle_send_timeout"
+varnish v1 -cliok "param.reset h2_window_timeout"
 
 client c3 -wait
 logexpect l3 -wait
