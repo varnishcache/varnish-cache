@@ -31,26 +31,13 @@ client c1 {
 		expect goaway.err == ENHANCE_YOUR_CALM
 	} -start
 
-	stream 1 {
-		txreq -hdr barrier ${b1_sock}
-		barrier b1 sync
-		txrst
-	} -run
-	stream 3 {
-		txreq -hdr barrier ${b1_sock}
-		barrier b1 sync
-		txrst
-	} -run
-	stream 5 {
-		txreq -hdr barrier ${b1_sock}
-		barrier b1 sync
-		txrst
-	} -run
-	stream 7 {
-		txreq -hdr barrier ${b1_sock}
-		barrier b1 sync
-		txrst
-	} -run
+	loop 4 {
+		stream next {
+			txreq -hdr barrier ${b1_sock}
+			barrier b1 sync
+			txrst
+		} -run
+	}
 
 	barrier b2 sync
 	stream 0 -wait
@@ -66,22 +53,12 @@ client c2 {
 		expect goaway.err == ENHANCE_YOUR_CALM
 	} -start
 
-	stream 1 {
-		txreq
-		txrst
-	} -run
-	stream 3 {
-		txreq
-		txrst
-	} -run
-	stream 5 {
-		txreq
-		txrst
-	} -run
-	stream 7 {
-		txreq
-		txrst
-	} -run
+	loop 4 {
+		stream next {
+			txreq
+			txrst
+		} -run
+	}
 
 	barrier b2 sync
 	stream 0 -wait
