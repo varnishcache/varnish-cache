@@ -43,6 +43,19 @@
 
 #define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
 
+static h2_error
+h2_errcheck(const struct h2_req *r2, const struct h2_sess *h2)
+{
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+
+	if (r2->error != NULL)
+		return (r2->error);
+	if (h2->error != NULL && r2->stream > h2->goaway_last_stream)
+		return (h2->error);
+	return (NULL);
+}
+
 static int
 h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 {
@@ -230,19 +243,6 @@ h2_win_charge(struct h2_req *r2, const struct h2_sess *h2, uint32_t w)
 	Lck_AssertHeld(&h2->sess->mtx);
 	r2->t_window -= w;
 	h2->req0->t_window -= w;
-}
-
-static h2_error
-h2_errcheck(const struct h2_req *r2, const struct h2_sess *h2)
-{
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-
-	if (r2->error != NULL)
-		return (r2->error);
-	if (h2->error != NULL && r2->stream > h2->goaway_last_stream)
-		return (h2->error);
-	return (NULL);
 }
 
 static int64_t
