@@ -70,20 +70,20 @@ h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 
 	Lck_AssertHeld(&h2->sess->mtx);
 
-	if (cache_param->idle_send_timeout > 0.)
-		tmo = cache_param->idle_send_timeout;
+	if (cache_param->h2_window_timeout > 0.)
+		tmo = cache_param->h2_window_timeout;
 
 	r = Lck_CondWaitTimeout(cond, &h2->sess->mtx, tmo);
 	assert(r == 0 || r == ETIMEDOUT);
 
 	now = VTIM_real();
 
-	/* NB: when we grab idle_send_timeout before acquiring the session
+	/* NB: when we grab h2_window_timeout before acquiring the session
 	 * lock we may time out, but once we wake up both send_timeout and
-	 * idle_send_timeout may have changed meanwhile. For this reason
+	 * h2_window_timeout may have changed meanwhile. For this reason
 	 * h2_stream_tmo() may not log what timed out and we need to call
 	 * again with a magic NAN "now" that indicates to h2_stream_tmo()
-	 * that the stream reached the idle_send_timeout via the lock and
+	 * that the stream reached the h2_window_timeout via the lock and
 	 * force it to log it.
 	 */
 	h2e = h2_stream_tmo(h2, r2, now);
@@ -208,6 +208,10 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 	iov[1].iov_len = len;
 	s = writev(h2->sess->fd, iov, len == 0 ? 1 : 2);
 	if (s != sizeof hdr + len) {
+		if (errno == EWOULDBLOCK) {
+			VSLb(h2->vsl, SLT_Debug,
+			     "H2: stream %u: Hit idle_send_timeout", stream);
+		}
 		/*
 		 * There is no point in being nice here, we will be unable
 		 * to send a GOAWAY once the code unrolls, so go directly
