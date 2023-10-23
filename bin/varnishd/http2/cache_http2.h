@@ -162,6 +162,8 @@ struct h2_sess {
 
 	struct sess			*sess;
 	int				refcnt;
+	int				open_streams;
+	int				winup_streams;
 	uint32_t			highest_stream;
 	int				goaway;
 	int				bogosity;
@@ -193,7 +195,6 @@ struct h2_sess {
 	VTAILQ_HEAD(,h2_req)		txqueue;
 
 	h2_error			error;
-	int				open_streams;
 
 	// rst rate limit parameters, copied from h2_* parameters
 	vtim_dur			rapid_reset;

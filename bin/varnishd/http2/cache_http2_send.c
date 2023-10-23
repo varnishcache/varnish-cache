@@ -268,6 +268,9 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 		r2->t_winupd = VTIM_real();
 		h2_send_rel_locked(h2, r2);
 
+		assert(h2->winup_streams >= 0);
+		h2->winup_streams++;
+
 		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == NULL) {
 			r2->cond = &wrk->cond;
 			(void)h2_cond_wait(r2->cond, h2, r2);
@@ -282,6 +285,10 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			h2_win_charge(r2, h2, w);
 			assert (w > 0);
 		}
+
+		assert(h2->winup_streams > 0);
+		h2->winup_streams--;
+
 		h2_send_get_locked(wrk, h2, r2);
 	}
 
