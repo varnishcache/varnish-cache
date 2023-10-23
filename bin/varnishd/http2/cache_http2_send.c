@@ -239,11 +239,11 @@ h2_errcheck(const struct h2_req *r2, const struct h2_sess *h2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 
-	if (r2->error)
+	if (r2->error != NULL)
 		return (r2->error);
-	if (h2->error && r2->stream > h2->goaway_last_stream)
+	if (h2->error != NULL && r2->stream > h2->goaway_last_stream)
 		return (h2->error);
-	return (0);
+	return (NULL);
 }
 
 static int64_t
@@ -263,25 +263,25 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 	if (r2->t_window <= 0 || h2->req0->t_window <= 0) {
 		r2->t_winupd = VTIM_real();
 		h2_send_rel_locked(h2, r2);
-		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
+
+		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == NULL) {
 			r2->cond = &wrk->cond;
 			(void)h2_cond_wait(r2->cond, h2, r2);
 			r2->cond = NULL;
 		}
-		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == 0)
+
+		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == NULL)
 			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
 
-		if (h2_errcheck(r2, h2) == 0) {
-			w = h2_win_limit(r2, h2);
-			if (w > wanted)
-				w = wanted;
+		if (h2_errcheck(r2, h2) == NULL) {
+			w = vmin_t(int64_t, h2_win_limit(r2, h2), wanted);
 			h2_win_charge(r2, h2, w);
 			assert (w > 0);
 		}
 		h2_send_get_locked(wrk, h2, r2);
 	}
 
-	if (w == 0 && h2_errcheck(r2, h2) == 0) {
+	if (w == 0 && h2_errcheck(r2, h2) == NULL) {
 		assert(r2->t_window > 0);
 		assert(h2->req0->t_window > 0);
 		w = h2_win_limit(r2, h2);
@@ -318,7 +318,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 	AN(H2_SEND_HELD(h2, r2));
 
-	if (h2_errcheck(r2, h2))
+	if (h2_errcheck(r2, h2) != NULL)
 		return;
 
 	AN(ftyp);
@@ -343,7 +343,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 	if (ftyp->respect_window) {
 		tf = h2_do_window(wrk, r2, h2, (len > mfs) ? mfs : len);
-		if (h2_errcheck(r2, h2))
+		if (h2_errcheck(r2, h2) != NULL)
 			return;
 		AN(H2_SEND_HELD(h2, r2));
 	} else
@@ -363,8 +363,8 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 				tf = mfs;
 			if (ftyp->respect_window && p != ptr) {
 				tf = h2_do_window(wrk, r2, h2,
-					(len > mfs) ? mfs : len);
-				if (h2_errcheck(r2, h2))
+				    (len > mfs) ? mfs : len);
+				if (h2_errcheck(r2, h2) != NULL)
 					return;
 				AN(H2_SEND_HELD(h2, r2));
 			}
@@ -385,7 +385,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 			ftyp = ftyp->continuation;
 			flags &= ftyp->flags;
 			final_flags &= ftyp->flags;
-		} while (!h2->error && len > 0);
+		} while (h2->error == NULL && len > 0);
 	}
 }
 
@@ -398,6 +398,7 @@ H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	AN(H2_SEND_HELD(h2, r2));
+	AN(h2e);
 
 	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
