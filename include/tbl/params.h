@@ -1194,6 +1194,20 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	h2_window_timeout,
+	/* type */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"5",
+	/* units */	"seconds",
+	/* descr */
+	"HTTP2 time limit without window credits. How long a stream may "
+	"wait for the client to credit the window and allow for more DATA "
+	"frames to be sent.",
+	/* flags */	WIZARD
+)
+
+PARAM_SIMPLE(
 	/* name */	h2_header_table_size,
 	/* type */	bytes_u,
 	/* min */	"0b",
