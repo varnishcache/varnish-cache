@@ -833,11 +833,11 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_Lock(&h2->sess->mtx);
 	CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
 
-	if (h2->error || r2->error) {
+	if (h2->error != NULL || r2->error != NULL) {
 		if (r2->cond)
 			PTOK(pthread_cond_signal(r2->cond));
 		Lck_Unlock(&h2->sess->mtx);
-		return (h2->error ? h2->error : r2->error);
+		return (h2->error != NULL ? h2->error : r2->error);
 	}
 
 	/* Check padding if present */
@@ -1074,7 +1074,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 		} else
 			l = 0;
 
-		if (h2->error || r2->error)
+		if (h2->error != NULL || r2->error != NULL)
 			retval = VFP_ERROR;
 		else if (r2->state >= H2_S_CLOS_REM && l <= *lp)
 			retval = VFP_END;
@@ -1270,15 +1270,15 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
 
 	h2e = h2f->rxfunc(wrk, h2, r2);
-	if (h2e == 0)
-		return (0);
+	if (h2e == NULL)
+		return (NULL);
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
 	H2_Send_Get(wrk, h2, h2->req0);
 	H2_Send_RST(wrk, h2, h2->req0, h2->rxf_stream, h2e);
 	H2_Send_Rel(h2, h2->req0);
-	return (0);
+	return (NULL);
 }
 
 int
@@ -1485,7 +1485,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	}
 
 	h2e = h2_procframe(wrk, h2, h2f);
-	if (h2->error == 0 && h2e) {
+	if (h2->error == NULL && h2e != NULL) {
 		h2->error = h2e;
 		vbe32enc(b, h2->highest_stream);
 		vbe32enc(b + 4, h2e->val);
@@ -1493,5 +1493,6 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
 		H2_Send_Rel(h2, h2->req0);
 	}
-	return (h2->error ? 0 : 1);
+
+	return (h2->error != NULL ? 0 : 1);
 }
