@@ -1801,6 +1801,22 @@ PARAM(
 )
 
 PARAM(
+	/* name */	h2_window_timeout,
+	/* typ */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"5",
+	/* units */	"seconds",
+	/* flags */	WIZARD,
+	/* s-text */
+	"HTTP2 time limit without window credits. How long a stream may "
+	"wait for the client to credit the window and allow for more DATA "
+	"frames to be sent.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */      h2_header_table_size,
 	/* typ */       bytes_u,
 	/* min */       "0b",
