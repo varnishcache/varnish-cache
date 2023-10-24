@@ -34,7 +34,8 @@ DESCRIPTION
 ===========
 
 This VMOD contains functions to control the HTTP2 transport built into
-Varnish-Cache.
+Varnish-Cache. Using VMOD outside of a client context will immediately
+fail the VCL transaction.
 
 $Function BOOL is()
 
@@ -49,8 +50,7 @@ Returns -1 when used outside the HTTP2 transport. Otherwise returns
 the previous value.
 
 If the call leads to a change in the rate limit parameters, the
-current budget as retuned by
-`h2.rapid_reset_budget()`_ is reset.
+current budget as retuned by `h2.rapid_reset_budget()`_ is reset.
 
 $Function INT rapid_reset_limit([INT number])
 
@@ -61,8 +61,7 @@ Returns -1 when used outside the HTTP2 transport. Otherwise returns
 the previous value.
 
 If the call leads to a change in the rate limit parameters, the
-current budget as retuned by
-`h2.rapid_reset_budget()`_ is reset.
+current budget as retuned by `h2.rapid_reset_budget()`_ is reset.
 
 $Function DURATION rapid_reset_period([DURATION duration])
 
@@ -73,8 +72,7 @@ Returns -1 when used outside the HTTP2 transport. Otherwise returns
 the previous value.
 
 If the call leads to a change in the rate limit parameters, the
-current budget as retuned by
-`h2.rapid_reset_budget()`_ is reset.
+current budget as retuned by `h2.rapid_reset_budget()`_ is reset.
 
 $Function REAL rapid_reset_budget()
 
