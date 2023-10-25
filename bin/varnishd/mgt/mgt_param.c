@@ -857,11 +857,6 @@ MCF_DumpRstParam(void)
 		MCF_DYN_REASON(Minimum, min);
 		MCF_DYN_REASON(Maximum, max);
 #undef MCF_DYN_REASON
-		/*
-		 * XXX: we should mark the params with one/two flags
-		 * XXX: that say if ->min/->max are valid, so we
-		 * XXX: can emit those also in help texts.
-		 */
 		if (pp->flags & ~DOCS_FLAGS) {
 			printf("\t* Flags: ");
 			q = "";
