@@ -44,6 +44,9 @@
 /* Flags for allocating memory in sml_stv_alloc */
 #define LESS_MEM_ALLOCED_IS_OK	1
 
+// marker pointer for sml_trimstore
+static void *trim_once = &trim_once;
+
 /*-------------------------------------------------------------------*/
 
 static struct storage *
@@ -257,7 +260,8 @@ sml_bocfini(const struct stevedore *stv, struct boc *boc)
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 
-	if (boc->stevedore_priv == NULL)
+	if (boc->stevedore_priv == NULL ||
+	    boc->stevedore_priv == trim_once)
 		return;
 
 	/* Free any leftovers from Trim */
@@ -533,6 +537,10 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
+	if (oc->boc->stevedore_priv != NULL)
+		WRONG("sml_trimstore already called");
+	oc->boc->stevedore_priv = trim_once;
+
 	if (stv->sml_free == NULL)
 		return;
 
@@ -566,7 +574,6 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	VTAILQ_INSERT_HEAD(&o->list, st1, list);
 	Lck_Unlock(&oc->boc->mtx);
 	/* sml_bocdone frees this */
-	AZ(oc->boc->stevedore_priv);
 	oc->boc->stevedore_priv = st;
 }
 

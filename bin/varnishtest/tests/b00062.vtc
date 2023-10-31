@@ -2,7 +2,11 @@ varnishtest "Test that we properly wait for certain 304 cases"
 
 server s1 {
 	rxreq
-	txresp -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -body "Geoff Still Rules"
+	txresp -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" \
+	       -hdr "Geoff: Still Rules" \
+	       -bodylen 130560
+
+	       # 2*64k-512 ^^^ see sml_trimstore() st->space - st->len < 512
 
 	# The IMS request we will spend some time to process for the sake of
 	# this test.
@@ -17,7 +21,7 @@ server s1 {
 	txresp -body "x"
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -arg "-p fetch_maxchunksize=64k" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.ttl = 1s;
 		set beresp.grace = 1s;
@@ -30,7 +34,8 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.body == "Geoff Still Rules"
+	expect resp.http.Geoff == "Still Rules"
+	expect resp.bodylen == 130560
 } -run
 
 # let the object's ttl and grace expire
@@ -42,7 +47,8 @@ client c2 {
 	rxresp
 	# we did not disable grace in the request, so we should get the graced object here
 	expect resp.status == 200
-	expect resp.body == "Geoff Still Rules"
+	expect resp.http.Geoff == "Still Rules"
+	expect resp.bodylen == 130560
 } -start
 
 delay .1
@@ -52,7 +58,8 @@ client c3 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.body == "Geoff Still Rules"
+	expect resp.http.Geoff == "Still Rules"
+	expect resp.bodylen == 130560
 } -start
 
 client c2 -wait

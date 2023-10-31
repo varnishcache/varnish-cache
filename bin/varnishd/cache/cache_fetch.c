@@ -769,7 +769,8 @@ vbf_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 	uint8_t *pd;
 
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
-	(void)flush;
+
+	flush &= OBJ_ITER_END;
 
 	while (len > 0) {
 		l = len;
@@ -777,7 +778,7 @@ vbf_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 			return (1);
 		l = vmin(l, len);
 		memcpy(pd, ps, l);
-		VFP_Extend(bo->vfc, l, l == len ? VFP_END : VFP_OK);
+		VFP_Extend(bo->vfc, l, flush && l == len ? VFP_END : VFP_OK);
 		ps += l;
 		len -= l;
 	}
