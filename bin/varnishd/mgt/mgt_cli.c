@@ -184,7 +184,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	cmd = mgt_cmd_lookup(av[1]);
-	if (cmd != NULL && VCLS_CMD_IS(cmd, INTERNAL)) {
+	if (cmd == NULL || VCLS_CMD_IS(cmd, INTERNAL)) {
 		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
 		VCLI_SetResult(cli, CLIS_UNKNOWN);
 		return;
