@@ -53,10 +53,10 @@ Varnish Cache NEXT (2024-03-15)
   In particular, this feature is used to reduce resource consumption
   of HTTP/2 "rapid reset" attacks (see below).
 
-  Note, in particular, that *req_reset* events may lead to client
-  tasks for which no VCL is called ever. Presumably, this is thus the
-  first time that valid `vcl(7)` client transactions may not contain
-  any ``VCL_call`` records.
+  Note that *req_reset* events may lead to client tasks for which no
+  VCL is called ever. Presumably, this is thus the first time that
+  valid `vcl(7)` client transactions may not contain any ``VCL_call``
+  records.
 
 * Added mitigation options and visibility for HTTP/2 "rapid reset"
   attacks (CVE-2023-44487_, 3996_, 3997_, 3998_, 3999_).
