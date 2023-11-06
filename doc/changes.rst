@@ -35,12 +35,8 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.4.1 (2023-09-19)
+Varnish Cache 7.4.2 (2023-11-13)
 ================================
-
-* Fix the scope of bereq protected headers (3984_).
-
-.. _3984: https://github.com/varnishcache/varnish-cache/issues/3984
 
 * The ``vcl_req_reset`` feature (controllable through the ``feature``
   parameter, see `varnishd(1)`) has been added and enabled by default
@@ -109,6 +105,14 @@ Varnish Cache 7.4.1 (2023-09-19)
 .. _3997: https://github.com/varnishcache/varnish-cache/pull/3997
 .. _3998: https://github.com/varnishcache/varnish-cache/pull/3998
 .. _3999: https://github.com/varnishcache/varnish-cache/pull/3999
+
+================================
+Varnish Cache 7.4.1 (2023-09-19)
+================================
+
+* Fix the scope of bereq protected headers (3984_).
+
+.. _3984: https://github.com/varnishcache/varnish-cache/issues/3984
 
 ================================
 Varnish Cache 7.4.0 (2023-09-15)
