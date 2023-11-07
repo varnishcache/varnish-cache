@@ -607,6 +607,13 @@ bit(uint8_t *p, unsigned no, enum bit_do act)
 	return (*p & b);
 }
 
+static inline void
+bit_clear(uint8_t *p, unsigned l)
+{
+
+	memset(p, 0, (l + 7) >> 3);
+}
+
 /*--------------------------------------------------------------------
  */
 
@@ -665,14 +672,14 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 
 	if (arg != NULL && !strcmp(arg, "default") &&
 	    strcmp(par->def, "none")) {
-		memset(p, 0, l >> 3);
+		bit_clear(p, l);
 		return (tweak_generic_bits(vsb, par, par->def, p, l, tags,
 		    desc, sign));
 	}
 
 	if (arg != NULL && arg != JSON_FMT) {
 		if (sign == '+' && !strcmp(arg, "none"))
-			memset(p, 0, l >> 3);
+			bit_clear(p, l);
 		else
 			return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
 	} else {
