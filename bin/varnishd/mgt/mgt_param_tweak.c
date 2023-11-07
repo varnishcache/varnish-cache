@@ -677,9 +677,7 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 {
 	unsigned j;
 
-	if (arg != NULL && !strcmp(arg, "default") &&
-	    strcmp(par->def, "none")) {
-		bit_clear(p, l);
+	if (arg != NULL && !strcmp(arg, "default")) {
 		return (tweak_generic_bits(vsb, par, par->def, p, l, tags,
 		    desc, sign));
 	}
