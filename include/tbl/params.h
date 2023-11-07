@@ -1881,6 +1881,7 @@ PARAM_BITS(
 	"-WorkThread",
 	/* descr */
 	"Mask individual VSL messages from being logged.\n"
+	"\tall\tEnable all tags\n"
 	"\tdefault\tSet default value\n"
 	"\nUse +/- prefix in front of VSL tag name to unmask/mask "
 	"individual VSL messages.")
