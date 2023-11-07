@@ -675,7 +675,6 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
     uint8_t *p, unsigned l, const char * const *tags, const char *desc,
     char sign)
 {
-	const char *s;
 	unsigned j;
 
 	if (arg != NULL && !strcmp(arg, "default") &&
@@ -690,15 +689,11 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 
 	if (arg == JSON_FMT)
 		VSB_putc(vsb, '"');
-	s = "";
+	VSB_cat(vsb, sign == '+' ? "none" : "all");
 	for (j = 0; j < l; j++) {
-		if (bit(p, j, BTST)) {
-			VSB_printf(vsb, "%s%c%s", s, sign, tags[j]);
-			s = ",";
-		}
+		if (bit(p, j, BTST))
+			VSB_printf(vsb, ",%c%s", sign, tags[j]);
 	}
-	if (*s == '\0')
-		VSB_cat(vsb, sign == '+' ? "none" : "all");
 	if (arg == JSON_FMT)
 		VSB_putc(vsb, '"');
 	return (0);
