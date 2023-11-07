@@ -10,6 +10,7 @@ varnish v1 -cliok "param.show vsl_mask"
 
 varnish v1 -cliexpect {"value": "none"} "param.set -j feature none"
 varnish v1 -cliexpect {"value": "all"} "param.set -j vsl_mask all"
+varnish v1 -cliexpect {"value": "all(,-\w+)+"} "param.reset -j vsl_mask"
 
 varnish v1 -clierr 106 "param.set vsl_mask FooBar"
 varnish v1 -clierr 106 "param.set vsl_mask -FooBar"

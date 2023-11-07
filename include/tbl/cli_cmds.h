@@ -172,9 +172,11 @@ CLI_CMD(VCL_LABEL,
 
 CLI_CMD(PARAM_RESET,
 	"param.reset",
-	"param.reset <param>",
+	"param.reset [-j] <param>",
 	"Reset parameter to default value.",
-	"",
+	"  The JSON output is the same as ``param.show -j <param>`` and"
+	" contains the updated value as it would be represented by a"
+	" subsequent execution of ``param.show``.\n\n",
 	1,1
 )
 
