@@ -634,6 +634,14 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 	}
 	for (i = 1; av[i] != NULL; i++) {
 		s = av[i];
+		if (sign == '+' && !strcmp(s, "none")) {
+			bit_clear(p, l);
+			continue;
+		}
+		if (sign == '-' && !strcmp(s, "all")) {
+			bit_clear(p, l);
+			continue;
+		}
 		if (*s != '-' && *s != '+') {
 			VSB_printf(vsb, "Missing '+' or '-' (%s)\n", s);
 			VAV_Free(av);
@@ -678,12 +686,7 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 	}
 
 	if (arg != NULL && arg != JSON_FMT) {
-		if (sign == '+' && !strcmp(arg, "none"))
-			bit_clear(p, l);
-		else if (sign == '-' && !strcmp(arg, "all"))
-			bit_clear(p, l);
-		else
-			return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
+		return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
 	} else {
 		if (arg == JSON_FMT)
 			VSB_putc(vsb, '"');
