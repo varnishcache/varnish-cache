@@ -685,23 +685,22 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 		    desc, sign));
 	}
 
-	if (arg != NULL && arg != JSON_FMT) {
+	if (arg != NULL && arg != JSON_FMT)
 		return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
-	} else {
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-		s = "";
-		for (j = 0; j < l; j++) {
-			if (bit(p, j, BTST)) {
-				VSB_printf(vsb, "%s%c%s", s, sign, tags[j]);
-				s = ",";
-			}
+
+	if (arg == JSON_FMT)
+		VSB_putc(vsb, '"');
+	s = "";
+	for (j = 0; j < l; j++) {
+		if (bit(p, j, BTST)) {
+			VSB_printf(vsb, "%s%c%s", s, sign, tags[j]);
+			s = ",";
 		}
-		if (*s == '\0')
-			VSB_cat(vsb, sign == '+' ? "none" : "all");
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
 	}
+	if (*s == '\0')
+		VSB_cat(vsb, sign == '+' ? "none" : "all");
+	if (arg == JSON_FMT)
+		VSB_putc(vsb, '"');
 	return (0);
 }
 
