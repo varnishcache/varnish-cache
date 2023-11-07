@@ -680,6 +680,8 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 	if (arg != NULL && arg != JSON_FMT) {
 		if (sign == '+' && !strcmp(arg, "none"))
 			bit_clear(p, l);
+		else if (sign == '-' && !strcmp(arg, "all"))
+			bit_clear(p, l);
 		else
 			return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
 	} else {
@@ -693,7 +695,7 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 			}
 		}
 		if (*s == '\0')
-			VSB_cat(vsb, sign == '+' ? "none" : "(all enabled)");
+			VSB_cat(vsb, sign == '+' ? "none" : "all");
 		if (arg == JSON_FMT)
 			VSB_putc(vsb, '"');
 	}
