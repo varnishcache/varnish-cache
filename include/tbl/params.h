@@ -1829,6 +1829,7 @@ PARAM_BITS(
 	/* name */	feature,
 	/* fld */	feature_bits,
 	/* def */
+	"none,"
 	"+validate_headers,"
 	"+vcl_req_reset",
 	/* descr */
@@ -1847,6 +1848,7 @@ PARAM_BITS(
 	/* name */	vcc_feature,
 	/* fld */	vcc_feature_bits,
 	/* def */
+	"none,"
 	"+err_unref,"
 	"+unsafe_path",
 	/* descr */
@@ -1865,6 +1867,7 @@ PARAM_BITS(
 	/* name */	vsl_mask,
 	/* fld */	vsl_mask,
 	/* def */
+	"all,"
 	"-Debug,"
 	"-ExpKill,"
 	"-H2RxBody,"
