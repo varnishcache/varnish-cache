@@ -678,6 +678,7 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 	unsigned j;
 
 	if (arg != NULL && !strcmp(arg, "default")) {
+		/* XXX: deprecated in favor of param.reset */
 		return (tweak_generic_bits(vsb, par, par->def, p, l, tags,
 		    desc, sign));
 	}

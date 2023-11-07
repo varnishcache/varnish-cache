@@ -1834,7 +1834,7 @@ PARAM_BITS(
 	"+vcl_req_reset",
 	/* descr */
 	"Enable/Disable various minor features.\n"
-	"\tdefault\tSet default value\n"
+	"\tdefault\tSet default value (deprecated: use param.reset)\n"
 	"\tnone\tDisable all features.\n\n"
 	"Use +/- prefix to enable/disable individual feature:")
 #ifdef PARAM_ALL
@@ -1853,7 +1853,7 @@ PARAM_BITS(
 	"+unsafe_path",
 	/* descr */
 	"Enable/Disable various VCC behaviors.\n"
-	"\tdefault\tSet default value\n"
+	"\tdefault\tSet default value (deprecated: use param.reset)\n"
 	"\tnone\tDisable all behaviors.\n\n"
 	"Use +/- prefix to enable/disable individual behavior:")
 #ifdef PARAM_ALL
@@ -1885,7 +1885,7 @@ PARAM_BITS(
 	/* descr */
 	"Mask individual VSL messages from being logged.\n"
 	"\tall\tEnable all tags\n"
-	"\tdefault\tSet default value\n"
+	"\tdefault\tSet default value (deprecated: use param.reset)\n"
 	"\nUse +/- prefix in front of VSL tag name to unmask/mask "
 	"individual VSL messages.")
 PARAM_POST
