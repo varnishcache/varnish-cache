@@ -30,6 +30,10 @@ directory, also available in HTML format at
 http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
+================================
+Varnish Cache 7.3.1 (2023-11-13)
+================================
+
 
 ================================
 Varnish Cache 7.3.0 (2023-03-15)
