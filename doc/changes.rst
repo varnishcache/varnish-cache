@@ -27,6 +27,76 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
+Varnish Cache 6.0.12 (2023-11-13)
+=================================
+
+* Added mitigation options and visibility for HTTP/2 "rapid reset"
+  attacks (CVE-2023-44487_, 3996_, 3997_, 3998_, 3999_).
+
+  Global rate limit controls have been added as parameters, which can
+  be overridden per HTTP/2 session from VCL using the new vmod ``h2``:
+
+  * The ``h2_rapid_reset`` parameter and ``h2.rapid_reset()`` function
+    define a threshold duration for an ``RST_STREAM`` to be classified
+    as "rapid": If an ``RST_STREAM`` frame is parsed sooner than this
+    duration after a ``HEADERS`` frame, it is accounted against the
+    rate limit described below.
+
+    The default is one second.
+
+  * The ``h2_rapid_reset_limit`` parameter and
+    ``h2.rapid_reset_limit()`` function define how many "rapid" resets
+    may be received during the time span defined by the
+    ``h2_rapid_reset_period`` parameter / ``h2.rapid_reset_period()``
+    function before the HTTP/2 connection is forcibly closed with a
+    ``GOAWAY`` and all ongoing VCL client tasks of the connection are
+    aborted.
+
+    The defaults are 100 and 60 seconds, corresponding to an allowance
+    of 100 "rapid" resets per minute.
+
+  * The ``h2.rapid_reset_budget()`` function can be used to query the
+    number of currently allowed "rapid" resets.
+
+  * Sessions closed due to rapid reset rate limiting are reported as
+    ``SessClose RAPID_RESET`` in `vsl(7)` and accounted to
+    ``main.sc_rapid_reset`` in `vsc` as visible through
+    ``varnishstat(1)``.
+
+* The ``vcl_req_reset`` feature (controllable through the ``feature``
+  parameter, see `varnishd(1)`) has been added and enabled by default
+  to terminate client side VCL processing early when the client is
+  gone.
+
+  *req_reset* events trigger a VCL failure and are reported to
+  `vsl(7)` as ``Timestamp: Reset`` and accounted to ``main.req_reset``
+  in `vsc` as visible through ``varnishstat(1)``.
+
+  In particular, this feature is used to reduce resource consumption
+  of HTTP/2 "rapid reset" attacks (see below).
+
+  Note that *req_reset* events may lead to client tasks for which no
+  VCL is called ever. Presumably, this is thus the first time that
+  valid `vcl(7)` client transactions may not contain any ``VCL_call``
+  records.
+
+* New request body h2 window handling using a buffer to avoid stalling an
+  entire h2 session until the relevant stream starts consuming DATA frames.
+  As a result the minimum value for ``h2_initial_window_size`` is now 65535B
+  to avoid running out of buffer with a negative window that was simpler to
+  not tolerate, and a new ``h2_rxbuf_storage`` parameter was added (3661_).
+
+* The bundled zlib has been updated to match zlib 1.2.11.
+
+.. _CVE-2023-44487: https://nvd.nist.gov/vuln/detail/CVE-2023-44487
+
+.. _3661: https://github.com/varnishcache/varnish-cache/issues/3661
+.. _3996: https://github.com/varnishcache/varnish-cache/issues/3996
+.. _3997: https://github.com/varnishcache/varnish-cache/pull/3997
+.. _3998: https://github.com/varnishcache/varnish-cache/pull/3998
+.. _3999: https://github.com/varnishcache/varnish-cache/pull/3999
+
+=================================
 Varnish Cache 6.0.11 (2022-11-08)
 =================================
 
