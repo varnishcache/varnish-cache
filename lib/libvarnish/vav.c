@@ -192,6 +192,12 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			b++;
 			continue;
 		}
+		if (sep != NULL && *sep == '"' &&
+		    *b == ',' && (flag & ARGV_COMMA)) {
+			sep = NULL;
+			b++;
+			continue;
+		}
 		if (sep != NULL && *sep == '"' && *b == '"' && (b - sep) < 2) {
 			argv[0] = err_missing_separator;
 			return (argv);
@@ -402,6 +408,7 @@ static const struct test_case *tests[] = {
 	TEST_FAIL(0    , "foo\"bar", invalid_quote),
 	TEST_FAIL(0    , "foo\"bar", invalid_quote),
 	TEST_PASS(0    , "\"foo\" \"bar\"", "foo", "bar"),
+	TEST_PASS(  C  , "\"foo\",\"bar\"", "foo", "bar"),
 	TEST_PASS(    N, "\"foo\"\"bar\"", "\"foo\"\"bar\""),
 	TEST_FAIL(0    , "\"foo\"\"bar\"", missing_separator),
 	NULL
