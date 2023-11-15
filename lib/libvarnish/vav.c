@@ -482,6 +482,8 @@ main(int argc, char **argv)
 	for (tc = tests; ret == 0 && *tc != NULL; tc++) {
 		argv = test_run(*tc, &ret);
 		VAV_Free(argv);
+		if (ret)
+			return (1);
 	}
 
 	return (0);
