@@ -474,18 +474,17 @@ int
 main(int argc, char **argv)
 {
 	const struct test_case **tc;
-	int ret = 0;
+	int ret = 0, fail = 0;
 
 	(void)argc;
 	(void)argv;
 
-	for (tc = tests; ret == 0 && *tc != NULL; tc++) {
+	for (tc = tests; *tc != NULL; ret = 0, tc++) {
 		argv = test_run(*tc, &ret);
 		VAV_Free(argv);
 		if (ret)
-			return (1);
+			fail = 1;
 	}
-
-	return (0);
+	return (fail);
 }
 #endif /* TEST_DRIVER */
