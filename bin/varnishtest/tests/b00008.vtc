@@ -49,3 +49,5 @@ varnish v1 -cliexpect 60 "param.show first_byte_timeout"
 varnish v1 -cliok "param.set cli_limit 128"
 
 varnish v1 -clierr 201 "param.show"
+
+varnish v1 -cliok "\"help\" \"help\""
