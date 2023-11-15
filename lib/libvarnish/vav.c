@@ -441,9 +441,6 @@ test_run(const struct test_case *tc, int *ret)
 		return (argv);
 	}
 
-	if (tc->argv[0] != NULL)
-		return (argv);
-
 	for (i = 1; i < argc && tc->argv[i] != NULL && argv[i] != NULL; i++) {
 		if (!strcmp(tc->argv[i], argv[i]))
 			continue;
@@ -455,7 +452,7 @@ test_run(const struct test_case *tc, int *ret)
 		return (argv);
 	}
 
-	if (tc->argv[i] != NULL || argv[i] != NULL) {
+	if (tc->argv[0] == NULL && (tc->argv[i] != NULL || argv[i] != NULL)) {
 		act = i < argc ? "less" : "more";
 		printf(
 		    "ERROR: Parsing string <%s> with flags %x, "
