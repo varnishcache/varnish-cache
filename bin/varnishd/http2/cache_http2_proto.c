@@ -1285,10 +1285,10 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 	return (NULL);
 }
 
-int
+h2_error
 h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 {
-	int r = 0;
+	h2_error h2e = NULL;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
@@ -1301,36 +1301,36 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 		AN(r2->t_winupd);
 
 	if (r2->t_winupd == 0 && r2->t_send == 0)
-		return (0);
+		return (NULL);
 
 	if (isnan(now) || (r2->t_winupd != 0 &&
 	    now - r2->t_winupd > cache_param->idle_send_timeout)) {
 		VSLb(h2->vsl, SLT_Debug,
 		     "H2: stream %u: Hit idle_send_timeout waiting for"
 		     " WINDOW_UPDATE", r2->stream);
-		r = 1;
+		h2e = H2SE_CANCEL;
 	}
 
-	if (r == 0 && r2->t_send != 0 &&
+	if (h2e == NULL && r2->t_send != 0 &&
 	    now - r2->t_send > cache_param->send_timeout) {
 		VSLb(h2->vsl, SLT_Debug,
 		     "H2: stream %u: Hit send_timeout", r2->stream);
-		r = 1;
+		h2e = H2SE_CANCEL;
 	}
 
-	return (r);
+	return (h2e);
 }
 
-static int
+static h2_error
 h2_stream_tmo_unlocked(struct h2_sess *h2, const struct h2_req *r2)
 {
-	int r;
+	h2_error h2e;
 
 	Lck_Lock(&h2->sess->mtx);
-	r = h2_stream_tmo(h2, r2, h2->sess->t_idle);
+	h2e = h2_stream_tmo(h2, r2, h2->sess->t_idle);
 	Lck_Unlock(&h2->sess->mtx);
 
-	return (r);
+	return (h2e);
 }
 
 /*
