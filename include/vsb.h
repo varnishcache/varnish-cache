@@ -123,6 +123,11 @@ void		 VSB_destroy(struct vsb **);
 	 * Not valid with VSB_QUOTE_JSON and VSB_QUOTE_HEX
 	 */
 
+#define VSB_QUOTE_CLI		64
+	/*
+	 * Add quotes ".." around arguments when needed
+	 */
+
 void		 VSB_quote_pfx(struct vsb *, const char*, const void *,
 		     int len, int how);
 void		 VSB_quote(struct vsb *, const void *, int len, int how);
