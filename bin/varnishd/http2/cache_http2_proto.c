@@ -1324,7 +1324,7 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 		VSLb(h2->vsl, SLT_Debug,
 		     "H2: stream %u: Hit idle_send_timeout waiting for"
 		     " WINDOW_UPDATE", r2->stream);
-		h2e = H2SE_CANCEL;
+		h2e = H2SE_BROKE_WINDOW;
 	}
 
 	if (h2e == NULL && r2->t_send != 0 &&

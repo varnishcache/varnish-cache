@@ -412,12 +412,14 @@ H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
     uint32_t len, const void *ptr, uint64_t *counter)
 {
 	uint64_t dummy_counter = 0;
+	h2_error h2e;
 
 	if (counter == NULL)
 		counter = &dummy_counter;
 
 	h2_send(wrk, r2, ftyp, flags, len, ptr, counter);
 
-	if (h2_errcheck(r2, r2->h2sess) == H2SE_CANCEL)
-		H2_Send_RST(wrk, r2->h2sess, r2, r2->stream, H2SE_CANCEL);
+	h2e = h2_errcheck(r2, r2->h2sess);
+	if (h2e != NULL && h2e->val == H2SE_CANCEL->val)
+		H2_Send_RST(wrk, r2->h2sess, r2, r2->stream, h2e);
 }
