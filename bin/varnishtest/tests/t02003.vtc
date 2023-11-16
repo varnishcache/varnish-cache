@@ -233,17 +233,28 @@ client c1 {
 } -run
 
 client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.err == NO_ERROR
+		expect goaway.laststream == 3
+	} -start
 	stream 1 {
-		txreq -nohdrend
+		txreq -nostrend
 		txrst -err 2
 	} -run
 	stream 3 {
-		txreq -nohdrend
+		txreq -nostrend
 		txrst -err 0x666
 	} -run
+	stream 0 -wait
 } -run
 
 client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.err == NO_ERROR
+		expect goaway.laststream == 1
+	} -start
 	stream 1 {
 		txreq
 		rxresp
@@ -252,6 +263,7 @@ client c1 {
 		# RST_STREAM on closed stream
 		txrst
 	} -run
+	stream 0 -wait
 } -run
 
 
