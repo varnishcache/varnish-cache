@@ -48,6 +48,7 @@ h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 {
 	vtim_dur tmo = 0.;
 	vtim_real now;
+	h2_error h2e;
 	int r;
 
 	AN(cond);
@@ -72,18 +73,16 @@ h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 	 * that the stream reached the idle_send_timeout via the lock and
 	 * force it to log it.
 	 */
-	if (h2_stream_tmo(h2, r2, now))
-		r = ETIMEDOUT;
-	else if (r == ETIMEDOUT)
-		AN(h2_stream_tmo(h2, r2, NAN));
-
-	if (r == ETIMEDOUT) {
-		if (r2->error == NULL)
-			r2->error = H2SE_CANCEL;
-		return (-1);
+	h2e = h2_stream_tmo(h2, r2, now);
+	if (h2e == NULL && r == ETIMEDOUT) {
+		h2e = h2_stream_tmo(h2, r2, NAN);
+		AN(h2e);
 	}
 
-	return (0);
+	if (r2->error == NULL)
+		r2->error = h2e;
+
+	return (h2e != NULL ? -1 : 0);
 }
 
 static void
