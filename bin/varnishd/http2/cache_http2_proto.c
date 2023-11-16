@@ -46,10 +46,13 @@
 #include "vtim.h"
 
 #define H2_CUSTOM_ERRORS
-#define H2EC1(U,v,r,d) const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1,r}};
-#define H2EC2(U,v,r,d) const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0,r}};
-#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
-#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
+#define H2EC1(U,v,g,r,d)	\
+	const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1,g,r}};
+#define H2EC2(U,v,g,r,d)	\
+	const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0,g,r}};
+#define H2EC3(U,v,g,r,d) H2EC1(U,v,g,r,d) H2EC2(U,v,g,r,d)
+#define H2_ERROR(NAME, val, sc, goaway, reason, desc)	\
+	H2EC##sc(NAME, val, goaway, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -61,6 +64,7 @@ static const struct h2_error_s H2NN_ERROR[1] = {{
 	0xffffffff,
 	1,
 	1,
+	0,
 	SC_RX_JUNK
 }};
 
@@ -88,10 +92,11 @@ h2_framename(enum h2frame h2f)
  */
 
 static const h2_error stream_errors[] = {
-#define H2EC1(U,v,r,d)
-#define H2EC2(U,v,r,d) [v] = H2SE_##U,
-#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
-#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
+#define H2EC1(U,v,g,r,d)
+#define H2EC2(U,v,g,r,d) [v] = H2SE_##U,
+#define H2EC3(U,v,g,r,d) H2EC1(U,v,g,r,d) H2EC2(U,v,g,r,d)
+#define H2_ERROR(NAME, val, sc, goaway, reason, desc)	\
+	H2EC##sc(NAME, val, goaway, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -113,10 +118,11 @@ h2_streamerror(uint32_t u)
  */
 
 static const h2_error conn_errors[] = {
-#define H2EC1(U,v,r,d) [v] = H2CE_##U,
-#define H2EC2(U,v,r,d)
-#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
-#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
+#define H2EC1(U,v,g,r,d) [v] = H2CE_##U,
+#define H2EC2(U,v,g,r,d)
+#define H2EC3(U,v,g,r,d) H2EC1(U,v,g,r,d) H2EC2(U,v,g,r,d)
+#define H2_ERROR(NAME, val, sc, goaway, reason, desc)	\
+	H2EC##sc(NAME, val, goaway, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -1319,6 +1325,10 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 	 */
 	if (isnan(now))
 		AN(r2->t_winupd);
+
+	if (h2->error != NULL && h2->error->connection &&
+	    !h2->error->send_goaway)
+		return (h2->error);
 
 	if (r2->t_winupd == 0 && r2->t_send == 0)
 		return (NULL);
