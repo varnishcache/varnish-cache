@@ -677,7 +677,7 @@ vclp_forward(struct cli *cli, const char * const *av, void *priv)
 	AN(cli_buf);
 	VSB_clear(cli_buf);
 	for (i = 1; av[i] != NULL; i++) {
-		VSB_quote(cli_buf, av[i], strlen(av[i]), 0);
+		VSB_quote(cli_buf, av[i], strlen(av[i]), VSB_QUOTE_CLI);
 		VSB_putc(cli_buf, ' ');
 	}
 	VSB_putc(cli_buf, '\n');
