@@ -410,7 +410,7 @@ h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
 	ASSERT_RXTHR(h2);
 	AN(h2e);
 
-	if (h2->goaway)
+	if (h2->goaway || !h2e->send_goaway)
 		return;
 
 	h2->goaway = 1;
@@ -1465,6 +1465,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	if (h2e != NULL && h2e->connection) {
 		h2->error = h2e;
+		h2_tx_goaway(wrk, h2, h2e);
 		return (0);
 	}
 
