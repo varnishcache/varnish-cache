@@ -1356,11 +1356,12 @@ static h2_error
 h2_sweep(struct worker *wrk, struct h2_sess *h2)
 {
 	struct h2_req *r2, *r22;
-	h2_error h2e = NULL, tmo;
+	h2_error h2e, tmo;
 	vtim_real now;
 
 	ASSERT_RXTHR(h2);
 
+	h2e = h2->error;
 	now = VTIM_real();
 	if (h2e == NULL && h2->open_streams == 0 &&
 	    h2->sess->t_idle + cache_param->timeout_idle < now)
