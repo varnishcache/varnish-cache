@@ -651,6 +651,14 @@
        configured limits for the number of permitted rapid stream
        resets.
 
+.. varnish_vsc:: sc_bankrupt
+	:level: diag
+	:oneliner:      Session Err BANKRUPT
+
+	Number of times we failed an http/2 session because all the streams
+	were waiting for their windows to be credited when h2_window_timeout
+	triggered.
+
 .. varnish_vsc:: client_resp_500
 	:level: diag
 	:group: wrk
