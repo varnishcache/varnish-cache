@@ -1357,13 +1357,19 @@ h2_stream_tmo_unlocked(struct h2_sess *h2, const struct h2_req *r2)
  * This is the janitorial task of cleaning up any closed & refused
  * streams, and checking if the session is timed out.
  */
-static int
+static h2_error
 h2_sweep(struct worker *wrk, struct h2_sess *h2)
 {
-	int tmo = 0;
 	struct h2_req *r2, *r22;
+	h2_error h2e = NULL, tmo;
+	vtim_real now;
 
 	ASSERT_RXTHR(h2);
+
+	now = VTIM_real();
+	if (h2e == NULL && h2->open_streams == 0 &&
+	    h2->sess->t_idle + cache_param->timeout_idle < now)
+		h2e = H2CE_NO_ERROR;
 
 	h2->do_sweep = 0;
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
@@ -1388,10 +1394,9 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			/* FALLTHROUGH */
 		case H2_S_CLOS_LOC:
 		case H2_S_OPEN:
-			if (h2_stream_tmo_unlocked(h2, r2)) {
-				tmo = 1;
-				continue;
-			}
+			tmo = h2_stream_tmo_unlocked(h2, r2);
+			if (h2e == NULL)
+				h2e = tmo;
 			break;
 		case H2_S_IDLE:
 			/* Current code make this unreachable: h2_new_req is
@@ -1403,9 +1408,7 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			break;
 		}
 	}
-	if (tmo)
-		return (0);
-	return (h2->refcnt > 1);
+	return (h2e);
 }
 
 
@@ -1437,30 +1440,30 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		return (0);
 
 	VTCP_blocking(*h2->htc->rfd);
-	h2->sess->t_idle = VTIM_real();
-	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
-	    NULL, NULL, NAN,
-	    h2->sess->t_idle + SESS_TMO(h2->sess, timeout_idle),
-	    NAN, h2->local_settings.max_frame_size + 9);
+	hs = HTC_RxStuff(h2->htc, h2_frame_complete, NULL, NULL, NAN,
+	    VTIM_real() + 0.5, NAN, h2->local_settings.max_frame_size + 9);
+
+	h2e = NULL;
 	switch (hs) {
 	case HTC_S_COMPLETE:
+		h2->sess->t_idle = VTIM_real();
+		if (h2->do_sweep)
+			h2e = h2_sweep(wrk, h2);
 		break;
 	case HTC_S_TIMEOUT:
-		if (h2_sweep(wrk, h2))
-			return (1);
-
-		/* FALLTHROUGH */
+		h2e = h2_sweep(wrk, h2);
+		break;
 	default:
-		/* XXX: HTC_S_OVERFLOW / FRAME_SIZE_ERROR handling */
-		Lck_Lock(&h2->sess->mtx);
-		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%d)", hs);
-		h2->error = H2CE_NO_ERROR;
-		Lck_Unlock(&h2->sess->mtx);
+		h2e = H2CE_ENHANCE_YOUR_CALM;
+	}
+
+	if (h2e != NULL && h2e->connection) {
+		h2->error = h2e;
 		return (0);
 	}
 
-	if (h2->do_sweep)
-		(void)h2_sweep(wrk, h2);
+	if (hs != HTC_S_COMPLETE)
+		return (1);
 
 	h2->rxf_len =  vbe32dec(h2->htc->rxbuf_b) >> 8;
 	h2->rxf_type =  h2->htc->rxbuf_b[3];
