@@ -163,6 +163,14 @@ H2_ERROR(
        /* reason */    SC_NULL,
        /* descr */     "Missing :scheme pseudo-header"
 )
+
+H2_ERROR(
+	/* name */	BROKE_WINDOW,
+	/* val */	8, /* CANCEL */
+	/* types */	2,
+	/* reason */	SC_NULL,
+	/* descr */	"http/2 stream out of window credits"
+)
 #  undef H2_CUSTOM_ERRORS
 #endif
 
