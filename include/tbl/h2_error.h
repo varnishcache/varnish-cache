@@ -161,6 +161,14 @@ H2_ERROR(
 	/* reason */	SC_NULL,
 	/* descr */	"http/2 stream out of window credits"
 )
+
+H2_ERROR(
+	/* name */	BANKRUPT,
+	/* val */	11, /* ENHANCE_YOUR_CALM */
+	/* types */	1,
+	/* reason */	SC_BANKRUPT,
+	/* descr */	"http/2 bankrupt connection"
+)
 #  undef H2_CUSTOM_ERRORS
 #endif
 
