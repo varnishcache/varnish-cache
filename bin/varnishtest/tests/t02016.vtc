@@ -6,7 +6,13 @@ server s1 {
 } -start
 
 varnish v1 -cliok "param.set feature +http2"
-varnish v1 -vcl+backend "" -start
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url ~ "synth") {
+			return (synth(200));
+		}
+	}
+} -start
 
 # coverage for send_timeout with c1
 
@@ -66,6 +72,10 @@ client c2 {
 	} -run
 
 	stream 1 {
+		txreq -nostrend -url "/synth"
+	} -run
+
+	stream 3 {
 		txreq
 		rxhdrs
 		rxdata
@@ -75,6 +85,9 @@ client c2 {
 		expect rst.err == CANCEL
 	} -run
 
+	stream 1 {
+		txdata
+	} -run
 } -run
 
 logexpect l2 -wait
@@ -100,6 +113,10 @@ client c3 {
 	} -run
 
 	stream 1 {
+		txreq -nostrend -url "/synth"
+	} -run
+
+	stream 3 {
 		txreq
 		rxhdrs
 		rxdata
@@ -110,6 +127,9 @@ client c3 {
 		expect rst.err == CANCEL
 	} -run
 
+	stream 1 {
+		txdata
+	} -run
 } -start
 
 barrier b3 sync

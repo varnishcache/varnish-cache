@@ -285,6 +285,10 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			assert (w > 0);
 		}
 
+		if (r2->error == H2SE_BROKE_WINDOW &&
+		    h2->open_streams <= h2->winup_streams)
+			h2->error = r2->error = H2CE_BANKRUPT;
+
 		assert(h2->winup_streams > 0);
 		h2->winup_streams--;
 
