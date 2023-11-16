@@ -48,6 +48,7 @@ SESS_CLOSE(RANGE_SHORT,   range_short,	1,	"Insufficient data for range")
 SESS_CLOSE(REQ_HTTP20,	  req_http20,	1,	"HTTP2 not accepted")
 SESS_CLOSE(VCL_FAILURE,	  vcl_failure,	1,	"VCL failure")
 SESS_CLOSE(RAPID_RESET,	  rapid_reset,  1,      "HTTP2 rapid reset")
+SESS_CLOSE(BANKRUPT,	  bankrupt,	1,      "HTTP2 credit bankruptcy")
 #undef SESS_CLOSE
 
 /*lint -restore */
