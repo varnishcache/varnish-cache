@@ -1,0 +1,28 @@
+varnishtest "Double fail ESI sub request"
+
+server s1 {
+	rxreq
+	txresp -body {<esi:include src="/inc"/>}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+
+	sub vcl_recv {
+		if (req.esi_level > 0) {
+			return (fail);
+		}
+	}
+
+	sub vcl_synth {
+		return (fail);
+	}
+} -start
+
+client c1 {
+	non_fatal
+	txreq
+	rxresp
+} -run
