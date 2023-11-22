@@ -261,6 +261,7 @@ SEE ALSO
 :ref:`varnishd(1)`
 :ref:`varnishlog(1)`
 :ref:`varnishstat(1)`
+:ref:`vsl-query(7)`
 :ref:`vsl(7)`
 
 HISTORY
