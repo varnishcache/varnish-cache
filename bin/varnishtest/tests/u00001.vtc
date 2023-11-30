@@ -114,3 +114,17 @@ shell { varnishadm -e -n ${v1_name} < cli_file.txt | diff -u expected_success.tx
 
 shell { cat cli_file.txt | varnishadm -e -n ${v1_name} }
 shell { cat cli_file.txt | varnishadm -e -n ${v1_name} | diff -u expected_success.txt - }
+
+shell {
+	cat > cli_heredoc.txt <<-EOF1
+	vcl.inline bar << EOF2
+	vcl 4.1;
+
+	backend default none;
+	EOF2
+	EOF1
+}
+
+shell { varnishadm -e -p -n ${v1_name} < cli_heredoc.txt }
+shell { varnishadm -n ${v1_name} vcl.discard bar }
+shell { cat cli_heredoc.txt | varnishadm -e -p -n ${v1_name} }
