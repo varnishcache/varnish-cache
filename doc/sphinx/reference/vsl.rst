@@ -79,7 +79,8 @@ Restart
 Reset
         The client closed its connection, reset its stream or caused
         a stream error that forced Varnish to reset the stream. Request
-        processing is interrupted and considered failed.
+        processing is interrupted and considered failed, with a 408
+        "Request Timeout" status code.
 
 Pipe handling timestamps
 ~~~~~~~~~~~~~~~~~~~~~~~~
