@@ -275,8 +275,13 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
 
 	Req_Rollback(req);
 
-	req->err_code = 503;
-	req->err_reason = "VCL failed";
+	if (req->req_reset) {
+		req->err_code = 408;
+		req->err_reason = "Client disconnected";
+	} else {
+		req->err_code = 503;
+		req->err_reason = "VCL failed";
+	}
 	req->req_step = R_STP_SYNTH;
 	req->doclose = SC_VCL_FAILURE;
 	return (REQ_FSM_MORE);
