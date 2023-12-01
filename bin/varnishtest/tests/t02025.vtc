@@ -46,7 +46,7 @@ varnish v1 -expect req_reset == 1
 # is interpreted as before a second elapsed. Session VXIDs showing up
 # numerous times become increasingly more suspicious. The format can of
 # course be extended to add anything else useful for data mining.
-shell -expect "1000 ${localhost}" {
+shell -expect "1000 ${localhost} 408" {
 	varnishncsa -n ${v1_name} -d \
-		-q 'Timestamp:Reset[2] < 1.0' -F '%{VSL:Begin[2]}x %h'
+		-q 'Timestamp:Reset[2] < 1.0' -F '%{VSL:Begin[2]}x %h %s'
 }
