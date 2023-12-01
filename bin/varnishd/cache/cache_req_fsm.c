@@ -289,8 +289,13 @@ cnt_vclfail(struct worker *wrk, struct req *req)
 
 	Req_Rollback(ctx);
 
-	req->err_code = 503;
-	req->err_reason = "VCL failed";
+	if (req->req_reset) {
+		req->err_code = 408;
+		req->err_reason = "Client disconnected";
+	} else {
+		req->err_code = 503;
+		req->err_reason = "VCL failed";
+	}
 	req->req_step = R_STP_SYNTH;
 	req->doclose = SC_VCL_FAILURE;
 	req->filter_list = NULL;
@@ -306,6 +311,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 {
 	struct vsb *synth_body;
 	ssize_t sz, szl;
+	uint16_t status;
 	uint8_t *ptr;
 	const char *body;
 
@@ -340,7 +346,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 		}
 		VSB_destroy(&synth_body);
 		(void)VRB_Ignore(req);
-		(void)req->transport->minimal_response(req, 500);
+		status = req->req_reset ? 408 : 500;
+		(void)req->transport->minimal_response(req, status);
 		req->doclose = SC_VCL_FAILURE; // XXX: Not necessary any more ?
 		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 		http_Teardown(req->resp);
