@@ -611,7 +611,7 @@ static inline void
 bit_clear(uint8_t *p, unsigned l)
 {
 
-	memset(p, 0, (l + 7) >> 3);
+	memset(p, 0, ((size_t)l + 7) >> 3);
 }
 
 /*--------------------------------------------------------------------
