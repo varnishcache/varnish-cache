@@ -170,6 +170,15 @@ H2_ERROR(
 )
 
 H2_ERROR(
+	/* name */	MISSING_SCHEME,
+	/* val */	1, /* PROTOCOL_ERROR */
+	/* types */	2,
+	/* goaway */	1,
+	/* reason */	SC_NULL,
+	/* descr */	"Missing :scheme pseudo-header"
+)
+
+H2_ERROR(
 	/* name */	BROKE_WINDOW,
 	/* val */	8, /* CANCEL */
 	/* types */	2,
