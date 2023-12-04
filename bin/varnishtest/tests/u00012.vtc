@@ -22,7 +22,7 @@ process p1 -expect-text 2 1 "200 19      "
 process p1 -expect-text 3 1 PONG
 
 process p1 -write "vcl.list\r"
-process p1 -expect-text 0 0 "auto    warm" 
+process p1 -expect-text 0 0 "auto   warm"
 
 process p1 -write "vcl.show vcl1\r"
 process p1 -expect-text 0 0 "backend s1"

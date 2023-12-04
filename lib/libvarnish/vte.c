@@ -138,7 +138,7 @@ vte_update(struct vte *vte)
 			vte->f_off = 0;
 			vte->f_sz = 0;
 			vte->l_sz = 0;
-		} else {
+		} else if (*p != '\t') {
 			vte->f_sz++;
 			vte->l_sz++;
 		}
@@ -261,9 +261,9 @@ VTE_format(const struct vte *vte, VTE_format_f *func, void *priv)
 	just_left = 0;
 	while (*p != 0) {
 		if (*p == '\v') {
-			if (p - 1 > q) { /* exclude previous separator */
+			if (p > q) {
 				VTE_FORMAT(func, priv, "%.*s%s",
-				    (int)((p - 1) - q), q, sep);
+				    (int)(p - q), q, sep);
 			}
 			q = ++p;
 			just_left = 1;
