@@ -300,3 +300,85 @@ VTE_format(const struct vte *vte, VTE_format_f *func, void *priv)
 		VTE_FORMAT(func, priv, "%s", q);
 	return (0);
 }
+
+#ifdef TEST_DRIVER
+
+#include <stdio.h>
+
+static const char *test_vte =
+    "name\tref\tcomment\n"
+    "foo\t\v1\tthe foo\n"
+    "bar\t\v10\tthe bars\n"
+    "baz\t\v0\t\n"
+    "qux\t\v-1\tno eol";
+
+static const char *test_fmt =
+    "name  ref  comment\n"
+    "foo     1  the foo\n"
+    "bar    10  the bars\n"
+    "baz     0  \n"
+    "qux    -1  no eol";
+
+static int
+test_vsb_format(void *priv, const char *fmt, ...)
+{
+	struct vsb *vsb;
+	va_list ap;
+	int res;
+
+	CAST_OBJ_NOTNULL(vsb, priv, VSB_MAGIC);
+	AN(fmt);
+
+	va_start(ap, fmt);
+	res = VSB_vprintf(vsb, fmt, ap);
+	va_end(ap);
+
+	return (res);
+}
+
+int
+main(int argc, char **argv)
+{
+	struct vte *vte;
+	struct vsb *vsb;
+	int err = 0;
+
+	(void)argc;
+	(void)argv;
+
+	vte = VTE_new(3, 20);
+	AN(vte);
+	AZ(VTE_cat(vte, test_vte));
+	AZ(VTE_finish(vte));
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	AZ(VTE_format(vte, test_vsb_format, vsb));
+	AZ(VSB_finish(vsb));
+
+	assert(vte->o_sep == 2);
+	assert(vte->f_maxsz[0] == 4);
+	assert(vte->f_maxsz[1] == 3);
+	assert(vte->f_maxsz[2] == 8);
+
+	if (strcmp(VSB_data(vsb), test_fmt)) {
+		fprintf(stderr,
+		    "Error: VTE output mismatch\n"
+		    "<<<<<<<\n"
+		    "%s\n"
+		    "=======\n"
+		    "%s\n"
+		    ">>>>>>>\n"
+		    "FAIL\n",
+		    VSB_data(vsb), test_fmt);
+		err = 1;
+	}
+
+	VSB_destroy(&vsb);
+	VTE_destroy(&vte);
+	if (!err)
+		printf("PASS\n");
+	return (err);
+}
+
+#endif
