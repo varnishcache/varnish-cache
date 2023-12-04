@@ -53,6 +53,7 @@ TESTS = \
 	vjsn_test \
 	vnum_c_test \
 	vsb_test \
+	vte_test \
 	vtim_test
 
 noinst_PROGRAMS = ${TESTS}
@@ -80,6 +81,10 @@ vjsn_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 vsb_test_SOURCES = vsb_test.c
 vsb_test_CFLAGS = $(AM_CFLAGS) -DVSB_TEST
 vsb_test_LDADD = $(AM_LDFLAGS) libvarnish.la
+
+vte_test_SOURCES = vte.c
+vte_test_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
+vte_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 
 vtim_test_SOURCES = vtim.c
 vtim_test_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
