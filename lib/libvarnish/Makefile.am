@@ -82,5 +82,5 @@ vsb_test_CFLAGS = $(AM_CFLAGS) -DVSB_TEST
 vsb_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 
 vtim_test_SOURCES = vtim.c
-vtim_test_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
+vtim_test_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER -Wno-error=format-y2k
 vtim_test_LDADD = $(AM_LDFLAGS) libvarnish.la
