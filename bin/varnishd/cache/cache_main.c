@@ -81,6 +81,7 @@ static pthread_key_t req_key;
 static pthread_key_t bo_key;
 static pthread_key_t wrk_key;
 pthread_key_t witness_key;
+pthread_key_t panic_key;
 
 void
 THR_SetBusyobj(const struct busyobj *bo)
@@ -404,6 +405,7 @@ child_main(int sigmagic, size_t altstksz)
 	PTOK(pthread_key_create(&wrk_key, NULL));
 	PTOK(pthread_key_create(&witness_key, free));
 	PTOK(pthread_key_create(&name_key, NULL));
+	PTOK(pthread_key_create(&panic_key, NULL));
 
 	THR_SetName("cache-main");
 

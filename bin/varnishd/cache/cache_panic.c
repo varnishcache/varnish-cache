@@ -67,7 +67,6 @@
 
 static struct vsb pan_vsb_storage, *pan_vsb;
 static pthread_mutex_t panicstr_mtx;
-static pthread_t panicy;
 
 static void pan_sess(struct vsb *, const struct sess *);
 static void pan_req(struct vsb *, const struct req *);
@@ -744,18 +743,23 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	struct busyobj *bo;
 	struct worker *wrk;
 	struct sigaction sa;
-	int err = errno;
+	int i, err = errno;
 
-	/* If we already panicing in another thread, do nothing */
-	while (heritage.panic_str[0] && panicy != pthread_self())
-		sleep(1);
-
-	if (pthread_mutex_lock(&panicstr_mtx)) {
-		/* Reentrant panic */
+	if (pthread_getspecific(panic_key) != NULL) {
 		VSB_cat(pan_vsb, "\n\nPANIC REENTRANCY\n\n");
 		abort();
 	}
-	panicy = pthread_self();
+
+	/* If we already panicing in another thread, do nothing */
+	do {
+		i = pthread_mutex_trylock(&panicstr_mtx);
+		if (i != 0)
+			sleep (1);
+	} while (i != 0);
+
+	assert (VSB_len(pan_vsb) == 0);
+
+	AZ(pthread_setspecific(panic_key, pan_vsb));
 
 	/*
 	 * should we trigger a SIGSEGV while handling a panic, our sigsegv
@@ -844,6 +848,14 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */
 
 	v_gcov_flush();
+
+	/*
+	 * Do a little song and dance for static checkers which
+	 * are not smart enough to figure out that calling abort()
+	 * with a mutex held is OK and probably very intentional.
+	 */
+	if (pthread_getspecific(panic_key))	/* ie: always */
+		abort();
 	PTOK(pthread_mutex_unlock(&panicstr_mtx));
 	abort();
 }

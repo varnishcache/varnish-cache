@@ -303,6 +303,7 @@ unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 /* cache_main.c */
 vxid_t VXID_Get(const struct worker *, uint64_t marker);
+extern pthread_key_t panic_key;
 extern pthread_key_t witness_key;
 
 void THR_SetName(const char *name);
