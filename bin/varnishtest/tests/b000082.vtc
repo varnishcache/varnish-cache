@@ -1,0 +1,39 @@
+varnishtest "Backend IMS 304 reponse with Content-Length 0"
+
+# this case tests invalid behaviour, which we should handle gracefully anyway
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 0" -hdr {Etag: "foo"}
+
+	rxreq
+	txresp -status 304 -nolen -hdr "Content-Length: 0" -hdr {Etag: "foo"}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1s;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+
+	txreq
+	rxresp
+} -run
+
+delay 1
+
+client c2 {
+	txreq
+	rxresp
+} -run
+
+delay 0.1
+
+client c3 {
+	txreq
+	rxresp
+} -run
