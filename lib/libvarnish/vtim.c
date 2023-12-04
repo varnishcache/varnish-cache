@@ -504,7 +504,7 @@ tst_delta_check(const char *name, double begin, double end, vtim_dur ref)
 }
 
 static void
-tst_delta()
+tst_delta(void)
 {
 	vtim_mono m_begin, m_end;
 	vtim_real r_begin, r_end;
@@ -527,7 +527,7 @@ tst_delta()
 }
 
 static void
-bench()
+bench(void)
 {
 	vtim_mono s, e;
 	vtim_mono t_m;
@@ -536,6 +536,7 @@ bench()
 	int i;
 	char buf[64];
 
+	t_m = 0;
 	t_r = 0;
 	s = VTIM_mono();
 	for (i=0; i<100000; i++)
@@ -575,7 +576,7 @@ bench()
 	    e - s, i, 1e9 * (e - s) / i, t_i, buf);
 }
 
-void
+static void
 parse_check(time_t t, const char *s)
 {
 	vtim_real tt;
@@ -597,6 +598,9 @@ main(int argc, char **argv)
 	struct tm tm;
 	char buf[BUFSIZ];
 	char buf1[BUFSIZ];
+
+	(void)argc;
+	(void)argv;
 
 	AZ(setenv("TZ", "UTC", 1));
 	assert(sizeof t >= 8);
