@@ -454,15 +454,7 @@ VTIM_timespec(vtim_dur t)
 	return (tv);
 }
 
-
 #ifdef TEST_DRIVER
-
-/**********************************************************************
- * Compile with:
- *	cc -o foo -DTEST_DRIVER -I../.. -I../../include vtim.c vas.c -lm
- * Test with:
- *	./foo
- */
 
 #include <stdint.h>
 
@@ -642,4 +634,5 @@ main(int argc, char **argv)
 
 	return (0);
 }
+
 #endif
