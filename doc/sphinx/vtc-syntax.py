@@ -38,7 +38,7 @@ import re
 def parse_file(fn, cl, tl, sl):
     p = False
     section = ""
-    resec = re.compile("\s*/?\* SECTION: ")
+    resec = re.compile(r"\s*/?\* SECTION: ")
 
     try:
         # Python3
