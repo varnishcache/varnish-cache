@@ -113,19 +113,12 @@ cscope.*out
 /nbproject/private/
 
 # Test droppings
-/bin/varnishd/vhp_decode_test
-/bin/varnishd/vhp_table_test
+/bin/varnishd/*_test
 /bin/varnishtest/tests/*.log-t
 /include/vrt_test*
 /include/vbm_test
-/lib/libvarnish/vav_test
-/lib/libvarnish/vbh_test
-/lib/libvarnish/vct_test
-/lib/libvarnish/vjsn_test
-/lib/libvarnish/vnum_c_test
-/lib/libvarnish/vsb_test
-/lib/libvarnishapi/vsl_glob_test
-/lib/libvarnishapi/vxp_test
+/lib/libvarnish/*_test
+/lib/libvarnishapi/*_test
 
 # GCOV droppings
 *.gcda
