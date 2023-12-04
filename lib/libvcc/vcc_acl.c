@@ -280,7 +280,7 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 			VSB_cat(tl->sb, "left of:\n");
 			vcc_ErrWhere(tl, (*r)->t_addr);
 			VSB_printf(tl->sb, "removing the latter and expanding "
-			    "mask of the former by one to /%d\n",
+			    "mask of the former by one to /%u\n",
 			    (*l)->mask - 8);
 			vcc_Warn(tl);
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *r);
