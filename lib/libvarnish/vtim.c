@@ -585,6 +585,9 @@ parse_check(time_t t, const char *s)
 	}
 }
 
+#define TTEST_MIN (sizeof(time_t) >= 8 ? -2209852800 : INT32_MIN)
+#define TTEST_MAX (sizeof(time_t) >= 8 ? 20000000000 : INT32_MAX)
+
 int
 main(int argc, char **argv)
 {
@@ -602,7 +605,7 @@ main(int argc, char **argv)
 	bench();
 
 	/* Brute force test against libc version */
-	for (t = -2209852800; t < 20000000000; t += 3599) {
+	for (t = TTEST_MIN; t < TTEST_MAX; t += 3599) {
 		gmtime_r(&t, &tm);
 		strftime(buf1, sizeof buf1, "%a, %d %b %Y %T GMT", &tm);
 		VTIM_format(t, buf);
