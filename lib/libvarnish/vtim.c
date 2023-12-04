@@ -456,6 +456,8 @@ VTIM_timespec(vtim_dur t)
 
 #ifdef TEST_DRIVER
 
+#pragma GCC diagnostic ignored "-Wformat-y2k"
+
 #include <stdint.h>
 
 static void
