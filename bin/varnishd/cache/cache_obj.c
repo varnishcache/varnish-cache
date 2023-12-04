@@ -672,6 +672,10 @@ static VTAILQ_HEAD(,oev_entry)		oev_list;
 static pthread_rwlock_t			oev_rwl;
 static unsigned				oev_mask;
 
+/*
+ * NB: ObjSubscribeEvents() is not atomic:
+ * oev_mask is checked optimistically in ObjSendEvent()
+ */
 uintptr_t
 ObjSubscribeEvents(obj_event_f *func, void *priv, unsigned mask)
 {
