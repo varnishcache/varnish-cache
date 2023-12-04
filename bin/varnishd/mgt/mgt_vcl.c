@@ -849,7 +849,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 			    vp == mgt_vcl_active ? "active" : "available");
 			vs = vp->warm ?  VCL_STATE_WARM : VCL_STATE_COLD;
 			VTE_printf(vte, "\t%s\t%s", vp->state->name, vs->name);
-			VTE_printf(vte, "\t%6s\t%s", "-", vp->name);
+			VTE_printf(vte, "\t-\t%s", vp->name);
 			if (mcf_is_label(vp)) {
 				vd = VTAILQ_FIRST(&vp->dfrom);
 				AN(vd);

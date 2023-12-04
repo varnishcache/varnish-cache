@@ -108,7 +108,7 @@ shell -expect {VCL 'vcl1' now active} {
 	varnishadm -n ${tmpdir}/v1 vcl.use vcl1
 }
 
-shell -expect {active   auto   warm        -   vcl1} {
+shell -expect {active   auto   warm   -   vcl1} {
 	varnishadm -n ${tmpdir}/v1 vcl.list
 }
 
