@@ -127,7 +127,8 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 }
 
 static h2_error
-h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len, int *flags)
+h2h_addhdr(struct h2h_decode *d, struct http *hp, char *b, size_t namelen,
+    size_t len)
 {
 	/* XXX: This might belong in cache/cache_http.c */
 	const char *b0;
@@ -188,7 +189,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len, int *flags)
 			/* XXX: What to do about this one? (typically
 			   "http" or "https"). For now set it as a normal
 			   header, stripping the first ':'. */
-			if (*flags & H2H_DECODE_FLAG_SCHEME_SEEN) {
+			if (d->has_scheme) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Duplicate pseudo-header %.*s%.*s",
 				    (int)namelen, b0,
@@ -199,7 +200,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len, int *flags)
 			b++;
 			len-=1;
 			n = hp->nhd;
-			*flags |= H2H_DECODE_FLAG_SCHEME_SEEN;
+			d->has_scheme = 1;
 
 			for (p = b + namelen, u = 0; u < len-namelen;
 			    p++, u++) {
@@ -302,6 +303,9 @@ h2h_decode_fini(const struct h2_sess *h2)
 		VSLb(h2->new_req->http->vsl, SLT_BogoHeader,
 		    "HPACK compression error/fini (%s)", VHD_Error(d->vhd_ret));
 		ret = H2CE_COMPRESSION_ERROR;
+	} else if (d->error == NULL && !d->has_scheme) {
+		VSLb(h2->vsl, SLT_Debug, "Missing :scheme");
+		ret = H2SE_MISSING_SCHEME; //rfc7540,l,3087,3090
 	} else
 		ret = d->error;
 	FINI_OBJ(d);
@@ -389,8 +393,8 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			    d->out_u);
 			if (d->error)
 				break;
-			d->error = h2h_addhdr(hp, d->out, d->namelen, d->out_u,
-			    &d->flags);
+			d->error = h2h_addhdr(d, hp, d->out,
+			    d->namelen, d->out_u);
 			if (d->error)
 				break;
 			d->out[d->out_u++] = '\0'; /* Zero guard */

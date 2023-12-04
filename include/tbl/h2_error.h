@@ -156,6 +156,13 @@ H2_ERROR(
        /* descr */     "http/2 rapid reset detected"
 )
 
+H2_ERROR(
+       /* name */      MISSING_SCHEME,
+       /* val */       1, /* PROTOCOL_ERROR */
+       /* types */     2,
+       /* reason */    SC_NULL,
+       /* descr */     "Missing :scheme pseudo-header"
+)
 #  undef H2_CUSTOM_ERRORS
 #endif
 

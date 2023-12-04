@@ -601,13 +601,11 @@ static h2_error
 h2_end_headers(struct worker *wrk, struct h2_sess *h2,
     struct req *req, struct h2_req *r2)
 {
-	int scheme_seen;
 	h2_error h2e;
 	ssize_t cl;
 
 	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
-	scheme_seen = h2->decode->flags & H2H_DECODE_FLAG_SCHEME_SEEN;
 	h2e = h2h_decode_fini(h2);
 	h2->new_req = NULL;
 	if (h2e != NULL) {
@@ -661,11 +659,6 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 
 	if (req->http->hd[HTTP_HDR_URL].b == NULL) {
 		VSLb(h2->vsl, SLT_Debug, "Missing :path");
-		return (H2SE_PROTOCOL_ERROR); //rfc7540,l,3087,3090
-	}
-
-	if (!(scheme_seen)) {
-		VSLb(h2->vsl, SLT_Debug, "Missing :scheme");
 		return (H2SE_PROTOCOL_ERROR); //rfc7540,l,3087,3090
 	}
 
