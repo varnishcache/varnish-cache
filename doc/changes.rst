@@ -41,6 +41,35 @@ Varnish Cache NEXT (2024-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The ``fold`` flag has been added to Access Control Lists (ACLs)
+  in VCL. When it is activated with ``acl ... +fold {}``, ACL entries
+  get optimized in that subnets contained in other entries are skipped
+  (e.g.  if 1.2.3.0/24 is part of the ACL, an entry for 1.2.3.128/25
+  will not be added) and adjacent entries get folded (e.g.  if both
+  1.2.3.0/25 and 1.2.3.128/25 are added, they will be folded to
+  1.2.3.0/24) (3563_).
+
+  Logging under the ``VCL_acl`` tag can change with this flag.
+
+  Negated ACL entries are never folded.
+
+* Fixed handling of failing sub-requests: A VCL failure on the client
+  side or the ``vcl_req_reset`` feature could trigger a panic, because
+  it is not allowed to generate a minimal response. For sub-requests,
+  we now masquerade the fail transition as a deliver and trade the
+  illegal minimal response for the synthetic response (4022_).
+
+* The ``param.reset [-j]`` CLI command has been added to reset flags
+  to their default. Consequently, the ``param.set ... default``
+  special value is now deprecated.
+
+* The ``param.set`` CLI command now supports the ``none`` and ``all``
+  values to achieve setting "absolute" values atomically as in
+  ``param.set foo none,+bar,+baz`` or ``param.set foo all,-bar,-baz``.
+
+* A glitch in CLI command parsing has been fixed where individually
+  quoted arguments like ``"help"`` were rejected.
+
 * The ``vcl_req_reset`` feature (controllable through the ``feature``
   parameter, see `varnishd(1)`) has been added and enabled by default
   to terminate client side VCL processing early when the client is
@@ -118,6 +147,8 @@ Varnish Cache NEXT (2024-03-15)
 .. _3984: https://github.com/varnishcache/varnish-cache/issues/3984
 .. _3995: https://github.com/varnishcache/varnish-cache/issues/3995
 .. _3996: https://github.com/varnishcache/varnish-cache/issues/3996
+.. _4022: https://github.com/varnishcache/varnish-cache/issues/4022
+.. _3563: https://github.com/varnishcache/varnish-cache/pull/3563
 .. _3997: https://github.com/varnishcache/varnish-cache/pull/3997
 .. _3998: https://github.com/varnishcache/varnish-cache/pull/3998
 .. _3999: https://github.com/varnishcache/varnish-cache/pull/3999
