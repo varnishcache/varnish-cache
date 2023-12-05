@@ -194,7 +194,7 @@ failedtests () (
 	while read trs
 	do
 		name=`basename "${trs}" .trs`
-		vtc=`echo $trs | sed -e 's/trs$/vtc/' -e 's/.*sub\///' `
+		vtc=`echo $trs | sed -e 's/trs$/vtc/' -e 's/.*_build\/\(sub\/\)\?//'`
 		logfile=`echo $trs | sed -e 's/trs$/log/'`
 		log="${name}.log"
 		rev=`git log -n 1 --pretty=format:%H "${vtc}"`
