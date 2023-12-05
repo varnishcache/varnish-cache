@@ -174,8 +174,9 @@ shell -err -expect {Cannot read -f file} {
 
 process p1 {
 	/bin/echo -n foobar > ${tmpdir}/_foobar
+	ls -l ${tmpdir}/_foobar
 	exec varnishd -n ${tmpdir}/v0 -d -a :0 -I ${tmpdir}/_foobar 2>&1
-} -expect-exit 2 -start
+} -expect-exit 2 -dump -start
 
 process p1 -expect-text 0 0 "-I file had incomplete CLI command at the end"
 process p1 -screen-dump
