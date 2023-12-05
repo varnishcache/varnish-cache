@@ -601,7 +601,6 @@ main(int argc, char **argv)
 	(void)argv;
 
 	AZ(setenv("TZ", "UTC", 1));
-	assert(sizeof t >= 8);
 
 	bench();
 
