@@ -194,10 +194,14 @@ failedtests () (
 	while read trs
 	do
 		name=`basename "${trs}" .trs`
-		vtc=`echo $trs | sed -e 's/trs$/vtc/' -e 's/.*_build\/\(sub\/\)\?//'`
+		vtc=`echo $trs | sed -E -e 's/trs$/vtc/' -e 's/.*_build\/(sub\/)?//'`
 		logfile=`echo $trs | sed -e 's/trs$/log/'`
 		log="${name}.log"
-		rev=`git log -n 1 --pretty=format:%H "${vtc}"`
+		if [ -f ${vtc} ] ; then
+			rev=`git log -n 1 --pretty=format:%H "${vtc}"`
+		else
+			rev="?"
+		fi
 		cp "${logfile}" "${REPORTDIR}/_${log}"
 		echo "VTCGITREV ${name} ${rev}"
 		echo "MANIFEST _${log}"
