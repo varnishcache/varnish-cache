@@ -592,6 +592,7 @@ int
 main(int argc, char **argv)
 {
 	time_t t;
+	intmax_t iter;
 	struct tm tm;
 	char buf[BUFSIZ];
 	char buf1[BUFSIZ];
@@ -605,7 +606,8 @@ main(int argc, char **argv)
 	bench();
 
 	/* Brute force test against libc version */
-	for (t = TTEST_MIN; t < TTEST_MAX; t += 3599) {
+	for (iter = TTEST_MIN; iter < TTEST_MAX; iter += 3599) {
+		t = (time_t)iter;
 		gmtime_r(&t, &tm);
 		strftime(buf1, sizeof buf1, "%a, %d %b %Y %T GMT", &tm);
 		VTIM_format(t, buf);
