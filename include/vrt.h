@@ -48,7 +48,7 @@
 
 #define VRT_MAJOR_VERSION	18U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 /***********************************************************************
  * Major and minor VRT API versions.
