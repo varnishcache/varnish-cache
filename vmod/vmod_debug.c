@@ -714,8 +714,12 @@ event_discard(VRT_CTX, void *priv)
 	 * of this VMOD, so we should only carry out cleanup on the
 	 * last discard event.
 	 */
-	if (vsc)
+	PTOK(pthread_mutex_lock(&vsc_mtx));
+	if (vsc != NULL) {
 		VSC_debug_Destroy(&vsc_seg);
+		vsc = NULL;
+	}
+	PTOK(pthread_mutex_unlock(&vsc_mtx));
 
 	return (0);
 }
@@ -772,8 +776,10 @@ VCL_VOID
 xyzzy_vsc_count(VRT_CTX, VCL_INT cnt)
 {
 	(void)ctx;
+	PTOK(pthread_mutex_lock(&vsc_mtx));
 	AN(vsc);
 	vsc->count += cnt;
+	PTOK(pthread_mutex_unlock(&vsc_mtx));
 }
 
 VCL_VOID
