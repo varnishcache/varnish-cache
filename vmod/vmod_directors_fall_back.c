@@ -169,9 +169,9 @@ vmod_fallback_resolve(VRT_CTX, VCL_BACKEND dir)
 		if (++fb->cur == fb->vd->n_backend)
 			fb->cur = 0;
 	}
-	vdir_unlock(fb->vd);
 	if (u == fb->vd->n_backend)
 		be = NULL;
+	vdir_unlock(fb->vd);
 	return (be);
 }
 
