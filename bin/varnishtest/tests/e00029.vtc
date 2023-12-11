@@ -1,0 +1,41 @@
+varnishtest "ESI max_esi_depth"
+
+# test that the default stack size is sufficent for hitting
+# max_esi_depth
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunked {<html>}
+	chunkedlen 1024
+	chunked {<esi:include src="/" onerror="continue"/>}
+	chunkedlen 1024
+	chunked {<esi:include src="/" onerror="continue"/>}
+	chunkedlen 1024
+	chunked {</html>}
+	chunkedlen 0
+} -start
+
+varnish v1 -arg "-p feature=+esi_include_onerror" -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+		set beresp.do_gzip = true;
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * * VCL_Error {^ESI depth limit reached}
+	expect 0 = VCL_Error {^ESI depth limit reached}
+	expect * * VCL_Error {^ESI depth limit reached}
+	expect 0 = VCL_Error {^ESI depth limit reached}
+	expect * * VCL_Error {^ESI depth limit reached}
+	expect 0 = VCL_Error {^ESI depth limit reached}
+	#... more
+} -start
+
+client c1 {
+	txreq -hdr "Host: foo" -hdr "Accept-Encoding: gzip"
+	rxresp
+} -run
+
+logexpect l1 -wait
