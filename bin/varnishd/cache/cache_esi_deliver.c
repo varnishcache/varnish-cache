@@ -309,7 +309,7 @@ ved_vdp_esi_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+ved_vdp_esi_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	const uint8_t *q, *r;
@@ -324,14 +324,14 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		act = VDP_FLUSH;
 
 	AN(priv);
-	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
 	pp = ptr;
 
 	while (1) {
 		switch (ecx->state) {
 		case 0:
-			ecx->p = ObjGetAttr(vdx->wrk, ecx->preq->objcore,
+			ecx->p = ObjGetAttr(vdc->wrk, ecx->preq->objcore,
 			    OA_ESIDATA, &l);
 			AN(ecx->p);
 			assert(l > 0);
@@ -339,7 +339,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 
 			if (*ecx->p == VEC_GZ) {
 				if (ecx->pecx == NULL)
-					retval = VDP_bytes(vdx, VDP_NULL,
+					retval = VDP_bytes(vdc, VDP_NULL,
 					    gzip_hdr, 10);
 				ecx->l_crc = 0;
 				ecx->crc = crc32(0L, Z_NULL, 0);
@@ -357,14 +357,14 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			case VEC_V1:
 			case VEC_V2:
 			case VEC_V8:
-				ecx->l = ved_decode_len(vdx->vsl, &ecx->p);
+				ecx->l = ved_decode_len(vdc->vsl, &ecx->p);
 				if (ecx->l < 0)
 					return (-1);
 				if (ecx->isgzip) {
 					assert(*ecx->p == VEC_C1 ||
 					    *ecx->p == VEC_C2 ||
 					    *ecx->p == VEC_C8);
-					l = ved_decode_len(vdx->vsl, &ecx->p);
+					l = ved_decode_len(vdc->vsl, &ecx->p);
 					if (l < 0)
 						return (-1);
 					icrc = vbe32dec(ecx->p);
@@ -378,7 +378,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			case VEC_S1:
 			case VEC_S2:
 			case VEC_S8:
-				ecx->l = ved_decode_len(vdx->vsl, &ecx->p);
+				ecx->l = ved_decode_len(vdc->vsl, &ecx->p);
 				if (ecx->l < 0)
 					return (-1);
 				Debug("SKIP1(%d)\n", (int)ecx->l);
@@ -395,7 +395,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				q++;
 				r = (void*)strchr((const char*)q, '\0');
 				AN(r);
-				if (VDP_bytes(vdx, VDP_FLUSH, NULL, 0)) {
+				if (VDP_bytes(vdc, VDP_FLUSH, NULL, 0)) {
 					ecx->p = ecx->e;
 					break;
 				}
@@ -406,7 +406,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				ecx->p = r + 1;
 				break;
 			default:
-				VSLb(vdx->vsl, SLT_Error,
+				VSLb(vdc->vsl, SLT_Error,
 				    "ESI corruption line %d 0x%02x [%s]\n",
 				    __LINE__, *ecx->p, ecx->p);
 				WRONG("ESI-codes: Illegal code");
@@ -439,7 +439,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				    ecx->crc, ecx->l_crc);
 				ecx->pecx->l_crc += ecx->l_crc;
 			}
-			retval = VDP_bytes(vdx, VDP_END, ptr, len);
+			retval = VDP_bytes(vdc, VDP_END, ptr, len);
 			ecx->state = 99;
 			return (retval);
 		case 3:
@@ -451,7 +451,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			 */
 			if (ecx->l <= len) {
 				if (ecx->state == 3)
-					retval = VDP_bytes(vdx, act,
+					retval = VDP_bytes(vdc, act,
 					    pp, ecx->l);
 				len -= ecx->l;
 				pp += ecx->l;
@@ -459,7 +459,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				break;
 			}
 			if (ecx->state == 3 && len > 0)
-				retval = VDP_bytes(vdx, act, pp, len);
+				retval = VDP_bytes(vdc, act, pp, len);
 			ecx->l -= len;
 			return (retval);
 		case 99:
@@ -524,7 +524,7 @@ ved_pretend_gzip_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+ved_pretend_gzip_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *pv, ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
@@ -532,7 +532,7 @@ ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	uint16_t lx;
 	struct ecx *ecx;
 
-	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
 
 	(void)priv;
@@ -652,7 +652,7 @@ ved_gzgz_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
  */
 
 static int v_matchproto_(vdp_bytes_f)
-ved_gzgz_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+ved_gzgz_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct ved_foo *foo;
@@ -660,7 +660,7 @@ ved_gzgz_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	ssize_t dl;
 	ssize_t l;
 
-	(void)vdx;
+	(void)vdc;
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 	pp = ptr;
 	if (len > 0) {
@@ -834,12 +834,12 @@ ved_vdp_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-ved_vdp_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+ved_vdp_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct ecx *ecx;
 
-	(void)vdx;
+	(void)vdc;
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
 	return (ved_bytes(ecx, act, ptr, len));
 }

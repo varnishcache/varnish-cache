@@ -40,19 +40,19 @@
 /*--------------------------------------------------------------------*/
 
 static int v_matchproto_(vdp_bytes_f)
-v1d_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+v1d_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	ssize_t wl = 0;
 
-	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	(void)priv;
 
-	AZ(vdx->nxt);		/* always at the bottom of the pile */
+	AZ(vdc->nxt);		/* always at the bottom of the pile */
 
 	if (len > 0)
-		wl = V1L_Write(vdx->wrk, ptr, len);
-	if (act > VDP_NULL && V1L_Flush(vdx->wrk) != SC_NULL)
+		wl = V1L_Write(vdc->wrk, ptr, len);
+	if (act > VDP_NULL && V1L_Flush(vdc->wrk) != SC_NULL)
 		return (-1);
 	if (len != wl)
 		return (-1);

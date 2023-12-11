@@ -65,7 +65,7 @@ vrg_range_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-vrg_range_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+vrg_range_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	int retval = 0;
@@ -73,7 +73,7 @@ vrg_range_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	const char *p = ptr;
 	struct vrg_priv *vrg_priv;
 
-	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	AN(priv);
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
 
@@ -93,9 +93,9 @@ vrg_range_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	}
 
 	if (l > 0)
-		retval = VDP_bytes(vdx, act, p, l);
+		retval = VDP_bytes(vdc, act, p, l);
 	else if (l == 0 && act > VDP_NULL)
-		retval = VDP_bytes(vdx, act, p, 0);
+		retval = VDP_bytes(vdc, act, p, 0);
 	return (retval || act == VDP_END ? 1 : 0);
 }
 

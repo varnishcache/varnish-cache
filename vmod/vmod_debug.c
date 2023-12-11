@@ -116,18 +116,18 @@ xyzzy_vfp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *
 }
 
 static int v_matchproto_(vdp_bytes_f)
-xyzzy_vfp_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+xyzzy_vfp_rot13_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	char *q;
 	const char *pp;
 	int i, j, retval = 0;
 
-	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	AN(priv);
 	AN(*priv);
 	if (len <= 0)
-		return (VDP_bytes(vdx, act, ptr, len));
+		return (VDP_bytes(vdc, act, ptr, len));
 	AN(ptr);
 	if (act != VDP_END)
 		act = VDP_FLUSH;
@@ -142,14 +142,14 @@ xyzzy_vfp_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		else
 			q[i] = pp[j];
 		if (i == ROT13_BUFSZ - 1 && j < len - 1) {
-			retval = VDP_bytes(vdx, VDP_FLUSH, q, ROT13_BUFSZ);
+			retval = VDP_bytes(vdc, VDP_FLUSH, q, ROT13_BUFSZ);
 			if (retval != 0)
 				return (retval);
 			i = -1;
 		}
 	}
 	if (i >= 0)
-		retval = VDP_bytes(vdx, act, q, i);
+		retval = VDP_bytes(vdc, act, q, i);
 	return (retval);
 }
 
@@ -212,7 +212,7 @@ static const struct vmod_priv_methods priv_pedantic_methods[1] = {{
 }};
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdx, void **priv,
+xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
     struct objcore *oc)
 {
 	struct vdp_state_s *vdps;
@@ -226,7 +226,7 @@ xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdx, void **priv,
 		return (-1);
 	assert(vdps->state == VDPS_NULL);
 
-	p = VRT_priv_task(ctx, (void *)vdx);
+	p = VRT_priv_task(ctx, (void *)vdc);
 	if (p == NULL)
 		return (-1);
 	p->priv = vdps;
@@ -241,7 +241,7 @@ xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdx, void **priv,
 }
 
 static int v_matchproto_(vdp_bytes_f)
-xyzzy_pedantic_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+xyzzy_pedantic_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct vdp_state_s *vdps;
@@ -255,15 +255,15 @@ xyzzy_pedantic_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	else
 		vdps->state = VDPS_BYTES;
 
-	return (VDP_bytes(vdx, act, ptr, len));
+	return (VDP_bytes(vdc, act, ptr, len));
 }
 
 static int v_matchproto_(vdp_fini_f)
-xyzzy_pedantic_fini(struct vdp_ctx *vdx, void **priv)
+xyzzy_pedantic_fini(struct vdp_ctx *vdc, void **priv)
 {
 	struct vdp_state_s *vdps;
 
-	(void) vdx;
+	(void) vdc;
 	AN(priv);
 	if (*priv == NULL)
 		return (0);

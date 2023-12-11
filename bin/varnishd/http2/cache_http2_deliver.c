@@ -111,12 +111,12 @@ h2_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-h2_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+h2_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct h2_req *r2;
 
-	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(r2, *priv, H2_REQ_MAGIC);
 	(void)act;
 
@@ -124,9 +124,9 @@ h2_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		return (-1);
 	if (len == 0)
 		return (0);
-	H2_Send_Get(vdx->wrk, r2->h2sess, r2);
-	vdx->bytes_done = 0;
-	H2_Send(vdx->wrk, r2, H2_F_DATA, H2FF_NONE, len, ptr, &vdx->bytes_done);
+	H2_Send_Get(vdc->wrk, r2->h2sess, r2);
+	vdc->bytes_done = 0;
+	H2_Send(vdc->wrk, r2, H2_F_DATA, H2FF_NONE, len, ptr, &vdc->bytes_done);
 	H2_Send_Rel(r2->h2sess, r2);
 	return (0);
 }

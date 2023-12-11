@@ -288,7 +288,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  */
 
 static int v_matchproto_(vdp_init_f)
-vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdp, void **priv, struct objcore *oc)
+vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	struct vgz *vg;
 	struct boc *boc;
@@ -299,9 +299,9 @@ vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdp, void **priv, struct objcore *oc)
 	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vdp, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
-	req = vdp->req;
+	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	vg = VGZ_NewGunzip(req->vsl, "U D -");
@@ -353,7 +353,7 @@ vdp_gunzip_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-vdp_gunzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+vdp_gunzip_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	enum vgzret_e vr;
@@ -362,8 +362,8 @@ vdp_gunzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	struct worker *wrk;
 	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
-	wrk = vdx->wrk;
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	wrk = vdc->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	(void)act;
 
@@ -385,9 +385,9 @@ vdp_gunzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		if (vr < VGZ_OK)
 			return (-1);
 		if (vg->m_len == vg->m_sz || vr != VGZ_OK) {
-			if (VDP_bytes(vdx, vr == VGZ_END ? VDP_END : VDP_FLUSH,
+			if (VDP_bytes(vdc, vr == VGZ_END ? VDP_END : VDP_FLUSH,
 			    vg->m_buf, vg->m_len))
-				return (vdx->retval);
+				return (vdc->retval);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}
