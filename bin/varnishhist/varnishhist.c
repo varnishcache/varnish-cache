@@ -217,6 +217,26 @@ upd_vsl_ts(const char *p)
 	vsl_ts = vmax_t(double, vsl_ts, strtod(p + 1, NULL));
 }
 
+static void
+deloran(void)
+{
+	int i;
+	double t = VTIM_mono();
+
+	if (vsl_t0 == 0)
+		vsl_to = vsl_t0 = vsl_ts;
+
+	assert(t > t0);
+	vsl_to = vsl_t0 + (t - t0) * timebend;
+
+	if (vsl_ts > vsl_to) {
+		double when = VTIM_real() + vsl_ts - vsl_to;
+		struct timespec ts = VTIM_timespec(when);
+		i = pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
+		assert(i == 0 || i == ETIMEDOUT);
+	}
+}
+
 static int v_matchproto_ (VSLQ_dispatch_f)
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
@@ -225,8 +245,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned u;
 	double value = 0;
 	struct VSL_transaction *tr;
-	double t;
 	const char *tsp;
+	enum vsl_status stat;
 
 	(void)vsl;
 	(void)priv;
@@ -235,25 +255,26 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (VSIG_int || VSIG_term || VSIG_hup)
 			return (-1);
 
-		if (tr->reason == VSL_r_esi)
+		if (tr->reason == VSL_r_esi) {
 			/* Skip ESI requests */
 			continue;
+		}
 
 		hit = 0;
 		skip = 0;
 		match = 0;
 		tsp = NULL;
 		while (skip == 0) {
-			i = VSL_Next(tr->c);
-			if (i == -3) {
-				/* overrun - need to skip forward */
+			stat = VSL_Next(tr->c);
+			if (stat == vsl_e_overrun) {
+				/* need to skip forward */
 				PTOK(pthread_mutex_lock(&mtx));
 				vsl_to = vsl_t0 = vsl_ts = 0;
 				t0 = VTIM_mono();
 				PTOK(pthread_mutex_unlock(&mtx));
 				break;
 			}
-			if (i != 1)
+			if (stat != vsl_more)
 				break;
 
 			/* get the value we want and register if it's a hit */
@@ -341,29 +362,10 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (++next_hist == HIST_N) {
 			next_hist = 0;
 		}
+		if (vsl_ts >= vsl_to)
+			deloran();
 		PTOK(pthread_mutex_unlock(&mtx));
 	}
-
-	if (vsl_ts < vsl_to)
-		return (0);
-
-	t = VTIM_mono();
-
-	PTOK(pthread_mutex_lock(&mtx));
-	if (vsl_t0 == 0)
-		vsl_to = vsl_t0 = vsl_ts;
-
-	assert(t > t0);
-	vsl_to = vsl_t0 + (t - t0) * timebend;
-
-	if (vsl_ts > vsl_to) {
-		double when = VTIM_real() + vsl_ts - vsl_to;
-		struct timespec ts = VTIM_timespec(when);
-		i = pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
-		assert(i == 0 || i == ETIMEDOUT);
-	}
-	PTOK(pthread_mutex_unlock(&mtx));
-
 	return (0);
 }
 
