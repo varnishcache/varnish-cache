@@ -90,9 +90,9 @@ vmod_rr_resolve(VRT_CTX, VCL_BACKEND dir)
 			break;
 	}
 	rr->nxt = nxt;
-	vdir_unlock(rr->vd);
 	if (u == rr->vd->n_backend)
 		be = NULL;
+	vdir_unlock(rr->vd);
 	return (be);
 }
 

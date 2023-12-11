@@ -94,9 +94,11 @@ vdir_release(struct vdir *vd)
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 
+	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++)
 		VRT_Assign_Backend(&vd->backend[u], NULL);
 	vd->n_backend = 0;
+	vdir_unlock(vd);
 }
 
 void
