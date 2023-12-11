@@ -151,8 +151,6 @@ update(void)
 	int i, j;
 	unsigned k, l;
 
-	AC(erase());
-
 	/* Draw horizontal axis */
 	for (k = 0; k < n; ++k)
 		(void)mvaddch(LINES - 2, k, '-');
@@ -202,8 +200,6 @@ update(void)
 		for (; l < (bm[k] + bh[k]) / scale; ++l)
 			(void)mvaddch((LINES - 3) - l, k, '|');
 	}
-
-	AC(refresh());
 }
 
 inline static void
@@ -382,9 +378,12 @@ do_curses(void *arg)
 	AC(curs_set(0));
 	AC(erase());
 	while (!VSIG_int && !VSIG_term && !VSIG_hup) {
+
+		AC(erase());
 		PTOK(pthread_mutex_lock(&mtx));
 		update();
 		PTOK(pthread_mutex_unlock(&mtx));
+		AC(refresh());
 
 		assert(ms_delay > 0);
 		timeout(ms_delay);
