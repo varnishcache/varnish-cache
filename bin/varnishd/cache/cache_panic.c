@@ -377,6 +377,10 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 		VSB_printf(vsb, "vfp_filter_list = \"%s\",\n",
 		    bo->vfp_filter_list);
 	}
+	if (bo->vdp_filter_list != NULL) {
+		VSB_printf(vsb, "vdp_filter_list = \"%s\",\n",
+		    bo->vdp_filter_list);
+	}
 
 	WS_Panic(vsb, bo->ws);
 	VSB_printf(vsb, "ws_bo = %p,\n", (void *)bo->ws_bo);
@@ -463,6 +467,15 @@ pan_req(struct vsb *vsb, const struct req *req)
 		VSB_cat(vsb, "step = R_STP_TRANSPORT\n");
 	else
 		VSB_printf(vsb, "step = %s\n", req->req_step->name);
+
+	if (req->vfp_filter_list != NULL) {
+		VSB_printf(vsb, "vfp_filter_list = \"%s\",\n",
+		    req->vfp_filter_list);
+	}
+	if (req->vdp_filter_list != NULL) {
+		VSB_printf(vsb, "vdp_filter_list = \"%s\",\n",
+		    req->vdp_filter_list);
+	}
 
 	VSB_printf(vsb, "req_body = %s,\n",
 	    req->req_body_status ? req->req_body_status->name : "NULL");

@@ -236,6 +236,32 @@ req.esi_level
 	A count of how many levels of ESI requests we're currently at.
 
 
+.. _req.filters:
+
+req.filters
+
+	Type: STRING
+
+	Readable from: vcl_recv
+
+	Writable from: vcl_recv
+
+	List of Varnish Fetch Processor (VFP) filters the req.body
+	will be pulled through. The order left to right signifies
+	processing from client to cache, iow the leftmost filter is
+	run first on the body as received from the client after
+	decoding of any transfer encodings.
+
+	VFP Filters change the body before potentially being cached
+	(e.g. using ``std.cache_req.body()``) and/or being handled by
+	the backend side, where it may get processed again by
+	bereq.filters.
+
+	Trying to set req.filters after processing the request body
+	(again, for example with ``std.cache_req.body()``) triggers a
+	VCL error.
+
+
 .. _req.grace:
 
 req.grace
@@ -692,6 +718,20 @@ bereq.connect_timeout
 
 	The time in seconds to wait for a backend connection to be
 	established.
+
+
+.. _bereq.filters:
+
+bereq.filters
+
+	Type: STRING
+
+	Readable from: vcl_backend_fetch
+
+	Writable from: vcl_backend_fetch
+
+	List of VDP filters the bereq.body will be pushed through when
+	sending the body to the backend.
 
 
 .. _bereq.first_byte_timeout:

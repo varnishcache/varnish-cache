@@ -909,6 +909,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 	req->is_hitpass = 0;
 	req->err_code = 0;
 	req->err_reason = NULL;
+
+	req->vfp_filter_list = NULL;
 }
 
 /*--------------------------------------------------------------------
