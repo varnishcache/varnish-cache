@@ -251,7 +251,7 @@ Req_Rollback(VRT_CTX)
 	if (IS_TOPREQ(req))
 		VCL_TaskEnter(req->top->privs);
 	HTTP_Clone(req->http, req->http0);
-	req->filter_list = NULL;
+	req->vdp_filter_list = NULL;
 	req->vcf = NULL;
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;

@@ -297,7 +297,7 @@ cnt_vclfail(struct worker *wrk, struct req *req)
 	}
 	req->req_step = R_STP_SYNTH;
 	req->doclose = SC_VCL_FAILURE;
-	req->filter_list = NULL;
+	req->vdp_filter_list = NULL;
 	return (REQ_FSM_MORE);
 }
 
@@ -327,7 +327,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	Resp_Setup_Synth(req);
 
-	req->filter_list = NULL;
+	req->vdp_filter_list = NULL;
 	synth_body = VSB_new_auto();
 	AN(synth_body);
 
@@ -461,10 +461,10 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	}
 
 	VDP_Init(req->vdc, req->wrk, req->vsl, req);
-	if (req->filter_list == NULL)
-		req->filter_list = resp_Get_Filter_List(req);
-	if (req->filter_list == NULL ||
-	    VCL_StackVDP(req, req->vcl, req->filter_list)) {
+	if (req->vdp_filter_list == NULL)
+		req->vdp_filter_list = resp_Get_Filter_List(req);
+	if (req->vdp_filter_list == NULL ||
+	    VCL_StackVDP(req, req->vcl, req->vdp_filter_list)) {
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 	} else {
@@ -513,7 +513,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 	http_Teardown(req->resp);
 
-	req->filter_list = NULL;
+	req->vdp_filter_list = NULL;
 	req->res_mode = 0;
 	return (REQ_FSM_DONE);
 }

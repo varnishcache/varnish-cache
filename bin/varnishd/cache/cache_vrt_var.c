@@ -1002,7 +1002,7 @@ VRT_r_resp_is_streaming(VRT_CTX)
 static inline int
 resp_filter_fixed(VRT_CTX, const char *s)
 {
-	if (ctx->req->filter_list == NULL)
+	if (ctx->req->vdp_filter_list == NULL)
 		return (0);
 	VRT_fail(ctx, "resp.filters are already fixed, %s is undefined", s);
 	return (1);

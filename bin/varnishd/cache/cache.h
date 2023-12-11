@@ -533,7 +533,7 @@ struct req {
 
 	/* Deliver pipeline */
 	struct vdp_ctx		*vdc;
-	const char		*filter_list;
+	const char		*vdp_filter_list;
 
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];

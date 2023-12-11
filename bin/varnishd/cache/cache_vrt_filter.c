@@ -448,4 +448,4 @@ resp_Get_Filter_List(struct req *req)
 	}
 
 FILTER_VAR(beresp, bo, VBF_Get_Filter_List, vfp_filter_list)
-FILTER_VAR(resp, req, resp_Get_Filter_List, filter_list)
+FILTER_VAR(resp, req, resp_Get_Filter_List, vdp_filter_list)
