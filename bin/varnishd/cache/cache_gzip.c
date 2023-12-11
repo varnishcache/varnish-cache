@@ -304,7 +304,7 @@ vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	vg = VGZ_NewGunzip(req->vsl, "U D -");
+	vg = VGZ_NewGunzip(vdc->vsl, "U D -");
 	AN(vg);
 	if (vgz_getmbuf(vg)) {
 		(void)VGZ_Destroy(&vg);
@@ -325,12 +325,12 @@ vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 	if (boc != NULL) {
 		CHECK_OBJ(boc, BOC_MAGIC);
 		bos = boc->state;
-		HSH_DerefBoc(req->wrk, oc);
+		HSH_DerefBoc(vdc->wrk, oc);
 		if (bos < BOS_FINISHED)
 			return (0); /* OA_GZIPBITS is not stable yet */
 	}
 
-	p = ObjGetAttr(req->wrk, oc, OA_GZIPBITS, &dl);
+	p = ObjGetAttr(vdc->wrk, oc, OA_GZIPBITS, &dl);
 	if (p != NULL && dl == 32) {
 		u = vbe64dec(p + 24);
 		if (u != 0)
