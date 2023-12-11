@@ -232,6 +232,9 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	(void)priv;
 
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
+		if (VSIG_int || VSIG_term || VSIG_hup)
+			return (-1);
+
 		if (tr->reason == VSL_r_esi)
 			/* Skip ESI requests */
 			continue;
