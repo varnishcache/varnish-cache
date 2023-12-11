@@ -17,6 +17,11 @@ server s1 {
 } -start
 
 varnish v1 -arg "-p feature=+esi_include_onerror" -vcl+backend {
+	sub vcl_deliver {
+		# ref r01576.vtc
+		set resp.http.torture =
+		   req.url + "${string,repeat,128,AB}" ~ "^/(A{1,2}B)+$";
+	}
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 		set beresp.do_gzip = true;
@@ -24,6 +29,7 @@ varnish v1 -arg "-p feature=+esi_include_onerror" -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -g raw {
+	fail add * VCL_Error {Regexp matching failed}
 	expect * * VCL_Error {^ESI depth limit reached}
 	expect 0 = VCL_Error {^ESI depth limit reached}
 	expect * * VCL_Error {^ESI depth limit reached}
@@ -31,11 +37,13 @@ logexpect l1 -v v1 -g raw {
 	expect * * VCL_Error {^ESI depth limit reached}
 	expect 0 = VCL_Error {^ESI depth limit reached}
 	#... more
+	fail clear
 } -start
 
 client c1 {
 	txreq -hdr "Host: foo" -hdr "Accept-Encoding: gzip"
 	rxresp
+	expect resp.status == 200
 } -run
 
 logexpect l1 -wait
