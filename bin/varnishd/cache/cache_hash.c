@@ -1097,13 +1097,13 @@ HSH_DerefObjCoreUnlock(struct worker *wrk, struct objcore **ocp, int rushmax)
 {
 	struct objcore *oc;
 	struct objhead *oh;
-	struct rush rush;
 	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oc, ocp, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
-	INIT_OBJ(&rush, RUSH_MAGIC);
+
+	(void)rushmax;
 
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -1113,15 +1113,11 @@ HSH_DerefObjCoreUnlock(struct worker *wrk, struct objcore **ocp, int rushmax)
 	r = --oc->refcnt;
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
-	if (!VTAILQ_EMPTY(&oh->waitinglist)) {
-		assert(oh->refcnt > 1);
-		hsh_rush1(wrk, oh, &rush, rushmax);
-	}
 	Lck_Unlock(&oh->mtx);
-	hsh_rush2(wrk, &rush);
 	if (r != 0)
 		return (r);
 
+	AZ(oc->flags & OC_F_BUSY);
 	AZ(oc->exp_flags);
 
 	BAN_DestroyObj(oc);
