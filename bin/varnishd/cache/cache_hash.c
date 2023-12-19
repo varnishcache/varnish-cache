@@ -864,6 +864,36 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 }
 
 /*---------------------------------------------------------------------
+ * Withdraw an objcore that will not proceed with a fetch.
+ */
+
+void
+HSH_Withdraw(struct worker *wrk, struct objcore **ocp)
+{
+	struct objhead *oh;
+	struct objcore *oc;
+	struct rush rush;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	TAKE_OBJ_NOTNULL(oc, ocp, OBJCORE_MAGIC);
+	INIT_OBJ(&rush, RUSH_MAGIC);
+
+	oh = oc->objhead;
+	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oh->mtx);
+	AZ(oc->stobj->stevedore);
+	assert(oc->flags == OC_F_BUSY);
+	assert(oc->refcnt == 1);
+	assert(oh->refcnt > 0);
+	oc->flags = OC_F_WITHDRAWN;
+	hsh_rush1(wrk, oh, &rush, 1);
+	AZ(HSH_DerefObjCoreUnlock(wrk, &oc, 0));
+
+	hsh_rush2(wrk, &rush);
+}
+
+/*---------------------------------------------------------------------
  * Unbusy an objcore when the object is completely fetched.
  */
 
@@ -1050,6 +1080,23 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 {
 	struct objcore *oc;
 	struct objhead *oh;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	TAKE_OBJ_NOTNULL(oc, ocp, OBJCORE_MAGIC);
+	assert(oc->refcnt > 0);
+
+	oh = oc->objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oh->mtx);
+	return (HSH_DerefObjCoreUnlock(wrk, &oc, rushmax));
+}
+
+int
+HSH_DerefObjCoreUnlock(struct worker *wrk, struct objcore **ocp, int rushmax)
+{
+	struct objcore *oc;
+	struct objhead *oh;
 	struct rush rush;
 	int r;
 
@@ -1061,7 +1108,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-	Lck_Lock(&oh->mtx);
+	Lck_AssertHeld(&oh->mtx);
 	assert(oh->refcnt > 0);
 	r = --oc->refcnt;
 	if (!r)

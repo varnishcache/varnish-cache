@@ -667,7 +667,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 
 	if (busy != NULL) {
-		(void)HSH_DerefObjCore(wrk, &busy, 0);
+		HSH_Withdraw(wrk, &busy);
 		VRY_Clear(req);
 	}
 
@@ -715,7 +715,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	VRY_Clear(req);
 	if (req->stale_oc != NULL)
 		(void)HSH_DerefObjCore(wrk, &req->stale_oc, 0);
-	AZ(HSH_DerefObjCore(wrk, &req->objcore, 1));
+	HSH_Withdraw(wrk, &req->objcore);
 	return (REQ_FSM_MORE);
 }
 
@@ -1085,7 +1085,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 
 	(void)HSH_Purge(wrk, boc->objhead, req->t_req, 0, 0, 0);
 
-	AZ(HSH_DerefObjCore(wrk, &boc, 1));
+	HSH_Withdraw(wrk, &boc);
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->vpi->handling) {

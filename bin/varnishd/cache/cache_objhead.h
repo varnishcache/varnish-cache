@@ -69,6 +69,7 @@ void HSH_Kill(struct objcore *);
 void HSH_Replace(struct objcore *, const struct objcore *);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *,
     struct ban *);
+void HSH_Withdraw(struct worker *, struct objcore **);
 void HSH_Fail(struct worker *, struct objcore *);
 void HSH_Unbusy(struct worker *, struct objcore *);
 int HSH_Snipe(const struct worker *, struct objcore *);
@@ -79,6 +80,7 @@ void HSH_DeleteObjHead(const struct worker *, struct objhead *);
 int HSH_DerefObjCore(struct worker *, struct objcore **, int rushmax);
 #define HSH_RUSH_POLICY -1
 
+int HSH_DerefObjCoreUnlock(struct worker *, struct objcore **, int rushmax);
 enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **);
 void HSH_Ref(struct objcore *o);
 void HSH_AddString(struct req *, void *ctx, const char *str);
