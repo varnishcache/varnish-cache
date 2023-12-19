@@ -69,6 +69,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
+	req->body_oc->flags &= ~OC_F_BUSY;
 
 	if (req->storage != NULL)
 		stv = req->storage;
