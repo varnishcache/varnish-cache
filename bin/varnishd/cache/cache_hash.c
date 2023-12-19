@@ -758,7 +758,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 				EXP_Remove(ocp[i], NULL);
 			else
 				EXP_Rearm(ocp[i], ttl_now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(wrk, &ocp[i], 0);
+			(void)HSH_DerefObjCore(wrk, &ocp[i]);
 			AZ(ocp[i]);
 			total++;
 		}
@@ -900,7 +900,7 @@ HSH_Withdraw(struct worker *wrk, struct objcore **ocp)
 	assert(oh->refcnt > 0);
 	oc->flags = OC_F_WITHDRAWN;
 	hsh_rush1(wrk, oc, &rush);
-	AZ(HSH_DerefObjCoreUnlock(wrk, &oc, 0));
+	AZ(HSH_DerefObjCoreUnlock(wrk, &oc));
 
 	hsh_rush2(wrk, &rush);
 }
@@ -1088,7 +1088,7 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
  */
 
 int
-HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
+HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 {
 	struct objcore *oc;
 	struct objhead *oh;
@@ -1101,11 +1101,11 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&oh->mtx);
-	return (HSH_DerefObjCoreUnlock(wrk, &oc, rushmax));
+	return (HSH_DerefObjCoreUnlock(wrk, &oc));
 }
 
 int
-HSH_DerefObjCoreUnlock(struct worker *wrk, struct objcore **ocp, int rushmax)
+HSH_DerefObjCoreUnlock(struct worker *wrk, struct objcore **ocp)
 {
 	struct objcore *oc;
 	struct objhead *oh;
@@ -1114,8 +1114,6 @@ HSH_DerefObjCoreUnlock(struct worker *wrk, struct objcore **ocp, int rushmax)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oc, ocp, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
-
-	(void)rushmax;
 
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
