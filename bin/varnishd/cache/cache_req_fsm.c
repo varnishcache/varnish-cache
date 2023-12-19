@@ -382,6 +382,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	req->objcore = HSH_Private(wrk);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	req->objcore->flags &= ~OC_F_BUSY;
 	szl = -1;
 	if (STV_NewObject(wrk, req->objcore, stv_transient, 0)) {
 		body = VSB_data(synth_body);
