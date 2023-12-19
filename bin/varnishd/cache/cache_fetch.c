@@ -1114,7 +1114,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	http_Teardown(bo->beresp);
 	// can not make assumptions about the number of references here #3434
 	if (bo->bereq_body != NULL)
-		(void) HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
+		(void)HSH_DerefObjCore(bo->wrk, &bo->bereq_body);
 
 	if (oc->boc->state == BOS_FINISHED) {
 		AZ(oc->flags & OC_F_FAILED);
@@ -1124,7 +1124,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	// AZ(oc->boc);	// XXX
 
 	if (bo->stale_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
+		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 
 	wrk->vsl = NULL;
 	HSH_DerefBoc(wrk, oc);
@@ -1213,7 +1213,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		wrk->stats->bgfetch_no_thread++;
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
+			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 		HSH_DerefBoc(wrk, oc);
 		SES_Rel(bo->sp);
 		THR_SetBusyobj(NULL);
@@ -1236,5 +1236,5 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	assert(oc->boc == boc);
 	HSH_DerefBoc(wrk, oc);
 	if (mode == VBF_BACKGROUND)
-		(void)HSH_DerefObjCore(wrk, &oc, HSH_RUSH_POLICY);
+		(void)HSH_DerefObjCore(wrk, &oc);
 }

@@ -80,7 +80,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	if (STV_NewObject(req->wrk, req->body_oc, stv, 0) == 0) {
 		req->req_body_status = BS_ERROR;
 		HSH_DerefBoc(req->wrk, req->body_oc);
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
 		(void)VFP_Error(vfc, "Object allocation failed:"
 		    " Ran out of space in %s", stv->vclname);
 		return (-1);
@@ -94,7 +94,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	if (VFP_Open(ctx, vfc) < 0) {
 		req->req_body_status = BS_ERROR;
 		HSH_DerefBoc(req->wrk, req->body_oc);
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
 		return (-1);
 	}
 
@@ -142,7 +142,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 	if (func != NULL) {
 		HSH_DerefBoc(req->wrk, req->body_oc);
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
 		if (vfps == VFP_END && r == 0 && (flush & OBJ_ITER_END) == 0)
 			r = func(priv, flush | OBJ_ITER_END, NULL, 0);
 		if (vfps != VFP_END) {
@@ -158,7 +158,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	if (vfps != VFP_END) {
 		req->req_body_status = BS_ERROR;
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
 		return (-1);
 	}
 
@@ -279,7 +279,7 @@ VRB_Free(struct req *req)
 	if (req->body_oc == NULL)
 		return;
 
-	r = HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
+	r = HSH_DerefObjCore(req->wrk, &req->body_oc);
 
 	// each busyobj may have gained a reference
 	assert (r >= 0);
