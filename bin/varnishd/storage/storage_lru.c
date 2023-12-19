@@ -205,6 +205,6 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 	ObjSlim(wrk, oc);
 
 	VSLb(wrk->vsl, SLT_ExpKill, "LRU xid=%ju", VXID(ObjGetXID(wrk, oc)));
-	(void)HSH_DerefObjCore(wrk, &oc, 0);	// Ref from HSH_Snipe
+	(void)HSH_DerefObjCore(wrk, &oc);	// Ref from HSH_Snipe
 	return (1);
 }
