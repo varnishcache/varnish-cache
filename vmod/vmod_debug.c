@@ -105,16 +105,21 @@ static const struct vfp xyzzy_vfp_rot13 = {
 #define ROT13_BUFSZ 8
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_vdp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+xyzzy_vdp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
-	(void)vdc;
-	(void)oc;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+
 	AN(priv);
+
 	*priv = malloc(ROT13_BUFSZ);
 	if (*priv == NULL)
 		return (-1);
+
 	return (0);
 }
 
@@ -182,21 +187,18 @@ static const struct vdp xyzzy_vdp_rot13 = {
  */
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_vdp_chunked_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+xyzzy_vdp_chunked_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
-	struct http *hp;
-
-	(void)vdc;
-	(void)oc;
-	(void)priv;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vdc->req, REQ_MAGIC);
-	hp = vdc->req->resp;
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	http_Unset(hp, H_Content_Length);
-	vdc->req->resp_len = -1;
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+	AN(priv);
+
+	http_Unset(vdc->hp, H_Content_Length);
+	*vdc->clen = -1;
 
 	return (1);
 }
@@ -248,15 +250,18 @@ static const struct vmod_priv_methods priv_pedantic_methods[1] = {{
 }};
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
-    struct objcore *oc)
+xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
 	struct vdp_state_s *vdps;
 	struct vmod_priv *p;
 
-	(void)oc;
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+	AN(priv);
+
 	WS_TASK_ALLOC_OBJ(ctx, vdps, VDP_STATE_MAGIC);
 	if (vdps == NULL)
 		return (-1);
@@ -268,7 +273,6 @@ xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
 	p->priv = vdps;
 	p->methods = priv_pedantic_methods;
 
-	AN(priv);
 	*priv = vdps;
 
 	vdps->state = VDPS_INIT;
