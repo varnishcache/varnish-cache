@@ -39,31 +39,6 @@
 
 /*--------------------------------------------------------------------*/
 
-static int v_matchproto_(vdp_bytes_f)
-v1d_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
-    const void *ptr, ssize_t len)
-{
-	ssize_t wl = 0;
-
-	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	(void)priv;
-
-	AZ(vdc->nxt);		/* always at the bottom of the pile */
-
-	if (len > 0)
-		wl = V1L_Write(vdc->wrk, ptr, len);
-	if (act > VDP_NULL && V1L_Flush(vdc->wrk) != SC_NULL)
-		return (-1);
-	if (len != wl)
-		return (-1);
-	return (0);
-}
-
-static const struct vdp v1d_vdp = {
-	.name =		"V1B",
-	.bytes =	v1d_bytes,
-};
-
 static void
 v1d_error(struct req *req, const char *msg)
 {
@@ -122,7 +97,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		}
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
-		if (VDP_Push(ctx, req->vdc, req->ws, &v1d_vdp, NULL)) {
+		if (VDP_Push(ctx, req->vdc, req->ws, v1l_vdp, NULL)) {
 			v1d_error(req, "Failure to push v1d processor");
 			return;
 		}

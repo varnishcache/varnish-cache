@@ -43,6 +43,7 @@
 
 #include <sys/uio.h>
 #include "cache/cache_varnishd.h"
+#include "cache/cache_filter.h"
 
 #include <stdio.h>
 
@@ -339,3 +340,32 @@ V1L_EndChunk(const struct worker *wrk)
 	v1l->cliov = 0;
 	(void)V1L_Write(wrk, "0\r\n\r\n", -1);
 }
+
+/*--------------------------------------------------------------------
+ * VDP using V1L
+ */
+
+static int v_matchproto_(vdp_bytes_f)
+v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	ssize_t wl = 0;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	(void)priv;
+
+	AZ(vdc->nxt);		/* always at the bottom of the pile */
+
+	if (len > 0)
+		wl = V1L_Write(vdc->wrk, ptr, len);
+	if (act > VDP_NULL && V1L_Flush(vdc->wrk) != SC_NULL)
+		return (-1);
+	if (len != wl)
+		return (-1);
+	return (0);
+}
+
+const struct vdp * const v1l_vdp = &(struct vdp){
+	.name =		"V1B",
+	.bytes =	v1l_bytes,
+};
