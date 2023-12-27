@@ -261,35 +261,43 @@ ved_decode_len(struct vsl_log *vsl, const uint8_t **pp)
  */
 
 static int v_matchproto_(vdp_init_f)
-ved_vdp_esi_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+ved_vdp_esi_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
+    const struct vdp_init_ctx *initctx)
 {
 	struct ecx *ecx;
-	struct req *req;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
-	if (oc == NULL || !ObjHasAttr(vdc->wrk, oc, OA_ESIDATA))
+	CHECK_OBJ_NOTNULL(initctx, VDP_INIT_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(initctx->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(initctx->hd, HTTP_MAGIC);
+	AN(initctx->cl);
+	AN(priv);
+
+	AZ(*priv);
+	if (initctx->oc == NULL || !ObjHasAttr(vdc->wrk, initctx->oc, OA_ESIDATA))
 		return (1);
 
-	req = vdc->req;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN(priv);
-	AZ(*priv);
+	if (ctx->req == NULL) {
+		VSLb(vdc->vsl, SLT_Error,
+		     "esi can only be used on the client side");
+		return (1);
+	}
 
 	ALLOC_OBJ(ecx, ECX_MAGIC);
 	AN(ecx);
 	assert(sizeof gzip_hdr == 10);
-	ecx->preq = req;
+	ecx->preq = ctx->req;
 	*priv = ecx;
-	RFC2616_Weaken_Etag(req->resp);
+	RFC2616_Weaken_Etag(initctx->hd);
 
-	req->res_mode |= RES_ESI;
-	if (req->resp_len != 0)
-		req->resp_len = -1;
-	if (req->esi_level > 0) {
-		assert(req->transport == &VED_transport);
-		CAST_OBJ_NOTNULL(ecx->pecx, req->transport_priv, ECX_MAGIC);
+	ctx->req->res_mode |= RES_ESI;
+	if (*initctx->cl != 0)
+		*initctx->cl = -1;
+	if (ctx->req->esi_level > 0) {
+		assert(ctx->req->transport == &VED_transport);
+		CAST_OBJ_NOTNULL(ecx->pecx, ctx->req->transport_priv, ECX_MAGIC);
 		if (!ecx->pecx->isgzip)
 			ecx->pecx = NULL;
 	}
@@ -604,18 +612,19 @@ struct ved_foo {
 };
 
 static int v_matchproto_(vdp_init_f)
-ved_gzgz_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+ved_gzgz_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
+    const struct vdp_init_ctx *initctx)
 {
 	ssize_t l;
 	const char *p;
 	struct ved_foo *foo;
-	struct req *req;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	(void)oc;
-	req = vdc->req;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(priv);
+	CHECK_OBJ_NOTNULL(initctx, VDP_INIT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 	CHECK_OBJ_NOTNULL(foo->objcore, OBJCORE_MAGIC);
 
@@ -872,6 +881,8 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	struct ecx *ecx;
 	struct ved_foo foo[1];
 	struct vrt_ctx ctx[1];
+	const struct vdp *vdp;
+	void *priv;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
@@ -924,15 +935,20 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		INIT_OBJ(foo, VED_FOO_MAGIC);
 		foo->ecx = ecx;
 		foo->objcore = req->objcore;
-		i = VDP_Push(ctx, req->vdc, req->ws, &ved_gzgz, foo);
-
+		vdp = &ved_gzgz;
+		priv = foo;
 	} else if (ecx->isgzip && !i) {
 		/* Non-Gzip'ed include in gzip'ed parent */
-		i = VDP_Push(ctx, req->vdc, req->ws, &ved_pretend_gz, ecx);
+		vdp = &ved_pretend_gz;
+		priv = ecx;
 	} else {
 		/* Anything else goes straight through */
-		i = VDP_Push(ctx, req->vdc, req->ws, &ved_ved, ecx);
+		vdp = &ved_ved;
+		priv = ecx;
 	}
+
+	i = VDP_Push(ctx, req->vdc, req->ws, vdp, priv,
+	    req->objcore, req->resp, &req->resp_len);
 
 	if (i == 0) {
 		i = VDP_DeliverObj(req->vdc, req->objcore);

@@ -188,12 +188,11 @@ void VDI_Init(void);
 
 /* cache_deliver_proc.c */
 void VDP_Fini(const struct vdp_ctx *vdc);
-void VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
-    struct req *req);
+void VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl);
 uint64_t VDP_Close(struct vdp_ctx *, struct objcore *, struct boc *);
 void VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc);
-int VDP_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
-    void *priv);
+int VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
+    void *priv, struct objcore *oc, struct http *hd, intmax_t *cl);
 int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
 extern const struct vdp VDP_gunzip;
 extern const struct vdp VDP_esi;
@@ -507,7 +506,8 @@ void pan_privs(struct vsb *, const struct vrt_privs *);
 
 /* cache_vrt_filter.c */
 int VCL_StackVFP(struct vfp_ctx *, const struct vcl *, const char *);
-int VCL_StackVDP(struct req *, const struct vcl *, const char *);
+int VCL_StackVDP(struct vdp_ctx *vdc, const struct vcl *vcl, const char *fl,
+    struct req *req, struct busyobj *bo, intmax_t *cl);
 const char *resp_Get_Filter_List(struct req *req);
 void VCL_VRT_Init(void);
 
