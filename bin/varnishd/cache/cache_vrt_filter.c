@@ -258,11 +258,14 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 {
 	const struct vfilter *vp;
 	struct vrt_ctx ctx[1];
+	struct objcore *oc;
 
 	AN(fl);
 	VSLbs(req->vsl, SLT_Filters, TOSTRAND(fl));
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Req2Ctx(ctx, req);
+
+	oc = req->objcore;
 
 	while (1) {
 		vp = vcl_filter_list_iter(0, &vrt_filters, &vcl->filters, &fl);
@@ -273,7 +276,8 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 			    "Filter '...%s' not found", fl);
 			return (-1);
 		}
-		if (VDP_Push(ctx, req->vdc, req->ws, vp->vdp, NULL))
+		if (VDP_Push(ctx, req->vdc, req->ws, vp->vdp, NULL,
+		    oc, req, req->resp, &req->resp_len))
 			return (-1);
 	}
 }
