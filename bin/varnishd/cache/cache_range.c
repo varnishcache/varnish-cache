@@ -196,16 +196,28 @@ vrg_ifrange(struct req *req)
 }
 
 static int v_matchproto_(vdp_init_f)
-vrg_range_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+vrg_range_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
+    struct objcore *oc, struct req *req,
+    struct http *hd, intmax_t *cl)
 {
 	const char *err;
-	struct req *req;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	(void)oc;
-	req = vdc->req;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(priv);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	if (req == NULL) {
+		VSLb(vdc->vsl, SLT_Error,
+		     "range can only be used on the client side");
+		return (1);
+	}
+
+	// not using hd/cl, because range needs req anyway for Req_Fail()
+	CHECK_OBJ_NOTNULL(hd, HTTP_MAGIC);
+	AN(cl);
+
 	if (!vrg_ifrange(req))		// rfc7233,l,455,456
 		return (1);
 	err = vrg_dorange(req, priv);
