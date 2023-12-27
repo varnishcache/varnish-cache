@@ -425,6 +425,7 @@ cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 				cfd->argv = av;
 				cfd->argc = ac;
 				cfd->match = av[ac - 1];
+				cli->hdoc = strdup(av[ac - 1]);
 				cfd->last_arg = VSB_new_auto();
 				AN(cfd->last_arg);
 			} else {
@@ -450,6 +451,7 @@ cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 				cfd->argv[cfd->argc - 2] =
 				    VSB_data(cfd->last_arg);
 				i = cls_exec(cfd, cfd->argv);
+				REPLACE(cli->hdoc, NULL);
 				cfd->argv[cfd->argc - 2] = NULL;
 				VAV_Free(cfd->argv);
 				cfd->argv = NULL;
@@ -676,7 +678,13 @@ vclp_forward(struct cli *cli, const char * const *av, void *priv)
 	cli_buf = VSB_new_auto();
 	AN(cli_buf);
 	VSB_clear(cli_buf);
-	for (i = 1; av[i] != NULL; i++) {
+	for (i = 1; av[i] != NULL && av[i+1] != NULL; i++) {
+		VSB_quote(cli_buf, av[i], strlen(av[i]), VSB_QUOTE_CLI);
+		VSB_putc(cli_buf, ' ');
+	}
+	if (av[i] != NULL && cli->hdoc != NULL) {
+		VSB_printf(cli_buf, "<< %s\n%s\n%s", cli->hdoc, av[i], cli->hdoc);
+	} else if (av[i] != NULL) {
 		VSB_quote(cli_buf, av[i], strlen(av[i]), VSB_QUOTE_CLI);
 		VSB_putc(cli_buf, ' ');
 	}

@@ -81,6 +81,7 @@ struct cli {
 	char			*ident;
 	struct VCLS		*cls;
 	volatile unsigned	*limit;
+	char			*hdoc;
 };
 
 /* The implementation must provide these functions */
