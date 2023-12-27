@@ -501,7 +501,8 @@ void pan_privs(struct vsb *, const struct vrt_privs *);
 
 /* cache_vrt_filter.c */
 int VCL_StackVFP(struct vfp_ctx *, const struct vcl *, const char *);
-int VCL_StackVDP(struct req *, const struct vcl *, const char *);
+int VCL_StackVDP(struct vdp_ctx *vdc, const struct vcl *vcl, const char *fl,
+    struct req *req, struct busyobj *bo, intmax_t *cl);
 const char *resp_Get_Filter_List(struct req *req);
 void VCL_VRT_Init(void);
 
