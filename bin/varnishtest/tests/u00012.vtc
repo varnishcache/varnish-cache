@@ -32,7 +32,7 @@ process p1 -screen_dump -write "\x04" -wait
 process p1 -log {varnishadm -t foobar 2>&1} -expect-exit 2 -run
 process p1 -expect-text 0 0 "-t: Invalid argument:"
 
-process p1 -log {varnishadm -Q 2>&1} -expect-exit 1 -run
+process p1 -log {varnishadm -Q 2>&1} -expect-exit 2 -run
 process p1 -expect-text 0 0 "Usage: varnishadm"
 
 process p2 -log {varnishadm -h 2>&1} -expect-exit 0 -run

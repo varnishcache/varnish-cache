@@ -186,7 +186,7 @@ shell {
 
 varnish v1 -clierr 300 "vcl.load f1 ${tmpdir}/f1"
 
-shell -exit 1 -expect {failing as requested} {
+shell -exit 3 -expect {failing as requested} {
 	varnishadm -t 10 -n ${tmpdir}/v1 vcl.load f1 ${tmpdir}/f1
 }
 

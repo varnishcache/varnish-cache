@@ -41,11 +41,12 @@ OPTIONS
 =======
 
 -e
-    Exit immediately if a command fails in `pass` mode and return the CLI
-    status code of the failing command divided by 100. This has no effect
-    on `interactive` mode (except when `-p` is used). Similarly to `CLI
-    Command File` (see :ref:`varnishd(1)`), if a command is prefixed with
-    '-', its failure will be ignored and will not cause varnishadm to exit.
+    Exit immediately if a command fails in `pass` mode with an exit 
+    status indicating the nature of the error (See EXIT STATUS for details).
+    This has no effect on `interactive` mode (except when `-p` is used).
+    Similarly to `CLI Command File` (see :ref:`varnishd(1)`), if a command
+    is prefixed with '-', its failure will be ignored and will not cause
+    varnishadm to exit.
 
 -h
     Print program usage and exit.
@@ -82,7 +83,13 @@ EXIT STATUS
 ===========
 
 If a command is given, the exit status of the `varnishadm` utility is
-zero if the command succeeded, and non-zero otherwise.
+zero if the command succeeded, and one of the following otherwise:
+
+1: could not execute the command
+2: bad usage
+3: the command failed
+4: the connection was lost
+5: the CLI session was terminated
 
 EXAMPLES
 ========

@@ -87,6 +87,11 @@ static int p_arg = 0;
 static int e_arg = 0;
 static int line_sock;
 
+static void v_noreturn_
+adm_exit(enum VCLI_status_e status) {
+	RL_EXIT(status / 100);
+}
+
 static void
 cli_write(int sock, const char *s)
 {
@@ -97,7 +102,7 @@ cli_write(int sock, const char *s)
 	if (i == l)
 		return;
 	perror("Write error CLI socket");
-	RL_EXIT(1);
+	adm_exit(CLIS_COMMS);
 }
 
 /*
@@ -196,11 +201,11 @@ pass_answer(int fd, enum pass_mode_e mode)
 	if (u) {
 		if (status == CLIS_COMMS) {
 			fprintf(stderr, "%s\n", answer);
-			RL_EXIT(2);
+			adm_exit(CLIS_COMMS);
 		}
 		if (answer)
 			fprintf(stderr, "%s\n", answer);
-		RL_EXIT(1);
+		adm_exit(status);
 	}
 
 	pass_print_answer(status, answer, mode);
@@ -227,7 +232,7 @@ do_args(int sock, int argc, char * const *argv)
 		exit(0);
 	if (!p_arg)
 		fprintf(stderr, "Command failed with error code %u\n", status);
-	exit(1);
+	adm_exit(status);
 }
 
 /* Callback for readline, doesn't take a private pointer, so we need
@@ -366,7 +371,7 @@ vadm_cli_cb_after(const struct cli *cli)
 	pass_print_answer(cli->result, VSB_data(cli->sb), pass_script);
 	fprintf(stderr, "\nCommand \"%s\" failed with error code %u\n",
 	    cmd, cli->result);
-	RL_EXIT(cli->result/100);
+	adm_exit(cli->result);
 }
 
 /*
@@ -504,7 +509,7 @@ main(int argc, char * const *argv)
 			t_arg = optarg;
 			break;
 		default:
-			usage(1);
+			usage(2);
 		}
 	}
 
@@ -513,11 +518,11 @@ main(int argc, char * const *argv)
 
 	if (T_arg != NULL) {
 		if (n_arg != NULL)
-			usage(1);
+			usage(2);
 		sock = cli_sock(T_arg, S_arg);
 	} else {
 		if (S_arg != NULL)
-			usage(1);
+			usage(2);
 		sock = n_arg_sock(n_arg, t_arg);
 	}
 	if (sock < 0)
