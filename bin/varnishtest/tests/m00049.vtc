@@ -1,0 +1,127 @@
+varnishtest "VMOD vfp & vdp - request bodies"
+
+# this test mirrors m00048.vtc with directions reversed
+
+server s1 {
+	rxreq
+	expect req.body == "Cbagb Snpgb, Pnrfne Genafvg!"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_backend_fetch {
+		set bereq.filters = "rot13 debug.pedantic";
+	}
+} -start
+
+client c1 {
+	txreq -req POST -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_backend_fetch {
+		set bereq.filters = "rot13 rot13a";
+	}
+}
+
+client c1 {
+	txreq -req POST -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 503
+} -run
+
+
+server s1 -wait
+
+server s1 -repeat 4 {
+	rxreq
+	expect req.body == "Ponto Facto, Caesar Transit!"
+	txresp
+
+	rxreq
+	expect req.http.rot13 == "please"
+	expect req.body == "Cbagb Snpgb, Pnrfne Genafvg!"
+	txresp
+
+	rxreq
+	expect req.http.rot13 == "please"
+	expect req.http.back13 == "undoes"
+	expect req.body == "Ponto Facto, Caesar Transit!"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	import std;
+
+	sub vcl_recv {
+		if (req.http.rot13) {
+			set req.filters = "rot13";
+		}
+		if (req.http.cache) {
+			std.cache_req_body(1MB);
+			if (req.http.wrong) {
+				set req.filters += " rot13";
+			}
+		}
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.http.back13) {
+			set bereq.filters = "rot13 debug.pedantic";
+		}
+	}
+}
+
+client c1 -repeat 2 {
+	txreq -req POST -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+
+	txreq -req POST -hdr "rot13: please" \
+	      -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+
+	txreq -req POST -hdr "rot13: please" -hdr "back13: undoes" \
+	      -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+
+	txreq -req POST -hdr "Cache: yes" \
+	      -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+
+	txreq -req POST -hdr "Cache: yes" -hdr "rot13: please" \
+	      -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+
+	txreq -req POST -hdr "Cache: yes" \
+	      -hdr "rot13: please" -hdr "back13: undoes" \
+	      -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -v v1 -g raw {
+	expect * * VCL_Error "^req\\.filters not settable"
+} -start
+
+client c1 {
+	txreq -req POST -hdr "Cache: yes" -hdr "Wrong: it.is" \
+	      -body "No second thoughts after caching"
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l1 -wait
