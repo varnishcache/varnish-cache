@@ -365,7 +365,7 @@ v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 	return (0);
 }
 
-const struct vdp * const v1l_vdp = &(struct vdp){
+const struct vdp * const VDP_v1l = &(struct vdp){
 	.name =		"V1B",
 	.bytes =	v1l_bytes,
 };

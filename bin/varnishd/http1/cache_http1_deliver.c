@@ -97,7 +97,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		}
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
-		if (VDP_Push(ctx, req->vdc, req->ws, v1l_vdp, NULL)) {
+		if (VDP_Push(ctx, req->vdc, req->ws, VDP_v1l, NULL)) {
 			v1d_error(req, "Failure to push v1d processor");
 			return;
 		}

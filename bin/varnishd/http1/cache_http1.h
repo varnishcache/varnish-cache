@@ -65,4 +65,4 @@ void V1L_Open(struct worker *, struct ws *, int *fd, struct vsl_log *,
 stream_close_t V1L_Flush(const struct worker *w);
 stream_close_t V1L_Close(struct worker *w, uint64_t *cnt);
 size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);
-extern const struct vdp * const v1l_vdp;
+extern const struct vdp * const VDP_v1l;
