@@ -96,7 +96,13 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		cl = 0;
 
 	VDP_Init(vdc, wrk, bo->vsl, NULL, bo, &cl);
-
+	if (bo->vdp_filter_list != NULL &&
+	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo)) {
+		VSLb(bo->vsl, SLT_FetchError, "Failure to push processors");
+		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
+		htc->doclose = SC_OVERLOAD;
+		return (-1);
+	}
 	if (v1f_stackv1l(vdc, bo)) {
 		VSLb(bo->vsl, SLT_FetchError, "Failure to push V1L");
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
