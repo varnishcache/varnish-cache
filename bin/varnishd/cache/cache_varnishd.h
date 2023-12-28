@@ -194,6 +194,7 @@ uint64_t VDP_Close(struct vdp_ctx *, struct objcore *, struct boc *);
 void VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc);
 int VDP_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
     void *priv);
+int VDP_ObjIterate(void *priv, unsigned flush, const void *ptr, ssize_t len);
 int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
 extern const struct vdp VDP_gunzip;
 extern const struct vdp VDP_esi;
