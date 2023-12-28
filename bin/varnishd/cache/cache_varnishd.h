@@ -198,6 +198,7 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws,
      const struct vdp *vdp, void *priv,
      struct objcore *oc, struct req *req,
      struct http *hd, intmax_t *cl);
+int VDP_ObjIterate(void *priv, unsigned flush, const void *ptr, ssize_t len);
 int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
 extern const struct vdp VDP_gunzip;
 extern const struct vdp VDP_esi;
