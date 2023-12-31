@@ -59,7 +59,6 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	enum vfp_status vfps = VFP_ERROR;
 	const struct stevedore *stv;
 	ssize_t req_bodybytes = 0;
-	unsigned hint;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -77,8 +76,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->storage = NULL;
 
-	hint = maxsize > 0 ? maxsize : 1;
-	if (STV_NewObject(req->wrk, req->body_oc, stv, hint) == 0) {
+	if (STV_NewObject(req->wrk, req->body_oc, stv, 0) == 0) {
 		req->req_body_status = BS_ERROR;
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));

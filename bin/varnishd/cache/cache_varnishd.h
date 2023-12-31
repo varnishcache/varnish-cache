@@ -564,6 +564,7 @@ const struct stevedore *STV_next(void);
 int STV_BanInfoDrop(const uint8_t *ban, unsigned len);
 int STV_BanInfoNew(const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *banlist, unsigned len);
+// STV_NewObject() len is space for OBJ_VARATTR
 int STV_NewObject(struct worker *, struct objcore *,
     const struct stevedore *, unsigned len);
 
