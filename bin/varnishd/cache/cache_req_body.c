@@ -59,6 +59,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	enum vfp_status vfps = VFP_ERROR;
 	const struct stevedore *stv;
 	ssize_t req_bodybytes = 0;
+	unsigned flush = OBJ_ITER_FLUSH;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -125,7 +126,9 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 			else if (yet > 0)
 				yet = 0;
 			if (func != NULL) {
-				r = func(priv, 1, ptr, l);
+				if (vfps == VFP_END)
+					flush |= OBJ_ITER_END;
+				r = func(priv, flush, ptr, l);
 				if (r)
 					break;
 			} else {
@@ -140,6 +143,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	if (func != NULL) {
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		if (vfps == VFP_END && (flush & OBJ_ITER_END) == 0)
+			func(priv, flush | OBJ_ITER_END, NULL, 0);
 		if (vfps != VFP_END) {
 			req->req_body_status = BS_ERROR;
 			if (r == 0)
