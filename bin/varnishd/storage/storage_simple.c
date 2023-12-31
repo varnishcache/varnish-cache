@@ -148,7 +148,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 
 	AN(stv->sml_alloc);
 
-	ltot = sizeof(struct object) + PRNDUP(wsl);
+	ltot = sizeof(*o) + PRNDUP(wsl);
 
 	do {
 		st = stv->sml_alloc(stv, ltot);
