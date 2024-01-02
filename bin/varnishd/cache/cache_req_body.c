@@ -143,8 +143,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	if (func != NULL) {
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
-		if (vfps == VFP_END && (flush & OBJ_ITER_END) == 0)
-			func(priv, flush | OBJ_ITER_END, NULL, 0);
+		if (vfps == VFP_END && r == 0 && (flush & OBJ_ITER_END) == 0)
+			r = func(priv, flush | OBJ_ITER_END, NULL, 0);
 		if (vfps != VFP_END) {
 			req->req_body_status = BS_ERROR;
 			if (r == 0)
