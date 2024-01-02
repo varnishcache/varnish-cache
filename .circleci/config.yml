@@ -406,10 +406,6 @@ workflows:
           dist: fedora
           release: latest
           make_target: witness.dot
-      - build:
-          name: build_fedora_rawhide
-          dist: fedora
-          release: rawhide
       # latest debian uses sanitizers
       - build:
           name: build_debian_buster
