@@ -59,6 +59,7 @@
  *
  * NEXT (2024-03-15)
  *	[cache.h] (struct req).filter_list renamed to vdp_filter_list
+ *	order of vcl/vmod and director COLD events reversed to directors first
  * 18.1 (2023-12-05)
  *	vbf_objiterate() implementation changed #4013
  * 18.0 (2023-09-15)

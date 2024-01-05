@@ -594,9 +594,9 @@ vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 		if (vcl->busy == 0 && vcl->temp->is_warm) {
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
+			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, msg));
 			AZ(*msg);
-			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 		}
 		else if (vcl->busy)
 			vcl->temp = VCL_TEMP_BUSY;
