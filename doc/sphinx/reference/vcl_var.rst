@@ -1826,6 +1826,8 @@ sess.xid	``VCL >= 4.1``
 storage
 -------
 
+.. XXX all of these are actually defined in generate.py
+
 .. _storage.free_space:
 
 storage.<name>.free_space
@@ -1834,6 +1836,7 @@ storage.<name>.free_space
 
 	Readable from: client, backend
 
+	Default: 0
 
 	Free space available in the named stevedore. Only available for
 	the malloc stevedore.
@@ -1847,6 +1850,7 @@ storage.<name>.happy
 
 	Readable from: client, backend
 
+	Default: true
 
 	Health status for the named stevedore. Not available in any of the
 	current stevedores.
@@ -1860,6 +1864,7 @@ storage.<name>.used_space
 
 	Readable from: client, backend
 
+	Default: 0
 
 	Used space in the named stevedore. Only available for the malloc
 	stevedore.

@@ -295,7 +295,7 @@ stv_variables = (
     Used space in the named stevedore. Only available for the malloc
     stevedore.
     """),
-    ('happy', 'BOOL', "0", 'storage.<name>.happy', """
+    ('happy', 'BOOL', "1", 'storage.<name>.happy', """
     Health status for the named stevedore. Not available in any of the
     current stevedores.
     """),
