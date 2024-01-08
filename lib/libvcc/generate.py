@@ -287,11 +287,11 @@ def parse_var_doc(fn):
         parse_var(l[n-2:m-1])
 
 stv_variables = (
-    ('free_space', 'BYTES', "0.", 'storage.<name>.free_space', """
+    ('free_space', 'BYTES', "0", 'storage.<name>.free_space', """
     Free space available in the named stevedore. Only available for
     the malloc stevedore.
     """),
-    ('used_space', 'BYTES', "0.", 'storage.<name>.used_space', """
+    ('used_space', 'BYTES', "0", 'storage.<name>.used_space', """
     Used space in the named stevedore. Only available for the malloc
     stevedore.
     """),
