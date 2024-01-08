@@ -306,6 +306,8 @@ VRT_stevedore_##nm(VCL_STEVEDORE stv)			\
 {							\
 	if (stv == NULL)				\
 		return (0);				\
+	if (stv->var_##nm == NULL)			\
+		return (dval);				\
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);	\
 	return (stv->var_##nm(stv));			\
 }

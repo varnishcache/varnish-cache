@@ -1,0 +1,15 @@
+varnishtest "Undefined storage properties"
+
+varnish v1 -arg "-s malloc=malloc -s file=file,${tmpdir}/file,1M" -vcl {
+	backend be none;
+
+	sub vcl_recv {
+		set req.http.happy = storage.malloc.happy;
+		set req.http.space = storage.file.free_space;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
