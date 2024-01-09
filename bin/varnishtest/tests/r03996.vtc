@@ -17,6 +17,7 @@ varnish v1 -vcl+backend {
 	import vtc;
 
 	sub vcl_recv {
+		vtc.sleep(0.5s);
 		if (req.http.barrier) {
 			vtc.barrier_sync(req.http.barrier);
 		}
@@ -24,6 +25,8 @@ varnish v1 -vcl+backend {
 	}
 
 } -start
+
+varnish v1 -vsl_catchup
 
 client c1 {
 	stream 0 {
@@ -42,6 +45,8 @@ client c1 {
 	barrier b2 sync
 	stream 0 -wait
 } -run
+
+varnish v1 -vsl_catchup
 
 varnish v1 -expect sc_rapid_reset == 1
 
@@ -63,5 +68,7 @@ client c2 {
 	barrier b2 sync
 	stream 0 -wait
 } -run
+
+varnish v1 -vsl_catchup
 
 varnish v1 -expect sc_rapid_reset == 2
