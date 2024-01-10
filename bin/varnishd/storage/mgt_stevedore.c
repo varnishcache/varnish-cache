@@ -125,7 +125,7 @@ stv_cli_list_json(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_stv[] = {
-	{ CLICMD_STORAGE_LIST,		"", stv_cli_list, stv_cli_list_json },
+	{ CLICMD_STORAGE_LIST,		stv_cli_list, stv_cli_list_json },
 	{ NULL}
 };
 
@@ -243,7 +243,7 @@ STV_Config_Final(void)
 	struct stevedore *stv;
 	ASSERT_MGT();
 
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
+	VCLS_AddFunc(mgt_cls, cli_stv);
 	STV_Foreach(stv)
 		if (!strcmp(stv->ident, TRANSIENT_STORAGE))
 			return;

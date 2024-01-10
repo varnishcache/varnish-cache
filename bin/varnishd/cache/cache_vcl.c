@@ -1005,13 +1005,13 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vcl_cmds[] = {
-	{ CLICMD_VCL_LOAD,		"", vcl_cli_load },
-	{ CLICMD_VCL_LIST,		"", vcl_cli_list, vcl_cli_list_json },
-	{ CLICMD_VCL_STATE,		"", vcl_cli_state },
-	{ CLICMD_VCL_DISCARD,		"", vcl_cli_discard },
-	{ CLICMD_VCL_USE,		"", vcl_cli_use },
-	{ CLICMD_VCL_SHOW,		"", vcl_cli_show },
-	{ CLICMD_VCL_LABEL,		"", vcl_cli_label },
+	{ CLICMD_VCL_LOAD,		vcl_cli_load },
+	{ CLICMD_VCL_LIST,		vcl_cli_list, vcl_cli_list_json },
+	{ CLICMD_VCL_STATE,		vcl_cli_state },
+	{ CLICMD_VCL_DISCARD,		vcl_cli_discard },
+	{ CLICMD_VCL_USE,		vcl_cli_use },
+	{ CLICMD_VCL_SHOW,		vcl_cli_show },
+	{ CLICMD_VCL_LABEL,		vcl_cli_label },
 	{ NULL }
 };
 

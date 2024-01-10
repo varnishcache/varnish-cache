@@ -12,7 +12,6 @@ nobase_pkginclude_HEADERS = \
 	tbl/beresp_flags.h \
 	tbl/boc_state.h \
 	tbl/body_status.h \
-	tbl/cli_cmds.h \
 	tbl/debug_bits.h \
 	tbl/experimental_bits.h \
 	tbl/feature_bits.h \
@@ -90,6 +89,8 @@ nobase_noinst_HEADERS = \
 	compat/daemon.h \
 	vfl.h \
 	libvcc.h \
+	tbl/cli_cmds.h \
+	tbl/cli_flags.h \
 	vcc_interface.h \
 	vcli_serve.h \
 	vcs_version.h \

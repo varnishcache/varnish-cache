@@ -1,10 +1,8 @@
 /*-
- * Copyright (c) 2010 Varnish Software AS
+ * Copyright (c) 2023 Varnish Software AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
- *
- * SPDX-License-Identifier: BSD-2-Clause
+ * Author: Walid Boudebouda <walid.boudebouda@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,28 +27,11 @@
  *
  */
 
-/*lint -save -e525 -e539 */
 
-LOCK(ban)
-LOCK(busyobj)
-LOCK(director)
-LOCK(exp)
-LOCK(hcb)
-LOCK(lru)
-LOCK(mempool)
-LOCK(objhdr)
-LOCK(perpool)
-LOCK(pipestat)
-LOCK(probe)
-LOCK(sess)
-LOCK(conn_pool)
-LOCK(vbe)
-LOCK(vcapace)
-LOCK(vcl)
-LOCK(vxid)
-LOCK(waiter)
-LOCK(wq)
-LOCK(wstat)
-#undef LOCK
+CLI_FLAG(NONE, 0)
+CLI_FLAG(AUTH, (1 << 0))
+CLI_FLAG(DEBUG, (1 << 1))
+CLI_FLAG(INTERNAL, (1 << 2))
+CLI_FLAG(SENSITIVE, (1 << 3))
 
-/*lint -restore */
+#undef CLI_FLAG

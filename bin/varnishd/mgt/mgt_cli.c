@@ -54,12 +54,13 @@
 #include "vss.h"
 #include "vtcp.h"
 
-#define CLI_CMD(U,l,s,h,d,m,M) \
-const struct cli_cmd_desc CLICMD_##U[1] = {{ l, s, h, d, m, M }};
+
+#define CLI_CMD(U,l,s,h,d,f,m,M) \
+const struct cli_cmd_desc CLICMD_##U[1] = {{ l, s, h, d, f, m, M }};
 #include "tbl/cli_cmds.h"
 
 static const struct cli_cmd_desc *cmds[] = {
-#define CLI_CMD(U,l,s,h,d,m,M) CLICMD_##U,
+#define CLI_CMD(U,l,s,h,d,f,m,M) CLICMD_##U,
 #include "tbl/cli_cmds.h"
 };
 
@@ -95,7 +96,7 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_proto[] = {
-	{ CLICMD_BANNER,		"", mcf_banner },
+	{ CLICMD_BANNER,		mcf_banner },
 	{ NULL }
 };
 
@@ -114,10 +115,49 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 	abort();
 }
 
+static void v_matchproto_(cli_func_t)
+mcf_debug_internal(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+	unsigned i, s;
+	char *r;
+	if (!MCH_Running()) {
+		VCLI_Out(cli, "Child is not running");
+		return;
+	}
+
+	i = mgt_cli_askchild(&s, &r, "debug.cld_internal\n");
+	VCLI_SetResult(cli, s);
+	if (i) {
+		VCLI_Out(cli, "Child returned Error: (%d)", s);
+		return;
+	}
+	VCLI_Out(cli, "Child answered: (%d) %s", s, r);
+	free(r);
+}
+
 static struct cli_proto cli_debug[] = {
-	{ CLICMD_DEBUG_PANIC_MASTER,		"d", mcf_panic },
+	{ CLICMD_DEBUG_PANIC_MASTER,		mcf_panic },
+	{ CLICMD_DEBUG_INTERNAL,		mcf_debug_internal },
 	{ NULL }
 };
+
+static const struct cli_cmd_desc *
+mgt_cmd_lookup(const char *cmdn)
+{
+       int i;
+
+       if (cmdn == NULL)
+		return (NULL);
+
+       for (i = 0; i < ncmds; i++) {
+               if (!strcmp(cmdn, cmds[i]->request))
+                       return (cmds[i]);
+       }
+       return (NULL);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -127,6 +167,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	int i;
 	char *q;
 	unsigned u;
+	const struct cli_cmd_desc *cmd;
 
 	(void)priv;
 	/*
@@ -141,7 +182,16 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		    "Type 'help' for more info.");
 		return;
 	}
+
+	cmd = mgt_cmd_lookup(av[1]);
+	if (cmd == NULL || VCLS_CMD_IS(cmd, INTERNAL)) {
+		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
+		VCLI_SetResult(cli, CLIS_UNKNOWN);
+		return;
+	}
+
 	VSB_clear(cli_buf);
+
 	for (i = 1; av[i] != NULL; i++) {
 		VSB_quote(cli_buf, av[i], strlen(av[i]), 0);
 		VSB_putc(cli_buf, ' ');
@@ -161,11 +211,19 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	free(q);
 }
 
-static const struct cli_cmd_desc CLICMD_WILDCARD[1] =
-    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", 0, 999 }};
+static const struct cli_cmd_desc CLICMD_WILDCARD[1] = {{
+	"*",
+       "<wild-card-entry>",
+       "<fall through to cacher>",
+       "",
+       CLI_F_INTERNAL|
+       CLI_F_AUTH,
+       0,
+       999
+}};
 
 static struct cli_proto cli_askchild[] = {
-	{ CLICMD_WILDCARD, "h*", mcf_askchild, mcf_askchild },
+	{ CLICMD_WILDCARD, mcf_askchild, mcf_askchild },
 	{ NULL }
 };
 
@@ -290,7 +348,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_CLOSE);
 		return;
 	}
-	cli->auth = MCF_AUTH;
+	cli->auth = 1;
 	memset(cli->challenge, 0, sizeof cli->challenge);
 	VCLI_SetResult(cli, CLIS_OK);
 	mcf_banner(cli, av, priv);
@@ -301,7 +359,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mcf_help(struct cli *cli, const char * const *av, void *priv)
 {
-	if (cli_o <= 0)
+	if (cli_o <= 0 || !cli->auth)
 		VCLS_func_help(cli, av, priv);
 	else
 		mcf_askchild(cli, av, priv);
@@ -310,37 +368,62 @@ mcf_help(struct cli *cli, const char * const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mcf_help_json(struct cli *cli, const char * const *av, void *priv)
 {
-	if (cli_o <= 0)
+	if (cli_o <= 0 || !cli->auth)
 		VCLS_func_help_json(cli, av, priv);
 	else
 		mcf_askchild(cli, av, priv);
 }
 
 static struct cli_proto cli_auth[] = {
-	{ CLICMD_HELP,		"", mcf_help, mcf_help_json },
-	{ CLICMD_PING,		"", VCLS_func_ping, VCLS_func_ping_json },
-	{ CLICMD_AUTH,		"", mcf_auth },
-	{ CLICMD_QUIT,		"", VCLS_func_close },
+	{ CLICMD_HELP,		mcf_help, mcf_help_json },
+	{ CLICMD_PING,		VCLS_func_ping, VCLS_func_ping_json },
+	{ CLICMD_AUTH,		mcf_auth },
+	{ CLICMD_QUIT,		VCLS_func_close },
 	{ NULL }
 };
 
 /*--------------------------------------------------------------------*/
 
 static void
-mgt_cli_cb_before(const struct cli *cli)
+mgt_cli_cb_before(const struct cli *cli, struct cli_proto *clp, const char * const *av)
 {
+	const struct cli_cmd_desc *cmd;
+	int d;
+
+	cmd = (clp == NULL ? mgt_cmd_lookup(av[1]) : clp->desc);
 
 	if (cli->priv == stderr)
 		fprintf(stderr, "> %s\n", VSB_data(cli->cmd));
+
+	if (VCLS_IsSensitive(cmd, MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
+		d = (*VSB_data(cli->cmd) == '-');
+		VSB_clear(cli->cmd);
+		VSB_printf(cli->cmd, "%s", d ? "-" : "");
+		if (clp != NULL && clp->logfunc != NULL)
+			clp->logfunc(cli, av, cli->cmd);
+		else
+			VSB_printf(cli->cmd, "%s (hidden)", av[1]);
+		AZ(VSB_finish(cli->cmd));
+	}
+
 	MGT_Complain(C_CLI, "CLI %s Rd %s", cli->ident, VSB_data(cli->cmd));
 }
 
 static void
-mgt_cli_cb_after(const struct cli *cli)
+mgt_cli_cb_after(const struct cli *cli, struct cli_proto *clp, const char * const *av)
 {
+	const struct cli_cmd_desc *cmd;
 
-	MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
-	    cli->ident, cli->result, VSB_data(cli->sb));
+	if (av) {
+		cmd = (clp == NULL ? mgt_cmd_lookup(av[1]) : clp->desc);
+		if (VCLS_IsSensitive(cmd, MGT_DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
+			MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
+			    cli->ident, cli->result, "(hidden)");
+		} else {
+			MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
+			    cli->ident, cli->result, VSB_data(cli->sb));
+		}
+	}
 	if (cli->priv != stderr)
 		return;
 	if (cli->result == CLIS_TRUNCATED)
@@ -360,10 +443,10 @@ mgt_cli_init_cls(void)
 	mgt_cls = VCLS_New(NULL);
 	AN(mgt_cls);
 	VCLS_SetHooks(mgt_cls, mgt_cli_cb_before, mgt_cli_cb_after);
-	VCLS_AddFunc(mgt_cls, MCF_NOAUTH, cli_auth);
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_proto);
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_debug);
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_askchild);
+	VCLS_AddFunc(mgt_cls, cli_auth);
+	VCLS_AddFunc(mgt_cls, cli_proto);
+	VCLS_AddFunc(mgt_cls, cli_debug);
+	VCLS_AddFunc(mgt_cls, cli_askchild);
 	cli_buf = VSB_new_auto();
 	AN(cli_buf);
 }
@@ -407,10 +490,10 @@ mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,
 	REPLACE(cli->ident, ident);
 
 	if (!auth && secret_file != NULL) {
-		cli->auth = MCF_NOAUTH;
+		cli->auth = 0;
 		mgt_cli_challenge(cli);
 	} else {
-		cli->auth = MCF_AUTH;
+		cli->auth = 1;
 		mcf_banner(cli, NULL, NULL);
 	}
 	AZ(VSB_finish(cli->sb));
@@ -692,6 +775,8 @@ mgt_DumpRstCli(void)
 	for (z = 0; z < ncmds; z++, cp++) {
 		cp = cmds[z];
 		if (!strncmp(cp->request, "debug.", 6))
+			continue;
+		if (VCLS_CMD_IS(cp, INTERNAL))
 			continue;
 		printf(".. _ref_cli_");
 		for (p = cp->request; *p; p++)

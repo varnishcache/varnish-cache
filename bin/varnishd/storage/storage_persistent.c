@@ -671,7 +671,7 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 }
 
 static struct cli_proto debug_cmds[] = {
-	{ CLICMD_DEBUG_PERSISTENT,		"d", debug_persistent },
+	{ CLICMD_DEBUG_PERSISTENT,		debug_persistent },
 	{ NULL }
 };
 

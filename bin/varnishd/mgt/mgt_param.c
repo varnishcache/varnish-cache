@@ -711,9 +711,9 @@ mcf_wash_param(struct cli *cli, struct parspec *pp, enum mcf_which_e which,
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_params[] = {
-	{ CLICMD_PARAM_SHOW,	"", mcf_param_show, mcf_param_show_json },
-	{ CLICMD_PARAM_SET,	"", mcf_param_set, mcf_param_set_json },
-	{ CLICMD_PARAM_RESET,	"", mcf_param_reset, mcf_param_set_json },
+	{ CLICMD_PARAM_SHOW,	mcf_param_show, mcf_param_show_json },
+	{ CLICMD_PARAM_SET,	mcf_param_set, mcf_param_set_json },
+	{ CLICMD_PARAM_RESET,	mcf_param_reset, mcf_param_set_json },
 	{ NULL }
 };
 
@@ -772,7 +772,7 @@ MCF_InitParams(struct cli *cli)
 	MCF_ParamConf(MCF_DEFAULT, "accept_filter", "off");
 #endif
 
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_params);
+	VCLS_AddFunc(mgt_cls, cli_params);
 
 	vsb = VSB_new_auto();
 	AN(vsb);

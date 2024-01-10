@@ -44,7 +44,6 @@
 #include "vcli_serve.h"
 
 pthread_t		cli_thread;
-static struct lock	cli_mtx;
 static int		add_check;
 static struct VCLS	*cache_cls;
 
@@ -65,29 +64,44 @@ CLI_AddFuncs(struct cli_proto *p)
 {
 
 	AZ(add_check);
-	Lck_Lock(&cli_mtx);
-	VCLS_AddFunc(cache_cls, 0, p);
-	Lck_Unlock(&cli_mtx);
+	VCLS_AddFunc(cache_cls, p);
 }
 
 static void
-cli_cb_before(const struct cli *cli)
+cli_cb_before(const struct cli *cli, struct cli_proto *clp, const char * const *av)
 {
-
 	ASSERT_CLI();
+	(void)av;
+
+	if (clp != NULL &&
+	    VCLS_IsSensitive(clp->desc, DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
+		VSB_clear(cli->cmd);
+		if (clp->logfunc != NULL)
+			clp->logfunc(cli, av, cli->cmd);
+		else
+			VSB_printf(cli->cmd, "%s (hidden)", av[1]);
+		AZ(VSB_finish(cli->cmd));
+	}
 	VSL(SLT_CLI, NO_VXID, "Rd %s", VSB_data(cli->cmd));
-	Lck_Lock(&cli_mtx);
 	VCL_Poll();
 }
 
 static void
-cli_cb_after(const struct cli *cli)
+cli_cb_after(const struct cli *cli, struct cli_proto *clp, const char * const *av)
 {
 
 	ASSERT_CLI();
-	Lck_Unlock(&cli_mtx);
-	VSL(SLT_CLI, NO_VXID, "Wr %03u %zd %s",
-	    cli->result, VSB_len(cli->sb), VSB_data(cli->sb));
+	(void)av;
+	const char *h = "(hidden)";
+
+	if (clp != NULL &&
+	    VCLS_IsSensitive(clp->desc, DO_DEBUG(DBG_CLI_SHOW_SENSITIVE))) {
+		VSL(SLT_CLI, NO_VXID, "Wr %03u %zd %s",
+		    cli->result, strlen(h), h);
+	} else {
+		VSL(SLT_CLI, NO_VXID, "Wr %03u %zd %s",
+		    cli->result, VSB_len(cli->sb), VSB_data(cli->sb));
+	}
 }
 
 void
@@ -115,8 +129,8 @@ CLI_Run(void)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_cmds[] = {
-	{ CLICMD_PING,	"i", VCLS_func_ping, VCLS_func_ping_json },
-	{ CLICMD_HELP,	"i", VCLS_func_help, VCLS_func_help_json },
+	{ CLICMD_PING,	VCLS_func_ping, VCLS_func_ping_json },
+	{ CLICMD_HELP,	VCLS_func_help, VCLS_func_help_json },
 	{ NULL }
 };
 
@@ -128,7 +142,6 @@ void
 CLI_Init(void)
 {
 
-	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
 	cache_cls = VCLS_New(heritage.cls);

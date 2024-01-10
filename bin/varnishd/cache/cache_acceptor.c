@@ -752,8 +752,8 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vca_cmds[] = {
-	{ CLICMD_SERVER_START,		"", ccf_start },
-	{ CLICMD_DEBUG_LISTEN_ADDRESS,	"d", ccf_listen_address },
+	{ CLICMD_SERVER_START,		ccf_start },
+	{ CLICMD_DEBUG_LISTEN_ADDRESS,	ccf_listen_address },
 	{ NULL }
 };
 

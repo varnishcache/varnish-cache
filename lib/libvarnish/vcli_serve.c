@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -52,6 +53,13 @@
 #include "vcli_serve.h"
 #include "vsb.h"
 #include "vtim.h"
+
+#define ASSERT_CLI_THR(cs) AN(pthread_self() == cs->thr)
+#define CHECK_VCLS(cs) do			\
+{						\
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);	\
+	ASSERT_CLI_THR(cs);			\
+} while (0)
 
 struct VCLS_fd {
 	unsigned			magic;
@@ -77,6 +85,16 @@ struct VCLS {
 	cls_cbc_f			*before, *after;
 	volatile unsigned		*limit;
 	struct cli_proto		*wildcard;
+	pthread_t			thr;
+};
+
+enum cmd_error_e {
+    CMD_ERR_NONE,
+    CMD_ERR_SYNTAX,
+    CMD_ERR_EMPTY,
+    CMD_ERR_ISUPPER,
+    CMD_ERR_NOTLOWER,
+    CMD_ERR_UNKNOWN
 };
 
 /*--------------------------------------------------------------------*/
@@ -84,9 +102,13 @@ struct VCLS {
 void v_matchproto_(cli_func_t)
 VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 {
+	struct VCLS *cs;
 
 	(void)av;
 	(void)priv;
+	cs = cli->cls;
+	CHECK_VCLS(cs);
+
 	VCLI_Out(cli, "Closing CLI connection");
 	VCLI_SetResult(cli, CLIS_CLOSE);
 }
@@ -97,9 +119,13 @@ void v_matchproto_(cli_func_t)
 VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 {
 	time_t t;
+	struct VCLS *cs;
 
 	(void)av;
 	(void)priv;
+	cs = cli->cls;
+	CHECK_VCLS(cs);
+
 	t = time(NULL);
 	VCLI_Out(cli, "PONG %jd 1.0", (intmax_t)t);
 }
@@ -107,8 +133,13 @@ VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 void v_matchproto_(cli_func_t)
 VCLS_func_ping_json(struct cli *cli, const char * const *av, void *priv)
 {
+	struct VCLS *cs;
+
 	(void)av;
 	(void)priv;
+	cs = cli->cls;
+	CHECK_VCLS(cs);
+
 	VCLI_JSON_begin(cli, 2, av);
 	VCLI_Out(cli, ", \"PONG\"\n");
 	VCLI_JSON_end(cli);
@@ -135,7 +166,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	cs = cli->cls;
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 
 	for (av += 2; av[0] != NULL && av[0][0] == '-'; av++) {
 		if (!strcmp(av[0], "-a")) {
@@ -149,13 +180,15 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 		}
 	}
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
-		if (clp->auth > cli->auth)
+		if (VCLS_PROTO_IS(clp, AUTH) && !cli->auth)
+			continue;
+		if (VCLS_PROTO_IS(clp, INTERNAL))
 			continue;
 		if (av[0] != NULL && !strcmp(clp->desc->request, av[0])) {
 			help_helper(cli, clp, av);
 			return;
 		} else if (av[0] == NULL) {
-			d = strchr(clp->flags, 'd') != NULL ? 2 : 1;
+			d = VCLS_PROTO_IS(clp, DEBUG) ? 2 : 1;
 			if (filter & d)
 				help_helper(cli, clp, av);
 		}
@@ -171,14 +204,18 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;
 	struct VCLS *cs;
+	const char* sep;
 
 	(void)priv;
 	cs = cli->cls;
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 
 	VCLI_JSON_begin(cli, 2, av);
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
-		if (clp->auth > cli->auth)
+		sep = "";
+		if (VCLS_PROTO_IS(clp, AUTH) && !cli->auth)
+			continue;
+		if (VCLS_PROTO_IS(clp, INTERNAL))
 			continue;
 		VCLI_Out(cli, ",\n  {\n");
 		VSB_indent(cli->sb, 2);
@@ -195,9 +232,14 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, ",\n");
 		VCLI_Out(cli, "\"maxarg\": %d", clp->desc->maxarg);
 		VCLI_Out(cli, ",\n");
-		VCLI_Out(cli, "\"flags\": ");
-		VCLI_JSON_str(cli, clp->flags);
-		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"flags\": [");
+		#define CLI_FLAG(U, v) \
+			if (clp->desc->flags & v) { \
+				VCLI_Out(cli, "%s\""#U "\"", sep); \
+				sep = ", "; \
+			}
+		#include "tbl/cli_flags.h"
+		VCLI_Out(cli, "],\n");
 		VCLI_Out(cli, "\"json\": %s",
 		    clp->jsonfunc == NULL ? "false" : "true");
 		VCLI_Out(cli, "\n");
@@ -255,6 +297,42 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
 		cp->func(cli, (const char * const *)av, cp->priv);
 }
 
+static struct cli_proto *
+cls_lookup(char * const *av, struct cli *cli, struct VCLS *cs, enum cmd_error_e *err) {
+
+	struct cli_proto *clp = NULL;
+	*err = CMD_ERR_NONE;
+
+	if (av[0] != NULL) {
+		*err = CMD_ERR_SYNTAX;
+		return (NULL);
+	}
+
+	if (av[1] == NULL) {
+		*err = CMD_ERR_EMPTY;
+		return (NULL);
+	}
+
+	if (isupper(av[1][0])) {
+		*err = CMD_ERR_NOTLOWER;
+		return (NULL);
+	}
+
+	if (!islower(av[1][0])) {
+		*err = CMD_ERR_UNKNOWN;
+		return (NULL);
+	}
+
+
+	VTAILQ_FOREACH(clp, &cs->funcs, list) {
+		if (VCLS_PROTO_IS(clp, AUTH) && !cli->auth)
+			continue;
+		if (!strcmp(clp->desc->request, av[1]))
+			break;
+	}
+
+	return (clp);
+}
 /*--------------------------------------------------------------------
  * We have collected a full cli line, parse it and execute, if possible.
  */
@@ -263,13 +341,14 @@ static int
 cls_exec(struct VCLS_fd *cfd, char * const *av)
 {
 	struct VCLS *cs;
-	struct cli_proto *clp;
+	struct cli_proto *clp = NULL;
 	struct cli *cli;
 	int na;
 	ssize_t len;
 	char *s;
 	unsigned lim;
 	int retval = 0;
+	enum cmd_error_e cmd_err = CMD_ERR_NONE;
 
 	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 	cs = cfd->cls;
@@ -280,57 +359,47 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	AN(cli->cmd);
 
 	cli->cls = cs;
-
 	cli->result = CLIS_UNKNOWN;
+
 	VSB_clear(cli->sb);
 	VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
 
+	for (na = 0; av[na + 1] != NULL; (na)++)
+		continue;
+
+	clp = cls_lookup(av, cli, cs, &cmd_err);
+
 	if (cs->before != NULL)
-		cs->before(cli);
+		cs->before(cli, clp, (const char *const *)av);
 
-	do {
-		if (av[0] != NULL) {
-			VCLI_Out(cli, "Syntax Error: %s\n", av[0]);
-			VCLI_SetResult(cli, CLIS_SYNTAX);
-			break;
-		}
-
-		if (av[1] == NULL) {
-			VCLI_Out(cli, "Empty CLI command.\n");
-			VCLI_SetResult(cli, CLIS_SYNTAX);
-			break;
-		}
-
-		if (isupper(av[1][0])) {
-			VCLI_Out(cli, "all commands are in lower-case.\n");
-			VCLI_SetResult(cli, CLIS_UNKNOWN);
-			break;
-		}
-
-		if (!islower(av[1][0]))
-			break;
-
-		for (na = 0; av[na + 1] != NULL; na++)
-			continue;
-
-		VTAILQ_FOREACH(clp, &cs->funcs, list) {
-			if (clp->auth > cli->auth)
-				continue;
-			if (!strcmp(clp->desc->request, av[1])) {
-				cls_dispatch(cli, clp, av, na);
+	if (clp == NULL) {
+		switch (cmd_err) {
+			case (CMD_ERR_SYNTAX):
+				VCLI_Out(cli, "Syntax Error: %s\n", av[0]);
+				VCLI_SetResult(cli, CLIS_SYNTAX);
 				break;
-			}
+			case (CMD_ERR_EMPTY):
+				VCLI_Out(cli, "Empty CLI command.\n");
+				VCLI_SetResult(cli, CLIS_SYNTAX);
+				break;
+			case (CMD_ERR_NOTLOWER):
+				VCLI_Out(cli, "all commands are in lower-case.\n");
+				VCLI_SetResult(cli, CLIS_UNKNOWN);
+				break;
+			case (CMD_ERR_UNKNOWN):
+				break;
+			default:
+				if (cs->wildcard && (!VCLS_PROTO_IS(cs->wildcard, AUTH) || cli->auth))
+					cls_dispatch(cli, cs->wildcard, av, na);
+				break;
 		}
-		if (clp == NULL &&
-		    cs->wildcard && cs->wildcard->auth <= cli->auth)
-			cls_dispatch(cli, cs->wildcard, av, na);
-
-	} while (0);
+	} else
+		cls_dispatch(cli, clp, av, na);
 
 	AZ(VSB_finish(cli->sb));
 
 	if (cs->after != NULL)
-		cs->after(cli);
+		cs->after(cli, clp, (const char *const *)av);
 
 	cli->cls = NULL;
 
@@ -467,6 +536,7 @@ VCLS_New(struct VCLS *model)
 	AN(cs);
 	VTAILQ_INIT(&cs->fds);
 	VTAILQ_INIT(&cs->funcs);
+	cs->thr = pthread_self();
 	if (model != NULL)
 		VTAILQ_CONCAT(&cs->funcs, &model->funcs, list);
 	return (cs);
@@ -475,7 +545,7 @@ VCLS_New(struct VCLS *model)
 void
 VCLS_SetLimit(struct VCLS *cs, volatile unsigned *limit)
 {
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	cs->limit = limit;
 }
 
@@ -483,7 +553,7 @@ void
 VCLS_SetHooks(struct VCLS *cs, cls_cbc_f *before, cls_cbc_f *after)
 {
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	cs->before = before;
 	cs->after = after;
 }
@@ -493,7 +563,7 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 {
 	struct VCLS_fd *cfd;
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	assert(fdi >= 0);
 	assert(fdo >= 0);
 	ALLOC_OBJ(cfd, VCLS_FD_MAGIC);
@@ -526,13 +596,13 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 	if (cfd->match != NULL) {
 		cfd->cli->result = CLIS_TRUNCATED;
 		if (cs->after != NULL)
-			cs->after(cfd->cli);
+			cs->after(cfd->cli, NULL, NULL);
 		VSB_destroy(&cfd->last_arg);
 	} else if (cfd->cli->cmd != NULL) {
 		(void)VSB_finish(cfd->cli->cmd);
 		cfd->cli->result = CLIS_TRUNCATED;
 		if (cs->after != NULL)
-			cs->after(cfd->cli);
+			cs->after(cfd->cli, NULL, NULL);
 		VSB_destroy(&cfd->cli->cmd);
 	}
 	cs->nfd--;
@@ -549,16 +619,15 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 }
 
 void
-VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)
+VCLS_AddFunc(struct VCLS *cs, struct cli_proto *clp)
 {
 	struct cli_proto *clp2;
 	int i;
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	AN(clp);
 
 	for (;clp->desc != NULL; clp++) {
-		clp->auth = auth;
 		if (!strcmp(clp->desc->request, "*")) {
 			cs->wildcard = clp;
 		} else {
@@ -588,7 +657,7 @@ VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 	int i, j, k;
 	char buf[BUFSIZ];
 
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_VCLS(cs);
 	if (cs->nfd == 0) {
 		errno = 0;
 		return (-1);
@@ -636,6 +705,7 @@ VCLS_Destroy(struct VCLS **csp)
 	struct cli_proto *clp;
 
 	TAKE_OBJ_NOTNULL(cs, csp, VCLS_MAGIC);
+	ASSERT_CLI_THR(cs);
 	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2)
 		(void)cls_close_fd(cs, cfd);
 
@@ -644,6 +714,15 @@ VCLS_Destroy(struct VCLS **csp)
 		VTAILQ_REMOVE(&cs->funcs, clp, list);
 	}
 	FREE_OBJ(cs);
+}
+
+unsigned
+VCLS_IsSensitive(const struct cli_cmd_desc *cmd, unsigned show) {
+
+	if (cmd == NULL || show)
+		return 0;
+
+	return VCLS_CMD_IS(cmd, SENSITIVE);
 }
 
 /**********************************************************************

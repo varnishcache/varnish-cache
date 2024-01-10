@@ -518,9 +518,8 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 /*---------------------------------------------------------------------*/
 
 static struct cli_proto backend_cmds[] = {
-	{ CLICMD_BACKEND_LIST,		"",
-	     cli_backend_list, cli_backend_list },
-	{ CLICMD_BACKEND_SET_HEALTH,	"", cli_backend_set_health },
+	{ CLICMD_BACKEND_LIST,		cli_backend_list, cli_backend_list },
+	{ CLICMD_BACKEND_SET_HEALTH,	cli_backend_set_health },
 	{ NULL }
 };
 
