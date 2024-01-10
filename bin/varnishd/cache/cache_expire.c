@@ -149,12 +149,16 @@ EXP_RefNewObjcore(struct objcore *oc)
  */
 
 void
-EXP_Remove(struct objcore *oc)
+EXP_Remove(struct objcore *oc, const struct objcore *new_oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(new_oc, OBJCORE_MAGIC);
+
 	if (oc->exp_flags & OC_EF_REFD) {
 		Lck_Lock(&exphdl->mtx);
+		if (new_oc != NULL)
+			VSC_C_main->n_superseded++;
 		if (oc->exp_flags & OC_EF_NEW) {
 			/* EXP_Insert has not been called for this object
 			 * yet. Mark it for removal, and EXP_Insert will
