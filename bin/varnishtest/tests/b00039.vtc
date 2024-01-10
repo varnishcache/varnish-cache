@@ -11,6 +11,7 @@ server s1 {
 	txresp -status 304
 } -start
 
+varnish v1 -cliok "param.set vsl_mask +ExpKill"
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.ttl = 2s;
@@ -18,6 +19,13 @@ varnish v1 -vcl+backend {
 		set beresp.keep = 1m;
 		set beresp.http.was-304 = beresp.was_304;
 	}
+} -start
+
+logexpect l1 -v v1 -g raw -q ExpKill {
+	expect * 0 ExpKill "VBF_Superseded x=1002 n=1005"
+	expect * 0 ExpKill "EXP_Removed x=1002"
+	expect * 0 ExpKill "VBF_Superseded x=1005 n=1010"
+	expect * 0 ExpKill "EXP_Removed x=1005"
 } -start
 
 client c1 {
@@ -57,3 +65,5 @@ client c1 {
 	expect resp.body == "Geoff Rules"
 	expect resp.http.was-304 == "true"
 } -run
+
+logexpect l1 -wait

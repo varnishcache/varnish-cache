@@ -752,8 +752,12 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 
 	ObjSetState(wrk, oc, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
-	if (bo->stale_oc != NULL)
+	if (bo->stale_oc != NULL) {
+		VSL(SLT_ExpKill, NO_VXID, "VBF_Superseded x=%ju n=%ju",
+		    VXID(ObjGetXID(wrk, bo->stale_oc)),
+		    VXID(ObjGetXID(wrk, bo->fetch_objcore)));
 		HSH_Kill(bo->stale_oc);
+	}
 	return (F_STP_DONE);
 }
 
