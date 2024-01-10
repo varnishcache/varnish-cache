@@ -424,7 +424,7 @@ smf_open(struct stevedore *st)
 		ARGV_ERR(
 		    "-sfile too small for this architecture,"
 		    " minimum size is %jd MB\n",
-		    (MINPAGES * (intmax_t)getpagesize()) >> 20
+		    (MINPAGES * (intmax_t)getpagesize()) / (1<<20)
 		);
 	}
 	printf("SMF.%s mmap'ed %ju bytes of %ju\n",
