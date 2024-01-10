@@ -756,7 +756,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 		VSL(SLT_ExpKill, NO_VXID, "VBF_Superseded x=%ju n=%ju",
 		    VXID(ObjGetXID(wrk, bo->stale_oc)),
 		    VXID(ObjGetXID(wrk, bo->fetch_objcore)));
-		HSH_Kill(bo->stale_oc);
+		HSH_Replace(bo->stale_oc, bo->fetch_objcore);
 	}
 	return (F_STP_DONE);
 }

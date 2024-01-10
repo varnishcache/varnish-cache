@@ -913,13 +913,24 @@ void
 HSH_Kill(struct objcore *oc)
 {
 
+	HSH_Replace(oc, NULL);
+}
+
+void
+HSH_Replace(struct objcore *oc, const struct objcore *new_oc)
+{
+
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+	if (new_oc != NULL) {
+		CHECK_OBJ(new_oc, OBJCORE_MAGIC);
+		assert(oc->objhead == new_oc->objhead);
+	}
 
 	Lck_Lock(&oc->objhead->mtx);
 	oc->flags |= OC_F_DYING;
 	Lck_Unlock(&oc->objhead->mtx);
-	EXP_Remove(oc, NULL);
+	EXP_Remove(oc, new_oc);
 }
 
 /*====================================================================

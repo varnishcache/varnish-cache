@@ -67,6 +67,7 @@ enum lookup_e {
 
 void HSH_Fail(struct objcore *);
 void HSH_Kill(struct objcore *);
+void HSH_Replace(struct objcore *, const struct objcore *);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *,
     struct ban *);
 void HSH_Unbusy(struct worker *, struct objcore *);
