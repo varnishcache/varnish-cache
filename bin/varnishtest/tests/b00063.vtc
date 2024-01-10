@@ -47,9 +47,9 @@ varnish v1 -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -g raw {
-	expect * *	ExpKill		EXP_expire
+	expect * *	ExpKill		EXP_Inspect
 	expect * *	ExpKill		EXP_When
-	expect * *	ExpKill		EXP_expire
+	expect * *	ExpKill		EXP_Inspect
 } -start
 
 client c1 {
