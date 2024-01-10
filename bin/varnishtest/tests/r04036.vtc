@@ -1,6 +1,6 @@
 varnishtest "Undefined storage properties"
 
-varnish v1 -arg "-s malloc=malloc -s file=file,${tmpdir}/file,1M" -vcl {
+varnish v1 -arg "-s malloc=malloc -s file=file,${tmpdir}/file,2M" -vcl {
 	backend be none;
 
 	sub vcl_recv {
