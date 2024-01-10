@@ -420,6 +420,13 @@ smf_open(struct stevedore *st)
 	Lck_Lock(&sc->mtx);
 	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);
 	Lck_Unlock(&sc->mtx);
+	if (sum < MINPAGES * (off_t)getpagesize()) {
+		ARGV_ERR(
+		    "-sfile too small for this architecture,"
+		    " minimum size is %jd MB\n",
+		    (MINPAGES * (intmax_t)getpagesize()) >> 20
+		);
+	}
 	printf("SMF.%s mmap'ed %ju bytes of %ju\n",
 	    st->ident, (uintmax_t)sum, sc->filesize);
 
