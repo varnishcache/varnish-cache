@@ -674,10 +674,12 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 {
 	struct objcore *oc, *oc_nows[2], **ocp;
 	unsigned i, j, n, n_max, total = 0;
+	int is_purge;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
+	is_purge = (ttl == 0 && grace == 0 && keep == 0);
 	n_max = WS_ReserveLumps(wrk->aws, sizeof *ocp);
 	if (n_max < 2) {
 		/* No space on the workspace. Give it a stack buffer of 2
@@ -740,7 +742,10 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 		}
 		for (i = 0; i < j; i++) {
 			CHECK_OBJ_NOTNULL(ocp[i], OBJCORE_MAGIC);
-			EXP_Rearm(ocp[i], ttl_now, ttl, grace, keep);
+			if (is_purge)
+				EXP_Remove(ocp[i]);
+			else
+				EXP_Rearm(ocp[i], ttl_now, ttl, grace, keep);
 			(void)HSH_DerefObjCore(wrk, &ocp[i], 0);
 			AZ(ocp[i]);
 			total++;
@@ -765,7 +770,8 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 	}
 
 	WS_Release(wrk->aws, 0);
-	Pool_PurgeStat(total);
+	if (is_purge)
+		Pool_PurgeStat(total);
 	return (total);
 }
 

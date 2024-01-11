@@ -33,3 +33,11 @@ client c1 {
 	expect resp.http.foo == 2
 
 } -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MAIN.n_purges == 1
+varnish v1 -expect MAIN.n_obj_purged == 1
+
+# NB: a purge used to increase n_expired
+varnish v1 -expect MAIN.n_expired == 0
