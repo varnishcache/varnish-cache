@@ -42,6 +42,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -318,7 +319,7 @@ mgt_launch_child(struct cli *cli)
 	child_state = CH_STARTING;
 
 	/* Open pipe for mgt->child CLI */
-	AZ(pipe(cp));
+	AZ(socketpair(AF_UNIX, SOCK_STREAM, 0, cp));
 	heritage.cli_in = cp[0];
 	assert(cp[0] > STDERR_FILENO);	// See #2782
 	assert(cp[1] > STDERR_FILENO);
