@@ -57,6 +57,7 @@
 enum connwait_e {
 	CW_DO_CONNECT = 1,
 	CW_QUEUED,
+	CW_DEQUEUED,
 	CW_BE_BUSY,
 };
 
@@ -133,7 +134,7 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 /*--------------------------------------------------------------------*/
 
 static void
-vbe_connwait_signal_locked(struct backend *bp)
+vbe_connwait_signal_locked(const struct backend *bp)
 {
 	struct connwait *cw;
 
@@ -150,14 +151,12 @@ vbe_connwait_signal_locked(struct backend *bp)
 }
 
 static void
-vbe_connwait_dequeue(struct backend *bp, struct connwait *cw, int lock_it)
+vbe_connwait_dequeue_locked(struct backend *bp, struct connwait *cw)
 {
-	if (lock_it)
-		Lck_Lock(bp->director->mtx);
+	Lck_AssertHeld(bp->director->mtx);
 	VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
 	vbe_connwait_signal_locked(bp);
-	if (lock_it)
-		Lck_Unlock(bp->director->mtx);
+	cw->cw_state = CW_DEQUEUED;
 }
 
 /*--------------------------------------------------------------------
@@ -239,8 +238,11 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	if (bo->htc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "out of workspace");
 		/* XXX: counter ? */
-		if (cw->cw_state == CW_QUEUED)
-			vbe_connwait_dequeue(bp, cw, 1);
+		if (cw->cw_state == CW_QUEUED) {
+			Lck_Lock(bp->director->mtx);
+			vbe_connwait_dequeue_locked(bp, cw);
+			Lck_Unlock(bp->director->mtx);
+		}
 		PTOK(pthread_cond_destroy(&cw->cw_cond));
 		return (NULL);
 	}
@@ -258,8 +260,11 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		     VRT_BACKEND_string(dir), err, VAS_errtxt(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
-		if (cw->cw_state == CW_QUEUED)
-			vbe_connwait_dequeue(bp, cw, 1);
+		if (cw->cw_state == CW_QUEUED) {
+			Lck_Lock(bp->director->mtx);
+			vbe_connwait_dequeue_locked(bp, cw);
+			Lck_Unlock(bp->director->mtx);
+		}
 		PTOK(pthread_cond_destroy(&cw->cw_cond));
 		return (NULL);
 	}
@@ -274,7 +279,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	bp->vsc->conn++;
 	bp->vsc->req++;
 	if (cw->cw_state == CW_QUEUED)
-		vbe_connwait_dequeue(bp, cw, 0);
+		vbe_connwait_dequeue_locked(bp, cw);
 
 	Lck_Unlock(bp->director->mtx);
 
