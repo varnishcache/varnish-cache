@@ -55,7 +55,6 @@
 #define HAPROXY_OPT_DAEMON	"-D"
 #define HAPROXY_SIGNAL		SIGINT
 #define HAPROXY_EXPECT_EXIT	(128 + HAPROXY_SIGNAL)
-#define HAPROXY_GOOD_CONF	"Configuration file is valid"
 
 struct envar {
 	VTAILQ_ENTRY(envar) list;
@@ -1077,8 +1076,9 @@ cmd_haproxy(CMD_ARGS)
 		if (!strcmp(*av, "-conf-OK")) {
 			AN(av[1]);
 			haproxy_store_conf(h, av[1], 0);
+			h->expect_exit = 0;
+			haproxy_check_conf(h, "");
 			av++;
-			haproxy_check_conf(h, HAPROXY_GOOD_CONF);
 			continue;
 		}
 		if (!strcmp(*av, "-conf-BAD")) {
