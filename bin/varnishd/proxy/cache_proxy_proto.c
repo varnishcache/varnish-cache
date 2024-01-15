@@ -52,7 +52,7 @@ struct vpx_tlv {
 	unsigned		magic;
 #define VPX_TLV_MAGIC		0xdeb9a4a5
 	unsigned		len;
-	char			tlv[];
+	char			tlv[] v_counted_by_(len);
 };
 
 static inline int

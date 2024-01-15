@@ -72,7 +72,7 @@ struct tbl {
 	unsigned		idx;
 	unsigned		lvl;
 	unsigned		p_idx;
-	struct cod		e[];
+	struct cod		e[] v_counted_by_(n);
 };
 
 static struct tbl *

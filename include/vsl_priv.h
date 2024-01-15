@@ -63,5 +63,5 @@ struct VSL_head {
 	ssize_t			segsize;
 	unsigned		segment_n;
 	ssize_t			offset[VSL_SEGMENTS];
-	uint32_t		log[];
+	uint32_t		log[] v_counted_by_(segment_n);
 };
