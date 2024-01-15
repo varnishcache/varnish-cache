@@ -212,13 +212,26 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
  */
 
 static void
-cls_dispatch(struct cli *cli, const struct cli_proto *cp,
-    char * const * av, int ac)
+cls_dispatch(struct cli *cli, struct VCLS *cs, char * const * av, int ac)
 {
 	int json = 0;
+	struct cli_proto *cp;
 
 	AN(av);
 	assert(ac >= 0);
+
+	VTAILQ_FOREACH(cp, &cs->funcs, list) {
+		if (cp->auth > cli->auth)
+			continue;
+		if (!strcmp(cp->desc->request, av[1]))
+			break;
+	}
+
+	if (cp == NULL && cs->wildcard && cs->wildcard->auth <= cli->auth)
+		cp = cs->wildcard;
+
+	if (cp == NULL)
+		return;
 
 	VSB_clear(cli->sb);
 
@@ -263,7 +276,6 @@ static int
 cls_exec(struct VCLS_fd *cfd, char * const *av)
 {
 	struct VCLS *cs;
-	struct cli_proto *clp;
 	struct cli *cli;
 	int na;
 	ssize_t len;
@@ -313,17 +325,7 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 		for (na = 0; av[na + 1] != NULL; na++)
 			continue;
 
-		VTAILQ_FOREACH(clp, &cs->funcs, list) {
-			if (clp->auth > cli->auth)
-				continue;
-			if (!strcmp(clp->desc->request, av[1])) {
-				cls_dispatch(cli, clp, av, na);
-				break;
-			}
-		}
-		if (clp == NULL &&
-		    cs->wildcard && cs->wildcard->auth <= cli->auth)
-			cls_dispatch(cli, cs->wildcard, av, na);
+		cls_dispatch(cli, cs, av, na);
 
 	} while (0);
 
