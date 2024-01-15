@@ -444,9 +444,6 @@ struct busyobj {
 	const char		*err_reason;
 
 	const char		*client_identity;
-
-	VTAILQ_ENTRY(busyobj)	cw_list;
-	pthread_cond_t		cw_cond;
 };
 
 #define BUSYOBJ_TMO(bo, pfx, tmo)					\

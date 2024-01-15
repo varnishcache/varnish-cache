@@ -148,8 +148,6 @@ VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 
 	memcpy(bo->digest, req->digest, sizeof bo->digest);
 
-	PTOK(pthread_cond_init(&bo->cw_cond, NULL));
-
 	return (bo);
 }
 
@@ -195,6 +193,5 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	memset(&bo->retries, 0,
 	    sizeof *bo - offsetof(struct busyobj, retries));
 
-	PTOK(pthread_cond_destroy(&bo->cw_cond));
 	vbo_Free(&bo);
 }

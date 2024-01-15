@@ -43,6 +43,7 @@ struct vbp_target;
 struct vrt_ctx;
 struct vrt_backend_probe;
 struct conn_pool;
+struct connwait;
 
 /*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
@@ -70,7 +71,7 @@ struct backend {
 
 	VCL_BACKEND		director;
 
-	VTAILQ_HEAD(, busyobj)	cw_head;
+	VTAILQ_HEAD(, connwait)	cw_head;
 	unsigned		cw_count;
 };
 
