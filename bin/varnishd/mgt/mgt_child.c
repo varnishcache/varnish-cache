@@ -63,8 +63,7 @@ static pid_t		child_pid = -1;
 
 static struct vbitmap	*fd_map;
 
-static int		child_cli_in = -1;
-static int		child_cli_out = -1;
+static int		child_cli_fd = -1;
 static int		child_output = -1;
 
 static enum {
@@ -320,17 +319,11 @@ mgt_launch_child(struct cli *cli)
 
 	/* Open pipe for mgt->child CLI */
 	AZ(socketpair(AF_UNIX, SOCK_STREAM, 0, cp));
-	heritage.cli_in = cp[0];
+	heritage.cli_fd = cp[0];
 	assert(cp[0] > STDERR_FILENO);	// See #2782
 	assert(cp[1] > STDERR_FILENO);
-	MCH_Fd_Inherit(heritage.cli_in, "cli_in");
-	child_cli_out = cp[1];
-
-	/* Open pipe for child->mgt CLI */
-	AZ(pipe(cp));
-	heritage.cli_out = cp[1];
-	MCH_Fd_Inherit(heritage.cli_out, "cli_out");
-	child_cli_in = cp[0];
+	MCH_Fd_Inherit(heritage.cli_fd, "cli_fd");
+	child_cli_fd = cp[1];
 
 	/*
 	 * Open pipe for child stdout/err
@@ -427,11 +420,8 @@ mgt_launch_child(struct cli *cli)
 	/* Close stuff the child got */
 	closefd(&heritage.std_fd);
 
-	MCH_Fd_Inherit(heritage.cli_in, NULL);
-	closefd(&heritage.cli_in);
-
-	MCH_Fd_Inherit(heritage.cli_out, NULL);
-	closefd(&heritage.cli_out);
+	MCH_Fd_Inherit(heritage.cli_fd, NULL);
+	closefd(&heritage.cli_fd);
 
 	child_std_vlu = VLU_New(child_line, NULL, 0);
 	AN(child_std_vlu);
@@ -440,7 +430,7 @@ mgt_launch_child(struct cli *cli)
 	bstart = mgt_param.startup_timeout >= mgt_param.cli_timeout;
 	dstart = bstart ? mgt_param.startup_timeout : mgt_param.cli_timeout;
 	t0 = VTIM_mono();
-	if (VCLI_ReadResult(child_cli_in, &u, NULL, dstart)) {
+	if (VCLI_ReadResult(child_cli_fd, &u, NULL, dstart)) {
 		assert(u == CLIS_COMMS);
 		if (VTIM_mono() - t0 < dstart)
 			mgt_launch_err(cli, u, "Child failed on launch ");
@@ -480,7 +470,7 @@ mgt_launch_child(struct cli *cli)
 		ev_poker = e;
 	}
 
-	mgt_cli_start_child(child_cli_in, child_cli_out);
+	mgt_cli_start_child(child_cli_fd, child_cli_fd);
 	child_pid = pid;
 
 	if (mgt_push_vcls(cli, &u, &p)) {
@@ -535,10 +525,8 @@ mgt_reap_child(void)
 	 * This signals orderly shut down to child
 	 */
 	mgt_cli_stop_child();
-	if (child_cli_out >= 0)
-		closefd(&child_cli_out);
-	if (child_cli_in >= 0)
-		closefd(&child_cli_in);
+	if (child_cli_fd >= 0)
+		closefd(&child_cli_fd);
 
 	/* Stop the poker */
 	if (ev_poker != NULL) {

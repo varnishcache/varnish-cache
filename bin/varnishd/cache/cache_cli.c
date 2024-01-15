@@ -99,10 +99,10 @@ CLI_Run(void)
 	add_check = 1;
 
 	/* Tell waiting MGT that we are ready to speak CLI */
-	AZ(VCLI_WriteResult(heritage.cli_out, CLIS_OK, "Ready"));
+	AZ(VCLI_WriteResult(heritage.cli_fd, CLIS_OK, "Ready"));
 
 	cli = VCLS_AddFd(cache_cls,
-	    heritage.cli_in, heritage.cli_out, NULL, NULL);
+	    heritage.cli_fd, heritage.cli_fd, NULL, NULL);
 	AN(cli);
 	cli->auth = 255;	// Non-zero to disable paranoia in vcli_serve
 
