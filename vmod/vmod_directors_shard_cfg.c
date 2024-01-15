@@ -262,7 +262,7 @@ shardcfg_hashcircle(struct sharddir *shardd)
 	uint32_t i, j, n_points, r, rmax;
 	const char *ident;
 	const int len = 12; // log10(UINT32_MAX) + 2;
-	char s[len];
+	v_vla_(char, s, len);
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	AZ(shardd->hashcircle);

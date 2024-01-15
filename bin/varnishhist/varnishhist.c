@@ -145,7 +145,8 @@ update(void)
 	char t[VTIM_FORMAT_SIZE];
 	const unsigned w = COLS / hist_range;
 	const unsigned n = w * hist_range;
-	unsigned bm[n], bh[n];
+	v_vla_(unsigned, bm, n);
+	v_vla_(unsigned, bh, n);
 	unsigned max;
 	unsigned scale;
 	int i, j;

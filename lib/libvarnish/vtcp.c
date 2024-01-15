@@ -122,7 +122,7 @@ VTCP_my_suckaddr(int sock)
 void
 VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
-	char buf[vsa_suckaddr_len];
+	v_vla_(char, buf, vsa_suckaddr_len);
 
 	VTCP_name(VSA_getsockname(sock, buf, sizeof buf),
 		  abuf, alen, pbuf, plen);
@@ -133,7 +133,7 @@ VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 void
 VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
-	char buf[vsa_suckaddr_len];
+	v_vla_(char, buf, vsa_suckaddr_len);
 	const struct suckaddr *sua;
 
 	sua = VSA_getpeername(sock, buf, sizeof buf);

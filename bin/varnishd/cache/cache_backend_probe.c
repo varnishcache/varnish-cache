@@ -246,7 +246,7 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 	char buf[105]; /* maximum size for a TCP6 PROXY line with null char */
 	char addr[VTCP_ADDRBUFSIZE];
 	char port[VTCP_PORTBUFSIZE];
-	char vsabuf[vsa_suckaddr_len];
+	v_vla_(char, vsabuf, vsa_suckaddr_len);
 	const struct suckaddr *sua;
 	int proto;
 	struct vsb vsb;

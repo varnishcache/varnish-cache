@@ -194,7 +194,7 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	const unsigned char *u;
 	char h[VTCP_ADDRBUFSIZE];
 	char t[VTCP_ADDRBUFSIZE + 10];
-	char s[vsa_suckaddr_len];
+	v_vla_(char, s, vsa_suckaddr_len);
 	char *r = NULL;
 	const struct suckaddr *sa;
 	unsigned m;

@@ -132,7 +132,7 @@ vcc_suckaddr(struct vcc *tl, const char *host, const struct suckaddr *vsa,
 	char p[VTCP_PORTBUFSIZE];
 	const int sz = sizeof(unsigned long long);
 	const unsigned n = (vsa_suckaddr_len + sz - 1) / sz;
-	unsigned long long b[n];
+	v_vla_(unsigned long long, b, n);
 	unsigned len;
 	char *q;
 

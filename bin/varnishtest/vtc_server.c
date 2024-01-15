@@ -185,7 +185,7 @@ server_listen_uds(struct server *s, const char **errp)
 static void
 server_listen_tcp(struct server *s, const char **errp)
 {
-	char buf[vsa_suckaddr_len];
+	v_vla_(char, buf, vsa_suckaddr_len);
 	const struct suckaddr *sua;
 
 	s->sock = VTCP_listen_on(s->listen, "0", s->depth, errp);

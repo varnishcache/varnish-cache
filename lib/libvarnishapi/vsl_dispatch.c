@@ -959,9 +959,9 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
     void *priv)
 {
 	unsigned n = vtx->n_descend + 1;
-	struct vtx *vtxs[n];
-	struct VSL_transaction trans[n];
-	struct VSL_transaction *ptrans[n + 1];
+	v_vla_(struct vtx, *vtxs, n);
+	v_vla_(struct VSL_transaction, trans, n);
+	v_vla_(struct VSL_transaction, *ptrans, n + 1);
 	unsigned i, j;
 
 	AN(vslq);
