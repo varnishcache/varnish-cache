@@ -1067,7 +1067,9 @@ cmd_process(CMD_ARGS)
 		p = process_new(av[0]);
 	av++;
 
+	PTOK(pthread_mutex_lock(&p->mtx));
 	bsnap = p->stdout_bytes;
+	PTOK(pthread_mutex_unlock(&p->mtx));
 
 	for (; *av != NULL; av++) {
 		if (vtc_error)

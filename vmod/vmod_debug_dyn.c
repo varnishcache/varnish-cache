@@ -155,10 +155,14 @@ xyzzy_dyn__fini(struct xyzzy_debug_dyn **dynp)
 VCL_BACKEND v_matchproto_()
 xyzzy_dyn_backend(VRT_CTX, struct xyzzy_debug_dyn *dyn)
 {
+	VCL_BACKEND retval;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
-	AN(dyn->dir);
-	return (dyn->dir);
+	PTOK(pthread_mutex_lock(&dyn->mtx));
+	retval = dyn->dir;
+	PTOK(pthread_mutex_unlock(&dyn->mtx));
+	AN(retval);
+	return (retval);
 }
 
 VCL_VOID
