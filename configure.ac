@@ -717,8 +717,7 @@ if test $? -ne 0 ; then
 fi
 
 # Do not allow Variable Length Arrays (VLA) by default
-AX_CHECK_COMPILE_FLAG([-Wvla],
-      [DEVELOPER_CFLAGS="$DEVELOPER_CFLAGS -Wvla -Wno-error=vla"
+AX_CHECK_COMPILE_FLAG([-Wvla], [DEVELOPER_CFLAGS="$DEVELOPER_CFLAGS -Wvla"
       AC_DEFINE([HAVE_WVLA], [1], [Define to 1 if we have -Wvla])], [], [])
 
 # zlib-specific flags
