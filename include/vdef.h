@@ -247,6 +247,16 @@ int __llvm_gcov_flush(void);
 #  define v_cold_
 #endif
 
+#if defined __has_attribute
+#  if __has_attribute(counted_by)
+#    define v_counted_by_(field) __attribute__((counted_by(field)))
+#  endif
+#endif
+
+#ifndef v_counted_by_
+#  define v_counted_by_(field)
+#endif
+
 /* VTIM API overhaul WIP */
 typedef double vtim_mono;
 typedef double vtim_real;
