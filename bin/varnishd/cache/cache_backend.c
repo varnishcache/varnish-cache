@@ -159,6 +159,15 @@ vbe_connwait_dequeue_locked(struct backend *bp, struct connwait *cw)
 	cw->cw_state = CW_DEQUEUED;
 }
 
+static void
+vbe_connwait_fini(struct connwait *cw)
+{
+	CHECK_OBJ_NOTNULL(cw, CONNWAIT_MAGIC);
+	assert(cw->cw_state != CW_QUEUED);
+	PTOK(pthread_cond_destroy(&cw->cw_cond));
+	FINI_OBJ(cw);
+}
+
 /*--------------------------------------------------------------------
  * Get a connection to the backend
  *
@@ -228,7 +237,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		     "backend %s: busy", VRT_BACKEND_string(dir));
 		bp->vsc->busy++;
 		VSC_C_main->backend_busy++;
-		PTOK(pthread_cond_destroy(&cw->cw_cond));
+		vbe_connwait_fini(cw);
 		return (NULL);
 	}
 
@@ -243,7 +252,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 			vbe_connwait_dequeue_locked(bp, cw);
 			Lck_Unlock(bp->director->mtx);
 		}
-		PTOK(pthread_cond_destroy(&cw->cw_cond));
+		vbe_connwait_fini(cw);
 		return (NULL);
 	}
 	bo->htc->doclose = SC_NULL;
@@ -265,7 +274,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 			vbe_connwait_dequeue_locked(bp, cw);
 			Lck_Unlock(bp->director->mtx);
 		}
-		PTOK(pthread_cond_destroy(&cw->cw_cond));
+		vbe_connwait_fini(cw);
 		return (NULL);
 	}
 
@@ -304,7 +313,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		bp->vsc->req--;
 		vbe_connwait_signal_locked(bp);
 		Lck_Unlock(bp->director->mtx);
-		PTOK(pthread_cond_destroy(&cw->cw_cond));
+		vbe_connwait_fini(cw);
 		return (NULL);
 	}
 	bo->acct.bereq_hdrbytes += err;
@@ -323,7 +332,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
 	    bo->htc->between_bytes_timeout, bo, bp);
-	PTOK(pthread_cond_destroy(&cw->cw_cond));
+	vbe_connwait_fini(cw);
 	return (pfd);
 }
 
