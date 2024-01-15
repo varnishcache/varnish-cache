@@ -60,6 +60,14 @@ enum connwait_e {
 	CW_BE_BUSY,
 };
 
+struct connwait {
+	unsigned			magic;
+#define CONNWAIT_MAGIC			0x75c7a52b
+	enum connwait_e			cw_state;
+	VTAILQ_ENTRY(connwait)		cw_list;
+	pthread_cond_t			cw_cond;
+};
+
 static const char * const vbe_proto_ident = "HTTP Backend";
 
 static struct lock backends_mtx;
@@ -133,25 +141,26 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 static void
 vbe_connwait_signal_locked(struct backend *bp)
 {
-	struct busyobj *bo;
+	struct connwait *cw;
 
 	Lck_AssertHeld(bp->director->mtx);
 
 	if (bp->n_conn < bp->max_connections) {
-		bo = VTAILQ_FIRST(&bp->cw_head);
-		if (bo != NULL) {
-			CHECK_OBJ(bo, BUSYOBJ_MAGIC);
-			PTOK(pthread_cond_signal(&bo->cw_cond));
+		cw = VTAILQ_FIRST(&bp->cw_head);
+		if (cw != NULL) {
+			CHECK_OBJ(cw, CONNWAIT_MAGIC);
+			assert(cw->cw_state == CW_QUEUED);
+			PTOK(pthread_cond_signal(&cw->cw_cond));
 		}
 	}
 }
 
 static void
-vbe_connwait_dequeue(struct backend *bp, struct busyobj *bo, int lock_it)
+vbe_connwait_dequeue(struct backend *bp, struct connwait *cw, int lock_it)
 {
 	if (lock_it)
 		Lck_Lock(bp->director->mtx);
-	VTAILQ_REMOVE(&bp->cw_head, bo, cw_list);
+	VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
 	vbe_connwait_signal_locked(bp);
 	if (lock_it)
 		Lck_Unlock(bp->director->mtx);
@@ -170,13 +179,13 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	struct busyobj *bo;
 	struct pfd *pfd;
 	int *fdp, err;
-	enum connwait_e cw_state;
 	vtim_dur tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 	unsigned wait_limit;
 	vtim_dur wait_tmod;
 	vtim_dur wait_end;
+	struct connwait cw[1];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -191,50 +200,54 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
-
+	INIT_OBJ(cw, CONNWAIT_MAGIC);
+	PTOK(pthread_cond_init(&cw->cw_cond, NULL));
 	Lck_Lock(bp->director->mtx);
-	cw_state = CW_DO_CONNECT;
+	cw->cw_state = CW_DO_CONNECT;
 	if (!VTAILQ_EMPTY(&bp->cw_head) || BE_BUSY(bp)) {
 		FIND_BE_PARAM(backend_wait_limit, wait_limit, bp);
 		FIND_BE_TMO(backend_wait_timeout, wait_tmod, bp);
-		cw_state = CW_BE_BUSY;
+		cw->cw_state = CW_BE_BUSY;
 	}
 
-	if (cw_state == CW_BE_BUSY && wait_limit > 0 &&
+	if (cw->cw_state == CW_BE_BUSY && wait_limit > 0 &&
 	    wait_tmod > 0.0 && bp->cw_count < wait_limit) {
-		VTAILQ_INSERT_TAIL(&bp->cw_head, bo, cw_list);
+		VTAILQ_INSERT_TAIL(&bp->cw_head, cw, cw_list);
 		bp->cw_count++;
 		VSC_C_main->backend_wait++;
-		cw_state = CW_QUEUED;
+		cw->cw_state = CW_QUEUED;
 		wait_end = VTIM_real() + wait_tmod;
 		do {
-			err = Lck_CondWaitUntil(&bo->cw_cond, bp->director->mtx,
+			err = Lck_CondWaitUntil(&cw->cw_cond, bp->director->mtx,
 			    wait_end);
 		} while (err == EINTR);
 		bp->cw_count--;
 		if (err != 0) {
-			VTAILQ_REMOVE(&bp->cw_head, bo, cw_list);
+			VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
 			VSC_C_main->backend_wait_fail++;
-			cw_state = CW_BE_BUSY;
+			cw->cw_state = CW_BE_BUSY;
 		}
 	}
 	Lck_Unlock(bp->director->mtx);
 
-	if (cw_state == CW_BE_BUSY) {
+	if (cw->cw_state == CW_BE_BUSY) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: busy", VRT_BACKEND_string(dir));
 		bp->vsc->busy++;
 		VSC_C_main->backend_busy++;
+		PTOK(pthread_cond_destroy(&cw->cw_cond));
 		return (NULL);
 	}
 
 	AZ(bo->htc);
 	bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
+	/* XXX: we may want to detect the ws overflow sooner */
 	if (bo->htc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "out of workspace");
 		/* XXX: counter ? */
-		if (cw_state == CW_QUEUED)
-			vbe_connwait_dequeue(bp, bo, 1);
+		if (cw->cw_state == CW_QUEUED)
+			vbe_connwait_dequeue(bp, cw, 1);
+		PTOK(pthread_cond_destroy(&cw->cw_cond));
 		return (NULL);
 	}
 	bo->htc->doclose = SC_NULL;
@@ -251,8 +264,9 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		     VRT_BACKEND_string(dir), err, VAS_errtxt(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
-		if (cw_state == CW_QUEUED)
-			vbe_connwait_dequeue(bp, bo, 1);
+		if (cw->cw_state == CW_QUEUED)
+			vbe_connwait_dequeue(bp, cw, 1);
+		PTOK(pthread_cond_destroy(&cw->cw_cond));
 		return (NULL);
 	}
 
@@ -265,8 +279,8 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	bp->n_conn++;
 	bp->vsc->conn++;
 	bp->vsc->req++;
-	if (cw_state == CW_QUEUED)
-		vbe_connwait_dequeue(bp, bo, 0);
+	if (cw->cw_state == CW_QUEUED)
+		vbe_connwait_dequeue(bp, cw, 0);
 
 	Lck_Unlock(bp->director->mtx);
 
@@ -291,6 +305,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		bp->vsc->req--;
 		vbe_connwait_signal_locked(bp);
 		Lck_Unlock(bp->director->mtx);
+		PTOK(pthread_cond_destroy(&cw->cw_cond));
 		return (NULL);
 	}
 	bo->acct.bereq_hdrbytes += err;
@@ -309,6 +324,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
 	    bo->htc->between_bytes_timeout, bo, bp);
+	PTOK(pthread_cond_destroy(&cw->cw_cond));
 	return (pfd);
 }
 
