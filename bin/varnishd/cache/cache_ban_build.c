@@ -319,7 +319,7 @@ BAN_AddTest(struct ban_proto *bp,
 const char *
 BAN_Commit(struct ban_proto *bp)
 {
-	struct ban  *b, *bi;
+	struct ban *b, *bi;
 	ssize_t ln;
 	vtim_real t0;
 	uint64_t u;
@@ -381,17 +381,8 @@ BAN_Commit(struct ban_proto *bp)
 	if (bi != NULL)
 		ban_info_new(b->spec, ln);	/* Notify stevedores */
 
-	if (cache_param->ban_dups) {
-		/* Hunt down duplicates, and mark them as completed */
-		for (bi = VTAILQ_NEXT(b, list); bi != NULL;
-		    bi = VTAILQ_NEXT(bi, list)) {
-			if (!(bi->flags & BANS_FLAG_COMPLETED) &&
-			    ban_equal(b->spec, bi->spec)) {
-				ban_mark_completed(bi);
-				VSC_C_main->bans_dups++;
-			}
-		}
-	}
+	if (cache_param->ban_dups)
+		VSC_C_main->bans_dups += BAN_Cancel(b, VTAILQ_NEXT(b, list));
 	if (!(b->flags & BANS_FLAG_REQ))
 		ban_kick_lurker();
 	Lck_Unlock(&ban_mtx);

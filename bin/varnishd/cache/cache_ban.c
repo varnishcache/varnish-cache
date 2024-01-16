@@ -154,7 +154,7 @@ ban_len(const uint8_t *banspec)
 	return (u);
 }
 
-int
+static int
 ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 {
 	unsigned u;
@@ -979,6 +979,33 @@ BAN_Compile(void)
 	ban_start = VTAILQ_FIRST(&ban_head);
 	BAN_Release();
 }
+
+/*--------------------------------------------------------------------
+ * Hunt down duplicates, and mark them as completed.
+ */
+
+unsigned
+BAN_Cancel(const struct ban *can, struct ban *ban)
+{
+	unsigned dups;
+
+	CHECK_OBJ_NOTNULL(can, BAN_MAGIC);
+	CHECK_OBJ_ORNULL(ban, BAN_MAGIC);
+	Lck_AssertHeld(&ban_mtx);
+
+	for (dups = 0; ban != NULL; ban = VTAILQ_NEXT(ban, list)) {
+		if (ban->flags & BANS_FLAG_COMPLETED)
+			continue;
+		if (!ban_equal(can->spec, ban->spec))
+			continue;
+		ban_mark_completed(ban);
+		dups++;
+	}
+	return (dups);
+}
+
+/*--------------------------------------------------------------------
+ */
 
 void
 BAN_Init(void)
