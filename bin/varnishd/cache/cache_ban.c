@@ -42,6 +42,7 @@
 #include "vcli_serve.h"
 #include "vend.h"
 #include "vmb.h"
+#include "vqueue.h"
 
 /* cache_ban_build.c */
 void BAN_Build_Init(void);
@@ -787,6 +788,50 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
+static void v_matchproto_(cli_func_t)
+ccf_ban_cancel(struct cli *cli, const char * const *av, void *priv)
+{
+	struct ban_proto *bp;
+	struct ban *b;
+	unsigned dups, json;
+
+	(void)priv;
+
+	json = !strcmp(av[2], "-j");
+	bp = ban_proto_build(cli, av + json);
+	if (bp == NULL)
+		return;
+
+	b = BAN_Alloc(bp, NULL);
+	if (b == NULL) {
+		VCLI_Out(cli, "%s", BAN_Error(bp));
+		VCLI_SetResult(cli, CLIS_CANT);
+		BAN_Abandon(bp);
+		return;
+	}
+
+	Lck_Lock(&ban_mtx);
+	dups = BAN_Cancel(b, VTAILQ_FIRST(&ban_head));
+	Lck_Unlock(&ban_mtx);
+	BAN_Free(b);
+	BAN_Abandon(bp);
+
+	if (!dups) {
+		VCLI_Out(cli, "No ban to cancel");
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
+	}
+
+	if (!json) {
+		VCLI_Out(cli, "Bans cancelled: %u\n", dups);
+		return;
+	}
+
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n  {\"cancelled\": %u}", dups);
+	VCLI_JSON_end(cli);
+}
+
 #define Ms 60
 #define Hs (Ms * 60)
 #define Ds (Hs * 24)
@@ -966,9 +1011,9 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto ban_cmds[] = {
-	{ CLICMD_BAN,				"", ccf_ban },
-	{ CLICMD_BAN_LIST,			"", ccf_ban_list,
-	  ccf_ban_list },
+	{ CLICMD_BAN,		"", ccf_ban },
+	{ CLICMD_BAN_CANCEL,	"", ccf_ban_cancel,	ccf_ban_cancel },
+	{ CLICMD_BAN_LIST,	"", ccf_ban_list,	ccf_ban_list },
 	{ NULL }
 };
 

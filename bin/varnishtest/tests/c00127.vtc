@@ -1,0 +1,34 @@
+varnishtest "Cancel bans"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -vsl_catchup
+varnish v1 -expect n_object == 1
+
+varnish v1 -clierr 300 "ban.cancel req.http.ban ~ nonexistent"
+
+# create actual bans to cancel
+varnish v1 -cliok "ban req.http.host == ${localhost}"
+varnish v1 -cliok "ban obj.status == 0"
+
+# cancel both bans
+varnish v1 -cliexpect "Bans cancelled: 1" \
+	"ban.cancel req.http.host == ${localhost}"
+varnish v1 -clijson "ban.cancel -j obj.status == 0"
+
+# the object is still accessible
+client c1 -run
+
+varnish v1 -vsl_catchup
+varnish v1 -expect n_object == 1
+varnish v1 -expect cache_hit == 1
