@@ -847,7 +847,7 @@ draw_bar_b(void)
 	if (page_start + l_points < n_ptarray)
 		mvwprintw(w_bar_b, 0, x, "vvv");
 	x += 4;
-	if (current < n_ptarray - 1)
+	if (current < n_ptarray)
 		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->vpt->name);
 
 	bprintf(buf, "%d-%d/%d", page_start + 1,
@@ -880,7 +880,7 @@ draw_info(void)
 		return;
 
 	werase(w_info);
-	if (current < n_ptarray - 1) {
+	if (current < n_ptarray) {
 		/* XXX: Word wrapping, and overflow handling? */
 		mvwprintw(w_info, 0, 0, "%s:",
 		    ptarray[current]->vpt->sdesc);
