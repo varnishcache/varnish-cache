@@ -249,7 +249,10 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			argv[0] = err_missing_quote;
 			return (argv);
 		}
-		/* Ensure slots for 1 new arg plus 1 trailing arg */
+		/*
+		 * Ensure slots for 1 new arg plus 1 trailing arg,
+		 * vcli_serve.c depends on this extra slot.
+		 */
 		if (nargv + 2 >= largv) {
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
 			assert(argv != NULL);

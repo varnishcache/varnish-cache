@@ -219,6 +219,8 @@ cls_dispatch(struct cli *cli, struct VCLS *cs, char * const * av, int ac)
 
 	AN(av);
 	assert(ac >= 0);
+	AZ(av[0]);
+	AN(av[1]);
 
 	VTAILQ_FOREACH(cp, &cs->funcs, list) {
 		if (cp->auth > cli->auth)
@@ -230,8 +232,10 @@ cls_dispatch(struct cli *cli, struct VCLS *cs, char * const * av, int ac)
 	if (cp == NULL && cs->wildcard && cs->wildcard->auth <= cli->auth)
 		cp = cs->wildcard;
 
-	if (cp == NULL)
+	if (cp == NULL) {
+		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
 		return;
+	}
 
 	VSB_clear(cli->sb);
 
@@ -262,10 +266,12 @@ cls_dispatch(struct cli *cli, struct VCLS *cs, char * const * av, int ac)
 	}
 
 	cli->result = CLIS_OK;
+	cli->cls = cs;
 	if (json)
 		cp->jsonfunc(cli, (const char * const *)av, cp->priv);
 	else
 		cp->func(cli, (const char * const *)av, cp->priv);
+	cli->cls = NULL;
 }
 
 /*--------------------------------------------------------------------
@@ -273,11 +279,10 @@ cls_dispatch(struct cli *cli, struct VCLS *cs, char * const * av, int ac)
  */
 
 static int
-cls_exec(struct VCLS_fd *cfd, char * const *av)
+cls_exec(struct VCLS_fd *cfd, char * const *av, int ac)
 {
 	struct VCLS *cs;
 	struct cli *cli;
-	int na;
 	ssize_t len;
 	char *s;
 	unsigned lim;
@@ -291,11 +296,8 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
 	AN(cli->cmd);
 
-	cli->cls = cs;
-
 	cli->result = CLIS_UNKNOWN;
 	VSB_clear(cli->sb);
-	VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
 
 	if (cs->before != NULL)
 		cs->before(cli);
@@ -313,19 +315,13 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 			break;
 		}
 
-		if (isupper(av[1][0])) {
-			VCLI_Out(cli, "all commands are in lower-case.\n");
+		if (!islower(av[1][0])) {
+			VCLI_Out(cli, "All commands are in lower-case.\n");
 			VCLI_SetResult(cli, CLIS_UNKNOWN);
 			break;
 		}
 
-		if (!islower(av[1][0]))
-			break;
-
-		for (na = 0; av[na + 1] != NULL; na++)
-			continue;
-
-		cls_dispatch(cli, cs, av, na);
+		cls_dispatch(cli, cs, av, ac);
 
 	} while (0);
 
@@ -333,8 +329,6 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 
 	if (cs->after != NULL)
 		cs->after(cli);
-
-	cli->cls = NULL;
 
 	s = VSB_data(cli->sb);
 	len = VSB_len(cli->sb);
@@ -415,7 +409,7 @@ cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 				AN(cfd->last_arg);
 			} else {
 				/* Plain command */
-				i = cls_exec(cfd, av);
+				i = cls_exec(cfd, av, ac - 1);
 				VAV_Free(av);
 				VSB_destroy(&cli->cmd);
 				if (i)
@@ -435,7 +429,7 @@ cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 				REPLACE(cfd->argv[cfd->argc - 2], NULL);
 				cfd->argv[cfd->argc - 2] =
 				    VSB_data(cfd->last_arg);
-				i = cls_exec(cfd, cfd->argv);
+				i = cls_exec(cfd, cfd->argv, cfd->argc - 2);
 				cfd->argv[cfd->argc - 2] = NULL;
 				VAV_Free(cfd->argv);
 				cfd->argv = NULL;
