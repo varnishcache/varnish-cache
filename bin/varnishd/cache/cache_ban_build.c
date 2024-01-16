@@ -137,6 +137,14 @@ ban_add_lump(const struct ban_proto *bp, const void *p, uint32_t len)
 /*--------------------------------------------------------------------
  */
 
+const char *
+BAN_Error(struct ban_proto *bp)
+{
+
+	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
+	return (bp->err);
+}
+
 static const char *
 ban_error(struct ban_proto *bp, const char *fmt, ...)
 {
