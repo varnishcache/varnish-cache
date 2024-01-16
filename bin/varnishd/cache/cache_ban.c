@@ -713,17 +713,15 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * CLI functions to add bans
+ * Build a ban from CLI arguments.
  */
 
-static void v_matchproto_(cli_func_t)
-ccf_ban(struct cli *cli, const char * const *av, void *priv)
+static struct ban_proto *
+ban_proto_build(struct cli *cli, const char * const *av)
 {
 	int narg, i;
 	struct ban_proto *bp;
 	const char *err = NULL;
-
-	(void)priv;
 
 	/* First do some cheap checks on the arguments */
 	for (narg = 0; av[narg + 2] != NULL; narg++)
@@ -731,13 +729,13 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	if ((narg % 4) != 3) {
 		VCLI_Out(cli, "Wrong number of arguments");
 		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
+		return (NULL);
 	}
 	for (i = 3; i < narg; i += 4) {
 		if (strcmp(av[i + 2], "&&")) {
 			VCLI_Out(cli, "Found \"%s\" expected &&", av[i + 2]);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (NULL);
 		}
 	}
 
@@ -745,7 +743,7 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	if (bp == NULL) {
 		VCLI_Out(cli, "Out of Memory");
 		VCLI_SetResult(cli, CLIS_CANT);
-		return;
+		return (NULL);
 	}
 	for (i = 0; i < narg; i += 4) {
 		err = BAN_AddTest(bp, av[i + 2], av[i + 3], av[i + 4]);
@@ -753,7 +751,31 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 			break;
 	}
 
-	if (err == NULL) {
+	if (err != NULL) {
+		VCLI_Out(cli, "%s", err);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		BAN_Abandon(bp);
+		bp = NULL;
+	}
+
+	return (bp);
+}
+
+/*--------------------------------------------------------------------
+ * CLI functions to add bans
+ */
+
+static void v_matchproto_(cli_func_t)
+ccf_ban(struct cli *cli, const char * const *av, void *priv)
+{
+	struct ban_proto *bp;
+	const char *err = NULL;
+
+	(void)priv;
+
+	bp = ban_proto_build(cli, av);
+
+	if (bp != NULL) {
 		// XXX racy - grab wstat lock?
 		err = BAN_Commit(bp);
 	}
