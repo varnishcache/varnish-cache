@@ -154,7 +154,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 
 	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 	if (sc != SC_NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s) (%s",
+		VSLb(bo->vsl, SLT_FetchError,
+		    "backend write error: %d (%s) (%s)",
 		    errno, VAS_errtxt(errno), sc->desc);
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;
