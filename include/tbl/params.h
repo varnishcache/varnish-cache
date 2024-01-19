@@ -767,6 +767,18 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	pipe_task_deadline,
+	/* type */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"0s",
+	/* units */	"seconds",
+	/* descr */
+	"Deadline for PIPE sessions. Regardless of activity in either "
+	"direction after this many seconds, the session is closed."
+)
+
+PARAM_SIMPLE(
 	/* name */	pipe_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
