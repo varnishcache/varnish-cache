@@ -117,6 +117,7 @@ void
 V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 {
 	struct pollfd fds[2];
+	vtim_dur tmo;
 	int i, j;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -142,8 +143,10 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 	while (fds[0].fd > -1 || fds[1].fd > -1) {
 		fds[0].revents = 0;
 		fds[1].revents = 0;
-		i = poll(fds, 2,
-		    (int)(cache_param->pipe_timeout * 1e3));
+		tmo = cache_param->pipe_timeout;
+		if (tmo == 0.)
+			tmo = -1.;
+		i = poll(fds, 2, (int)(tmo * 1e3));
 		if (i < 1)
 			break;
 		if (fds[0].revents &&
