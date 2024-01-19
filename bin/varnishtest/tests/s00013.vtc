@@ -1,0 +1,22 @@
+varnishtest "pipe timeouts"
+
+server s1 {
+	rxreq
+	txresp -hdr "transfer-encoding: chunked"
+	delay 1.1
+} -start
+
+varnish v1 -cliok "param.set pipe_timeout 0s"
+varnish v1 -vcl+backend "" -start
+
+logexpect l1 -v v1 -q "Timestamp:PipeSess[2] > 1.0" {
+	expect 1001 * ReqMethod PIPE
+} -start
+
+client c1 {
+	non_fatal
+	txreq -method PIPE
+	rxresp
+} -run
+
+logexpect l1 -wait
