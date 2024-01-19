@@ -10,13 +10,31 @@ server s1 {
 	rxreq
 	txresp -hdr "transfer-encoding: chunked"
 	expect_close
+
+	accept
+	rxreq
+	txresp -hdr "transfer-encoding: chunked"
+	expect_close
+
+	accept
+	non_fatal
+	rxreq
+	txresp -hdr "transfer-encoding: chunked"
+	loop 20 {
+		chunkedlen 1
+		delay 0.1
+	}
 } -start
 
 varnish v1 -cliok "param.set pipe_timeout 0s"
+varnish v1 -cliok "param.set pipe_task_deadline 0s"
 varnish v1 -vcl+backend "" -start
 
-logexpect l1 -v v1 -q "Timestamp:PipeSess[2] > 1.0" {
-	expect 1001 * ReqMethod PIPE
+logexpect l1 -v v1 -g raw -q SessClose {
+	expect 1000 * SessClose {^TX_PIPE 1\.}
+	expect 1003 * SessClose {^RX_TIMEOUT 0\.}
+	expect 1006 * SessClose {^RX_TIMEOUT 1\.}
+	expect 1009 * SessClose {^RX_TIMEOUT 1\.}
 } -start
 
 client c1 {
@@ -25,11 +43,20 @@ client c1 {
 	rxresp
 } -run
 
-logexpect l1 -wait
-
 varnish v1 -cliok "param.set pipe_timeout 500ms"
+varnish v1 -cliok "param.set pipe_task_deadline 0s"
 client c1 -run
 
-varnish v1 -expect MAIN.s_pipe == 2
+varnish v1 -cliok "param.set pipe_timeout 0s"
+varnish v1 -cliok "param.set pipe_task_deadline 1.1s"
+client c1 -run
+
+varnish v1 -cliok "param.set pipe_timeout 500ms"
+varnish v1 -cliok "param.set pipe_task_deadline 1.1s"
+client c1 -run
+
+logexpect l1 -wait
+
+varnish v1 -expect MAIN.s_pipe == 4
 varnish v1 -expect MAIN.sc_tx_pipe == 1
-varnish v1 -expect MAIN.sc_rx_timeout == 1
+varnish v1 -expect MAIN.sc_rx_timeout == 3
