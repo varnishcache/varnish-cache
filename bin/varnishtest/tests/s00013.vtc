@@ -4,6 +4,12 @@ server s1 {
 	rxreq
 	txresp -hdr "transfer-encoding: chunked"
 	delay 1.1
+	close
+
+	accept
+	rxreq
+	txresp -hdr "transfer-encoding: chunked"
+	expect_close
 } -start
 
 varnish v1 -cliok "param.set pipe_timeout 0s"
@@ -20,3 +26,10 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+
+varnish v1 -cliok "param.set pipe_timeout 500ms"
+client c1 -run
+
+varnish v1 -expect MAIN.s_pipe == 2
+varnish v1 -expect MAIN.sc_tx_pipe == 1
+varnish v1 -expect MAIN.sc_rx_timeout == 1
