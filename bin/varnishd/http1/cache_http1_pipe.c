@@ -40,6 +40,7 @@
 
 #include "cache_http1.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 #include "VSC_vbe.h"
 
@@ -117,7 +118,8 @@ stream_close_t
 V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 {
 	struct pollfd fds[2];
-	vtim_dur tmo;
+	vtim_dur tmo, tmo_task;
+	vtim_real deadline;
 	stream_close_t sc;
 	int i, j;
 
@@ -141,6 +143,10 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 	fds[1].fd = req->sp->fd;
 	fds[1].events = POLLIN;
 
+	deadline = cache_param->pipe_task_deadline;
+	if (deadline > 0.)
+		deadline += req->sp->t_idle;
+
 	sc = SC_TX_PIPE;
 	while (fds[0].fd > -1 || fds[1].fd > -1) {
 		fds[0].revents = 0;
@@ -148,6 +154,11 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 		tmo = cache_param->pipe_timeout;
 		if (tmo == 0.)
 			tmo = -1.;
+		if (deadline > 0.) {
+			tmo_task = deadline - VTIM_real();
+			tmo = (tmo > 0.) ? vmin(tmo, tmo_task) : tmo_task;
+			tmo = vmax(tmo, 0.);
+		}
 		i = poll(fds, 2, (int)(tmo * 1e3));
 		if (i == 0)
 			sc = SC_RX_TIMEOUT;
