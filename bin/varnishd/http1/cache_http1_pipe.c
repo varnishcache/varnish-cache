@@ -113,11 +113,12 @@ V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 	Lck_Unlock(&pipestat_mtx);
 }
 
-void
+stream_close_t
 V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 {
 	struct pollfd fds[2];
 	vtim_dur tmo;
+	stream_close_t sc;
 	int i, j;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -129,7 +130,7 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 		    req->htc->pipeline_e - req->htc->pipeline_b);
 		VTCP_Assert(j);
 		if (j < 0)
-			return;
+			return (SC_OVERLOAD);
 		req->htc->pipeline_b = NULL;
 		req->htc->pipeline_e = NULL;
 		v1a->in += j;
@@ -140,6 +141,7 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 	fds[1].fd = req->sp->fd;
 	fds[1].events = POLLIN;
 
+	sc = SC_TX_PIPE;
 	while (fds[0].fd > -1 || fds[1].fd > -1) {
 		fds[0].revents = 0;
 		fds[1].revents = 0;
@@ -147,6 +149,8 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 		if (tmo == 0.)
 			tmo = -1.;
 		i = poll(fds, 2, (int)(tmo * 1e3));
+		if (i == 0)
+			sc = SC_RX_TIMEOUT;
 		if (i < 1)
 			break;
 		if (fds[0].revents &&
@@ -168,6 +172,8 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 			fds[1].fd = -1;
 		}
 	}
+
+	return (sc);
 }
 
 /*--------------------------------------------------------------------*/

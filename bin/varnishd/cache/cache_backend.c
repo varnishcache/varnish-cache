@@ -391,11 +391,10 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 		    &v1a.bereq, &v1a.out);
 		VSLb_ts_req(ctx->req, "Pipe", W_TIM_real(ctx->req->wrk));
 		if (i == 0)
-			V1P_Process(ctx->req, *PFD_Fd(pfd), &v1a);
+			retval = V1P_Process(ctx->req, *PFD_Fd(pfd), &v1a);
 		VSLb_ts_req(ctx->req, "PipeSess", W_TIM_real(ctx->req->wrk));
-		ctx->bo->htc->doclose = SC_TX_PIPE;
+		ctx->bo->htc->doclose = retval;
 		vbe_dir_finish(ctx, d);
-		retval = SC_TX_PIPE;
 	}
 	V1P_Charge(ctx->req, &v1a, bp->vsc);
 	CHECK_OBJ_NOTNULL(retval, STREAM_CLOSE_MAGIC);
