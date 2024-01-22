@@ -1,0 +1,156 @@
+varnishtest "successful expired waiting list hit"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+barrier b4 cond 2
+
+
+server s1 {
+	rxreq
+	expect req.http.user-agent == c1
+	expect req.http.bgfetch == false
+	barrier b1 sync
+	barrier b2 sync
+	txresp -hdr "Cache-Control: max-age=60" -hdr "Age: 120"
+
+	rxreq
+	expect req.http.user-agent == c3
+	expect req.http.bgfetch == true
+	txresp
+
+	# The no-cache case only works with a complicit VCL, for now.
+	rxreq
+	expect req.http.user-agent == c4
+	expect req.http.bgfetch == false
+	barrier b3 sync
+	barrier b4 sync
+	txresp -hdr "Cache-Control: no-cache"
+
+	rxreq
+	expect req.http.user-agent == c6
+	expect req.http.bgfetch == false
+	txresp -hdr "Cache-Control: no-cache"
+} -start
+
+varnish v1 -cliok "param.set default_grace 1h"
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set debug +syncvsl,+waitinglist"
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.bgfetch = bereq.is_bgfetch;
+	}
+	sub vcl_beresp_stale {
+		# We just validated a stale object, do not mark it as
+		# uncacheable. The object remains available for grace
+		# hits and background fetches.
+		return;
+	}
+	sub vcl_beresp_control {
+		if (beresp.http.cache-control == "no-cache") {
+			# Keep beresp.uncacheable clear.
+			return;
+		}
+	}
+	sub vcl_deliver {
+		set resp.http.obj-hits = obj.hits;
+		set resp.http.obj-ttl = obj.ttl;
+	}
+} -start
+
+client c1 {
+	txreq -url "/stale-hit"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == 1001
+	expect resp.http.obj-hits == 0
+	expect resp.http.obj-ttl < 0
+} -start
+
+barrier b1 sync
+
+client c2 {
+	txreq -url "/stale-hit"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == "1004 1002"
+	expect resp.http.obj-hits == 1
+	expect resp.http.obj-ttl < 0
+} -start
+
+varnish v1 -expect busy_sleep == 1
+barrier b2 sync
+
+client c1 -wait
+client c2 -wait
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect cache_miss == 1
+varnish v1 -expect cache_hit == 1
+varnish v1 -expect cache_hit_grace == 0
+varnish v1 -expect s_bgfetch == 0
+
+client c3 {
+	txreq -url "/stale-hit"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == "1006 1002"
+	expect resp.http.obj-hits == 2
+	expect resp.http.obj-ttl < 0
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect cache_miss == 1
+varnish v1 -expect cache_hit == 2
+varnish v1 -expect cache_hit_grace == 1
+varnish v1 -expect s_bgfetch == 1
+
+# The only way for a plain no-cache to be hit is to have a non-zero keep.
+varnish v1 -cliok "param.set default_ttl 0"
+varnish v1 -cliok "param.set default_grace 0"
+varnish v1 -cliok "param.set default_keep 1h"
+
+client c4 {
+	txreq -url "/no-cache-hit"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == 1009
+	expect resp.http.obj-hits == 0
+	expect resp.http.obj-ttl <= 0
+} -start
+
+barrier b3 sync
+
+client c5 {
+	txreq -url "/no-cache-hit"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == "1012 1010"
+	expect resp.http.obj-hits == 1
+	expect resp.http.obj-ttl <= 0
+} -start
+
+varnish v1 -expect busy_sleep == 2
+barrier b4 sync
+
+client c4 -wait
+client c5 -wait
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect cache_miss == 2
+varnish v1 -expect cache_hit == 3
+varnish v1 -expect cache_hit_grace == 1
+varnish v1 -expect s_bgfetch == 1
+
+# No hit when not on the waiting list
+client c6 {
+	txreq -url "/no-cache-hit"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == 1014
+	expect resp.http.obj-hits == 0
+	expect resp.http.obj-ttl <= 0
+} -run

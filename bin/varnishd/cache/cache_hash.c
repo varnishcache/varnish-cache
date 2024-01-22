@@ -101,6 +101,7 @@ hsh_initobjhead(struct objhead *oh)
 	XXXAN(oh);
 	INIT_OBJ(oh, OBJHEAD_MAGIC);
 	oh->refcnt = 1;
+	oh->waitinglist_gen = 1;
 	VTAILQ_INIT(&oh->objcs);
 	VTAILQ_INIT(&oh->waitinglist);
 	Lck_New(&oh->mtx, lck_objhdr);
@@ -380,6 +381,42 @@ hsh_insert_busyobj(const struct worker *wrk, struct objhead *oh)
 /*---------------------------------------------------------------------
  */
 
+static unsigned
+hsh_rush_match(struct req *req)
+{
+	struct objhead *oh;
+	struct objcore *oc;
+	const uint8_t *vary;
+
+	oc = req->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->refcnt > 0);
+
+	AZ(oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_PRIVATE);
+	if (oc->flags & (OC_F_WITHDRAWN|OC_F_HFM|OC_F_HFP|OC_F_CANCEL|
+	    OC_F_FAILED))
+		return (0);
+
+	if (req->vcf != NULL) /* NB: must operate under oh lock. */
+		return (0);
+
+	oh = oc->objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	if (req->hash_ignore_vary)
+		return (1);
+	if (!ObjHasAttr(req->wrk, oc, OA_VARY))
+		return (1);
+
+	vary = ObjGetAttr(req->wrk, oc, OA_VARY, NULL);
+	AN(vary);
+	return (VRY_Match(req, vary));
+}
+
+/*---------------------------------------------------------------------
+ */
+
 enum lookup_e
 HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 {
@@ -407,6 +444,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
+	CHECK_OBJ_ORNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_ORNULL(req->vcf, VCF_MAGIC);
 	AN(hash);
 
@@ -414,15 +452,33 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	if (DO_DEBUG(DBG_HASHEDGE))
 		hsh_testmagic(req->digest);
 
-	if (req->hash_objhead != NULL) {
-		/*
-		 * This req came off the waiting list, and brings an
-		 * oh refcnt with it.
-		 */
-		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
-		oh = req->hash_objhead;
+	/*
+	 * When a req rushes off the waiting list, it brings an implicit
+	 * oh refcnt acquired at disembark time and an oc ref (with its
+	 * own distinct oh ref) acquired during rush hour.
+	 */
+
+	if (req->objcore != NULL && hsh_rush_match(req)) {
+		TAKE_OBJ_NOTNULL(oc, &req->objcore, OBJCORE_MAGIC);
+		*ocp = oc;
+		oh = oc->objhead;
 		Lck_Lock(&oh->mtx);
-		req->hash_objhead = NULL;
+		oc->hits++;
+		boc_progress = oc->boc == NULL ? -1 : oc->boc->fetched_so_far;
+		AN(hsh_deref_objhead_unlock(wrk, &oh, oc));
+		Req_LogHit(wrk, req, oc, boc_progress);
+		/* NB: since this hit comes from the waiting list instead of
+		 * a regular lookup, grace is not considered. The object is
+		 * fresh in the context of the waiting list, even expired: it
+		 * was successfully just [re]validated by a fetch task.
+		 */
+		return (HSH_HIT);
+	}
+
+	if (req->objcore != NULL) {
+		oh = req->objcore->objhead;
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		Lck_Lock(&oh->mtx);
 	} else {
 		AN(wrk->wpriv->nobjhead);
 		oh = hash->lookup(wrk, req->digest, &wrk->wpriv->nobjhead);
@@ -615,13 +671,14 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	AZ(req->hash_ignore_busy);
 
 	/*
-	 * The objhead reference transfers to the sess, we get it
-	 * back when the sess comes off the waiting list and
-	 * calls us again
+	 * The objhead reference is held by req while it is parked on the
+	 * waiting list. The oh pointer is taken back from the objcore that
+	 * triggers a rush of req off the waiting list.
 	 */
-	req->hash_objhead = oh;
+	assert(oh->refcnt > 1);
+
 	req->wrk = NULL;
-	req->waitinglist = 1;
+	req->waitinglist_gen = oh->waitinglist_gen;
 
 	if (DO_DEBUG(DBG_WAITINGLIST))
 		VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
@@ -657,24 +714,44 @@ hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r)
 
 	AZ(oc->flags & OC_F_BUSY);
 	AZ(oc->flags & OC_F_PRIVATE);
+	max = cache_param->rush_exponent;
 	if (oc->flags & (OC_F_WITHDRAWN|OC_F_FAILED))
 		max = 1;
-	else if (oc->flags & (OC_F_HFM|OC_F_HFP|OC_F_CANCEL|OC_F_DYING))
-		max = cache_param->rush_exponent;
-	else
-		max = INT_MAX; /* XXX: temp */
 	assert(max > 0);
+
+	if (oc->waitinglist_gen == 0) {
+		oc->waitinglist_gen = oh->waitinglist_gen;
+		oh->waitinglist_gen++;
+	}
 
 	for (i = 0; i < max; i++) {
 		req = VTAILQ_FIRST(&oh->waitinglist);
 		if (req == NULL)
 			break;
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		wrk->stats->busy_wakeup++;
+
+		CHECK_OBJ(req, REQ_MAGIC);
+
+		/* NB: The waiting list is naturally sorted by generation.
+		 *
+		 * Because of the exponential nature of the rush, it is
+		 * possible that new requests enter the waiting list before
+		 * the rush for this oc completes. Because the OC_F_BUSY flag
+		 * was cleared before the beginning of the rush, requests
+		 * from a newer generation already got a chance to evaluate
+		 * oc during a lookup and it didn't match their criteria.
+		 *
+		 * Therefore there's no point propagating the exponential
+		 * rush of this oc when we see a newer generation.
+		 */
+		if (req->waitinglist_gen > oc->waitinglist_gen)
+			break;
+
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
 		VTAILQ_INSERT_TAIL(&r->reqs, req, w_list);
-		req->waitinglist = 0;
+		req->objcore = oc;
+		oc->refcnt++;
+		wrk->stats->busy_wakeup++;
 	}
 }
 
@@ -945,8 +1022,8 @@ HSH_Withdraw(struct worker *wrk, struct objcore **ocp)
 	assert(oh->refcnt > 0);
 	oc->flags &= ~OC_F_BUSY;
 	oc->flags |= OC_F_WITHDRAWN;
-	hsh_rush1(wrk, oc, &rush);
-	AZ(HSH_DerefObjCoreUnlock(wrk, &oc));
+	hsh_rush1(wrk, oc, &rush); /* grabs up to 1 oc ref */
+	assert(HSH_DerefObjCoreUnlock(wrk, &oc) <= 1);
 
 	hsh_rush2(wrk, &rush);
 }
