@@ -918,27 +918,36 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+	AN(oc->flags & OC_F_BUSY);
 
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+
+	/* NB: It is guaranteed that exactly one request is waiting for
+	 * the objcore for pass objects. The other reference is held by
+	 * the current fetch task.
+	 */
+	if (oc->flags & OC_F_PRIVATE) {
+		assert(oc->refcnt == 2);
+		oc->flags &= ~OC_F_BUSY;
+		return;
+	}
+
 	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	AN(oc->stobj->stevedore);
-	AN(oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_PRIVATE);
 	assert(oh->refcnt > 0);
 	assert(oc->refcnt > 0);
 
-	if (!(oc->flags & OC_F_PRIVATE)) {
-		BAN_NewObjCore(oc);
-		AN(oc->ban);
-	}
+	BAN_NewObjCore(oc);
+	AN(oc->ban);
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	assert(oc->refcnt > 0);
-	if (!(oc->flags & OC_F_PRIVATE))
-		EXP_RefNewObjcore(oc); /* Takes a ref for expiry */
+	EXP_RefNewObjcore(oc); /* Takes a ref for expiry */
 	/* XXX: strictly speaking, we should sort in Date: order. */
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
@@ -948,8 +957,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 		hsh_rush1(wrk, oc, &rush);
 	}
 	Lck_Unlock(&oh->mtx);
-	EXP_Insert(wrk, oc); /* Does nothing unless EXP_RefNewObjcore was
-			      * called */
+	EXP_Insert(wrk, oc);
 	hsh_rush2(wrk, &rush);
 }
 
