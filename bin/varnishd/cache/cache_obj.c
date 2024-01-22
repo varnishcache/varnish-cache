@@ -86,6 +86,7 @@
 
 #include "cache_varnishd.h"
 #include "cache_obj.h"
+#include "cache_objhead.h"
 #include "vend.h"
 #include "storage/storage.h"
 
@@ -290,8 +291,7 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
  */
 
 void
-ObjSetState(struct worker *wrk, const struct objcore *oc,
-    enum boc_state_e next)
+ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next)
 {
 	const struct obj_methods *om;
 
@@ -300,7 +300,6 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 	assert(next > oc->boc->state);
 
 	CHECK_OBJ_ORNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
-	assert(next != BOS_STREAM || oc->boc->state == BOS_PREP_STREAM);
 	assert(next != BOS_FINISHED || (oc->oa_present & (1 << OA_LEN)));
 
 	if (oc->stobj->stevedore != NULL) {
@@ -308,6 +307,11 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 		if (om->objsetstate != NULL)
 			om->objsetstate(wrk, oc, next);
 	}
+
+	if (next == BOS_FAILED)
+		HSH_Fail(wrk, oc);
+	else if (oc->boc->state < BOS_STREAM && next >= BOS_STREAM)
+		HSH_Unbusy(wrk, oc);
 
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
