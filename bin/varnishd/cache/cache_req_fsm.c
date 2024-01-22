@@ -576,20 +576,23 @@ cnt_lookup(struct worker *wrk, struct req *req)
 {
 	struct objcore *oc, *busy;
 	enum lookup_e lr;
-	int had_objhead = 0;
+	int had_objcore = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AZ(req->objcore);
 	AZ(req->stale_oc);
 
 	AN(req->vcl);
 
 	VRY_Prep(req);
 
-	AZ(req->objcore);
-	if (req->hash_objhead)
-		had_objhead = 1;
+	if (req->waitinglist_gen) {
+		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+		req->waitinglist_gen = 0;
+		had_objcore = 1;
+	} else
+		AZ(req->objcore);
+
 	wrk->strangelove = 0;
 	lr = HSH_Lookup(req, &oc, &busy);
 	if (lr == HSH_BUSY) {
@@ -605,7 +608,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if ((unsigned)wrk->strangelove >= cache_param->vary_notice)
 		VSLb(req->vsl, SLT_Notice, "vsl: High number of variants (%d)",
 		    wrk->strangelove);
-	if (had_objhead)
+	if (had_objcore)
 		VSLb_ts_req(req, "Waitinglist", W_TIM_real(wrk));
 
 	if (req->vcf != NULL) {
