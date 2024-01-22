@@ -40,6 +40,7 @@ struct objhead {
 	struct lock		mtx;
 	VTAILQ_HEAD(,objcore)	objcs;
 	uint8_t			digest[DIGEST_LEN];
+	unsigned		waitinglist_gen;
 	VTAILQ_HEAD(, req)	waitinglist;
 
 	/*----------------------------------------------------
