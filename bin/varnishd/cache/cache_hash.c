@@ -816,14 +816,17 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
  */
 
 void
-HSH_Fail(struct objcore *oc)
+HSH_Fail(struct worker *wrk, struct objcore *oc)
 {
 	struct objhead *oh;
+	struct rush rush;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	/*
 	 * We either failed before the end of vcl_backend_response
@@ -842,7 +845,12 @@ HSH_Fail(struct objcore *oc)
 
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
+	if (oc->flags & OC_F_BUSY) {
+		oc->flags &= ~OC_F_BUSY;
+		hsh_rush1(wrk, oh, &rush, 1);
+	}
 	Lck_Unlock(&oh->mtx);
+	hsh_rush2(wrk, &rush);
 }
 
 /*---------------------------------------------------------------------
