@@ -110,6 +110,7 @@ vsl_sanity(const struct vsl_log *vsl)
 	AN(vsl->wlp);
 	AN(vsl->wlb);
 	AN(vsl->wle);
+	assert(vsl->wlb <= vsl->wlp);
 	assert(vsl->wlp <= vsl->wle);
 }
 
