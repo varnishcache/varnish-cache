@@ -907,24 +907,27 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
-	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	AN(oc->stobj->stevedore);
 	AN(oc->flags & OC_F_BUSY);
 	assert(oh->refcnt > 0);
 	assert(oc->refcnt > 0);
 
-	if (!(oc->flags & OC_F_PRIVATE)) {
-		BAN_NewObjCore(oc);
-		AN(oc->ban);
+	if (oc->flags & OC_F_PRIVATE) {
+		oc->flags &= ~OC_F_BUSY;
+		return;
 	}
+
+	INIT_OBJ(&rush, RUSH_MAGIC);
+
+	BAN_NewObjCore(oc);
+	AN(oc->ban);
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	assert(oc->refcnt > 0);
-	if (!(oc->flags & OC_F_PRIVATE))
-		EXP_RefNewObjcore(oc); /* Takes a ref for expiry */
+	EXP_RefNewObjcore(oc); /* Takes a ref for expiry */
 	/* XXX: strictly speaking, we should sort in Date: order. */
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
@@ -934,8 +937,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
 	}
 	Lck_Unlock(&oh->mtx);
-	EXP_Insert(wrk, oc); /* Does nothing unless EXP_RefNewObjcore was
-			      * called */
+	EXP_Insert(wrk, oc);
 	hsh_rush2(wrk, &rush);
 }
 
