@@ -1047,9 +1047,8 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	assert(oc->boc->state < BOS_FINISHED);
-	HSH_Fail(oc);
-	if (!(oc->flags & OC_F_BUSY))
-		HSH_Kill(oc);
+	HSH_Fail(wrk, oc);
+	HSH_Kill(oc);
 	ObjSetState(wrk, oc, BOS_FAILED);
 	return (F_STP_DONE);
 }
@@ -1234,11 +1233,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 			(void)VRB_Ignore(req);
 		} else {
 			ObjWaitState(oc, BOS_STREAM);
-			if (oc->boc->state == BOS_FAILED) {
-				AN((oc->flags & OC_F_FAILED));
-			} else {
-				AZ(oc->flags & OC_F_BUSY);
-			}
+			AZ(oc->flags & OC_F_BUSY);
+			if (oc->boc->state == BOS_FAILED)
+				AN(oc->flags & OC_F_FAILED);
 		}
 	}
 	AZ(bo);
