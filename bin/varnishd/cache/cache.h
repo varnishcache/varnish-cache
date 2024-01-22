@@ -491,9 +491,6 @@ struct req {
 
 	struct objcore		*body_oc;
 
-	/* The busy objhead we sleep on */
-	struct objhead		*hash_objhead;
-
 	/* Built Vary string == workspace reservation */
 	uint8_t			*vary_b;
 	uint8_t			*vary_e;
