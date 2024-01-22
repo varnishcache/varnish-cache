@@ -712,11 +712,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(oc->boc->state == BOS_REQ_DONE);
 
-	if (bo->do_stream) {
-		ObjSetState(wrk, oc, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, oc);
+	if (bo->do_stream)
 		ObjSetState(wrk, oc, BOS_STREAM);
-	}
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
 	    bo->htc->body_status->nbr, bo->htc->body_status->name,
@@ -751,11 +748,8 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream)
 		assert(oc->boc->state == BOS_STREAM);
-	else {
+	else
 		assert(oc->boc->state == BOS_REQ_DONE);
-		ObjSetState(wrk, oc, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, oc);
-	}
 
 	ObjSetState(wrk, oc, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
@@ -884,11 +878,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetFlag(bo->wrk, oc, OF_IMSCAND, 0);
 	AZ(ObjCopyAttr(bo->wrk, oc, stale_oc, OA_GZIPBITS));
 
-	if (bo->do_stream) {
-		ObjSetState(wrk, oc, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, oc);
+	if (bo->do_stream)
 		ObjSetState(wrk, oc, BOS_STREAM);
-	}
 
 	INIT_OBJ(vop, VBF_OBITER_PRIV_MAGIC);
 	vop->bo = bo;
@@ -1038,8 +1029,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	assert(o == VSB_len(synth_body));
 	AZ(ObjSetU64(wrk, oc, OA_LEN, o));
 	VSB_destroy(&synth_body);
-	ObjSetState(wrk, oc, BOS_PREP_STREAM);
-	HSH_Unbusy(wrk, oc);
 	if (stale != NULL && oc->ttl > 0)
 		HSH_Kill(stale);
 	ObjSetState(wrk, oc, BOS_FINISHED);
@@ -1060,9 +1049,8 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	assert(oc->boc->state < BOS_FINISHED);
-	HSH_Fail(wrk, oc);
-	HSH_Kill(oc);
 	ObjSetState(wrk, oc, BOS_FAILED);
+	HSH_Kill(oc);
 	return (F_STP_DONE);
 }
 
