@@ -33,6 +33,7 @@
 
 #include "config.h"
 
+#include <limits.h>
 #include <time.h>
 #include <ctype.h>
 #include <poll.h>
@@ -78,6 +79,20 @@ struct VCLS {
 	cls_cbc_f			*before, *after;
 	volatile unsigned		*limit;
 	struct cli_proto		*wildcard;
+};
+
+struct vclp_priv {
+	unsigned			magic;
+#define VCLP_PRIV_MAGIC			0xa154f8be
+	int				proxy_sock;
+	double				timeout;
+};
+
+struct VCLP {
+	unsigned			magic;
+#define VCLP_MAGIC			0x78695378
+	struct VCLS			*vcls;
+	struct vclp_priv		priv[1];
 };
 
 /*--------------------------------------------------------------------*/
@@ -645,6 +660,149 @@ VCLS_Destroy(struct VCLS **csp)
 		VTAILQ_REMOVE(&cs->funcs, clp, list);
 	}
 	FREE_OBJ(cs);
+}
+
+/**********************************************************************
+ * CLI Proxy
+*/
+
+static void v_matchproto_(cli_func_t)
+vclp_forward(struct cli *cli, const char * const *av, void *priv)
+{
+	int i, sock;
+	unsigned u;
+	char *q;
+	struct vclp_priv *vp;
+	struct vsb *cli_buf;
+
+	CAST_OBJ_NOTNULL(vp, priv, VCLP_PRIV_MAGIC);
+	sock = vp->proxy_sock;
+	cli_buf = VSB_new_auto();
+	AN(cli_buf);
+	VSB_clear(cli_buf);
+	for (i = 1; av[i] != NULL; i++) {
+		VSB_quote(cli_buf, av[i], strlen(av[i]), 0);
+		VSB_putc(cli_buf, ' ');
+	}
+	VSB_putc(cli_buf, '\n');
+	AZ(VSB_finish(cli_buf));
+	if (VSB_tofile(cli_buf, sock)) {
+		VCLI_SetResult(cli, CLIS_COMMS);
+		VCLI_Out(cli, "CLI communication error");
+		return;
+	}
+	if (VCLI_ReadResult(sock, &u, &q, vp->timeout)) {
+		VCLI_SetResult(cli, CLIS_COMMS);
+		VCLI_Out(cli, "CLI communication error");
+		return;
+	}
+
+	VCLI_SetResult(cli, u);
+	VCLI_Out(cli, "%s", q);
+	free(q);
+}
+
+static const struct cli_cmd_desc CLICMD_WILDCARD[1] =
+    {{ "*", "<wild-card-entry>", "<fall through>", "", 0, 999 }};
+
+struct cli_proto cli_proxy[] = {
+    { CLICMD_WILDCARD, "", vclp_forward, vclp_forward},
+    { NULL }
+};
+
+struct VCLP *
+VCLP_New(int fdi, int fdo, int sock, vcls_proto_e proto, double timeout)
+{
+	struct VCLP *cp;
+	struct cli *cli;
+	unsigned clilim = UINT_MAX;
+
+	ALLOC_OBJ(cp, VCLP_MAGIC);
+	AN(cp);
+	INIT_OBJ(cp->priv, VCLP_PRIV_MAGIC);
+	cp->priv->proxy_sock = sock;
+	cp->priv->timeout = timeout;
+	cli_proxy->priv = &cp->priv;
+	cp->vcls = VCLS_New(NULL);
+	AN(cp->vcls);
+	VCLS_SetLimit(cp->vcls, &clilim);
+	cp->vcls->proto = proto;
+	cli = VCLS_AddFd(cp->vcls, fdi, fdo, NULL, NULL);
+	AN(cli);
+	cli->auth = 1;
+	VCLS_AddFunc(cp->vcls, 1, cli_proxy);
+	return cp;
+}
+
+void
+VCLP_SetHooks(struct VCLP *cp, cls_cbc_f *before, cls_cbc_f *after)
+{
+	CHECK_OBJ_NOTNULL(cp, VCLP_MAGIC);
+	CHECK_OBJ_NOTNULL(cp->vcls, VCLS_MAGIC);
+
+	cp->vcls->before = before;
+	cp->vcls->after = after;
+}
+
+int
+VCLP_Poll(struct VCLP *cp, int timeout)
+{
+	struct VCLS_fd *cfd;
+	struct VCLS *cs;
+	struct pollfd pfd[2];
+	int i, j, k;
+	char buf[BUFSIZ];
+
+	CHECK_OBJ_NOTNULL(cp, VCLP_MAGIC);
+	cs = cp->vcls;
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	if (cs->nfd == 0) {
+		errno = 0;
+		return (-1);
+	}
+	assert(cs->nfd > 0);
+
+	cfd = VTAILQ_FIRST(&cs->fds);
+	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
+
+	memset(pfd, 0, sizeof(pfd));
+	pfd[0].fd = cfd->fdi;
+	pfd[0].events = POLLIN;
+
+	pfd[1].fd = cp->priv->proxy_sock;
+	pfd[1].events = POLLIN;
+
+	j = poll(pfd, 2, timeout);
+
+	if (j <= 0)
+		return (j);
+
+	if (j > 0 && (pfd[1].revents & POLLIN)) {
+		return (-1);
+	}
+
+	i = read(cfd->fdi, buf, sizeof buf);
+	if (i <= 0)
+		k = 1;
+	else
+		k = cls_feed(cfd, buf, buf + i);
+	if (k) {
+		i = cls_close_fd(cs, cfd);
+		if (i < 0)
+			k = i;
+	}
+	return (k);
+}
+
+void
+VCLP_Destroy(struct VCLP **cpp)
+{
+	struct VCLP *cp;
+
+	TAKE_OBJ_NOTNULL(cp, cpp, VCLP_MAGIC);
+	VCLS_Destroy(&cp->vcls);
+	ZERO_OBJ(cp->priv, sizeof(cp->priv));
+	FREE_OBJ(cp);
 }
 
 /**********************************************************************

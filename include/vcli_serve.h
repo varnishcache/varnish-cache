@@ -37,6 +37,7 @@
 
 struct cli;	/* NB: struct cli is opaque at this level.  */
 struct VCLS;
+struct VCLP;
 
 typedef void cli_func_t(struct cli*, const char * const *av, void *priv);
 
@@ -91,6 +92,7 @@ void VCLI_JSON_begin(struct cli *cli, unsigned ver, const char * const * av);
 void VCLI_JSON_end(struct cli *cli);
 void VCLI_SetResult(struct cli *cli, unsigned r);
 
+/* CLI server */
 typedef int cls_cb_f(void *priv);
 typedef void cls_cbc_f(const struct cli*);
 struct VCLS *VCLS_New(struct VCLS *);
@@ -101,6 +103,12 @@ struct cli *VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc,
 void VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp);
 int VCLS_Poll(struct VCLS *cs, const struct cli*, int timeout);
 void VCLS_Destroy(struct VCLS **);
+
+/* CLI proxy */
+struct VCLP *VCLP_New(int fdi, int fdo, int sock, vcls_proto_e proto, double timeout);
+int VCLP_Poll(struct VCLP *cp, int timeout);
+void VCLP_Destroy(struct VCLP **);
+void VCLP_SetHooks(struct VCLP *, cls_cbc_f *, cls_cbc_f *);
 
 /* From libvarnish/cli.c */
 cli_func_t	VCLS_func_close;
