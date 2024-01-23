@@ -627,15 +627,11 @@ VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 	j = poll(pfd, 1, timeout);
 	if (j <= 0)
 		return (j);
-	if (pfd[0].revents & POLLHUP)
+	i = read(cfd->fdi, buf, sizeof buf);
+	if (i <= 0)
 		k = 1;
-	else {
-		i = read(cfd->fdi, buf, sizeof buf);
-		if (i <= 0)
-			k = 1;
-		else
-			k = cls_feed(cfd, buf, buf + i);
-	}
+	else
+		k = cls_feed(cfd, buf, buf + i);
 	if (k) {
 		i = cls_close_fd(cs, cfd);
 		if (i < 0)
