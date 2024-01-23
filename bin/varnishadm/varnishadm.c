@@ -166,6 +166,24 @@ cli_sock(const char *T_arg, const char *S_arg)
 	return (sock);
 }
 
+static void
+pass_print_answer(int status, char *answer, enum pass_mode_e mode)
+{
+	if (p_arg && answer != NULL) {
+		printf("%-3u %-8zu\n%s", status, strlen(answer), answer);
+	} else if (p_arg) {
+		printf("%-3u %-8u\n", status, 0U);
+	} else {
+		if (mode == pass_interactive)
+			printf("%u\n", status);
+		if (answer != NULL)
+			printf("%s\n", answer);
+		if (status == CLIS_TRUNCATED)
+			printf("[response was truncated]\n");
+	}
+	fflush(stdout);
+}
+
 static unsigned
 pass_answer(int fd, enum pass_mode_e mode)
 {
@@ -183,20 +201,8 @@ pass_answer(int fd, enum pass_mode_e mode)
 		RL_EXIT(1);
 	}
 
-	if (p_arg && answer != NULL) {
-		printf("%-3u %-8zu\n%s", status, strlen(answer), answer);
-	} else if (p_arg) {
-		printf("%-3u %-8u\n", status, 0U);
-	} else {
-		if (mode == pass_interactive)
-			printf("%u\n", status);
-		if (answer != NULL)
-			printf("%s\n", answer);
-		if (status == CLIS_TRUNCATED)
-			printf("[response was truncated]\n");
-	}
+	pass_print_answer(status, answer, mode);
 	free(answer);
-	(void)fflush(stdout);
 	return (status);
 }
 
