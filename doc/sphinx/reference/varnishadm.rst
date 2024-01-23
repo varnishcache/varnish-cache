@@ -19,7 +19,7 @@ Control a running Varnish instance
 SYNOPSIS
 ========
 
-varnishadm [-h] [-n ident] [-p] [-S secretfile] [-T [address]:port] [-t timeout] [command [...]]
+varnishadm [-e] [-h] [-n ident] [-p] [-S secretfile] [-T [address]:port] [-t timeout] [command [...]]
 
 
 DESCRIPTION
@@ -39,6 +39,13 @@ replies between the CLI socket and stdin/stdout.
 
 OPTIONS
 =======
+
+-e
+    Exit immediately if a command fails in `pass` mode and return the CLI
+    status code of the failing command divided by 100. This has no effect
+    on `interactive` mode (except when `-p` is used). Similarly to `CLI
+    Command File` (see :ref:`varnishd(1)`), if a command is prefixed with
+    '-', its failure will be ignored and will not cause varnishadm to exit.
 
 -h
     Print program usage and exit.

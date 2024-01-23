@@ -67,6 +67,7 @@
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli_serve.h"
+#include "vsb.h"
 #include "vjsn.h"
 #include "vtcp.h"
 
@@ -83,6 +84,7 @@ enum pass_mode_e {
 
 static double timeout = 5;
 static int p_arg = 0;
+static int e_arg = 0;
 static int line_sock;
 
 static void
@@ -344,6 +346,29 @@ interactive(int sock)
 	}
 }
 
+/*--------------------------------------------------------------------*/
+
+static void
+vadm_cli_cb_after(const struct cli *cli)
+{
+	const char *cmd;
+
+	if (!e_arg)
+		return;
+
+	if (cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED)
+		return;
+
+	cmd = VSB_data(cli->cmd);
+	if (*cmd == '-')
+		return;
+
+	pass_print_answer(cli->result, VSB_data(cli->sb), pass_script);
+	fprintf(stderr, "\nCommand \"%s\" failed with error code %u\n",
+	    cmd, cli->result);
+	RL_EXIT(cli->result/100);
+}
+
 /*
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
  */
@@ -357,6 +382,7 @@ pass(int sock)
 	vclp = VCLP_New(STDIN_FILENO, STDOUT_FILENO,
 	    sock, p_arg ? PROTO_FULL : PROTO_HEADLESS, timeout);
 	AN(vclp);
+	VCLP_SetHooks(vclp, NULL, vadm_cli_cb_after);
 	do {
 		i = VCLP_Poll(vclp, -1);
 	} while (i == 0);
@@ -367,7 +393,7 @@ static void v_noreturn_
 usage(int status)
 {
 	fprintf(stderr,
-	    "Usage: varnishadm [-h] [-n ident] [-p] [-S secretfile] "
+	    "Usage: varnishadm [-e] [-h] [-n ident] [-p] [-S secretfile] "
 	    "[-T [address]:port] [-t timeout] [command [...]]\n");
 	fprintf(stderr, "\t-n is mutually exclusive with -S and -T\n");
 	exit(status);
@@ -431,7 +457,7 @@ t_arg_timeout(const char *t_arg)
 	return (1);
 }
 
-#define OPTARG "hn:pS:T:t:"
+#define OPTARG "ehn:pS:T:t:"
 
 int
 main(int argc, char * const *argv)
@@ -456,6 +482,9 @@ main(int argc, char * const *argv)
 	 */
 	while ((opt = getopt(argc, argv, "+" OPTARG)) != -1) {
 		switch (opt) {
+		case 'e':
+			e_arg = 1;
+			break;
 		case 'h':
 			/* Usage help */
 			usage(0);

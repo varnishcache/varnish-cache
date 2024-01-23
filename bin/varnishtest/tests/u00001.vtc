@@ -60,3 +60,57 @@ shell -err {
 	varnishadm -n ${v1_name} -p |
 	python3 -c 'import sys, json; print(json.load(sys.stdin))'
 }
+
+shell {
+	cat > cli_file.txt <<-EOF
+	status
+	foo
+	vcl.list
+	EOF
+}
+
+shell {
+	cat > expected_success.txt <<-EOF
+	Child in state running
+	Unknown request.
+	Type 'help' for more info.
+
+	active   auto    warm      0   vcl1
+
+	EOF
+}
+
+shell {
+	cat > expected_abort.txt <<-EOF
+	Child in state running
+	Unknown request.
+	Type 'help' for more info.
+
+	EOF
+}
+
+shell { varnishadm -n ${v1_name} < cli_file.txt }
+shell { varnishadm -n ${v1_name} < cli_file.txt | diff -u expected_success.txt - }
+
+shell -exit 1 { varnishadm -e -n ${v1_name} < cli_file.txt }
+shell { varnishadm -e -n ${v1_name} < cli_file.txt | diff -u expected_abort.txt - }
+
+shell { cat cli_file.txt | varnishadm -n ${v1_name} }
+shell { cat cli_file.txt | varnishadm -n ${v1_name} | diff -u expected_success.txt - }
+
+shell -exit 1 { cat cli_file.txt | varnishadm -e -n ${v1_name} }
+shell { cat cli_file.txt | varnishadm -e -n ${v1_name} | diff -u expected_abort.txt - }
+
+shell {
+	cat > cli_file.txt <<-EOF
+	status
+	-foo
+	vcl.list
+	EOF
+}
+
+shell { varnishadm -e -n ${v1_name} < cli_file.txt }
+shell { varnishadm -e -n ${v1_name} < cli_file.txt | diff -u expected_success.txt - }
+
+shell { cat cli_file.txt | varnishadm -e -n ${v1_name} }
+shell { cat cli_file.txt | varnishadm -e -n ${v1_name} | diff -u expected_success.txt - }
