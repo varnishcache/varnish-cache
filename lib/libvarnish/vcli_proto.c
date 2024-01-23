@@ -72,9 +72,9 @@ VCLI_AuthResponse(int S_fd, const char *challenge,
 }
 
 int
-VCLI_WriteResult(int fd, unsigned status, const char *result)
+VCLI_Write(int fd, vcls_proto_e proto, unsigned status, const char *result)
 {
-	int i, l;
+	int i, l, k = 0;
 	struct iovec iov[3];
 	char nl[2] = "\n";
 	size_t len;
@@ -87,24 +87,43 @@ VCLI_WriteResult(int fd, unsigned status, const char *result)
 	assert(status <= 999);		/*lint !e650 const out of range */
 
 	len = strlen(result);
+	switch (proto) {
+		case PROTO_FULL:
+			i = snprintf(res, sizeof res, "%-3d %-8zd\n", status, len);
+			assert(i == CLI_LINE0_LEN);
+			assert(strtoul(res + 3, NULL, 10) == len);
+			break;
+		case PROTO_STATUS:
+			i = snprintf(res, sizeof res, "%-12u\n", status);
+			assert(i == CLI_LINE0_LEN);
+			break;
+		case PROTO_HEADLESS:
+			break;
+		default:
+			WRONG("Unknown cli output format\n");
+	}
 
-	i = snprintf(res, sizeof res, "%-3d %-8zd\n", status, len);
-	assert(i == CLI_LINE0_LEN);
-	assert(strtoul(res + 3, NULL, 10) == len);
+	if (proto != 2) {
+		iov[k].iov_base = res;
+		iov[k++].iov_len = CLI_LINE0_LEN;
+	}
 
-	iov[0].iov_base = res;
-	iov[0].iov_len = CLI_LINE0_LEN;
+	iov[k].iov_base = (void*)(uintptr_t)result;	/* TRUST ME */
+	iov[k++].iov_len = len;
 
-	iov[1].iov_base = (void*)(uintptr_t)result;	/* TRUST ME */
-	iov[1].iov_len = len;
+	iov[k].iov_base = nl;
+	iov[k++].iov_len = 1;
 
-	iov[2].iov_base = nl;
-	iov[2].iov_len = 1;
-
-	for (l = i = 0; i < 3; i++)
+	for (l = i = 0; i < k; i++)
 		l += iov[i].iov_len;
-	i = writev(fd, iov, 3);
+	i = writev(fd, iov, k);
 	return (i != l);
+}
+
+int
+VCLI_WriteResult(int fd, unsigned status, const char *result)
+{
+	return (VCLI_Write(fd, PROTO_FULL, status, result));
 }
 
 static int

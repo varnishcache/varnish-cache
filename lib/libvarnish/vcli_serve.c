@@ -73,6 +73,7 @@ struct VCLS {
 #define VCLS_MAGIC			0x60f044a3
 	VTAILQ_HEAD(,VCLS_fd)		fds;
 	unsigned			nfd;
+	vcls_proto_e			proto;
 	VTAILQ_HEAD(,cli_proto)		funcs;
 	cls_cbc_f			*before, *after;
 	volatile unsigned		*limit;
@@ -343,7 +344,7 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 		s[lim - 1] = '\0';
 		assert(strlen(s) <= lim);
 	}
-	if (VCLI_WriteResult(cfd->fdo, cli->result, s) ||
+	if (VCLI_Write(cfd->fdo, cs->proto, cli->result, s) ||
 	    cli->result == CLIS_CLOSE)
 		retval = 1;
 

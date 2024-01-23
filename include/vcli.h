@@ -56,12 +56,19 @@ enum VCLI_status_e {
 	CLIS_CLOSE	= 500
 };
 
+typedef enum {
+	PROTO_FULL = 0,
+	PROTO_STATUS,
+	PROTO_HEADLESS
+} vcls_proto_e;
+
 /* Length of first line of response */
 #define CLI_LINE0_LEN	13
 #define CLI_AUTH_RESPONSE_LEN		64	/* 64 hex + NUL */
 
 #if !defined(VCLI_PROTOCOL_ONLY)
 /* Convenience functions exported in libvarnishapi */
+int VCLI_Write(int fd, vcls_proto_e proto, unsigned status, const char *result);
 int VCLI_WriteResult(int fd, unsigned status, const char *result);
 int VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo);
 void VCLI_AuthResponse(int S_fd, const char *challenge,
