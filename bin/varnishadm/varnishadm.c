@@ -66,7 +66,7 @@
 #include "vapi/vsig.h"
 #include "vapi/vsm.h"
 #include "vas.h"
-#include "vcli.h"
+#include "vcli_serve.h"
 #include "vjsn.h"
 #include "vtcp.h"
 
@@ -341,48 +341,21 @@ interactive(int sock)
 /*
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
  */
+
 static void v_noreturn_
 pass(int sock)
 {
-	struct pollfd fds[2];
-	char buf[1024];
+	struct VCLP *vclp;
 	int i;
-	ssize_t n;
-	int busy = 0;
 
-	fds[0].fd = sock;
-	fds[0].events = POLLIN;
-	fds[1].fd = 0;
-	fds[1].events = POLLIN;
-	while (1) {
-		i = poll(fds, 2, -1);
-		if (i == -1 && errno == EINTR) {
-			continue;
-		}
-		assert(i > 0);
-		if (fds[0].revents & POLLIN) {
-			(void)pass_answer(fds[0].fd, pass_script);
-			busy = 0;
-			if (fds[1].fd < 0)
-				RL_EXIT(0);
-		}
-		if (fds[1].revents & POLLIN || fds[1].revents & POLLHUP) {
-			n = read(fds[1].fd, buf, sizeof buf - 1);
-			if (n == 0) {
-				if (!busy)
-					RL_EXIT(0);
-				fds[1].fd = -1;
-			} else if (n < 0) {
-				RL_EXIT(0);
-			} else {
-				busy = 1;
-				buf[n] = '\0';
-				cli_write(sock, buf);
-			}
-		}
-	}
+	vclp = VCLP_New(STDIN_FILENO, STDOUT_FILENO,
+	    sock, p_arg ? PROTO_FULL : PROTO_HEADLESS, timeout);
+	AN(vclp);
+	do {
+		i = VCLP_Poll(vclp, -1);
+	} while (i == 0);
+	RL_EXIT(0);
 }
-
 
 static void v_noreturn_
 usage(int status)

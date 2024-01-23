@@ -34,7 +34,6 @@ shell {
 # same command via stdin
 shell {
 	echo status | varnishadm -n ${v1_name} -p | tr ' ' _ >actual.txt
-	printf '\n' >>actual.txt
 	diff -u expected.txt actual.txt
 }
 
