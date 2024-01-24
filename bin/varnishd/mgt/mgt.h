@@ -89,7 +89,7 @@ void mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,
     mgt_cli_close_f *close_func, void *priv);
 int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
     v_printflike_(3, 4);
-void mgt_cli_start_child(int fdi, int fdo);
+unsigned mgt_cli_start_child(int fd, double tmo);
 void mgt_cli_stop_child(void);
 void mgt_cli_telnet(const char *T_arg);
 void mgt_cli_master(const char *M_arg);

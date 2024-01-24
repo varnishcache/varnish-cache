@@ -430,7 +430,8 @@ mgt_launch_child(struct cli *cli)
 	bstart = mgt_param.startup_timeout >= mgt_param.cli_timeout;
 	dstart = bstart ? mgt_param.startup_timeout : mgt_param.cli_timeout;
 	t0 = VTIM_mono();
-	if (VCLI_ReadResult(child_cli_fd, &u, NULL, dstart)) {
+	u = mgt_cli_start_child(child_cli_fd, dstart);
+	if (u != CLIS_OK) {
 		assert(u == CLIS_COMMS);
 		if (VTIM_mono() - t0 < dstart)
 			mgt_launch_err(cli, u, "Child failed on launch ");
@@ -470,7 +471,6 @@ mgt_launch_child(struct cli *cli)
 		ev_poker = e;
 	}
 
-	mgt_cli_start_child(child_cli_fd, child_cli_fd);
 	child_pid = pid;
 
 	if (mgt_push_vcls(cli, &u, &p)) {

@@ -213,12 +213,17 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
-void
-mgt_cli_start_child(int fdi, int fdo)
+unsigned
+mgt_cli_start_child(int fd, double tmo)
 {
+	unsigned u;
 
-	cli_i = fdi;
-	cli_o = fdo;
+	cli_i = fd;
+	cli_o = fd;
+	if (VCLI_ReadResult(cli_i, &u, NULL, tmo)) {
+		return (CLIS_COMMS);
+	}
+	return (u);
 }
 
 /*--------------------------------------------------------------------*/
