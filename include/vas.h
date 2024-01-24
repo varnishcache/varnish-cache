@@ -91,7 +91,7 @@ do {									\
 } while (0)
 
 #define _PTOK(call, var)						\
-do { 									\
+do {									\
 	int var = call;							\
 	if (!var)							\
 		break;							\
