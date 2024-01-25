@@ -540,6 +540,59 @@ to load the configurations at startup.
 RUN TIME PARAMETERS
 ===================
 
+Runtime parameters can either be set during startup with the ``-p`` command
+line option for ``varnishd(1)`` or through the CLI using the ``param.set`` or
+``param.reset`` commands. They can be locked during startup with the ``-r``
+command line option.
+
+Run Time Parameter Units
+------------------------
+
+There are different types of parameters that may accept a list of specific
+values, or optionally take a unit suffix.
+
+bool
+~~~~
+
+A boolean parameter accepts the values ``on`` and ``off``.
+
+It will also recognize the following values:
+
+- ``yes`` and ``no``
+- ``true`` and ``false``
+- ``enable`` and ``disable``
+
+bytes
+~~~~~
+
+A bytes parameter requires one of the following units suffixes:
+
+- ``b`` (bytes)
+- ``k`` (kibibytes, 1024 bytes)
+- ``m`` (mebibytes, 1024 kibibytes)
+- ``g`` (gibibytes, 1024 mebibytes)
+- ``t`` (tebibytes, 1024 gibibytes)
+- ``p`` (pebibytes, 1024 tebibytes)
+
+Multiplicator units may be appended with an extra ``b``. For example ``32k``
+is equivalent to ``32kb``. Bytes units are case-insensitive.
+
+seconds
+~~~~~~~
+
+A duration parameter may accept the following units suffixes:
+
+- ``ms`` (milliseconds)
+- ``s`` (seconds)
+- ``m`` (minutes)
+- ``h`` (hours)
+- ``d`` (days)
+- ``w`` (weeks)
+- ``y`` (years)
+
+If the parameter is a timeout or a deadline, a value of zero (when allowed)
+disables the effect of the parameter.
+
 Run Time Parameter Flags
 ------------------------
 
