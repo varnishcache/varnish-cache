@@ -683,12 +683,12 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 	AN(fmt);
 	AZ(strchr(fmt, '\n'));
 	va_start(ap, fmt);
-	if (ctx->vsl != NULL) {
-		VSLbv(ctx->vsl, SLT_VCL_Error, fmt, ap);
-	} else {
-		AN(ctx->msg);
+	if (ctx->msg != NULL) {
 		VSB_vprintf(ctx->msg, fmt, ap);
 		VSB_putc(ctx->msg, '\n');
+	} else {
+		AN(ctx->vsl);
+		VSLbv(ctx->vsl, SLT_VCL_Error, fmt, ap);
 	}
 	va_end(ap);
 	ctx->vpi->handling = VCL_RET_FAIL;
