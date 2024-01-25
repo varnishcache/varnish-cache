@@ -6,15 +6,12 @@ server s1 {
 	delay 1.1
 	close
 
-	accept
-	rxreq
-	txresp -hdr "transfer-encoding: chunked"
-	expect_close
-
-	accept
-	rxreq
-	txresp -hdr "transfer-encoding: chunked"
-	expect_close
+	loop 3 {
+		accept
+		rxreq
+		txresp -hdr "transfer-encoding: chunked"
+		expect_close
+	}
 
 	accept
 	non_fatal
@@ -28,13 +25,20 @@ server s1 {
 
 varnish v1 -cliok "param.set pipe_timeout 0s"
 varnish v1 -cliok "param.set pipe_task_deadline 0s"
-varnish v1 -vcl+backend "" -start
+varnish v1 -vcl+backend {
+	sub vcl_pipe {
+		if (req.method == "TMO") {
+			set bereq.task_deadline = 1.1s;
+		}
+	}
+} -start
 
 logexpect l1 -v v1 -g raw -q SessClose {
 	expect 1000 * SessClose {^TX_PIPE 1\.}
 	expect 1003 * SessClose {^RX_TIMEOUT 0\.}
 	expect 1006 * SessClose {^RX_TIMEOUT 1\.}
 	expect 1009 * SessClose {^RX_TIMEOUT 1\.}
+	expect 1012 * SessClose {^RX_TIMEOUT 1\.}
 } -start
 
 client c1 {
@@ -51,12 +55,21 @@ varnish v1 -cliok "param.set pipe_timeout 0s"
 varnish v1 -cliok "param.set pipe_task_deadline 1.1s"
 client c1 -run
 
+varnish v1 -cliok "param.set pipe_timeout 0s"
+varnish v1 -cliok "param.set pipe_task_deadline 0s"
+
+client c2 {
+	non_fatal
+	txreq -method TMO
+	rxresp
+} -run
+
 varnish v1 -cliok "param.set pipe_timeout 500ms"
 varnish v1 -cliok "param.set pipe_task_deadline 1.1s"
 client c1 -run
 
 logexpect l1 -wait
 
-varnish v1 -expect MAIN.s_pipe == 4
+varnish v1 -expect MAIN.s_pipe == 5
 varnish v1 -expect MAIN.sc_tx_pipe == 1
-varnish v1 -expect MAIN.sc_rx_timeout == 3
+varnish v1 -expect MAIN.sc_rx_timeout == 4

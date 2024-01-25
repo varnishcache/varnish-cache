@@ -409,6 +409,8 @@ VRT_r_bereq_##which(VRT_CTX)					\
 BEREQ_TIMEOUT(connect_timeout)
 BEREQ_TIMEOUT(first_byte_timeout)
 BEREQ_TIMEOUT(between_bytes_timeout)
+BEREQ_TIMEOUT(task_deadline)
+
 
 /*--------------------------------------------------------------------*/
 

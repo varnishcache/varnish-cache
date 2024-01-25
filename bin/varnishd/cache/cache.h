@@ -419,6 +419,7 @@ struct busyobj {
 	vtim_dur		connect_timeout;
 	vtim_dur		first_byte_timeout;
 	vtim_dur		between_bytes_timeout;
+	vtim_dur		task_deadline;
 
 	/* Timers */
 	vtim_real		t_first;	/* First timestamp logged */

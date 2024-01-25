@@ -54,7 +54,8 @@ struct v1p_acct {
 
 int V1P_Enter(void);
 void V1P_Leave(void);
-stream_close_t V1P_Process(const struct req *, int fd, struct v1p_acct *);
+stream_close_t V1P_Process(const struct req *, int fd, struct v1p_acct *,
+    vtim_real deadline);
 void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_vbe *);
 
 /* cache_http1_line.c */
