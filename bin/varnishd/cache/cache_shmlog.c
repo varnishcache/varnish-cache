@@ -114,6 +114,13 @@ vsl_sanity(const struct vsl_log *vsl)
 	assert(vsl->wlp <= vsl->wle);
 }
 
+static inline void
+vsl_flush(struct vsl_log *vsl)
+{
+	if (IS_NO_VXID(vsl->wid) || DO_DEBUG(DBG_SYNCVSL))
+			VSL_Flush(vsl, 0);
+}
+
 /*--------------------------------------------------------------------
  * Check if the VSL_tag is masked by parameter bitmap
  */
@@ -403,8 +410,7 @@ vslb_simple(struct vsl_log *vsl, enum VSL_tag_e tag,
 	memcpy(p, str, length - 1);
 	p[length - 1] = '\0';
 
-	if (DO_DEBUG(DBG_SYNCVSL))
-		VSL_Flush(vsl, 0);
+	vsl_flush(vsl);
 }
 
 /*--------------------------------------------------------------------
@@ -439,8 +445,7 @@ VSLbs(struct vsl_log *vsl, enum VSL_tag_e tag, const struct strands *s)
 
 	(void)strands_cat(p, l, s);
 
-	if (DO_DEBUG(DBG_SYNCVSL))
-		VSL_Flush(vsl, 0);
+	vsl_flush(vsl);
 }
 
 /*--------------------------------------------------------------------
@@ -498,8 +503,7 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 		mlen = n + 1;
 	(void)vslb_get(vsl, tag, &mlen);
 
-	if (DO_DEBUG(DBG_SYNCVSL))
-		VSL_Flush(vsl, 0);
+	vsl_flush(vsl);
 }
 
 void
@@ -563,8 +567,7 @@ VSLb_bin(struct vsl_log *vsl, enum VSL_tag_e tag, ssize_t len, const void *ptr)
 	assert(vsl->wlp <= vsl->wle);
 	vsl->wlr++;
 
-	if (DO_DEBUG(DBG_SYNCVSL))
-		VSL_Flush(vsl, 0);
+	vsl_flush(vsl);
 }
 
 /*--------------------------------------------------------------------
