@@ -795,6 +795,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	}
 
 	bo->wrk = wrk;
+	bo->task_deadline = NAN; /* XXX: copy req->task_deadline */
 	if (WS_Overflowed(req->ws))
 		wrk->vpi->handling = VCL_RET_FAIL;
 	else

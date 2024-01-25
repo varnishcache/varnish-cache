@@ -366,6 +366,7 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 	struct backend *bp;
 	struct v1p_acct v1a;
 	struct pfd *pfd;
+	vtim_real deadline;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -390,8 +391,15 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 		i = V1F_SendReq(ctx->req->wrk, ctx->bo,
 		    &v1a.bereq, &v1a.out);
 		VSLb_ts_req(ctx->req, "Pipe", W_TIM_real(ctx->req->wrk));
-		if (i == 0)
-			retval = V1P_Process(ctx->req, *PFD_Fd(pfd), &v1a);
+		if (i == 0) {
+			deadline = ctx->bo->task_deadline;
+			if (isnan(deadline))
+				deadline = cache_param->pipe_task_deadline;
+			if (deadline > 0.)
+				deadline += ctx->req->sp->t_idle;
+			retval = V1P_Process(ctx->req, *PFD_Fd(pfd), &v1a,
+			    deadline);
+		}
 		VSLb_ts_req(ctx->req, "PipeSess", W_TIM_real(ctx->req->wrk));
 		ctx->bo->htc->doclose = retval;
 		vbe_dir_finish(ctx, d);

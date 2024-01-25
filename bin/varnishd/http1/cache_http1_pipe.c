@@ -115,11 +115,11 @@ V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 }
 
 stream_close_t
-V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
+V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a,
+    vtim_real deadline)
 {
 	struct pollfd fds[2];
 	vtim_dur tmo, tmo_task;
-	vtim_real deadline;
 	stream_close_t sc;
 	int i, j;
 
@@ -142,10 +142,6 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 	fds[0].events = POLLIN;
 	fds[1].fd = req->sp->fd;
 	fds[1].events = POLLIN;
-
-	deadline = cache_param->pipe_task_deadline;
-	if (deadline > 0.)
-		deadline += req->sp->t_idle;
 
 	sc = SC_TX_PIPE;
 	while (fds[0].fd > -1 || fds[1].fd > -1) {

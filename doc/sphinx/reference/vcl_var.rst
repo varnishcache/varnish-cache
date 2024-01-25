@@ -840,6 +840,20 @@ bereq.retries
 	A count of how many times this request has been retried.
 
 
+.. _bereq.task_deadline:
+
+bereq.task_deadline
+
+	Type: DURATION
+
+	Readable from: vcl_pipe
+
+	Writable from: vcl_pipe
+
+	Deadline for pipe sessions, defaults ``0s``, which falls back to the
+        ``pipe_task_deadline`` parameter, see :ref:`varnishd(1)`
+
+
 .. _bereq.time:
 
 bereq.time
