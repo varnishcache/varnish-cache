@@ -279,9 +279,9 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, double now)
 		assert(oc->timer_idx == VBH_NOIDX);
 		assert(oc->refcnt > 0);
 		AZ(oc->exp_flags);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%ld",
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%jd",
 		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
-		    oc->hits);
+		    (intmax_t)oc->hits);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
 		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
 		return;
@@ -357,9 +357,9 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 		assert(oc->timer_idx == VBH_NOIDX);
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%ju t=%.0f h=%ld",
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%ju t=%.0f h=%jd",
 		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
-		    oc->hits);
+		    (intmax_t)oc->hits);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
 		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
 	}
