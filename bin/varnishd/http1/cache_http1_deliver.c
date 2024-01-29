@@ -142,6 +142,9 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	if (sc == SC_NULL && err && req->sp->fd >= 0)
 		sc = SC_REM_CLOSE;
-	if (sc != SC_NULL)
+	if (sc != SC_NULL) {
+		VSLb(req->vsl, SLT_DeliveryError, "resp: \"%s\" %d \"%s\"",
+		    sc->desc, errno, VAS_errtxt(errno));
 		Req_Fail(req, sc);
+	}
 }
