@@ -240,7 +240,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	bo->htc->priv = NULL;
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s close %s", *PFD_Fd(pfd),
-		    VRT_BACKEND_string(d), bo->htc->doclose->desc);
+		    VRT_BACKEND_string(d), bo->htc->doclose->name);
 		VCP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(bp->director->mtx);
