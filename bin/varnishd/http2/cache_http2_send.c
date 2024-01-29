@@ -285,6 +285,18 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			assert (w > 0);
 		}
 
+		/* If all streams ran out of control flow window credits
+		 * upon triggering h2_window_timeout, declare bankruptcy
+		 * for the entire connection.
+		 *
+		 * But streams may be closed from the h2_sess thread while
+		 * waiting for a window update. So the open_streams counter
+		 * may be decremented in a different critical section than
+		 * winup_streams, right before signalling the stream thread.
+		 * So there may be more streams awaiting a window updates
+		 * than streams officially open, hence the "lower-equal"
+		 * comparison.
+		 */
 		if (r2->error == H2SE_BROKE_WINDOW &&
 		    h2->open_streams <= h2->winup_streams)
 			h2->error = r2->error = H2CE_BANKRUPT;
