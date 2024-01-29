@@ -155,7 +155,7 @@ SLTM(BackendClose, 0, "Backend connection closed",
 	"The format is::\n\n"
 	"\t%d %s %s [ %s ]\n"
 	"\t|  |  |    |\n"
-	"\t|  |  |    +- Optional reason\n"
+	"\t|  |  |    +- Optional reason, see SessClose for explanation\n"
 	"\t|  |  +------ \"close\" or \"recycle\"\n"
 	"\t|  +--------- Backend display name\n"
 	"\t+------------ Connection file descriptor\n"
