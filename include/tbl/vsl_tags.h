@@ -91,6 +91,16 @@ SLTM(SessOpen, 0, "Client connection opened",
 	"\t+------------------- Remote IPv4/6 address / 0.0.0.0 for UDS\n"
 	"\n"
 )
+/*
+ * XXX generate the list of SC_* reasons (see also HTC info):
+ *
+ * #include <stdio.h>
+ * int main(void) {
+ * #define SESS_CLOSE(e, sc, err, desc)			\
+ *	printf("\t\"\\t* ``%s``: %s\\n\"\n", #e, desc);
+ * #include "include/tbl/sess_close.h"
+ *	return (0);
+ */
 
 SLTM(SessClose, 0, "Client connection closed",
 	"SessClose is the last record for any client connection.\n\n"
@@ -99,6 +109,26 @@ SLTM(SessClose, 0, "Client connection closed",
 	"\t|  |\n"
 	"\t|  +- How long the session was open\n"
 	"\t+---- Why the connection closed\n"
+	"\nExplanation of reasons (first column):\n"
+	"\t* ``REM_CLOSE``: Client Closed\n"
+	"\t* ``REQ_CLOSE``: Client requested close\n"
+	"\t* ``REQ_HTTP10``: Proto < HTTP/1.1\n"
+	"\t* ``RX_BAD``: Received bad req/resp\n"
+	"\t* ``RX_BODY``: Failure receiving body\n"
+	"\t* ``RX_JUNK``: Received junk data\n"
+	"\t* ``RX_OVERFLOW``: Received buffer overflow\n"
+	"\t* ``RX_TIMEOUT``: Receive timeout\n"
+	"\t* ``RX_CLOSE_IDLE``: timeout_idle reached\n"
+	"\t* ``TX_PIPE``: Piped transaction\n"
+	"\t* ``TX_ERROR``: Error transaction\n"
+	"\t* ``TX_EOF``: EOF transmission\n"
+	"\t* ``RESP_CLOSE``: Backend/VCL requested close\n"
+	"\t* ``OVERLOAD``: Out of some resource\n"
+	"\t* ``PIPE_OVERFLOW``: Session pipe overflow\n"
+	"\t* ``RANGE_SHORT``: Insufficient data for range\n"
+	"\t* ``REQ_HTTP20``: HTTP2 not accepted\n"
+	"\t* ``VCL_FAILURE``: VCL failure\n"
+	"\t* ``RAPID_RESET``: HTTP2 rapid reset\n"
 	"\n"
 )
 
