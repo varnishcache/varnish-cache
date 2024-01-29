@@ -691,6 +691,17 @@ SLTM(VdpAcct, 0, "Deliver filter accounting",
 	NODEF_NOTICE
 )
 
+SLTM(DeliveryError, 0, "Error while delivering an HTTP message.",
+	"Logs the error message of a failed delivery operation.\n\n"
+	"The format is::\n\n"
+	"\t%s: \"%s\" %d \"%s\"\n"
+	"\t|     |    |    |\n"
+	"\t|     |    |    +- Detailed error message\n"
+	"\t|     |    +------ Error Number (errno)\n"
+	"\t|     +----------- Why the stream closed\n"
+	"\t+----------------- \"bereq\" or \"resp\"\n"
+	"\n"
+)
 
 #undef NOSUP_NOTICE
 #undef NODEF_NOTICE
