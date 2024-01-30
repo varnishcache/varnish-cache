@@ -173,6 +173,10 @@ Supported formatters are:
 %{X}x
   Extended variables.  Supported variables are:
 
+  Varnish:default_format
+    The log format used when neither -f nor -F options are specified.
+    Useful for appending/prepending with other formatters.
+
   Varnish:time_firstbyte
     Time from when the request processing starts until the first
     byte is sent to the client, in seconds.  For backend mode: Time

@@ -162,6 +162,8 @@ static struct ctx {
 	int64_t			vxid;
 } CTX;
 
+static void parse_format(const char *format);
+
 static void
 openout(int append)
 {
@@ -679,6 +681,10 @@ parse_x_format(char *buf)
 		assert(slt >= 0);
 
 		addf_vsl((enum VSL_tag_e)slt, lval, r);
+		return;
+	}
+	if (!strcmp(buf, "Varnish:default_format")) {
+		parse_format(FORMAT);
 		return;
 	}
 	VUT_Error(vut, 1, "Unknown formatting extension: %s", buf);

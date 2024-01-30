@@ -182,4 +182,14 @@ shell -expect ${localhost} {
 	varnishncsa -n ${v1_name} -d -q 'RespStatus == 400'
 }
 
+shell {
+	(
+		varnishncsa -n ${v1_name} -d -k 1
+		varnishncsa -n ${v1_name} -d -k 1 -F "%{User-Agent}i"
+	) >def_then_ua.txt
+	varnishncsa -n ${v1_name} -d -k 1 >def_with_ua.txt \
+		-F "%{Varnish:default_format}x\n%{User-Agent}i"
+	diff -u def_then_ua.txt def_with_ua.txt
+}
+
 # ESI coverage in e00003.vtc
