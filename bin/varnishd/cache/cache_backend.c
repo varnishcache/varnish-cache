@@ -382,11 +382,10 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 
 	ctx->req->res_mode = RES_PIPE;
 
+	retval = SC_TX_ERROR;
 	pfd = vbe_dir_getfd(ctx, ctx->req->wrk, d, bp, 0);
 
-	if (pfd == NULL) {
-		retval = SC_TX_ERROR;
-	} else {
+	if (pfd != NULL) {
 		CHECK_OBJ_NOTNULL(ctx->bo->htc, HTTP_CONN_MAGIC);
 		i = V1F_SendReq(ctx->req->wrk, ctx->bo,
 		    &v1a.bereq, &v1a.out);
