@@ -154,6 +154,17 @@ vcldir_free(struct vcldir *vdir)
 	FREE_OBJ(vdir);
 }
 
+static VCL_BACKEND
+vcldir_surplus(struct vcldir *vdir)
+{
+
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	assert(vdir->refcnt == 1);
+	vdir->refcnt = 0;
+	vcldir_free(vdir);
+	return (NULL);
+}
+
 VCL_BACKEND
 VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
     const char *fmt, ...)
@@ -217,12 +228,9 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 		VDI_Event(vdir->dir, VCL_EVENT_WARM);
 	Lck_Unlock(&vcl_mtx);
 
-	if (temp == VCL_TEMP_COOLING) {
-		assert(vdir->refcnt == 1);
-		vdir->refcnt = 0;
-		vcldir_free(vdir);
-		return (NULL);
-	}
+	if (temp == VCL_TEMP_COOLING)
+		return (vcldir_surplus(vdir));
+
 	if (!temp->is_warm && temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 
