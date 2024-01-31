@@ -84,7 +84,7 @@ client c2 {
 	expect resp.status == 200
 	expect resp.body == "1"
 	expect resp.http.X-grace == "60.000"
-	expect resp.http.X-req-grace < 0.
+	expect resp.http.X-req-grace == "NAN"
 	expect resp.http.X-was-bgfetch == <undef>
 } -run
 
@@ -118,7 +118,7 @@ client c4 {
 	# We should get what c1 got in the very beginning
 	expect resp.body == "1"
 	expect resp.http.X-grace == "60.000"
-	expect resp.http.X-req-grace < 0.
+	expect resp.http.X-req-grace == "NAN"
 	expect resp.http.X-was-bgfetch == <undef>
 } -start
 
