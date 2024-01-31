@@ -219,8 +219,25 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	 * not be legal to do so. Because we change the VCL temperature before
 	 * sending COLD events we have to tolerate and undo attempts for the
 	 * COOLING case.
+	 *
+	 * To avoid deadlocks during vcl_BackendEvent, we only wait for vcl_mtx
+	 * if the vcl is busy (ref vcl_set_state())
 	 */
-	Lck_Lock(&vcl_mtx);
+
+	while (1) {
+		temp = vcl->temp;
+		if (temp == VCL_TEMP_COOLING)
+			return (vcldir_surplus(vdir));
+		if (vcl->busy == 0 && vcl->temp->is_warm) {
+			if (! Lck_Trylock(&vcl_mtx))
+				break;
+			usleep(10 * 1000);
+			continue;
+		}
+		Lck_Lock(&vcl_mtx);
+		break;
+	}
+	Lck_AssertHeld(&vcl_mtx);
 	temp = vcl->temp;
 	if (temp != VCL_TEMP_COOLING)
 		VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
