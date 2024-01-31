@@ -253,6 +253,7 @@ V1L_Flush(const struct worker *wrk)
 				v1l->werr = SC_REM_CLOSE;
 			else
 				v1l->werr = SC_TX_ERROR;
+			errno = err;
 		}
 	}
 	v1l->liov = 0;
