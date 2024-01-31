@@ -218,6 +218,8 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	Lck_Unlock(&vcl_mtx);
 
 	if (temp == VCL_TEMP_COOLING) {
+		assert(vdir->refcnt == 1);
+		vdir->refcnt = 0;
 		vcldir_free(vdir);
 		return (NULL);
 	}
