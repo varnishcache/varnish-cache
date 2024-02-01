@@ -1,5 +1,5 @@
 ..
-	Copyright (c) 2015-2019 Varnish Software AS
+	Copyright 2015,2016,2019,2024 UPLEX - Nils Goroll Systemoptimierung
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
@@ -24,9 +24,9 @@ not follow the style:
 
 * use code blocks for::
 
-  Examples and
+    Examples and
 
-  other code
+    other code
 
 References are tricky
 ---------------------
@@ -70,6 +70,28 @@ of documentation:
 
 .. _implicit link targets: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#implicit-hyperlink-targets
 
+Document Structure
+------------------
+
+While RST supports a great deal of flexibility for adornments of
+titles and section headers, we should adhere to a consistent style to
+avoid breaking the document structure unintentially.
+
+Within the Varnish-Cache project, we should use these characters:
+
+* Over and underline ``=`` for document titles
+
+* Over and underline ``-`` for document subtitles
+
+* Underline ``=`` for sections
+
+* Underline ``-`` for subsection
+
+* Underline ``~`` for subsubsections
+
+This is in line with the example in
+https://docutils.sourceforge.io/docs/user/rst/quickstart.html#sections
+
 HISTORY
 =======
 
@@ -81,4 +103,5 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright 2014 UPLEX - Nils Goroll Systemoptimierung
+* Copyright 2015,2016,2019,2024 UPLEX - Nils Goroll
+  Systemoptimierung
