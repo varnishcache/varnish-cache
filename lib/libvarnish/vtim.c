@@ -454,6 +454,15 @@ VTIM_timespec(vtim_dur t)
 	return (tv);
 }
 
+int
+VTIM_poll_tmo(vtim_dur tmo)
+{
+
+	if (isnan(tmo))
+		return (-1);
+	return (vmax_t(int, 0, tmo * 1e3));
+}
+
 #ifdef TEST_DRIVER
 
 #pragma GCC diagnostic ignored "-Wformat-y2k"
