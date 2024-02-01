@@ -149,13 +149,12 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a,
 		fds[1].revents = 0;
 		tmo = cache_param->pipe_timeout;
 		if (tmo == 0.)
-			tmo = -1.;
+			tmo = NAN;
 		if (deadline > 0.) {
 			tmo_task = deadline - VTIM_real();
-			tmo = (tmo > 0.) ? vmin(tmo, tmo_task) : tmo_task;
-			tmo = vmax(tmo, 0.);
+			tmo = vmin(tmo, tmo_task);
 		}
-		i = poll(fds, 2, (int)(tmo * 1e3));
+		i = poll(fds, 2, VTIM_poll_tmo(tmo));
 		if (i == 0)
 			sc = SC_RX_TIMEOUT;
 		if (i < 1)
