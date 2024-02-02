@@ -643,10 +643,7 @@ VTCP_read(int fd, void *ptr, size_t len, vtim_dur tmo)
 		pfd[0].fd = fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		j = (int)floor(tmo * 1e3);
-		if (j == 0)
-			j++;
-		j = poll(pfd, 1, j);
+		j = poll(pfd, 1, VTIM_poll_tmo(tmo));
 		if (j == 0)
 			return (-2);
 	}
