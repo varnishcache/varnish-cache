@@ -850,8 +850,10 @@ bereq.task_deadline
 
 	Writable from: vcl_pipe
 
+	Unsetable from: vcl_pipe
+
 	Deadline for pipe sessions, defaults ``0s``, which falls back to the
-        ``pipe_task_deadline`` parameter, see :ref:`varnishd(1)`
+	``pipe_task_deadline`` parameter, see :ref:`varnishd(1)`
 
 
 .. _bereq.time:

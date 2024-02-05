@@ -27,8 +27,9 @@ varnish v1 -cliok "param.set pipe_timeout 0s"
 varnish v1 -cliok "param.set pipe_task_deadline 0s"
 varnish v1 -vcl+backend {
 	sub vcl_pipe {
-		if (req.method == "TMO") {
-			set bereq.task_deadline = 1.1s;
+		set bereq.task_deadline = 1.1s;
+		if (req.method != "TMO") {
+			unset bereq.task_deadline;
 		}
 	}
 } -start

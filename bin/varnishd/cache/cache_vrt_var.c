@@ -387,7 +387,19 @@ VRT_l_client_identity(VRT_CTX, const char *str, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-#define BEREQ_TIMEOUT(which)					\
+#define BEREQ_TIMEOUT_UNSET0(which)
+
+#define BEREQ_TIMEOUT_UNSET1(which)				\
+VCL_VOID							\
+VRT_u_bereq_##which(VRT_CTX)					\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	ctx->bo->which = NAN;					\
+}
+
+#define BEREQ_TIMEOUT(which, unset)				\
 VCL_VOID							\
 VRT_l_bereq_##which(VRT_CTX, VCL_DURATION num)			\
 {								\
@@ -404,12 +416,14 @@ VRT_r_bereq_##which(VRT_CTX)					\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
 	return (ctx->bo->which);				\
-}
+}								\
+								\
+BEREQ_TIMEOUT_UNSET##unset(which)
 
-BEREQ_TIMEOUT(connect_timeout)
-BEREQ_TIMEOUT(first_byte_timeout)
-BEREQ_TIMEOUT(between_bytes_timeout)
-BEREQ_TIMEOUT(task_deadline)
+BEREQ_TIMEOUT(connect_timeout, 0)
+BEREQ_TIMEOUT(first_byte_timeout, 0)
+BEREQ_TIMEOUT(between_bytes_timeout, 0)
+BEREQ_TIMEOUT(task_deadline, 1)
 
 
 /*--------------------------------------------------------------------*/
