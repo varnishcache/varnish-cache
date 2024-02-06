@@ -66,10 +66,17 @@ EXTRA_DIST = \
 	whats-new
 
 dist-hook:
+	echo XXX make html
 	$(MAKE) html
+	echo XXX rm doctrees/
 	rm -rf $(BUILDDIR)/doctrees
+	echo XXX cp html/
+	printf 'XXX pwd='
+	pwd
+	echo XXX distdir=$(distdir)
 	cp -r $(BUILDDIR)/html $(distdir)/../
 	@ # Remove build artifacts.
+	echo XXX rm buildinfo/
 	rm $(distdir)/../html/.buildinfo $(distdir)/../html/*.inv
 
 distclean-local:
