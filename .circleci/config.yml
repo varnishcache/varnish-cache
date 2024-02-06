@@ -358,7 +358,7 @@ jobs:
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
             ret=$?
-            find _build/sub/ | xargs ls -dl
+            find varnish-trunk/ | xargs ls -dl
             exit $ret
             '
 
