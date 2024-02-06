@@ -357,6 +357,9 @@ jobs:
                 make << parameters.make_target >> VERBOSE=1 -j 4 -k \
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
+            ret=$?
+            find _build/sub/ | xargs ls -dl
+            exit $ret
             '
 
   collect_packages:
