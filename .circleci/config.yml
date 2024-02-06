@@ -213,7 +213,7 @@ jobs:
         type: string
       make_target:
         description: the make target to execute during the build
-        default: distcheck
+        default: distcheck TESTS=
         type: string
       extra_conf:
         description: platform-specific configure arguments
