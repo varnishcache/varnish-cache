@@ -233,8 +233,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	req->t_resp = W_TIM_real(wrk);
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 
-	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
-
 	assert(req->restarts <= cache_param->max_restarts);
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
@@ -258,6 +256,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 		return (REQ_FSM_MORE);
 	}
+
+	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
 	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
