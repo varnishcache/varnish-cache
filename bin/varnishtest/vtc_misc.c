@@ -48,6 +48,7 @@
 
 #include "vtc.h"
 
+#include "vfil.h"
 #include "vnum.h"
 #include "vre.h"
 #include "vtcp.h"
@@ -347,6 +348,40 @@ cmd_delay(CMD_ARGS)
 		vtc_fatal(vl, "Syntax error in number (%s)", av[1]);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
 	VTIM_sleep(f);
+}
+
+/* SECTION: include include
+ *
+ * Executes a vtc fragment::
+ *
+ *         include FILE [...]
+ *
+ * Open a file and execute it as a VTC fragment. This command is available
+ * everywhere commands are given.
+ *
+ */
+void
+cmd_include(CMD_ARGS)
+{
+	char *spec;
+	unsigned i;
+
+	if (av == NULL)
+		return;
+
+	if (av[1] == NULL)
+		vtc_fatal(vl, "CMD include: At least 1 argument required");
+
+	for (i = 1; av[i] != NULL; i++) {
+		spec = VFIL_readfile(NULL, av[i], NULL);
+		if (spec == NULL)
+			vtc_fatal(vl, "CMD include: Unable to read file '%s' "
+			    "(%s)", av[i], strerror(errno));
+		vtc_log(vl, 2, "Begin include '%s'", av[i]);
+		parse_string(vl, priv, spec);
+		vtc_log(vl, 2, "End include '%s'", av[i]);
+		free(spec);
+	}
 }
 
 /**********************************************************************

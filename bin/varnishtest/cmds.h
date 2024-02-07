@@ -37,6 +37,7 @@
 CMD_GLOBAL(barrier)
 CMD_GLOBAL(delay)
 CMD_GLOBAL(shell)
+CMD_GLOBAL(include)
 #undef CMD_GLOBAL
 
 #ifndef CMD_TOP
