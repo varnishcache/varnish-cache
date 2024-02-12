@@ -1587,6 +1587,22 @@ resp.do_esi	``VCL >= 4.1``
 	It is a VCL error to use resp.do_esi after setting resp.filters.
 
 
+resp.esi_include_onerror
+
+	Type: BOOL
+
+	Readable from: vcl_deliver
+
+	Writable from: vcl_deliver
+
+	Defines whether the ``onerror="continue"`` attribute is needed to
+	resume the delivery of an ESI sub-request when the response status
+	is neither 200 nor 204.
+
+	Defaults to the setting of the ``feature esi_include_onerror``
+	parameter before entering ``vcl_deliver``, see :ref:`varnishd(1)`.
+
+
 .. _resp.filters:
 
 resp.filters

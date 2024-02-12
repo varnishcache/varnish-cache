@@ -386,7 +386,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 				break;
 			case VEC_IC:
 				ecx->incl_cont =
-				    FEATURE(FEATURE_ESI_INCLUDE_ONERROR);
+				    ecx->preq->esi_include_onerror;
 				/* FALLTHROUGH */
 			case VEC_IA:
 				ecx->p++;

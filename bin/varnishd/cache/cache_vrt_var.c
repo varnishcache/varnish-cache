@@ -1048,6 +1048,24 @@ VRT_r_resp_do_esi(VRT_CTX)
 	return (!ctx->req->disable_esi);
 }
 
+VCL_VOID
+VRT_l_resp_esi_include_onerror(VRT_CTX, VCL_BOOL val)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	ctx->req->esi_include_onerror = val;
+}
+
+VCL_BOOL
+VRT_r_resp_esi_include_onerror(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (ctx->req->esi_include_onerror);
+}
+
 /*--------------------------------------------------------------------*/
 
 #define VRT_BODY_L(which)					\
