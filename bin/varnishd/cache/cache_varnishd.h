@@ -436,7 +436,7 @@ void SES_Wait(struct sess *, const struct transport *);
 void SES_Ref(struct sess *sp);
 void SES_Rel(struct sess *sp);
 
-const char * HTC_Status(enum htc_status_e);
+void HTC_Status(enum htc_status_e, const char **, const char **);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, char *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,

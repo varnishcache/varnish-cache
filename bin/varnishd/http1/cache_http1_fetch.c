@@ -175,6 +175,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	double t;
 	struct http_conn *htc;
 	enum htc_status_e hs;
+	const char *name, *desc;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
@@ -219,8 +220,9 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			htc->doclose = SC_RX_TIMEOUT;
 			break;
 		default:
-			VSLb(bo->vsl, SLT_FetchError, "HTC %s (%d)",
-			     HTC_Status(hs), hs);
+			HTC_Status(hs, &name, &desc);
+			VSLb(bo->vsl, SLT_FetchError, "HTC %s (%s)",
+			     name, desc);
 			htc->doclose = SC_RX_BAD;
 			break;
 		}

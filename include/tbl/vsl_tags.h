@@ -92,7 +92,7 @@ SLTM(SessOpen, 0, "Client connection opened",
 	"\n"
 )
 /*
- * XXX generate the list of SC_* reasons (see also HTC info):
+ * XXX generate the list of SC_* reasons:
  *
  * #include <stdio.h>
  * int main(void) {
@@ -189,33 +189,9 @@ SLTM(Length, 0, "Size of object body",
 	"Logs the size of a fetch object body.\n\n"
 )
 
-/*
- * XXX generate HTC info below from tbl include
- *
- * #include <stdio.h>
- * int main(void) {
- * #define HTC_STATUS(e, n, s, l) \
- *	printf("\t\"\\t* ``%s`` (%d): %s\\n\"\n", s, n, l);
- * #include "include/tbl/htc.h"
- *	return (0);
- * }
- */
-
 SLTM(FetchError, 0, "Error while fetching object",
 	"Logs the error message of a failed fetch operation.\n\n"
-	"Error messages should be self-explanatory, yet the http connection\n"
-	"(HTC) class of errors is reported with these symbols:\n\n"
-	"\t* ``junk`` (-5): Received unexpected data\n"
-	"\t* ``close`` (-4): Connection closed\n"
-	"\t* ``timeout`` (-3): Timed out\n"
-	"\t* ``overflow`` (-2): Buffer/workspace too small\n"
-	"\t* ``eof`` (-1): Unexpected end of input\n"
-	"\t* ``empty`` (0): Empty response\n"
-	"\t* ``more`` (1): More data required\n"
-	"\t* ``complete`` (2): Data complete (no error)\n"
-	"\t* ``idle`` (3): Connection was closed while idle\n"
-	"\nNotice that some HTC errors are never emitted."
-	)
+)
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
 	SLTM(Req##tag, (req ? 0 : SLT_F_UNUSED), "Client request " sdesc, ldesc)

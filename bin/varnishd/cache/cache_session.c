@@ -237,17 +237,20 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 
 /*--------------------------------------------------------------------*/
 
-const char *
-HTC_Status(enum htc_status_e e)
+void
+HTC_Status(enum htc_status_e e, const char **name, const char **desc)
 {
+
 	switch (e) {
 #define HTC_STATUS(e, n, s, l)				\
-		case HTC_S_ ## e:	return (s);
+	case HTC_S_ ## e:				\
+		*name = s;				\
+		*desc = l;				\
+		return;
 #include "tbl/htc.h"
 	default:
 		WRONG("HTC_Status");
 	}
-	NEEDLESS(return (NULL));
 }
 
 /*--------------------------------------------------------------------*/
