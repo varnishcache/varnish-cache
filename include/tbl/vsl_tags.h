@@ -100,6 +100,7 @@ SLTM(SessOpen, 0, "Client connection opened",
  *	printf("\t\"\\t* ``%s``: %s\\n\"\n", #e, desc);
  * #include "include/tbl/sess_close.h"
  *	return (0);
+ * }
  */
 
 SLTM(SessClose, 0, "Client connection closed",
