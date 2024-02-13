@@ -415,8 +415,10 @@ BAN_Commit(struct ban_proto *bp)
 	if (bi != NULL)
 		ban_info_new(b->spec, ln);	/* Notify stevedores */
 
-	if (cache_param->ban_dups)
-		VSC_C_main->bans_dups += BAN_Cancel(b, VTAILQ_NEXT(b, list));
+	if (cache_param->ban_dups) {
+		VSC_C_main->bans_dups += BAN_Cancel(b->spec,
+		    VTAILQ_NEXT(b, list));
+	}
 	if (!(b->flags & BANS_FLAG_REQ))
 		ban_kick_lurker();
 	Lck_Unlock(&ban_mtx);

@@ -431,16 +431,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 		VTAILQ_INSERT_BEFORE(b, b2, list);
 	bans_persisted_bytes += len;
 	VSC_C_main->bans_persisted_bytes = bans_persisted_bytes;
-
-	/* Hunt down older duplicates */
-	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
-		if (b->flags & BANS_FLAG_COMPLETED)
-			continue;
-		if (ban_equal(b->spec, ban)) {
-			ban_mark_completed(b);
-			VSC_C_main->bans_dups++;
-		}
-	}
+	VSC_C_main->bans_dups += BAN_Cancel(ban, VTAILQ_NEXT(b2, list));
 }
 
 /*--------------------------------------------------------------------
@@ -811,7 +802,7 @@ ccf_ban_cancel(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	Lck_Lock(&ban_mtx);
-	dups = BAN_Cancel(b, VTAILQ_FIRST(&ban_head));
+	dups = BAN_Cancel(b->spec, VTAILQ_FIRST(&ban_head));
 	Lck_Unlock(&ban_mtx);
 	BAN_Free(b);
 	BAN_Abandon(bp);
@@ -1052,18 +1043,18 @@ BAN_Compile(void)
  */
 
 unsigned
-BAN_Cancel(const struct ban *can, struct ban *ban)
+BAN_Cancel(const uint8_t *spec, struct ban *ban)
 {
 	unsigned dups;
 
-	CHECK_OBJ_NOTNULL(can, BAN_MAGIC);
+	AN(spec);
 	CHECK_OBJ_ORNULL(ban, BAN_MAGIC);
 	Lck_AssertHeld(&ban_mtx);
 
 	for (dups = 0; ban != NULL; ban = VTAILQ_NEXT(ban, list)) {
 		if (ban->flags & BANS_FLAG_COMPLETED)
 			continue;
-		if (!ban_equal(can->spec, ban->spec))
+		if (!ban_equal(spec, ban->spec))
 			continue;
 		ban_mark_completed(ban);
 		dups++;

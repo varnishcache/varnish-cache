@@ -153,7 +153,7 @@ int ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests);
 vtim_real ban_time(const uint8_t *banspec);
 struct ban * BAN_Alloc(struct ban_proto *bp, ssize_t *lnp);
-unsigned BAN_Cancel(const struct ban *can, struct ban *ban);
+unsigned BAN_Cancel(const uint8_t *, struct ban *ban);
 const char * BAN_Error(struct ban_proto *bp);
 void BAN_Free(struct ban *b);
 void ban_kick_lurker(void);
