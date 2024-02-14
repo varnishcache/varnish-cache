@@ -44,6 +44,8 @@
 #endif
 #define VDEF_H_INCLUDED
 
+#include <math.h>
+
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\
 	do {								\

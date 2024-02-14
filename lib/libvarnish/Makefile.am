@@ -40,6 +40,7 @@ libvarnish_la_SOURCES = \
 	vsha256.c \
 	vss.c \
 	vsub.c \
+	vsync.c \
 	vtcp.c \
 	vte.c \
 	vtim.c \
