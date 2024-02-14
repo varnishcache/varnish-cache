@@ -476,6 +476,8 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(sz);
 	AN(ptr);
+	if (*sz == 0)
+		*sz = cache_param->fetch_chunksize;
 	assert(*sz > 0);
 
 	o = sml_getobj(wrk, oc);

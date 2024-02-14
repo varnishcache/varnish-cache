@@ -190,6 +190,7 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
  * is no free space, some will be added first.
  *
  * The "sz" argument is an input hint of how much space is desired.
+ * 0 means "unknown", return some default size (maybe fetch_chunksize)
  */
 
 int
@@ -201,7 +202,7 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	AN(sz);
 	AN(ptr);
-	assert(*sz > 0);
+	assert(*sz >= 0);
 
 	AN(om->objgetspace);
 	return (om->objgetspace(wrk, oc, sz, ptr));

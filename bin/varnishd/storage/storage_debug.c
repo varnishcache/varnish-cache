@@ -57,7 +57,7 @@ smd_lsp_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
     uint8_t **ptr)
 {
 	AN(sz);
-	if (*sz > 1)
+	if (*sz > 2)
 		(*sz)--;
 	return (SML_methods.objgetspace(wrk, oc, sz, ptr));
 }

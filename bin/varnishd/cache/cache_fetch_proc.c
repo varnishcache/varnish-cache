@@ -71,19 +71,15 @@ VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
 enum vfp_status
 VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 {
-	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	AN(sz);
 	assert(*sz >= 0);
 	AN(ptr);
 
-	l = fetchfrag;
-	if (l == 0)
-		l = *sz;
-	if (l == 0)
-		l = cache_param->fetch_chunksize;
-	*sz = l;
+	if (fetchfrag > 0)
+		*sz = fetchfrag;
+
 	if (!ObjGetSpace(vc->wrk, vc->oc, sz, ptr)) {
 		*sz = 0;
 		*ptr = NULL;
