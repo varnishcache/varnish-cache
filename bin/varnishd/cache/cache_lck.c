@@ -271,6 +271,9 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 			errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
 		}
 #endif
+		/* We should never observe EINTR, but we have in the past. For
+		 * example when sanitizers are enabled.
+		 */
 		assert(errno == 0 ||
 		    errno == ETIMEDOUT ||
 		    errno == EINTR);
