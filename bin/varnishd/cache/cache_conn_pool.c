@@ -231,7 +231,7 @@ VCP_Rel(struct conn_pool **cpp)
 		cp->n_conn--;
 		assert(pfd->state == PFD_STATE_AVAIL);
 		pfd->state = PFD_STATE_CLEANUP;
-		(void)shutdown(pfd->fd, SHUT_WR);
+		(void)shutdown(pfd->fd, SHUT_RDWR);
 		cp->n_kill++;
 	}
 	while (cp->n_kill) {
