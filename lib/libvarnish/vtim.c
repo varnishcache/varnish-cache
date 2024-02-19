@@ -460,7 +460,7 @@ VTIM_poll_tmo(vtim_dur tmo)
 
 	if (isnan(tmo))
 		return (-1);
-	return (vmax_t(int, 0, tmo * 1e3));
+	return (vmax_t(int, 0, ((int)(tmo * 1e3))));
 }
 
 #ifdef TEST_DRIVER
