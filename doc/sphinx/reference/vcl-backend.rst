@@ -113,6 +113,25 @@ Limit how many simultaneous connections varnish can open to the backend::
 
     .max_connections = 1000;
 
+Attribute ``.wait_limit``
+------------------------------
+
+Maximum  number  of  transactions that can queue waiting for a backend connection to become avaiable::
+
+    .wait_limit = 1000;
+
+Defaults to the :ref:`varnishd(1)` `backend_wait_limit` parameter.
+
+Attribute ``.wait_timeout``
+------------------------------
+
+When a transaction is queued waiting for a backend connection to become available (see `.wait_limit`),
+this is the time that the transaction will wait before giving up::
+
+    .wait_timeout = 2s;
+
+Defaults to the :ref:`varnishd(1)` `backend_wait_timeout` parameter.
+
 Attribute ``.proxy_header``
 ---------------------------
 
