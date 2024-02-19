@@ -95,7 +95,6 @@ struct conn_pool {
 	VTAILQ_HEAD(, pfd)			connlist;
 	int					n_conn;
 
-	VTAILQ_HEAD(, pfd)			killlist;
 	int					n_kill;
 
 	int					n_used;
@@ -180,7 +179,6 @@ vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
 	case PFD_STATE_CLEANUP:
 		cp->methods->close(pfd);
 		cp->n_kill--;
-		VTAILQ_REMOVE(&cp->killlist, pfd, list);
 		memset(pfd, 0x11, sizeof *pfd);
 		free(pfd);
 		break;
@@ -234,7 +232,6 @@ VCP_Rel(struct conn_pool **cpp)
 		assert(pfd->state == PFD_STATE_AVAIL);
 		pfd->state = PFD_STATE_CLEANUP;
 		(void)shutdown(pfd->fd, SHUT_WR);
-		VTAILQ_INSERT_TAIL(&cp->killlist, pfd, list);
 		cp->n_kill++;
 	}
 	while (cp->n_kill) {
@@ -419,7 +416,6 @@ VCP_Close(struct pfd **pfdp)
 		(void)shutdown(pfd->fd, SHUT_RDWR);
 		VTAILQ_REMOVE(&cp->connlist, pfd, list);
 		pfd->state = PFD_STATE_CLEANUP;
-		VTAILQ_INSERT_HEAD(&cp->killlist, pfd, list);
 		cp->n_kill++;
 	} else {
 		assert(pfd->state == PFD_STATE_USED);
@@ -738,7 +734,6 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 		cp->methods = &vtp_methods;
 	Lck_New(&cp->mtx, lck_conn_pool);
 	VTAILQ_INIT(&cp->connlist);
-	VTAILQ_INIT(&cp->killlist);
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 	Lck_Lock(&conn_pools_mtx);
