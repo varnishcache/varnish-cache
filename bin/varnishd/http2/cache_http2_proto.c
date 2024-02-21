@@ -200,6 +200,8 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	}
 
 	Req_Cleanup(sp, wrk, r2->req);
+	if (FEATURE(FEATURE_BUSY_STATS_RATE))
+		WRK_AddStat(wrk);
 	Req_Release(r2->req);
 }
 
