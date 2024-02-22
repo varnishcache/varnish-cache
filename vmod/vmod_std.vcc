@@ -582,6 +582,10 @@ $Function VOID rollback(HTTP h)
 
 Restores the *h* HTTP headers to their original state.
 
+.. note: after calling this function, you must immediately either `return(restart)` or `return(retry)`.
+
+Failure in doing so may result in Varnish panicking.
+
 Example::
 
 	std.rollback(bereq);
