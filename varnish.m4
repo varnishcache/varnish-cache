@@ -213,9 +213,9 @@ AC_DEFUN([_VARNISH_VMOD], [
 
 	AC_SUBST(m4_toupper(BUILD_VMOD_$1), ["
 
-vmod_$1.lo: vcc_$1_if.c vcc_$1_if.h
+\$(libvmod_$1_la_OBJECTS): vcc_$1_if.c vcc_$1_if.h
 
-vmod_$1.lo: \$(nodist_libvmod_$1_la_SOURCES)
+\$(libvmod_$1_la_OBJECTS): \$(nodist_libvmod_$1_la_SOURCES)
 
 vcc_$1_if.h vmod_$1.rst vmod_$1.man.rst: vcc_$1_if.c
 
