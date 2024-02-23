@@ -69,7 +69,7 @@ DESIRABLE_WFLAGS = [
 ]
 
 UNDESIRABLE_WFLAGS = [
-    "-Wno-system-headers" # Outside of our control
+    "-Wno-system-headers", # Outside of our control
     "-Wno-thread-safety", # Does not understand our mutexs are wrapped
     "-Wno-old-style-definition", # Does not like vgz
     "-Wno-sign-compare", # Fixable
