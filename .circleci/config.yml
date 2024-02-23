@@ -433,6 +433,10 @@ workflows:
           dist: ubuntu
           release: jammy
       - build:
+          name: build_ubuntu_noble
+          dist: ubuntu
+          release: noble
+      - build:
           name: build_alpine
           dist: alpine
           release: "latest"
@@ -457,6 +461,7 @@ workflows:
                 - ubuntu:bionic
                 - ubuntu:focal
                 - ubuntu:jammy
+                - ubuntu:noble
                 - debian:buster
                 - debian:bullseye
                 - debian:bookworm
