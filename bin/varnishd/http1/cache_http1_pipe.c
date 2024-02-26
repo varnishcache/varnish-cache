@@ -149,7 +149,7 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a,
 		fds[1].revents = 0;
 		tmo = cache_param->pipe_timeout;
 		if (tmo == 0.)
-			tmo = NAN;
+			tmo = INFINITY;
 		if (deadline > 0.) {
 			tmo_task = deadline - VTIM_real();
 			tmo = vmin(tmo, tmo_task);
