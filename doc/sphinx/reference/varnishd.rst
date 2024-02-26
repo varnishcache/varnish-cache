@@ -590,7 +590,7 @@ A duration parameter may accept the following units suffixes:
 - ``w`` (weeks)
 - ``y`` (years)
 
-If the parameter is a timeout or a deadline, a value of zero (when allowed)
+If the parameter is a timeout or a deadline, a value of "never" (when allowed)
 disables the effect of the parameter.
 
 Run Time Parameter Flags
