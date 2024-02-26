@@ -458,8 +458,9 @@ int
 VTIM_poll_tmo(vtim_dur tmo)
 {
 
-	if (isnan(tmo))
+	if (isinf(tmo))
 		return (-1);
+	assert(!isnan(tmo));
 	return (vmax_t(int, 0, ((int)(tmo * 1e3))));
 }
 
