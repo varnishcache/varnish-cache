@@ -142,6 +142,13 @@ tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 	return (tweak_generic_double(vsb, arg, par, parse_duration, "%.3f"));
 }
 
+int v_matchproto_(tweak_t)
+tweak_duration(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+
+	return (tweak_generic_double(vsb, arg, par, parse_duration, "%.3f"));
+}
+
 /*--------------------------------------------------------------------*/
 
 int v_matchproto_(tweak_t)

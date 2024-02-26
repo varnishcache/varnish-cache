@@ -110,6 +110,7 @@ struct params {
 #define ptyp_bytes_u		unsigned
 #define ptyp_debug		debug_t
 #define ptyp_double		double
+#define ptyp_duration		vtim_dur
 #define ptyp_experimental	experimental_t
 #define ptyp_feature		feature_t
 #define ptyp_poolparam		struct poolparam
@@ -129,6 +130,7 @@ struct params {
 #undef ptyp_bytes_u
 #undef ptyp_debug
 #undef ptyp_double
+#undef ptyp_duration
 #undef ptyp_experimental
 #undef ptyp_feature
 #undef ptyp_poolparam

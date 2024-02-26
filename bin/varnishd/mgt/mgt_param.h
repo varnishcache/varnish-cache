@@ -74,6 +74,7 @@ tweak_t tweak_boolean;
 tweak_t tweak_bytes;
 tweak_t tweak_bytes_u;
 tweak_t tweak_double;
+tweak_t tweak_duration;
 tweak_t tweak_debug;
 tweak_t tweak_experimental;
 tweak_t tweak_feature;

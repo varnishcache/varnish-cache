@@ -97,7 +97,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	acceptor_sleep_incr,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0",
 	/* max */	"1",
 	/* def */	"0",
@@ -112,7 +112,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	acceptor_sleep_max,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0",
 	/* max */	"10",
 	/* def */	"0.05",
@@ -182,7 +182,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	ban_lurker_age,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0",
 	/* max */	NULL,
 	/* def */	"60",
@@ -211,7 +211,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	ban_lurker_sleep,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0",
 	/* max */	NULL,
 	/* def */	"0.010",
@@ -225,7 +225,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	ban_lurker_holdoff,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0",
 	/* max */	NULL,
 	/* def */	"0.010",
@@ -267,7 +267,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	backend_idle_timeout,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"1",
 	/* max */	NULL,
 	/* def */	"60",
@@ -278,7 +278,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	backend_local_error_holddown,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"10.000",
@@ -296,7 +296,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	backend_remote_error_holddown,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"0.250",
@@ -361,7 +361,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	clock_step,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"1.000",
@@ -387,7 +387,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	critbit_cooloff,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"60.000",
 	/* max */	"254.000",
 	/* def */	"180.000",
@@ -400,7 +400,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	default_grace,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"10s",
@@ -417,7 +417,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	default_keep,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"0s",
@@ -435,7 +435,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	default_ttl,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"2m",
@@ -670,7 +670,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	lru_interval,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"2.000",
@@ -836,7 +836,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	shortlived,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"10.000",
@@ -895,7 +895,7 @@ PARAM_SIMPLE(
 #endif
 PARAM_SIMPLE(
 	/* name */	tcp_keepalive_intvl,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"1",
 	/* max */	"100",
 	/* def */	NULL,
@@ -928,7 +928,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	tcp_keepalive_time,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"1",
 	/* max */	"7200",
 	/* def */	NULL,
@@ -1017,7 +1017,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	vcl_cooldown,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"1.000",
 	/* max */	NULL,
 	/* def */	"600.000",
@@ -1055,7 +1055,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	vsm_free_cooldown,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"10.000",
 	/* max */	"600.000",
 	/* def */	"60.000",
@@ -1275,7 +1275,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	h2_rapid_reset,
-	/* typ */	timeout,
+	/* typ */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"1.000",
@@ -1305,7 +1305,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	h2_rapid_reset_period,
-	/* typ */	timeout,
+	/* typ */	duration,
 	/* min */	"1.000",
 	/* max */	NULL,
 	/* def */	"60.000",
@@ -1458,7 +1458,7 @@ PARAM_THREAD(
 PARAM_THREAD(
 	/* name */	thread_pool_timeout,
 	/* field */	timeout,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"10",
 	/* max */	NULL,
 	/* def */	"300",
@@ -1474,7 +1474,7 @@ PARAM_THREAD(
 PARAM_THREAD(
 	/* name */	thread_pool_watchdog,
 	/* field */	watchdog,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.1",
 	/* max */	NULL,
 	/* def */	"60",
@@ -1490,7 +1490,7 @@ PARAM_THREAD(
 PARAM_THREAD(
 	/* name */	thread_pool_destroy_delay,
 	/* field */	destroy_delay,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.01",
 	/* max */	NULL,
 	/* def */	"1",
@@ -1505,7 +1505,7 @@ PARAM_THREAD(
 PARAM_THREAD(
 	/* name */	thread_pool_add_delay,
 	/* field */	add_delay,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0",
 	/* max */	NULL,
 	/* def */	"0",
@@ -1525,7 +1525,7 @@ PARAM_THREAD(
 PARAM_THREAD(
 	/* name */	thread_pool_fail_delay,
 	/* field */	fail_delay,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	".01",
 	/* max */	NULL,
 	/* def */	"0.2",
