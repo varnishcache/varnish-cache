@@ -138,6 +138,22 @@ parse_duration(const char *p, const char **err)
 int v_matchproto_(tweak_t)
 tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
+	volatile double *dest = par->priv;
+
+	if (arg != NULL && !strcmp(arg, "never")) {
+		*dest = INFINITY;
+		return (0);
+	}
+
+	if (*dest == INFINITY && arg == NULL) {
+		VSB_cat(vsb, "never");
+		return (0);
+	}
+
+	if (*dest == INFINITY && arg == JSON_FMT) {
+		VSB_cat(vsb, "\"never\"");
+		return (0);
+	}
 
 	return (tweak_generic_double(vsb, arg, par, parse_duration, "%.3f"));
 }
