@@ -590,7 +590,7 @@ Example::
 
 	std.rollback(bereq);
 
-$Restrict backend vcl_recv vcl_pass vcl_hash vcl_purge vcl_miss vcl_hit vcl_deliver vcl_synth
+$Restrict vcl_recv vcl_pass vcl_purge vcl_miss vcl_hit vcl_deliver vcl_synth vcl_purge vcl_backend_error vcl_backend_response
 
 $Function BOOL ban(STRING)
 
