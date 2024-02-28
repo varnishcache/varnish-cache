@@ -64,6 +64,8 @@
  *	VRT_u_sess_send_timeout() added
  *	VRT_u_sess_timeout_idle() added
  *	VRT_u_sess_timeout_linger() added
+ *	(struct vrt_backend).*_timeout must be initialized to a negative value
+ *	VRT_BACKEND_INIT() helper macro added
  * 18.1 (2023-12-05)
  *	vbf_objiterate() implementation changed #4013
  * 18.0 (2023-09-15)
@@ -581,6 +583,14 @@ struct vrt_endpoint {
 	vtim_dur			between_bytes_timeout;	\
 	unsigned			max_connections;	\
 	unsigned			proxy_header;
+
+#define VRT_BACKEND_INIT(be)					\
+	do {							\
+		INIT_OBJ(be, VRT_BACKEND_MAGIC);		\
+		(be)->connect_timeout = -1.0;			\
+		(be)->first_byte_timeout = -1.0;		\
+		(be)->between_bytes_timeout = -1.0;		\
+	} while(0)
 
 #define VRT_BACKEND_HANDLE()			\
 	do {					\

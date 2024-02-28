@@ -75,7 +75,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	CHECK_OBJ_ORNULL(via, DIRECTOR_MAGIC);
 
 	INIT_OBJ(&vep, VRT_ENDPOINT_MAGIC);
-	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
+	VRT_BACKEND_INIT(&vrt);
 	vrt.endpoint = &vep;
 	vrt.vcl_name = dyn->vcl_name;
 	vrt.hosthdr = addr;
@@ -206,7 +206,7 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 	}
 
 	INIT_OBJ(&vep, VRT_ENDPOINT_MAGIC);
-	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
+	VRT_BACKEND_INIT(&vrt);
 	vrt.endpoint = &vep;
 	vep.uds_path = path;
 	vrt.vcl_name = uds->vcl_name;

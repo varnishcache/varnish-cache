@@ -32,6 +32,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -381,9 +382,11 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	struct inifin *ifp;
 	struct vsb *vsb1;
 	struct symbol *via = NULL;
+	vtim_dur connect_timeout = NAN;
+	vtim_dur first_byte_timeout = NAN;
+	vtim_dur between_bytes_timeout = NAN;
 	char *p;
 	unsigned u;
-	double t;
 
 	if (tl->t->tok == ID &&
 	    (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
@@ -480,21 +483,21 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
 			Fb(tl, 0, "\t.connect_timeout = ");
-			vcc_Duration(tl, &t);
+			vcc_Duration(tl, &connect_timeout);
 			ERRCHK(tl);
-			Fb(tl, 0, "%g,\n", t);
+			Fb(tl, 0, "%g,\n", connect_timeout);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "first_byte_timeout")) {
 			Fb(tl, 0, "\t.first_byte_timeout = ");
-			vcc_Duration(tl, &t);
+			vcc_Duration(tl, &first_byte_timeout);
 			ERRCHK(tl);
-			Fb(tl, 0, "%g,\n", t);
+			Fb(tl, 0, "%g,\n", first_byte_timeout);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "between_bytes_timeout")) {
 			Fb(tl, 0, "\t.between_bytes_timeout = ");
-			vcc_Duration(tl, &t);
+			vcc_Duration(tl, &between_bytes_timeout);
 			ERRCHK(tl);
-			Fb(tl, 0, "%g,\n", t);
+			Fb(tl, 0, "%g,\n", between_bytes_timeout);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "max_connections")) {
 			u = vcc_UintVal(tl);
@@ -580,6 +583,13 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	vcc_FieldsOk(tl, fs);
 	free(fs);
 	ERRCHK(tl);
+
+	if (isnan(connect_timeout))
+		Fb(tl, 0, "\t.connect_timeout = -1.0,\n");
+	if (isnan(first_byte_timeout))
+		Fb(tl, 0, "\t.first_byte_timeout = -1.0,\n");
+	if (isnan(between_bytes_timeout))
+		Fb(tl, 0, "\t.between_bytes_timeout = -1.0,\n");
 
 	ExpectErr(tl, '}');
 
