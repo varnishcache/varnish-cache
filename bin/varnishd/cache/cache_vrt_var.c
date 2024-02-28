@@ -387,9 +387,25 @@ VRT_l_client_identity(VRT_CTX, const char *str, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-#define BEREQ_TIMEOUT_UNSET0(which)
-
-#define BEREQ_TIMEOUT_UNSET1(which)				\
+#define BEREQ_TIMEOUT(prefix, which)				\
+VCL_VOID							\
+VRT_l_bereq_##which(VRT_CTX, VCL_DURATION num)			\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	ctx->bo->which = num;					\
+}								\
+								\
+VCL_DURATION							\
+VRT_r_bereq_##which(VRT_CTX)					\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	return (BUSYOBJ_TMO(ctx->bo, prefix, which));		\
+}								\
+								\
 VCL_VOID							\
 VRT_u_bereq_##which(VRT_CTX)					\
 {								\
@@ -399,31 +415,10 @@ VRT_u_bereq_##which(VRT_CTX)					\
 	ctx->bo->which = NAN;					\
 }
 
-#define BEREQ_TIMEOUT(which, unset)				\
-VCL_VOID							\
-VRT_l_bereq_##which(VRT_CTX, VCL_DURATION num)			\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	ctx->bo->which = (num > 0.0 ? num : 0.0);		\
-}								\
-								\
-VCL_DURATION							\
-VRT_r_bereq_##which(VRT_CTX)					\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	return (ctx->bo->which);				\
-}								\
-								\
-BEREQ_TIMEOUT_UNSET##unset(which)
-
-BEREQ_TIMEOUT(connect_timeout, 0)
-BEREQ_TIMEOUT(first_byte_timeout, 0)
-BEREQ_TIMEOUT(between_bytes_timeout, 0)
-BEREQ_TIMEOUT(task_deadline, 1)
+BEREQ_TIMEOUT(, connect_timeout)
+BEREQ_TIMEOUT(, first_byte_timeout)
+BEREQ_TIMEOUT(, between_bytes_timeout)
+BEREQ_TIMEOUT(pipe_, task_deadline)
 
 
 /*--------------------------------------------------------------------*/

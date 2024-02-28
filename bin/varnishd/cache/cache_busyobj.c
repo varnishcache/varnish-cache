@@ -142,6 +142,9 @@ VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 	VCL_Ref(bo->vcl);
 
 	bo->t_first = bo->t_prev = NAN;
+	bo->connect_timeout = NAN;
+	bo->first_byte_timeout = NAN;
+	bo->between_bytes_timeout = NAN;
 
 	memcpy(bo->digest, req->digest, sizeof bo->digest);
 

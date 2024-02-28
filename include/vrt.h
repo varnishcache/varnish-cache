@@ -66,6 +66,12 @@
  *	VRT_u_sess_timeout_linger() added
  *	(struct vrt_backend).*_timeout must be initialized to a negative value
  *	VRT_BACKEND_INIT() helper macro added
+ *	VRT_l_bereq_task_deadline() added
+ *	VRT_r_bereq_task_deadline() added
+ *	VRT_u_bereq_task_deadline() added
+ *	VRT_u_bereq_between_bytes_timeout() added
+ *	VRT_u_bereq_connect_timeout() added
+ *	VRT_u_bereq_first_byte_timeout() added
  * 18.1 (2023-12-05)
  *	vbf_objiterate() implementation changed #4013
  * 18.0 (2023-09-15)
