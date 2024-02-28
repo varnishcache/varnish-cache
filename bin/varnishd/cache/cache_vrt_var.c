@@ -1135,7 +1135,7 @@ set_idle_send_timeout(const struct sess *sp, VCL_DURATION d)
 
 #define SESS_VAR_DUR(x, setter)				\
 VCL_VOID						\
-VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)		\
+VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)			\
 {							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
@@ -1145,11 +1145,19 @@ VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)		\
 }							\
 							\
 VCL_DURATION						\
-VRT_r_sess_##x(VRT_CTX)				\
+VRT_r_sess_##x(VRT_CTX)					\
 {							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
 	return (SESS_TMO(ctx->sp, x));			\
+}							\
+							\
+VCL_VOID						\
+VRT_u_sess_##x(VRT_CTX)					\
+{							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
+	ctx->sp->x = NAN;				\
 }
 
 SESS_VAR_DUR(timeout_idle, )
