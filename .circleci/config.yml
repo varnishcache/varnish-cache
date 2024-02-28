@@ -405,11 +405,12 @@ workflows:
           dist: fedora
           release: latest
           make_target: witness.dot
-      # latest debian uses sanitizers
+      # oldest debian goes 32bit
       - build:
           name: build_debian_buster
           dist: debian
           release: buster
+          prefix: i386/
       - build:
           name: build_debian_bullseye
           dist: debian
@@ -418,11 +419,9 @@ workflows:
           name: build_debian_bookworm
           dist: debian
           release: bookworm
-          extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
-      # oldest ubuntu goes 32bit
+      # latest ubuntu uses sanitizers
       - build:
           name: build_ubuntu_bionic
-          prefix: i386/
           dist: ubuntu
           release: bionic
       - build:
@@ -437,6 +436,7 @@ workflows:
           name: build_ubuntu_noble
           dist: ubuntu
           release: noble
+          extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
       - build:
           name: build_alpine
           dist: alpine
