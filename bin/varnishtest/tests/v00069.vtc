@@ -1,0 +1,61 @@
+varnishtest "Unset session timeouts"
+
+varnish v1 -cliok "param.set timeout_idle 42"
+varnish v1 -cliok "param.set timeout_linger 42"
+varnish v1 -cliok "param.set idle_send_timeout 42"
+varnish v1 -cliok "param.set send_timeout 42"
+
+varnish v1 -vcl {
+	backend be none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.def_timeout_idle = sess.timeout_idle;
+		set resp.http.def_timeout_linger = sess.timeout_linger;
+		set resp.http.def_idle_send_timeout = sess.idle_send_timeout;
+		set resp.http.def_send_timeout = sess.send_timeout;
+
+		set sess.timeout_idle = 0s;
+		set sess.timeout_linger = 0s;
+		set sess.idle_send_timeout = 0s;
+		set sess.send_timeout = 0s;
+
+		set resp.http.set_timeout_idle = sess.timeout_idle;
+		set resp.http.set_timeout_linger = sess.timeout_linger;
+		set resp.http.set_idle_send_timeout = sess.idle_send_timeout;
+		set resp.http.set_send_timeout = sess.send_timeout;
+
+		unset sess.timeout_idle;
+		unset sess.timeout_linger;
+		unset sess.idle_send_timeout;
+		unset sess.send_timeout;
+
+		set resp.http.unset_timeout_idle = sess.timeout_idle;
+		set resp.http.unset_timeout_linger = sess.timeout_linger;
+		set resp.http.unset_idle_send_timeout = sess.idle_send_timeout;
+		set resp.http.unset_send_timeout = sess.send_timeout;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+
+	expect resp.http.def_timeout_idle == 42.000
+	expect resp.http.def_timeout_linger == 42.000
+	expect resp.http.def_idle_send_timeout == 42.000
+	expect resp.http.def_send_timeout == 42.000
+
+	expect resp.http.set_timeout_idle == 0.000
+	expect resp.http.set_timeout_linger == 0.000
+	expect resp.http.set_idle_send_timeout == 0.000
+	expect resp.http.set_send_timeout == 0.000
+
+	expect resp.http.unset_timeout_idle == 42.000
+	expect resp.http.unset_timeout_linger == 42.000
+	expect resp.http.unset_idle_send_timeout == 42.000
+	expect resp.http.unset_send_timeout == 42.000
+} -run

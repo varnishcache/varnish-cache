@@ -60,6 +60,10 @@
  * NEXT (2024-03-15)
  *	[cache.h] (struct req).filter_list renamed to vdp_filter_list
  *	order of vcl/vmod and director COLD events reversed to directors first
+ *	VRT_u_sess_idle_send_timeout() added
+ *	VRT_u_sess_send_timeout() added
+ *	VRT_u_sess_timeout_idle() added
+ *	VRT_u_sess_timeout_linger() added
  * 18.1 (2023-12-05)
  *	vbf_objiterate() implementation changed #4013
  * 18.0 (2023-09-15)
