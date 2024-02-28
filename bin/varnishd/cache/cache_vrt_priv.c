@@ -40,9 +40,15 @@
 #include "vcl.h"
 #include "vcc_interface.h"
 
+enum vrt_priv_storage_e {
+	VRT_PRIV_ST_WS = 1,
+	VRT_PRIV_ST_HEAP
+};
+
 struct vrt_priv {
 	unsigned			magic;
 #define VRT_PRIV_MAGIC			0x24157a52
+	enum vrt_priv_storage_e		storage;
 	VRBT_ENTRY(vrt_priv)		entry;
 	struct vmod_priv		priv[1];
 	uintptr_t			vmod_id;
@@ -138,23 +144,37 @@ vrt_priv_dynamic_get(const struct vrt_privs *privs, uintptr_t vmod_id)
 static struct vmod_priv *
 vrt_priv_dynamic(struct ws *ws, struct vrt_privs *privs, uintptr_t vmod_id)
 {
+	//lint --e{593} vp allocated, vp->priv returned
 	struct vrt_priv *vp, *ovp;
+	enum vrt_priv_storage_e storage;
 
 	AN(vmod_id);
 
-	/* even if ws is full, return any existing priv */
-	if (WS_ReserveSize(ws, sizeof *vp) == 0)
-		return (vrt_priv_dynamic_get(privs, vmod_id));
+	if (LIKELY(WS_ReserveSize(ws, sizeof *vp) != 0)) {
+		vp = WS_Reservation(ws);
+		storage = VRT_PRIV_ST_WS;
+	}
+	else {
+		vp = malloc(sizeof *vp);
+		storage = VRT_PRIV_ST_HEAP;
+	}
+	AN(vp);
 
-	vp = WS_Reservation(ws);
 	INIT_OBJ(vp, VRT_PRIV_MAGIC);
+	vp->storage = storage;
 	vp->vmod_id = vmod_id;
 	ovp = VRBT_INSERT(vrt_privs, privs, vp);
 	if (ovp == NULL) {
-		WS_Release(ws, sizeof *vp);
+		if (storage == VRT_PRIV_ST_WS)
+			WS_Release(ws, sizeof *vp);
 		return (vp->priv);
 	}
-	WS_Release(ws, 0);
+	if (storage == VRT_PRIV_ST_WS)
+		WS_Release(ws, 0);
+	else if (storage == VRT_PRIV_ST_HEAP)
+		free(vp);
+	else
+		WRONG("priv storage");
 	return (ovp->priv);
 }
 
@@ -310,6 +330,8 @@ VCL_TaskLeave(VRT_CTX, struct vrt_privs *privs)
 	VRBT_FOREACH_SAFE(vp, vrt_privs, privs, vp1) {
 		CHECK_OBJ(vp, VRT_PRIV_MAGIC);
 		VRT_priv_fini(ctx, vp->priv);
+		if (vp->storage == VRT_PRIV_ST_HEAP)
+			free(vp);
 	}
 	ZERO_OBJ(privs, sizeof *privs);
 }
