@@ -401,7 +401,6 @@ vcc_priv_arg(struct vcc *tl, const char *p, struct symbol *sym)
 	char buf[64];
 	struct inifin *ifp;
 	const char *f = NULL;
-	struct procprivhead *marklist = NULL;
 
 	AN(sym);
 	AN(sym->vmod_name);
@@ -417,31 +416,18 @@ vcc_priv_arg(struct vcc *tl, const char *p, struct symbol *sym)
 		return (vcc_mk_expr(VOID, "&%s", buf));
 	}
 
-	if (!strcmp(p, "PRIV_TASK")) {
+	if (!strcmp(p, "PRIV_TASK"))
 		f = "task";
-		marklist = &tl->curproc->priv_tasks;
-	} else if (!strcmp(p, "PRIV_TOP")) {
+	else if (!strcmp(p, "PRIV_TOP")) {
 		f = "top";
 		sym->r_methods &= VCL_MET_TASK_C;
-		marklist = &tl->curproc->priv_tops;
 	} else {
 		WRONG("Wrong PRIV_ type");
 	}
 	AN(f);
-	AN(marklist);
-	bprintf(buf, "ARG_priv_%s_%s", f, sym->vmod_name);
 
-	if (vcc_MarkPriv(tl, marklist, sym->vmod_name) == NULL)
-		VSB_printf(tl->curproc->prologue,
-			   "  struct vmod_priv *%s = "
-			   "VRT_priv_%s(ctx, &VGC_vmod_%s);\n"
-			   "  if (%s == NULL) {\n"
-			   "    VRT_fail(ctx, \"failed to get %s priv "
-			   "for vmod %s\");\n"
-			   "    return;\n"
-			   "  }\n",
-			   buf, f, sym->vmod_name, buf, f, sym->vmod_name);
-	return (vcc_mk_expr(VOID, "%s", buf));
+	return (vcc_mk_expr(VOID, "VRT_priv_%s(ctx, &VGC_vmod_%s)",
+	    f, sym->vmod_name));
 }
 
 struct func_arg {
