@@ -467,6 +467,8 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	    VCL_StackVDP(req, req->vcl, req->vdp_filter_list)) {
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
+		req->acct.resp_bodybytes +=
+			VDP_Close(req->vdc, req->objcore, boc);
 	} else {
 		if (status < 200 || status == 204) {
 			// rfc7230,l,1691,1695
@@ -503,9 +505,6 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		 * Fail the request. */
 		req->doclose = SC_TX_ERROR;
 	}
-
-	if (req->doclose != SC_NULL)
-		req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 
 	if (boc != NULL)
 		HSH_DerefBoc(wrk, req->objcore);
