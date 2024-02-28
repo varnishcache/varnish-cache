@@ -652,6 +652,8 @@ bereq.between_bytes_timeout
 
 	Writable from: backend
 
+	Unsetable from: vcl_pipe, backend
+
 	Default: ``.between_bytes_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
 	``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`.
@@ -682,6 +684,8 @@ bereq.connect_timeout
 
 	Writable from: vcl_pipe, backend
 
+	Unsetable from: vcl_pipe, backend
+
 	Default: ``.connect_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
 	``connect_timeout`` parameter, see :ref:`varnishd(1)`.
@@ -699,6 +703,8 @@ bereq.first_byte_timeout
 	Readable from: backend
 
 	Writable from: backend
+
+	Unsetable from: vcl_pipe, backend
 
 	Default: ``.first_byte_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the

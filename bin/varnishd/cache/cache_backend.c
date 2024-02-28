@@ -99,9 +99,9 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 	do {								\
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
 		dst = bo->tmx;						\
-		if (dst == 0.0 && be->tmx >= 0.0)			\
+		if (isnan(dst) && be->tmx >= 0.0)			\
 			dst = be->tmx;					\
-		if (dst == 0.0)						\
+		if (isnan(dst))						\
 			dst = cache_param->tmx;				\
 	} while (0)
 

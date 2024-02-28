@@ -446,6 +446,9 @@ struct busyobj {
 	const char		*client_identity;
 };
 
+#define BUSYOBJ_TMO(bo, pfx, tmo)					\
+	(isnan((bo)->tmo) ? cache_param->pfx##tmo : (bo)->tmo)
+
 
 /*--------------------------------------------------------------------*/
 

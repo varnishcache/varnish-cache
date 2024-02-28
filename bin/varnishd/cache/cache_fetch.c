@@ -332,6 +332,9 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->was_304 = 0;
 	bo->err_code = 0;
 	bo->err_reason = NULL;
+	bo->connect_timeout = NAN;
+	bo->first_byte_timeout = NAN;
+	bo->between_bytes_timeout = NAN;
 	if (bo->htc != NULL)
 		bo->htc->doclose = SC_NULL;
 

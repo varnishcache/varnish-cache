@@ -1,0 +1,52 @@
+varnishtest "Unset bereq timeouts"
+
+varnish v1 -cliok "param.set connect_timeout 42"
+varnish v1 -cliok "param.set first_byte_timeout 42"
+varnish v1 -cliok "param.set between_bytes_timeout 42"
+
+varnish v1 -vcl {
+	backend be none;
+
+	sub vcl_backend_fetch {
+		return (error(200));
+	}
+
+	sub vcl_backend_error {
+		set beresp.http.def_connect_timeout = bereq.connect_timeout;
+		set beresp.http.def_first_byte_timeout = bereq.first_byte_timeout;
+		set beresp.http.def_between_bytes_timeout = bereq.between_bytes_timeout;
+
+		set bereq.connect_timeout = 0s;
+		set bereq.first_byte_timeout = 0s;
+		set bereq.between_bytes_timeout = 0s;
+
+		set beresp.http.set_connect_timeout = bereq.connect_timeout;
+		set beresp.http.set_first_byte_timeout = bereq.first_byte_timeout;
+		set beresp.http.set_between_bytes_timeout = bereq.between_bytes_timeout;
+
+		unset bereq.connect_timeout;
+		unset bereq.first_byte_timeout;
+		unset bereq.between_bytes_timeout;
+
+		set beresp.http.unset_connect_timeout = bereq.connect_timeout;
+		set beresp.http.unset_first_byte_timeout = bereq.first_byte_timeout;
+		set beresp.http.unset_between_bytes_timeout = bereq.between_bytes_timeout;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+
+	expect resp.http.def_connect_timeout == 42.000
+	expect resp.http.def_first_byte_timeout == 42.000
+	expect resp.http.def_between_bytes_timeout == 42.000
+
+	expect resp.http.set_connect_timeout == 0.000
+	expect resp.http.set_first_byte_timeout == 0.000
+	expect resp.http.set_between_bytes_timeout == 0.000
+
+	expect resp.http.unset_connect_timeout == 42.000
+	expect resp.http.unset_first_byte_timeout == 42.000
+	expect resp.http.unset_between_bytes_timeout == 42.000
+} -run
