@@ -850,6 +850,17 @@ static const struct vdp ved_ved = {
 	.fini =		ved_vdp_fini,
 };
 
+static void
+ved_close(struct req *req, struct boc *boc, int error)
+{
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
+
+	if (! error)
+		return;
+	req->top->topreq->vdc->retval = -1;
+	req->top->topreq->doclose = req->doclose;
+}
+
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(vtr_deliver_f)
@@ -868,19 +879,22 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 
-	if (wantbody == 0)
+	if (wantbody == 0) {
+		ved_close(req, boc, 0);
 		return;
+	}
 
 	status = req->resp->status % 1000;
 
 	if (!ecx->incl_cont && status != 200 && status != 204) {
-		req->top->topreq->vdc->retval = -1;
-		req->top->topreq->doclose = req->doclose;
+		ved_close(req, boc, 1);
 		return;
 	}
 
-	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0)
+	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0) {
+		ved_close(req, boc, 0);
 		return;
+	}
 
 	if (http_GetHdr(req->resp, H_Content_Encoding, &p))
 		i = http_coding_eq(p, gzip);
@@ -899,7 +913,10 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 		if (req->objcore->flags & OC_F_FAILED) {
 			/* No way of signalling errors in the middle of
-			   the ESI body. Omit this ESI fragment. */
+			 * the ESI body. Omit this ESI fragment.
+			 * XXX change error argument to 1
+			 */
+			ved_close(req, boc, 0);
 			return;
 		}
 
@@ -926,10 +943,5 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
-
-	if (i && !ecx->incl_cont) {
-		req->top->topreq->vdc->retval = -1;
-		req->top->topreq->doclose = req->doclose;
-	}
+	ved_close(req, boc, i && !ecx->incl_cont);
 }

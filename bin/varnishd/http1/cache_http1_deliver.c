@@ -40,7 +40,7 @@
 /*--------------------------------------------------------------------*/
 
 static void
-v1d_error(struct req *req, const char *msg)
+v1d_error(struct req *req, struct boc *boc, const char *msg)
 {
 	static const char r_500[] =
 	    "HTTP/1.1 500 Internal Server Error\r\n"
@@ -57,6 +57,8 @@ v1d_error(struct req *req, const char *msg)
 	req->wrk->stats->client_resp_500++;
 	VTCP_Assert(write(req->sp->fd, r_500, sizeof r_500 - 1));
 	req->doclose = SC_TX_EOF;
+
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 }
 
 /*--------------------------------------------------------------------
@@ -98,18 +100,18 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
 		if (VDP_Push(ctx, req->vdc, req->ws, VDP_v1l, NULL)) {
-			v1d_error(req, "Failure to push v1d processor");
+			v1d_error(req, boc, "Failure to push v1d processor");
 			return;
 		}
 	}
 
 	if (WS_Overflowed(req->ws)) {
-		v1d_error(req, "workspace_client overflow");
+		v1d_error(req, boc, "workspace_client overflow");
 		return;
 	}
 
 	if (WS_Overflowed(req->sp->ws)) {
-		v1d_error(req, "workspace_session overflow");
+		v1d_error(req, boc, "workspace_session overflow");
 		return;
 	}
 
@@ -118,7 +120,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	    cache_param->http1_iovs);
 
 	if (WS_Overflowed(req->wrk->aws)) {
-		v1d_error(req, "workspace_thread overflow");
+		v1d_error(req, boc, "workspace_thread overflow");
 		return;
 	}
 
