@@ -156,8 +156,6 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 	AN(p);
 	VTAILQ_INIT(&p->calls);
 	VTAILQ_INIT(&p->uses);
-	VTAILQ_INIT(&p->priv_tasks);
-	VTAILQ_INIT(&p->priv_tops);
 	VTAILQ_INSERT_TAIL(&tl->procs, p, list);
 	p->prologue = VSB_new_auto();
 	AN(p->prologue);

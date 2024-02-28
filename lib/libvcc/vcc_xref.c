@@ -63,11 +63,6 @@ struct procuse {
 	struct proc		*fm;
 };
 
-struct procpriv {
-	VTAILQ_ENTRY(procpriv)	list;
-	const char		*vmod;
-};
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -466,29 +461,4 @@ VCC_XrefTable(struct vcc *tl)
 	VCC_WalkSymbols(tl, vcc_xreftable, SYM_##U, SYM_NONE);		\
 	Fc(tl, 0, "*/\n\n");
 #include "vcc_namespace.h"
-}
-
-/*---------------------------------------------------------------------
- * mark vmod as referenced, return NULL if not yet marked, vmod if marked
- */
-
-const char *
-vcc_MarkPriv(struct vcc *tl, struct procprivhead *head,
-    const char *vmod)
-{
-	struct procpriv *pp;
-
-	AN(vmod);
-
-	VTAILQ_FOREACH(pp, head, list) {
-		if (pp->vmod == vmod)
-			return (vmod);
-		AN(strcmp(pp->vmod, vmod));
-	}
-
-	pp = TlAlloc(tl, sizeof *pp);
-	assert(pp != NULL);
-	pp->vmod = vmod;
-	VTAILQ_INSERT_TAIL(head, pp, list);
-	return (NULL);
 }
