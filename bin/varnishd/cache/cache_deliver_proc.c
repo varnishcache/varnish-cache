@@ -59,7 +59,15 @@ VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc)
 	VSB_cat(vsb, "},\n");
 }
 
-
+/*
+ * Ensure that transports have called VDP_Close()
+ * to avoid leaks in VDPs
+ */
+void
+VDP_Fini(struct vdp_ctx *vdc)
+{
+	assert(VTAILQ_EMPTY(&vdc->vdp));
+}
 
 void
 VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
