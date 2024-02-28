@@ -1,0 +1,29 @@
+varnishtest "Withdraw graced hit's busy objcore"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1ms;
+	}
+	sub vcl_hit {
+		if (obj.ttl < 0s) {
+			return (fail);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	delay 0.01
+
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
