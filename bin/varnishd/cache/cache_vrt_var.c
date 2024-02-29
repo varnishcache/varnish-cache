@@ -45,6 +45,8 @@
 
 #include "vrt_obj.h"
 
+#define VRT_TMO(tmo) (isinf(tmo) ? VRT_DECIMAL_MAX : tmo)
+
 static char vrt_hostname[255] = "";
 
 /*--------------------------------------------------------------------
@@ -403,7 +405,7 @@ VRT_r_bereq_##which(VRT_CTX)					\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	return (BUSYOBJ_TMO(ctx->bo, prefix, which));		\
+	return (VRT_TMO(BUSYOBJ_TMO(ctx->bo, prefix, which)));	\
 }								\
 								\
 VCL_VOID							\
@@ -1144,7 +1146,7 @@ VRT_r_sess_##x(VRT_CTX)					\
 {							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
-	return (SESS_TMO(ctx->sp, x));			\
+	return (VRT_TMO(SESS_TMO(ctx->sp, x)));		\
 }							\
 							\
 VCL_VOID						\

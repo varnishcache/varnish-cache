@@ -1,0 +1,19 @@
+varnishtest "Disabled timeout in VCL"
+
+varnish v1 -cliok "param.set idle_send_timeout never"
+
+varnish v1 -vcl {
+	backend be none;
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub vcl_synth {
+		set resp.http.idle_send_timeout = sess.idle_send_timeout;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.idle_send_timeout == 999999999999.999
+} -run
