@@ -229,7 +229,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 			    wait_end);
 		} while (err == EINTR);
 		bp->cw_count--;
-		if (err != 0) {
+		if (err != 0 && BE_BUSY(bp)) {
 			VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
 			VSC_C_main->backend_wait_fail++;
 			cw->cw_state = CW_BE_BUSY;
