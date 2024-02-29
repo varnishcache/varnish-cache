@@ -1,0 +1,37 @@
+varnishtest "unset req.ttl and req.grace"
+
+server s1 {
+	rxreq
+	expect req.http.ttl-initial == -1.000
+	expect req.http.grace-initial == -1.000
+	expect req.http.ttl-set == 0.000
+	expect req.http.grace-set == 0.000
+	expect req.http.ttl-unset == -1.000
+	expect req.http.grace-unset == -1.000
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.http.ttl-initial = req.ttl;
+		set req.http.grace-initial = req.grace;
+
+		set req.ttl = 0s;
+		set req.grace = 0s;
+
+		set req.http.ttl-set = req.ttl;
+		set req.http.grace-set = req.grace;
+
+		unset req.ttl;
+		unset req.grace;
+
+		set req.http.ttl-unset = req.ttl;
+		set req.http.grace-unset = req.grace;
+	}
+} -start
+
+client c1 -repeat 2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

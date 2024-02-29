@@ -73,7 +73,7 @@ EXP_Ttl(const struct req *req, const struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	r = oc->ttl;
-	if (req != NULL && req->d_ttl > 0. && req->d_ttl < r)
+	if (req != NULL && req->d_ttl >= 0. && req->d_ttl < r)
 		r = req->d_ttl;
 	return (oc->t_origin + r);
 }
