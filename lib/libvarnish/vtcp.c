@@ -349,7 +349,7 @@ VTCP_close(int *s)
 void
 VTCP_set_read_timeout(int s, vtim_dur seconds)
 {
-	struct timeval timeout = VTIM_timeval(seconds);
+	struct timeval timeout = VTIM_timeval_sock(seconds);
 
 	/*
 	 * Solaris bug (present at least in snv_151 and older): If this fails
