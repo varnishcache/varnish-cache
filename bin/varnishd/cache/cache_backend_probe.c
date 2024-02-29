@@ -273,8 +273,9 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 static void
 vbp_poke(struct vbp_target *vt)
 {
-	int s, tmo, i, proxy_header, err;
+	int s, i, proxy_header, err;
 	vtim_real t_start, t_now, t_end;
+	vtim_dur tmo;
 	unsigned rlen, resp;
 	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
@@ -304,11 +305,11 @@ vbp_poke(struct vbp_target *vt)
 		WRONG("Wrong probe protocol family");
 
 	t_now = VTIM_real();
-	tmo = (int)round((t_end - t_now) * 1e3);
+	tmo = t_end - t_now;
 	if (tmo <= 0) {
 		bprintf(vt->resp_buf,
 			"Open timeout %.3fs exceeded by %.3fs",
-			vt->timeout, t_now - t_end);
+			vt->timeout, -tmo);
 		VTCP_close(&s);
 		return;
 	}
@@ -347,15 +348,15 @@ vbp_poke(struct vbp_target *vt)
 		pfd->events = POLLIN;
 		pfd->revents = 0;
 		t_now = VTIM_real();
-		tmo = (int)round((t_end - t_now) * 1e3);
+		tmo = t_end - t_now;
 		if (tmo <= 0) {
 			bprintf(vt->resp_buf,
 			    "Poll timeout %.3fs exceeded by %.3fs",
-			    vt->timeout, t_now - t_end);
+			    vt->timeout, -tmo);
 			i = -1;
 			break;
 		}
-		i = poll(pfd, 1, tmo);
+		i = poll(pfd, 1, VTIM_poll_tmo(tmo));
 		if (i <= 0) {
 			if (!i) {
 				if (!vt->exp_close)
