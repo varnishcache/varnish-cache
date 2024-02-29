@@ -1123,7 +1123,7 @@ HTTP_VAR(beresp)
 static inline void
 set_idle_send_timeout(const struct sess *sp, VCL_DURATION d)
 {
-	struct timeval tv = VTIM_timeval(d);
+	struct timeval tv = VTIM_timeval_sock(d);
 	VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
 	    &tv, sizeof tv));
 }
