@@ -205,10 +205,10 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	INIT_OBJ(cw, CONNWAIT_MAGIC);
 	PTOK(pthread_cond_init(&cw->cw_cond, NULL));
 	Lck_Lock(bp->director->mtx);
+	FIND_BE_PARAM(backend_wait_limit, wait_limit, bp);
+	FIND_BE_PARAM(backend_wait_timeout, wait_tmod, bp);
 	cw->cw_state = CW_DO_CONNECT;
 	if (!VTAILQ_EMPTY(&bp->cw_head) || BE_BUSY(bp)) {
-		FIND_BE_PARAM(backend_wait_limit, wait_limit, bp);
-		FIND_BE_PARAM(backend_wait_timeout, wait_tmod, bp);
 		cw->cw_state = CW_BE_BUSY;
 	}
 
