@@ -254,26 +254,49 @@ VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 }
 
 int
-VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
+VCL_StackVDP(struct vdp_ctx *vdc, const struct vcl *vcl, const char *fl,
+    struct req *req, struct busyobj *bo, intmax_t *cl)
 {
 	const struct vfilter *vp;
 	struct vrt_ctx ctx[1];
+	struct objcore *oc;
+	struct http *hd;
 
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	AN(vcl);
 	AN(fl);
-	VSLbs(req->vsl, SLT_Filters, TOSTRAND(fl));
+
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	AN(cl);
+
+	assert((req ? 1 : 0) ^ (bo ? 1 : 0));
+
+	VSLbs(vdc->vsl, SLT_Filters, TOSTRAND(fl));
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
-	VCL_Req2Ctx(ctx, req);
+
+	if (req) {
+		VCL_Req2Ctx(ctx, req);
+		oc = req->objcore;
+		hd = req->resp;
+	}
+	else {
+		VCL_Bo2Ctx(ctx, bo);
+		oc = bo->bereq_body;
+		hd = bo->bereq;
+	}
 
 	while (1) {
 		vp = vcl_filter_list_iter(0, &vrt_filters, &vcl->filters, &fl);
 		if (vp == NULL)
 			return (0);
 		if (vp == vfilter_error) {
-			VSLb(req->vsl, SLT_Error,
+			VSLb(vdc->vsl, SLT_Error,
 			    "Filter '...%s' not found", fl);
 			return (-1);
 		}
-		if (VDP_Push(ctx, req->vdc, req->ws, vp->vdp, NULL))
+		if (VDP_Push(ctx, vdc, ctx->ws, vp->vdp, NULL,
+		    oc, req, hd, cl))
 			return (-1);
 	}
 }
@@ -387,6 +410,14 @@ VBF_Get_Filter_List(struct busyobj *bo)
 	return (filter_on_ws(bo->ws, vbf_default_filter_list, bo));
 }
 
+static const char *
+bereq_Empty_Filter(struct busyobj *bo)
+{
+
+	(void)bo;
+	return ("");
+}
+
 /*--------------------------------------------------------------------
  */
 
@@ -420,9 +451,25 @@ resp_Get_Filter_List(struct req *req)
 	return (filter_on_ws(req->ws, resp_default_filter_list, req));
 }
 
+static const char *
+req_Empty_Filter(struct req *req)
+{
+
+	(void)req;
+	return ("");
+}
+
+/*--------------------------------------------------------------------*/
+static int
+req_filter_can(struct req *req) {
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	return (req->req_body_status->avail == 1);
+}
+
 /*--------------------------------------------------------------------*/
 
-#define FILTER_VAR(vcl, in, func, fld)					\
+#define FILTER_VAR(vcl, in, func, cond, fld)				\
 	VCL_STRING							\
 	VRT_r_##vcl##_filters(VRT_CTX)					\
 	{								\
@@ -440,6 +487,10 @@ resp_Get_Filter_List(struct req *req)
 									\
 		(void)str;						\
 		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+		if (! (cond)) {						\
+			VRT_fail(ctx, #vcl ".filters not settable");	\
+			return;						\
+		}							\
 		b = VRT_StrandsWS(ctx->in->ws, str, s);			\
 		if (b == NULL)						\
 			WS_MarkOverflow(ctx->in->ws);			\
@@ -447,5 +498,7 @@ resp_Get_Filter_List(struct req *req)
 			ctx->in->fld = b;				\
 	}
 
-FILTER_VAR(beresp, bo, VBF_Get_Filter_List, vfp_filter_list)
-FILTER_VAR(resp, req, resp_Get_Filter_List, vdp_filter_list)
+FILTER_VAR(bereq, bo, bereq_Empty_Filter, 1, vdp_filter_list)
+FILTER_VAR(beresp, bo, VBF_Get_Filter_List, 1, vfp_filter_list)
+FILTER_VAR(req, req, req_Empty_Filter, req_filter_can(ctx->req), vfp_filter_list)
+FILTER_VAR(resp, req, resp_Get_Filter_List, 1, vdp_filter_list)

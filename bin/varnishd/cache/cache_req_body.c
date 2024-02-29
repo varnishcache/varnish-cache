@@ -91,6 +91,16 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Req2Ctx(ctx, req);
 
+	if (req->vfp_filter_list != NULL &&
+	    VCL_StackVFP(vfc, req->vcl, req->vfp_filter_list)) {
+		(void)VFP_Error(vfc, "req.body filters failed");
+		req->req_body_status = BS_ERROR;
+		HSH_DerefBoc(req->wrk, req->body_oc);
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		return (-1);
+	}
+
+
 	if (VFP_Open(ctx, vfc) < 0) {
 		req->req_body_status = BS_ERROR;
 		HSH_DerefBoc(req->wrk, req->body_oc);
