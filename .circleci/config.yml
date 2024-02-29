@@ -209,7 +209,7 @@ jobs:
         description: the Linux distribution (debian|ubuntu)
         type: string
       release:
-        description: the release name (buster|bullseye|bionic|focal|jammy)
+        description: the release name (buster|bullseye|bookworm|focal|jammy|noble)
         type: string
       make_target:
         description: the make target to execute during the build
@@ -419,11 +419,6 @@ workflows:
           name: build_debian_bookworm
           dist: debian
           release: bookworm
-      # latest ubuntu uses sanitizers
-      - build:
-          name: build_ubuntu_bionic
-          dist: ubuntu
-          release: bionic
       - build:
           name: build_ubuntu_focal
           dist: ubuntu
@@ -459,7 +454,6 @@ workflows:
           matrix:
             parameters:
               platform:
-                - ubuntu:bionic
                 - ubuntu:focal
                 - ubuntu:jammy
                 - ubuntu:noble
