@@ -454,6 +454,13 @@ VTIM_timespec(vtim_dur t)
 	return (tv);
 }
 
+struct timeval
+VTIM_timeval_sock(vtim_dur t)
+{
+
+	return (VTIM_timeval(isinf(t) ? 0. : vmax(t, 1e-3)));
+}
+
 int
 VTIM_poll_tmo(vtim_dur tmo)
 {
