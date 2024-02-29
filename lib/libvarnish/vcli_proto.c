@@ -45,6 +45,7 @@
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "vcli.h"
 #include "vsha256.h"
+#include "vtim.h"
 
 void
 VCLI_AuthResponse(int S_fd, const char *challenge,
@@ -110,17 +111,13 @@ VCLI_WriteResult(int fd, unsigned status, const char *result)
 static int
 read_tmo(int fd, char *ptr, unsigned len, double tmo)
 {
-	int i, j, to;
+	int i, j;
 	struct pollfd pfd;
 
-	if (tmo > 0)
-		to = (int)(tmo * 1e3);
-	else
-		to = -1;
 	pfd.fd = fd;
 	pfd.events = POLLIN;
 	for (j = 0; len > 0; ) {
-		i = poll(&pfd, 1, to);
+		i = poll(&pfd, 1, VTIM_poll_tmo(tmo));
 		if (i < 0) {
 			errno = EINTR;
 			return (-1);
