@@ -14,6 +14,9 @@ server s1 {
 	txresp -hdr "id: bar" -body "<3>bar</3>"
 } -start
 
+# give enough stack to 32bit systems
+varnish v1 -cliok "param.set thread_pool_stack 80k"
+
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		if (bereq.url != "/bar") {
