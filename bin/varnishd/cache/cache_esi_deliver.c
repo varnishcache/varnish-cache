@@ -881,8 +881,9 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	status = req->resp->status % 1000;
 
-	if (ecx->abrt && status != 200 && status != 204) {
-		ved_close(req, boc, 1);
+	if (FEATURE(FEATURE_ESI_INCLUDE_ONERROR) &&
+	    status != 200 && status != 204) {
+		ved_close(req, boc, ecx->abrt);
 		return;
 	}
 

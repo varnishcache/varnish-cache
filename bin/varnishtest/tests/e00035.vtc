@@ -8,7 +8,7 @@ server s1 {
 
 	rxreq
 	expect req.url == "/fail"
-	txresp -hdr "content-length: 100" -nolen
+	txresp -hdr "content-length: 100"
 	delay 0.1
 } -start
 
@@ -17,6 +17,7 @@ varnish v1 -cliok "param.set feature +esi_include_onerror"
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = beresp.http.surrogate-control ~ "ESI/1.0";
+		set beresp.do_stream = beresp.http.stream != "false";
 		unset beresp.http.surrogate-control;
 	}
 } -start
@@ -38,13 +39,34 @@ server s1 {
 
 	rxreq
 	expect req.url == "/fail"
-	txresp -hdr "content-length: 100" -nolen
+	txresp -hdr "content-length: 100"
 	delay 0.1
 } -start
 
 client c1 {
 	fatal
 	txreq -url "/continue"
+	rxresp
+	expect resp.body == "before  after"
+} -run
+
+server s1 -wait
+
+server s1 {
+	rxreq
+	expect req.url == "/continue-no-stream"
+	txresp -hdr {surrogate-control: content="ESI/1.0"} \
+	    -body {before <esi:include src="/err" onerror="continue"/> after}
+
+	rxreq
+	expect req.url == "/err"
+	txresp -hdr "content-encoding chunked" -hdr "stream: false"
+	chunked "incomplete"
+} -start
+
+client c1 {
+	fatal
+	txreq -url "/continue-no-stream"
 	rxresp
 	expect resp.body == "before  after"
 } -run

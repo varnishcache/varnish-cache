@@ -93,7 +93,7 @@ client c1 {
 	fatal
 	txreq -url "/continue"
 	rxresp
-	expect resp.body == "before FOOBAR after"
+	expect resp.body == "before  after"
 } -run
 
 varnish v1 -cliok "param.set max_esi_depth 0"
