@@ -128,7 +128,10 @@ continue in case of failures, by setting::
     param.set feature +esi_include_onerror
 
 Once this feature flag is enabled, a delivery failure can only continue
-if an ``onerror`` attribute said so.
+if an ``onerror`` attribute said so. The ESI specification states that
+in that case the failing fragment is not delivered, which is honored based
+on the status code, or based on the response body only when streaming is
+disabled (see ``beresp.do_stream``).
 
 Can an ESI fragment also use ESI-includes ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
