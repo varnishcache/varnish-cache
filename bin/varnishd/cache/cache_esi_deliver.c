@@ -65,7 +65,7 @@ struct ecx {
 	ssize_t		l;
 	int		isgzip;
 	int		woken;
-	int		incl_cont;
+	int		abrt;
 
 	struct req	*preq;
 	struct ecx	*pecx;
@@ -127,7 +127,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		VSLb(preq->vsl, SLT_VCL_Error,
 		    "ESI depth limit reached (param max_esi_depth = %u)",
 		    cache_param->max_esi_depth);
-		if (!ecx->incl_cont)
+		if (ecx->abrt)
 			preq->top->topreq->vdc->retval = -1;
 		return;
 	}
@@ -384,11 +384,11 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 				Debug("SKIP1(%d)\n", (int)ecx->l);
 				ecx->state = 4;
 				break;
-			case VEC_IC:
-				ecx->incl_cont =
+			case VEC_IA:
+				ecx->abrt =
 				    FEATURE(FEATURE_ESI_INCLUDE_ONERROR);
 				/* FALLTHROUGH */
-			case VEC_IA:
+			case VEC_IC:
 				ecx->p++;
 				q = (void*)strchr((const char*)ecx->p, '\0');
 				AN(q);
@@ -881,7 +881,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	status = req->resp->status % 1000;
 
-	if (!ecx->incl_cont && status != 200 && status != 204) {
+	if (ecx->abrt && status != 200 && status != 204) {
 		ved_close(req, boc, 1);
 		return;
 	}
@@ -943,5 +943,5 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	ved_close(req, boc, i && !ecx->incl_cont ? 1 : 0);
+	ved_close(req, boc, i && ecx->abrt);
 }
