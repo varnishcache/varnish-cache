@@ -1,0 +1,37 @@
+varnishtest "Override ESI status check for onerror=abort"
+
+server s1 {
+        rxreq
+        expect req.http.esi-level == 0
+        txresp -body {before <esi:include src="/fail"/> after}
+
+        rxreq
+        expect req.http.esi-level == 1
+        txresp -status 500 -hdr "transfer-encoding: chunked"
+        delay 0.1
+        chunked 500
+	chunkedlen 0
+} -start
+
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
+varnish v1 -cliok "param.set feature +esi_include_onerror"
+
+varnish v1 -vcl+backend {
+        sub vcl_recv {
+                set req.http.esi-level = req.esi_level;
+        }
+        sub vcl_backend_response {
+                set beresp.do_esi = bereq.http.esi-level == "0";
+        }
+        sub vcl_deliver {
+                if (req.esi_level > 0 && resp.status != 200) {
+			set resp.status = 200;
+                }
+        }
+} -start
+
+client c1 {
+        txreq
+        rxresp
+        expect resp.body == "before 500 after"
+} -run
