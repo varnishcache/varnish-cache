@@ -92,30 +92,43 @@ For example::
 What happens when it fails ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default, the fragments must have ``resp.status`` 200 or 206 or
-their inclusion will cause the parent request to abort.
+By default, the fragments must have ``resp.status`` 200 or 204 or
+their delivery will be considered failed.
 
 Likewise, if the fragment is a streaming fetch, and that fetch
-fails, the parent request aborts.
+fails, the fragment delivery is considered failed.
 
 If you include synthetic fragments, that is fragments created in
 ``vcl_backend_error{}`` or ``vcl_synth{}``, you must set
-``(be)resp.status`` to 200 before ``return(deliver);``	
+``(be)resp.status`` to 200 before ``return(deliver);``, for example
+with a ``return (synth(200))`` or ``return (error(200))`` transition.
+
+Failure to properly deliver an ESI fragment has no effect on its
+parent request delivery by default. The parent request can include
+the ESI fragment with an ``onerror`` attribute::
+
+    <ESI:include src="…" onerror="continue"/>
+
+This attribute is ignored by default. In fact, Varnish will treat
+failures to deliver ESI fragments as if there was the attribute
+``onerror="continue"``. In the absence of this attribute with this
+specific value, Varnish should normally abort the delivery of the
+parent request.
 
 We say "abort" rather than "fail", because by the time Varnish
 starts inserting the fragments, the HTTP response header has long
 since been sent, and it is no longer possible to change the parent
 requests's ``resp.status`` to a 5xx, so the only way to signal that
-something is amiss, is to close the connection.
+something is amiss, is to close the connection in the HTTP/1 case or
+reset the stream for h2 sessions.
 
 However, it is possible to allow individual ``<ESI:include…`` to
 continue in case of failures, by setting::
 
     param.set feature +esi_include_onerror
 
-and tagging those specific includes::
-
-    <ESI:include src="…" onerror="continue"/>
+Once this feature flag is enabled, a delivery failure can only continue
+if an ``onerror`` attribute said so.
 
 Can an ESI fragment also use ESI-includes ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
