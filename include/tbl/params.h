@@ -643,9 +643,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	idle_send_timeout,
 	/* type */	timeout,
-	/* min */	"0.000",
-	/* max */	NULL,
-	/* def */	"60.000",
+	/* min */	"0s",
+	/* max */	"1h",
+	/* def */	"60s",
 	/* units */	"seconds",
 	/* descr */
 	"Send timeout for individual pieces of data on client connections."
@@ -946,10 +946,10 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	timeout_idle,
-	/* type */	timeout,
-	/* min */	"0.000",
-	/* max */	NULL,
-	/* def */	"5.000",
+	/* type */	duration,
+	/* min */	"0s",
+	/* max */	"1h",
+	/* def */	"5s",
 	/* units */	"seconds",
 	/* descr */
 	"Idle timeout for client connections.\n\n"
@@ -962,7 +962,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	timeout_linger,
-	/* type */	timeout,
+	/* type */	duration,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"0.050",
