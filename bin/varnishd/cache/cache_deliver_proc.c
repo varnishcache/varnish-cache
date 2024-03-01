@@ -64,7 +64,7 @@ VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc)
  * to avoid leaks in VDPs
  */
 void
-VDP_Fini(struct vdp_ctx *vdc)
+VDP_Fini(const struct vdp_ctx *vdc)
 {
 	assert(VTAILQ_EMPTY(&vdc->vdp));
 }

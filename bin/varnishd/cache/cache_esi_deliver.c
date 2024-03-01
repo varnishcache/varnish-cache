@@ -943,5 +943,5 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	ved_close(req, boc, i && !ecx->incl_cont);
+	ved_close(req, boc, i && !ecx->incl_cont ? 1 : 0);
 }
