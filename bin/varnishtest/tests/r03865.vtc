@@ -6,6 +6,11 @@ server s1 {
 	txresp -hdr {surrogate-control: content="ESI/1.0"} \
 	    -body {before <esi:include src="/fail" onerror="abort"/> after}
 
+	rxreq
+	expect req.url == "/abort0"
+	txresp -hdr {surrogate-control: content="ESI/1.0"} \
+	    -body {before <esi:include src="/fail0" onerror="abort"/> after}
+
 } -start
 
 varnish v1 -cliok "param.set feature +esi_disable_xml_check"
@@ -14,6 +19,9 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 		if (bereq.url == "/fail") {
 			return (error(604));
+		}
+		if (bereq.url == "/fail0") {
+			return (error(605));
 		}
 	}
 	sub vcl_backend_response {
@@ -25,11 +33,27 @@ varnish v1 -vcl+backend {
 			set beresp.body = "FOOBAR";
 			return(deliver);
 		}
+		if (beresp.status == 605) {
+			set beresp.body = "";
+			return(deliver);
+		}
 	}
 } -start
 
 client c1 {
 	txreq -url "/abort"
+	non_fatal
+	rxresphdrs
+	expect resp.status == 200
+	rxchunk
+	rxchunk
+	expect_close
+	expect resp.body == "before "
+} -run
+
+client c1 {
+	# #4070
+	txreq -url "/abort0"
 	non_fatal
 	rxresphdrs
 	expect resp.status == 200

@@ -879,15 +879,15 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 
-	if (wantbody == 0) {
-		ved_close(req, boc, 0);
-		return;
-	}
-
 	status = req->resp->status % 1000;
 
 	if (!ecx->incl_cont && status != 200 && status != 204) {
 		ved_close(req, boc, 1);
+		return;
+	}
+
+	if (wantbody == 0) {
+		ved_close(req, boc, 0);
 		return;
 	}
 
