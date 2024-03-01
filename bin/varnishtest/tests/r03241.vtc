@@ -1,24 +1,16 @@
 varnishtest "ESI include out of workspace"
 
-
 server s1 {
 	rxreq
 	expect req.http.esi0 == "foo"
-	txresp -body {
-		<html>
-		Before include
-		<esi:include src="/body" sr="foo"/>
-		After include
-		</html>
-	}
+	txresp -body {before <esi:include src="/body" sr="foo"/> after}
 	rxreq
 	expect req.url == "/body1"
 	expect req.http.esi0 != "foo"
-	txresp -body {
-		Included file
-	}
+	txresp -body "include"
 } -start
 
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
 varnish v1 -vcl+backend {
 	import vtc;
 
@@ -48,9 +40,8 @@ logexpect l1 -v v1 -g raw {
 client c1 {
 	txreq -hdr "Host: foo"
 	rxresp
-	# XXX this is actually wrong (missed include)
-	expect resp.bodylen == 57
 	expect resp.status == 200
+	expect resp.body == "before  after"
 }  -run
 
 logexpect l1 -wait
