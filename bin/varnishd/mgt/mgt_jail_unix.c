@@ -296,7 +296,7 @@ vju_fixfd(int fd, enum jail_fixfd_e what)
 
 	switch (what) {
 	case JAIL_FIXFD_FILE:
-		AZ(fchmod(fd, 0750));
+		AZ(fchmod(fd, 0600));
 		AZ(fchown(fd, vju_wrkuid, vju_wrkgid));
 		break;
 	case JAIL_FIXFD_VSMMGT:
