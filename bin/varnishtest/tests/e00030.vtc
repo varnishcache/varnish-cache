@@ -1,7 +1,6 @@
 varnishtest "Test req_top.* in an ESI context"
 
-varnish v1 -arg "-p feature=+esi_disable_xml_check" \
-	   -errvcl {Variable is read only.} {
+varnish v1 -errvcl {Variable is read only.} {
 	backend foo None;
 
 	sub vcl_recv {
@@ -51,6 +50,10 @@ server s1 {
 	expect req.url == "/b1"
 	txresp
 } -start
+
+# give enough stack to 32bit systems
+varnish v1 -cliok "param.set thread_pool_stack 80k"
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {

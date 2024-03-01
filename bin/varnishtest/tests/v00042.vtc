@@ -33,6 +33,9 @@ server s1 {
 	txresp
 } -start
 
+# give enough stack to 32bit systems
+varnish v1 -cliok "param.set thread_pool_stack 80k"
+
 varnish v1 -vcl+backend {
 	import debug;
 
