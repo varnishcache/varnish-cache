@@ -23,7 +23,11 @@ server s1 {
 	rxresp
 } -start
 
-varnish v1 -arg "-p feature=+esi_disable_xml_check" -vcl+backend {
+# give enough stack to 32bit systems
+varnish v1 -cliok "param.set thread_pool_stack 80k"
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
+
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
