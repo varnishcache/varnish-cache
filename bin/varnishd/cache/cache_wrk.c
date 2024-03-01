@@ -443,7 +443,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					 * chance to push stats. */
 					tmo = now + 1.;
 				else if (wrk->wpriv->vcl == NULL)
-					tmo = 0;
+					tmo = INFINITY;
 				else if (DO_DEBUG(DBG_VTC_MODE))
 					tmo = now + 1.;
 				else
