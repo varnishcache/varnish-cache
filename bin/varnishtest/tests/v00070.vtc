@@ -1,0 +1,46 @@
+varnishtest "Check backend wait limit fail"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	delay 0.2
+	txresp
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.max_connections = 1;
+		.connect_timeout = 2s;
+		.wait_timeout = 100ms;
+		.wait_limit = 1;
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+
+client c1 -connect ${v1_sock} {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c2 -connect ${v1_sock} {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c1 -wait
+
+varnish v1 -expect backend_wait == 1
+varnish v1 -expect backend_wait_fail == 1

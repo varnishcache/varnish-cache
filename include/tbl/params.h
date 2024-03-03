@@ -312,6 +312,41 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	backend_wait_timeout,
+	/* type */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"0.000",
+	/* units */	"seconds",
+	/* descr */
+	"When a backend has no connections available for a transaction, "
+	"the transaction can be queued (see backend_wait_limit) to wait for "
+	"a connection.  This is the default time that the transaction will "
+	"wait before giving up. VCL can override this default value for each "
+	"backend.\n\n"
+	"It is strongly advised to never set this higher than a couple of seconds.",
+	/* flags */	EXPERIMENTAL
+)
+
+PARAM_SIMPLE(
+	/* name */	backend_wait_limit,
+	/* type */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"0",
+	/* units */	NULL,
+	/* descr */
+	"Maximum number of transactions that can queue waiting for a backend "
+	"connection to become avaiable.  This default of 0 (zero) means that "
+	"there is no transaction queueing. VCL can override this default value "
+	"for each backend.\n\n"
+	"Note that this feature must be used with caution, as it can "
+	"cause threads to pile up and increase response times.",
+	/* flags */	EXPERIMENTAL
+)
+
+
+PARAM_SIMPLE(
 	/* name */	cli_limit,
 	/* type */	bytes_u,
 	/* min */	"128b",

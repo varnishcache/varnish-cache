@@ -423,6 +423,8 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	    "?preamble",
 	    "?via",
 	    "?authority",
+	    "?wait_timeout",
+	    "?wait_limit",
 	    NULL);
 
 	tl->fb = VSB_new_auto();
@@ -569,6 +571,17 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 			t_authority = tl->t;
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "wait_timeout")) {
+			Fb(tl, 0, "\t.backend_wait_timeout = ");
+			vcc_Duration(tl, &t);
+			ERRCHK(tl);
+			Fb(tl, 0, "%g,\n", t);
+			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "wait_limit")) {
+			u = vcc_UintVal(tl);
+			ERRCHK(tl);
+			SkipToken(tl, ';');
+			Fb(tl, 0, "\t.backend_wait_limit = %u,\n", u);
 		} else {
 			ErrInternal(tl);
 			VSB_destroy(&tl->fb);

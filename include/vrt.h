@@ -58,6 +58,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2024-03-15)
+ *	struct vrt_backend.backend_wait_timeout added
+ *	struct vrt_backend.backend_wait_limit  added
  *	[cache.h] (struct req).filter_list renamed to vdp_filter_list
  *	order of vcl/vmod and director COLD events reversed to directors first
  * 18.1 (2023-12-05)
@@ -575,8 +577,10 @@ struct vrt_endpoint {
 	vtim_dur			connect_timeout;	\
 	vtim_dur			first_byte_timeout;	\
 	vtim_dur			between_bytes_timeout;	\
+	vtim_dur			backend_wait_timeout;	\
 	unsigned			max_connections;	\
-	unsigned			proxy_header;
+	unsigned			proxy_header;		\
+	unsigned			backend_wait_limit;
 
 #define VRT_BACKEND_HANDLE()			\
 	do {					\
@@ -586,8 +590,10 @@ struct vrt_endpoint {
 		DN(connect_timeout);		\
 		DN(first_byte_timeout);		\
 		DN(between_bytes_timeout);	\
+		DN(backend_wait_timeout);	\
 		DN(max_connections);		\
 		DN(proxy_header);		\
+		DN(backend_wait_limit);		\
 	} while(0)
 
 struct vrt_backend {
