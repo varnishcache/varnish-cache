@@ -934,7 +934,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	oc = bo->fetch_objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->flags & OC_F_BUSY);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+	assert(oc->boc->state < BOS_STREAM);
 	assert(bo->director_state == DIR_S_NULL);
 
 	if (wrk->vpi->handling != VCL_RET_ERROR)
@@ -1168,7 +1169,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->flags & OC_F_BUSY);
 	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
 
 	bo = VBO_GetBusyObj(wrk, req);
@@ -1177,6 +1177,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	boc = HSH_RefBoc(oc);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	assert(boc->state < BOS_STREAM);
 	boc->transit_buffer = cache_param->transit_buffer;
 
 	switch (mode) {

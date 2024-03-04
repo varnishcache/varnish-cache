@@ -140,8 +140,6 @@ ObjNew(const struct worker *wrk)
 	AN(oc);
 	wrk->stats->n_objectcore++;
 	oc->last_lru = NAN;
-	oc->flags = OC_F_BUSY;
-
 	oc->boc = obj_newboc();
 
 	return (oc);
