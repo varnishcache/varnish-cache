@@ -316,7 +316,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	AN(digest);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ban);
-	AN(oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_BUSY);
 	AZ(oc->flags & OC_F_PRIVATE);
 	assert(oc->refcnt == 1);
 	INIT_OBJ(&rush, RUSH_MAGIC);
@@ -344,7 +344,6 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	Lck_Lock(&oh->mtx);
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
-	oc->flags &= ~OC_F_BUSY;
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
 	Lck_Unlock(&oh->mtx);
@@ -370,7 +369,8 @@ hsh_insert_busyobj(const struct worker *wrk, struct objhead *oh)
 	wrk->wpriv->nobjcore = NULL;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AN(oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_BUSY);
+	oc->flags |= OC_F_BUSY;
 	oc->refcnt = 1;		/* Owned by busyobj */
 	oc->objhead = oh;
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, hsh_list);
@@ -821,15 +821,24 @@ HSH_Fail(struct objcore *oc)
 	struct objhead *oh;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	/*
-	 * We have to have either a busy bit, so that HSH_Lookup
-	 * will not consider this oc, or an object hung of the oc
+	 * We either failed before the end of vcl_backend_response
+	 * and a cache miss has the busy bit, so that HSH_Lookup()
+	 * will not consider this oc, or an object hung off the oc
 	 * so that it can consider it.
+	 *
+	 * We can only fail an ongoing fetch in a backend context
+	 * so we can safely check the BOC state as it won't change
+	 * under our feet.
 	 */
-	assert((oc->flags & OC_F_BUSY) || (oc->stobj->stevedore != NULL));
+	if (oc->boc->state < BOS_STREAM)
+		assert(oc->flags & (OC_F_BUSY|OC_F_PRIVATE));
+	else
+		assert(oc->stobj->stevedore != NULL);
 
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
@@ -909,15 +918,15 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	AN(oc->stobj->stevedore);
-	AN(oc->flags & OC_F_BUSY);
 	assert(oh->refcnt > 0);
 	assert(oc->refcnt > 0);
 
 	if (oc->flags & OC_F_PRIVATE) {
-		oc->flags &= ~OC_F_BUSY;
+		AZ(oc->flags & OC_F_BUSY);
 		return;
 	}
 
+	AN(oc->flags & OC_F_BUSY);
 	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	BAN_NewObjCore(oc);
