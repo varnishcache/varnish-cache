@@ -353,7 +353,7 @@ jobs:
                 << parameters.extra_conf >>
             sudo -u varnish \
                 --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-                make << parameters.make_target >> VERBOSE=1 -j 4 -k \
+                make -j 4 -k << parameters.make_target >> VERBOSE=1 \
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
             '
@@ -419,6 +419,7 @@ workflows:
           name: build_debian_bookworm
           dist: debian
           release: bookworm
+      # latest ubuntu uses sanitizers
       - build:
           name: build_ubuntu_focal
           dist: ubuntu
@@ -432,6 +433,7 @@ workflows:
           dist: ubuntu
           release: noble
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
+          make_target: check -j2
       - build:
           name: build_alpine
           dist: alpine
