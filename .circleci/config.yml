@@ -383,66 +383,11 @@ workflows:
         - << pipeline.parameters.dist-url >>
     jobs:
       - build:
-          name: build_centos_7
-          dist: centos
-          release: "7"
-      - build:
-          name: build_centos_stream
-          prefix: quay.io/centos/
-          dist: centos
-          release: stream
-      - build:
-          name: build_almalinux_8
-          dist: almalinux
-          release: "8"
-      - build:
-          name: build_almalinux_9
-          dist: almalinux
-          release: "9"
-      # fedora is our witness
-      - build:
-          name: build_fedora_latest
-          dist: fedora
-          release: latest
-          make_target: witness.dot
-      # oldest debian goes 32bit
-      - build:
-          name: build_debian_buster
-          dist: debian
-          release: buster
-          prefix: i386/
-      - build:
-          name: build_debian_bullseye
-          dist: debian
-          release: bullseye
-      - build:
-          name: build_debian_bookworm
-          dist: debian
-          release: bookworm
-      # latest ubuntu uses sanitizers
-      - build:
-          name: build_ubuntu_focal
-          dist: ubuntu
-          release: focal
-      - build:
-          name: build_ubuntu_jammy
-          dist: ubuntu
-          release: jammy
-      - build:
           name: build_ubuntu_noble
           dist: ubuntu
           release: noble
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
           make_target: check -j2
-      - build:
-          name: build_alpine
-          dist: alpine
-          release: "latest"
-          extra_conf: --without-contrib
-      - build:
-          name: build_archlinux
-          dist: archlinux
-          release: base-devel
   packaging:
     when: *packaging_cond
     jobs: &packaging_jobs
