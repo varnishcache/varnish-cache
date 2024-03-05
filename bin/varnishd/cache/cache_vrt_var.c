@@ -402,10 +402,12 @@ VRT_l_bereq_##which(VRT_CTX, VCL_DURATION num)			\
 VCL_DURATION							\
 VRT_r_bereq_##which(VRT_CTX)					\
 {								\
+	vtim_dur res;						\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	return (VRT_TMO(BUSYOBJ_TMO(ctx->bo, prefix, which)));	\
+	res = BUSYOBJ_TMO(ctx->bo, prefix, which);		\
+	return (VRT_TMO(res));					\
 }								\
 								\
 VCL_VOID							\
@@ -1144,9 +1146,12 @@ VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)			\
 VCL_DURATION						\
 VRT_r_sess_##x(VRT_CTX)					\
 {							\
+	vtim_dur res;					\
+							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
-	return (VRT_TMO(SESS_TMO(ctx->sp, x)));		\
+	res = SESS_TMO(ctx->sp, x);			\
+	return (VRT_TMO(res));				\
 }							\
 							\
 VCL_VOID						\
