@@ -439,6 +439,7 @@ workflows:
           dist: alpine
           release: "latest"
           extra_conf: --without-contrib
+          make_target: check
       - build:
           name: build_archlinux
           dist: archlinux
