@@ -516,7 +516,9 @@ abstract_uds_works(void)
  * workspace_emulator
  *        Varnish was built with its workspace emulator.
  * abstract_uds
- *        Creation of an abstract unix domain socket succeeded
+ *        Creation of an abstract unix domain socket succeeded.
+ * disable_aslr
+ *        ASLR can be disabnled.
  *
  * A feature name can be prefixed with an exclamation mark (!) to skip a
  * test if the feature is present.
