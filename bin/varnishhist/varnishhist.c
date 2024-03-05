@@ -218,7 +218,7 @@ upd_vsl_ts(const char *p)
 }
 
 static void
-deloran(void)
+delorean(void)
 {
 	int i;
 	double t = VTIM_mono();
@@ -363,7 +363,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			next_hist = 0;
 		}
 		if (vsl_ts >= vsl_to)
-			deloran();
+			delorean();
 		PTOK(pthread_mutex_unlock(&mtx));
 	}
 	return (0);
