@@ -135,6 +135,8 @@
 // System/Posix/Iso-C library related
 
 -emacro(747, isnan)     // significant coercion
+-emacro(506, isinf)	// Constant value Boolean
+-emacro(866, isinf)	// Unusual use of '?' in argument to sizeof
 
 // ignore retval
 -esym(534, printf)
