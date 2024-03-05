@@ -518,7 +518,7 @@ abstract_uds_works(void)
  * abstract_uds
  *        Creation of an abstract unix domain socket succeeded.
  * disable_aslr
- *        ASLR can be disabnled.
+ *        ASLR can be disabled.
  *
  * A feature name can be prefixed with an exclamation mark (!) to skip a
  * test if the feature is present.
