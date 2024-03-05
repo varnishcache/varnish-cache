@@ -230,6 +230,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	    !(req->objcore->flags & OC_F_PRIVATE))
 		http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
 
+	req->esi_include_onerror = FEATURE(FEATURE_ESI_INCLUDE_ONERROR);
+
 	req->t_resp = W_TIM_real(wrk);
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 
