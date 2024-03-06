@@ -34,7 +34,7 @@
  * REMEMBER to update the documentation (especially the varnishlog(1) man
  * page) whenever this list changes.
  *
- * XXX: Please add new entries a the end to not break saved log-segments.
+ * XXX: Please add new entries at the end to not break saved log-segments.
  *
  * Arguments:
  *	Tag-Name
