@@ -1185,10 +1185,17 @@ class vcc():
     def version(self):
         srcdir = os.path.dirname(self.inputfile)
 
-        for pkgstr in open(os.path.join(srcdir, "Makefile")):
-            if pkgstr[:14] == "PACKAGE_STRING":
-                break
-        pkgstr = pkgstr.split("=")[1].strip()
+        pkgstr = "NOVERSION"
+
+        for d in [srcdir, "."]:
+            f = os.path.join(d, "Makefile")
+            if not os.path.exists(f):
+                continue
+            for pkgstr in open(f):
+                if pkgstr[:14] == "PACKAGE_STRING":
+                    pkgstr = pkgstr.split("=")[1].strip()
+                    break
+            break
 
         gitver = subprocess.check_output([
             "git -C %s rev-parse HEAD 2>/dev/null || echo NOGIT" %
