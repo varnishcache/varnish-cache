@@ -26,3 +26,5 @@ client c1 {
 	barrier b sync
 	expect_close
 } -run
+
+server s1 -wait
