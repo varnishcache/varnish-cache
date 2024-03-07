@@ -163,8 +163,6 @@ void VCA_Shutdown(void);
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
 
-void VBP_Init(void);
-
 /* cache_ban.c */
 
 /* for stevedoes resurrecting bans */
@@ -464,7 +462,8 @@ struct conn_pool;
 void VCP_Init(void);
 void VCP_Panic(struct vsb *, struct conn_pool *);
 
-/* cache_backend_poll.c */
+/* cache_backend_probe.c */
+void VBP_Init(void);
 
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);
