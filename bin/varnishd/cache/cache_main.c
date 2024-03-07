@@ -560,6 +560,7 @@ child_main(int sigmagic, size_t altstksz)
 	VCA_Shutdown();
 	BAN_Shutdown();
 	EXP_Shutdown();
+	STV_warn();
 	VCL_Shutdown();
 	STV_close();
 

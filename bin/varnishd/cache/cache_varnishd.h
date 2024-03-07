@@ -582,6 +582,7 @@ void V2D_Init(void);
 
 /* stevedore.c */
 void STV_open(void);
+void STV_warn(void);
 void STV_close(void);
 const struct stevedore *STV_next(void);
 int STV_BanInfoDrop(const uint8_t *ban, unsigned len);
