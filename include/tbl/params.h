@@ -1899,7 +1899,7 @@ PARAM_BITS(
 	"\tall\tEnable all tags\n"
 	"\tdefault\tSet default value (deprecated: use param.reset)\n"
 	"\nUse +/- prefix in front of VSL tag name to unmask/mask "
-	"individual VSL messages.")
+	"individual VSL messages. See vsl(7) for possible values.")
 PARAM_POST
 
 #undef PARAM_ALL
