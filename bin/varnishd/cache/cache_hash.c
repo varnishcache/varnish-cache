@@ -369,8 +369,9 @@ hsh_rush_match(struct req *req)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AZ(oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_PRIVATE);
 	if (oc->flags & (OC_F_WITHDRAWN|OC_F_HFM|OC_F_HFP|OC_F_CANCEL|
-	    OC_F_PRIVATE|OC_F_FAILED|OC_F_DYING))
+	    OC_F_FAILED|OC_F_DYING))
 		return (0);
 
 	if (req->vcf != NULL) /* NB: must operate under oh lock. */
@@ -675,10 +676,10 @@ hsh_rush1(const struct worker *wrk, struct objcore *oc, struct rush *r)
 	Lck_AssertHeld(&oh->mtx);
 
 	AZ(oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_PRIVATE);
 	if (oc->flags & (OC_F_WITHDRAWN|OC_F_FAILED))
 		max = 1;
-	else if (oc->flags & (OC_F_HFM|OC_F_HFP|OC_F_CANCEL|OC_F_PRIVATE|
-	    OC_F_DYING))
+	else if (oc->flags & (OC_F_HFM|OC_F_HFP|OC_F_CANCEL|OC_F_DYING))
 		max = cache_param->rush_exponent;
 	else
 		max = INT_MAX;
