@@ -21,28 +21,38 @@ Parameters
 
 **XXX changes in -p parameters**
 
-The default value of ``cli_limit`` increased to avoid truncating the
-``param.show -j`` output.
+The default value of ``cli_limit`` has been increased from 48KB to
+64KB to avoid truncating the ``param.show -j`` output for common use
+cases.
 
 The ``vsl_mask`` parameter accepts a new special value "all" that enables
 logging of all VSL tags, the counterpart of "none".
 
-All bits parameters can be set atomically to an absolute value::
+.. I am not sure if "absolute value" is the best name here. It is
+   "relative to all", but I do not have a better idea
+
+This allows all bits parameters to be set atomically to an absolute
+value, as in::
 
     param.set vsl_mask all,-Debug,-ExpKill
 
-The ``param.show`` output prints them with an absolute value. This enables
-operations to atomically set a value, relative or absolute, and collect the
-absolute value, for bits parameters::
+The ``param.show`` output prints the absolute value. This enables
+operations to atomically set a bits parameter, relative or absolute,
+and collect the absolute value::
 
-    param.set -j feature +http2
+    param.show vsl_mask
+    200
+    vsl_mask
+            Value is: all,-Debug,-ExpKill
+    [...]
 
-The ``param.set`` command in JSON mode prints the ``param.show`` JSON output
-after successfully updating a parameter. The ``param.reset`` command now
-shares the same behavior.
+The ``param.set`` command in JSON mode (``-j argument``) prints the
+``param.show`` JSON output after successfully updating a
+parameter. The ``param.reset`` command now shares the same behavior.
 
-The special value "default" for bits parameters was deprecated in favor of the
-generic ``param.reset`` command. It will be removed in a future release.
+The special value ``default`` for bits parameters was deprecated in
+favor of the generic ``param.reset`` command. It will be removed in a
+future release.
 
 A new ``pipe_task_deadline`` specifies the maximum duration of a pipe
 transaction. The default value is the special value "never" to align with the
