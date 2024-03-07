@@ -56,6 +56,7 @@ data structures that do all the hard work.
 The std VMODs vmod.vcc file looks somewhat like this::
 
 	$ABI strict
+	$Version my.version
 	$Module std 3 "Varnish Standard Module"
 	$Event event_function
 	$Function STRING toupper(STRANDS s)
@@ -72,6 +73,11 @@ RunTime), in which case it needs to be built for the exact Varnish
 version, use ``strict``.  If it complies to the VRT and only needs
 to be rebuilt when breaking changes are introduced to the VRT API,
 use ``vrt``.
+
+The ``$Version`` line is also optional. It specifies the version identifier
+compiled into the VMOD binary for later identification. If omitted,
+``PACKAGE_STRING`` from an automake ``Makefile`` will be used, or ``NOVERSION``
+otherwise.
 
 The ``$Module`` line gives the name of the module, the manual section
 where the documentation will reside, and the description.

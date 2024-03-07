@@ -45,6 +45,7 @@ import json
 import optparse
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -127,6 +128,7 @@ CTYPES = {
 CTYPES.update(PRIVS)
 
 DEPRECATED = {}
+
 
 #######################################################################
 
@@ -930,6 +932,14 @@ class AliasStanza(Stanza):
     def json(self, jl):
         jl.append(["$ALIAS", self.sym_alias, self.sym_name])
 
+class VersionStanza(Stanza):
+
+    ''' $Version version ... '''
+
+    def parse(self):
+        if len(self.toks) < 2:
+            self.syntax()
+        self.vcc.pkgstr = " ".join(self.toks[1:])
 
 #######################################################################
 
@@ -944,6 +954,7 @@ DISPATCH = {
     "Synopsis": SynopsisStanza,
     "Alias":    AliasStanza,
     "Restrict": RestrictStanza,
+    "Version":  VersionStanza
 }
 
 
@@ -966,6 +977,7 @@ class vcc():
         self.auto_synopsis = True
         self.modname = None
         self.csn = None
+        self.pkgstr = None
 
     def openfile(self, fn):
         self.commit_files.append(fn)
@@ -1180,10 +1192,60 @@ class vcc():
         fo.write('\t\"\\n\\x03\"\n};\n')
         fo.write('#undef STRINGIFY\n')
 
+    # parts from varnish-cache include/generate.py
+    def version(self):
+        srcdir = os.path.dirname(self.inputfile)
+
+        pkgstr = "NOVERSION"
+
+        if self.pkgstr is not None:
+            pkgstr = self.pkgstr
+        else:
+            for d in [srcdir, "."]:
+                f = os.path.join(d, "Makefile")
+                if not os.path.exists(f):
+                    continue
+                for pkgstr in open(f):
+                    if pkgstr[:14] == "PACKAGE_STRING":
+                        pkgstr = pkgstr.split("=")[1].strip()
+                        break
+                break
+        return pkgstr
+
+    # parts from varnish-cache include/generate.py
+    def vcs(self):
+        srcdir = os.path.dirname(self.inputfile)
+
+        gitver = subprocess.check_output([
+            "git -C %s rev-parse HEAD 2>/dev/null || echo NOGIT" %
+            srcdir], shell=True, universal_newlines=True).strip()
+        gitfile = "vmod_vcs_version.txt"
+
+        if gitver == "NOGIT":
+            for d in [".", srcdir]:
+                f = os.path.join(d, gitfile)
+                if not os.path.exists(f):
+                    continue
+                fh = open(f, "r")
+                if not fh:
+                    continue
+                gitver = fh.read()
+                fh.close()
+                break;
+        else:
+            fh = open(gitfile, "w")
+            fh.write(gitver)
+            fh.close()
+
+        return gitver
 
     def vmod_data(self, fo):
+        version = json.dumps(self.version())
+        vcs = json.dumps(self.vcs())
         vmd = "Vmod_%s_Data" % self.modname
         fo.write('\n')
+        fo.write('__attribute__((section(".vmod_vcs"), used))\n')
+        fo.write('const char vmod_vcs[] = %s;' % vcs)
         for i in (714, 759, 765):
             fo.write("/*lint -esym(%d, %s) */\n" % (i, vmd))
         fo.write("\nextern const struct vmod_data %s;\n" % vmd)
@@ -1197,6 +1259,8 @@ class vcc():
         fo.write('\t.func_len =\tsizeof(%s),\n' % self.csn)
         fo.write('\t.json =\t\tVmod_Json,\n')
         fo.write('\t.abi =\t\tVMOD_ABI_Version,\n')
+        fo.write('\t.version =\t%s,\n' % version)
+        fo.write('\t.vcs =\tvmod_vcs,\n')
         fo.write("};\n")
 
     def mkcfile(self):
