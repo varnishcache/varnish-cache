@@ -14,10 +14,14 @@ server s1 {
 	chunkedlen 0
 } -start
 
-varnish v1				\
-	-arg "-p idle_send_timeout=.1"	\
-	-arg "-p send_timeout=.8"	\
-	-vcl+backend { } -start
+varnish v1 -cliok "param.set idle_send_timeout .1"
+varnish v1 -cliok "param.set send_timeout .8"
+varnish v1 -vcl+backend { } -start
+
+logexpect l1 -v v1 {
+	expect * * DeliveryError	{resp: "Error transaction" \d+ ".*"}
+	expect 0 = Timestamp		"Resp:"
+} -start
 
 client c1 {
 	txreq
@@ -26,3 +30,5 @@ client c1 {
 	barrier b sync
 	expect_close
 } -run
+
+logexpect l1 -wait
