@@ -45,6 +45,7 @@ import json
 import optparse
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -1180,6 +1181,20 @@ class vcc():
         fo.write('\t\"\\n\\x03\"\n};\n')
         fo.write('#undef STRINGIFY\n')
 
+    # from varnish-cache include/generate.py
+    def version(self):
+        srcdir = os.path.dirname(self.inputfile)
+
+        for pkgstr in open(os.path.join(srcdir, "Makefile")):
+            if pkgstr[:14] == "PACKAGE_STRING":
+                break
+        pkgstr = pkgstr.split("=")[1].strip()
+
+        gitver = subprocess.check_output([
+            "git -C %s rev-parse HEAD 2>/dev/null || echo NOGIT" %
+            srcdir], shell=True, universal_newlines=True).strip()
+
+        return pkgstr + " " + gitver
 
     def vmod_data(self, fo):
         vmd = "Vmod_%s_Data" % self.modname
@@ -1197,6 +1212,7 @@ class vcc():
         fo.write('\t.func_len =\tsizeof(%s),\n' % self.csn)
         fo.write('\t.json =\t\tVmod_Json,\n')
         fo.write('\t.abi =\t\tVMOD_ABI_Version,\n')
+        fo.write('\t.version =\t%s,\n' % json.dumps(self.version()))
         fo.write("};\n")
 
     def mkcfile(self):
