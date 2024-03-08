@@ -89,7 +89,7 @@
 #define VSL_END(ptr, len)	((ptr) + VSL_OVERHEAD + VSL_WORDS(len))
 #define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
 #define VSL_LEN(ptr)		((ptr)[0] & VSL_LENMASK)
-#define VSL_VER(ptr)		(((ptr)[0] & VSL_VERMASK) >> VSL_VERSHIFT)
+#define VSL_VER(ptr)		(((ptr)[0] >> VSL_VERSHIFT) & VSL_VERMASK)
 #define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> VSL_IDSHIFT))
 #define VSL_ID64(ptr)		(((uint64_t)((ptr)[2])<<32) | ((ptr)[1]))
 #define VSL_ID(ptr)		(VSL_ID64(ptr) & VSL_IDENTMASK)
