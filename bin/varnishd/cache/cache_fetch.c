@@ -1222,6 +1222,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	if (Pool_Task(wrk->pool, bo->fetch_task, prio)) {
 		wrk->stats->bgfetch_no_thread++;
+		VSLb(bo->vsl, SLT_FetchError,
+		    "No thread available for bgfetch");
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
