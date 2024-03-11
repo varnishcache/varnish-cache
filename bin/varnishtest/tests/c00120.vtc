@@ -15,6 +15,10 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 {
+	expect * * FetchError "No thread available for bgfetch"
+} -start
+
 client c1 {
 	txreq
 	rxresp
@@ -28,5 +32,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -start
+
+logexpect l1 -wait
 
 varnish v1 -expect MAIN.bgfetch_no_thread == 1
