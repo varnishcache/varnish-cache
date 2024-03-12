@@ -718,6 +718,8 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 			}
 			if (oc->flags & OC_F_DYING)
 				continue;
+			if (is_purge)
+				oc->flags |= OC_F_DYING;
 			oc->refcnt++;
 			ocp[n++] = oc;
 		}
