@@ -855,6 +855,13 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	stale_oc = bo->stale_oc;
 	CHECK_OBJ_NOTNULL(stale_oc, OBJCORE_MAGIC);
 
+	if (stale_oc->flags & OC_F_DYING) {
+		(void)VFP_Error(bo->vfc, "Template object invalidated");
+		vbf_cleanup(bo);
+		wrk->stats->fetch_failed++;
+		return (F_STP_ERROR);
+	}
+
 	stale_boc = HSH_RefBoc(stale_oc);
 	CHECK_OBJ_ORNULL(stale_boc, BOC_MAGIC);
 	if (stale_boc) {
