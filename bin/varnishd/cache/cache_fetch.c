@@ -270,7 +270,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	}
 	http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 
-	if (bo->stale_oc != NULL &&
+	if (bo->stale_oc != NULL && !(bo->stale_oc->flags & OC_F_DYING) &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
 	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
 		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
