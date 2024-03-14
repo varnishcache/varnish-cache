@@ -19,40 +19,9 @@ varnishd
 Parameters
 ~~~~~~~~~~
 
-**XXX changes in -p parameters**
-
 The default value of ``cli_limit`` has been increased from 48KB to
 64KB to avoid truncating the ``param.show -j`` output for common use
 cases.
-
-The ``vsl_mask`` parameter accepts a new special value "all" that enables
-logging of all VSL tags, the counterpart of "none".
-
-.. I am not sure if "absolute value" is the best name here. It is
-   "relative to all", but I do not have a better idea
-
-This allows all bits parameters to be set atomically to an absolute
-value, as in::
-
-    param.set vsl_mask all,-Debug,-ExpKill
-
-The ``param.show`` output prints the absolute value. This enables
-operations to atomically set a bits parameter, relative or absolute,
-and collect the absolute value::
-
-    param.show vsl_mask
-    200
-    vsl_mask
-            Value is: all,-Debug,-ExpKill
-    [...]
-
-The ``param.set`` command in JSON mode (``-j argument``) prints the
-``param.show`` JSON output after successfully updating a
-parameter. The ``param.reset`` command now shares the same behavior.
-
-The special value ``default`` for bits parameters was deprecated in
-favor of the generic ``param.reset`` command. It will be removed in a
-future release.
 
 A new ``pipe_task_deadline`` specifies the maximum duration of a pipe
 transaction. The default value is the special value "never" to align with the
@@ -76,6 +45,65 @@ All the timeout parameters that can be disabled accept the "never" value:
 
 The :ref:`varnishd(1)` manual advertises the ``timeout`` flag for these
 parameters.
+
+Bits parameters
+~~~~~~~~~~~~~~~
+
+In Varnish 7.1.0 the ``param.set`` command grew a new ``-j`` option that
+displays the same output as ``param.show -j`` for the parameter that is
+successfully updated.
+
+The goal was to atomically change a value and communicate how a subsequent
+``param.show`` would render it. This could be used for consistency checks,
+to ensure that a parameter was not changed by a different party. Collecting
+how the parameter is displayed can be important for example for floating-point
+numbers parameters that could be displayed with different resolutions, or
+parameters that can take units and have multiple representations.
+
+Here is a concrete example::
+
+    $ varnishadm param.set -j workspace_client 16384 | jq '.[3].value'
+    16384
+    $ varnishadm param.set -j workspace_client 128k | jq '.[3].value'
+    131072
+
+However, this could not work with bits parameters::
+
+    $ varnishadm param.set -j feature +http2 | jq -r '.[3].value'
+    +http2,+validate_headers
+
+If the ``feature`` parameter is changed, reusing the output of ``param.set``
+cannot guarantee the restoration that exact value::
+
+    $ varnishadm param.set -j feature +http2,+validate_headers | jq -r '.[3].value'
+    +http2,+no_coredump,+validate_headers
+
+To fill this gap, bits parameters are now displayed as absolute values,
+relative to none of the bits being set. A list of bits can start with the
+special value ``none`` to clear all the bits, followed by specific bits to
+raise::
+
+    $ varnishadm param.set -j feature +http2 | jq -r '.[3].value'
+    none,+http2,+validate_headers
+    $ varnishadm param.set -j feature none,+http2,+validate_headers | jq -r '.[3].value'
+    none,+http2,+validate_headers
+
+The output of ``param.show`` and ``param.set`` is now idempotent for bits
+parameters, and can be used by a consistency check system to restore a
+parameter to its desired value.
+
+Almost all bits parameters are displayed as bits set relative to a ``none``
+value. The notable exception is ``vsl_mask`` that is expressed with bits
+cleared. For this purpose the ``vsl_mask`` parameter is now displayed as
+bits cleared relative to an ``all`` value::
+
+
+    $ varnishadm param.set -j vsl_mask all,-Debug | jq -r '.[3].value'
+    all,-Debug
+
+The special value ``default`` for bits parameters was deprecated in
+favor of the generic ``param.reset`` command. It might be removed in a
+future release.
 
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,8 +136,6 @@ Changes to VCL
 
 VCL variables
 ~~~~~~~~~~~~~
-
-**XXX new, deprecated or removed variables, or changed semantics**
 
 A new ``bereq.task_deadline`` variable is available in ``vcl_pipe`` to
 override the ``pipe_task_deadline`` parameter.
@@ -158,15 +184,8 @@ Other changes to VCL
 The new ``+fold`` flag for ACLs merges adjacent subnets together and optimize
 out subnets for which there exist another all-encompassing subnet.
 
-VMODs
-=====
-
-**XXX changes in the bundled VMODs**
-
 varnishlog
 ==========
-
-**XXX changes concerning varnishlog(1) and/or vsl(7)**
 
 When a ``BackendClose`` record includes a reason field, it now shows the
 reason tag (for example ``RX_TIMEOUT``) instead of its description (Receive
@@ -192,15 +211,8 @@ without having to repeat it::
 
     varnishncsa -F ``%{Varnish:default_format}x %{Varnish:handling}x``
 
-varnishadm
-==========
-
-**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
-
 varnishstat
 ===========
-
-**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
 
 A new counter ``MAIN.n_superseded`` adds visibility on how many objects are
 inserted as the replacement of another object in the cache. This can give
@@ -208,8 +220,6 @@ insights regarding the nature of churn in a cache.
 
 varnishtest
 ===========
-
-**XXX changes concerning varnishtest(1) and/or vtc(7)**
 
 When an HTTP/2 stream number does not matter and the stream is handled in a
 single block, the automatic ``next`` identifier can be used::
@@ -230,9 +240,6 @@ include command itself. There are no guards against recursive includes.
 
 Changes for developers and VMOD authors
 =======================================
-
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
 
 The ``VSB_tofile()`` function can work with VSBs larger than ``INT_MAX`` and
 tolerate partial writes.
