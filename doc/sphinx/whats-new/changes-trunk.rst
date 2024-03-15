@@ -113,8 +113,14 @@ relative to none of the bits being set. A list of bits can start with the
 special value ``none`` to clear all the bits, followed by specific bits to
 raise::
 
+    # atomically update and capture feature flags
     $ varnishadm param.set -j feature +http2 | jq -r '.[3].value'
     none,+http2,+validate_headers
+
+    # very insistent systems administrator
+    $ varnishadm param.set feature +no_coredump | jq -r '.[3].value'
+
+    # successful attempt at restoring the captured value
     $ varnishadm param.set -j feature none,+http2,+validate_headers | jq -r '.[3].value'
     none,+http2,+validate_headers
 
