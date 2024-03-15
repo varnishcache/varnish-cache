@@ -27,6 +27,16 @@ longer open (stream reset, client disconnected etc).
 
 .. _VSV 13: https://varnish-cache.org/security/VSV00013.html
 
+CVE-2023-43622
+~~~~~~~~~~~~~~
+
+Another denial of service attack vector received a CVE number in the aftermath
+of the Rapid Reset debacle. `VSV 14`_ is called the HTTP/2 Broke Window attack
+and can be summarized as the ability for clients to hold a server still by not
+crediting the control flow window of HTTP/2 streams.
+
+.. _VSV 14: https://varnish-cache.org/security/VSV00014.html
+
 varnishd
 ========
 
@@ -65,6 +75,11 @@ The following parameters address the HTTP/2 Rapid Reset attach:
 - ``h2_rapid_reset`` (duration below which a reset is considered rapid)
 - ``h2_rapid_reset_limit`` (maximum number of rapid resets per period)
 - ``h2_rapid_reset_period`` (the sliding period to track rapid resets)
+
+The new ``h2_window_timeout`` parameter defines how long an HTTP/2 stream can
+stall its delivery waiting for a control flow window update. A stream without
+any credits is considered broke, and if all streams are broke when the new
+timeout triggers the entire connection is considered bankrupt.
 
 A new bit flag ``vcl_req_reset`` for the ``feature`` parameter interrupts
 client request tasks during VCL transitions when an HTTP/2 stream is no longer
@@ -247,9 +262,12 @@ A new ``MAIN.sc_rapid_reset`` counter counts the number of HTTP/2 connections
 closed because the number of rapid resets exceed the limit over the configured
 period.
 
-Its ``MAIN.req_reset`` counterpart counts the number of time a client task was
-prematurely failed because the HTTP/2 stream it was processing was no longer
-open and the feature flag ``vcl_req_reset`` was raised.
+Likewise, ``MAIN.sc_bankrupt`` counts the number of HTTP/2 connections closed
+because all streams ran out of credits and ``h2_window_timeout`` triggered.
+
+Their ``MAIN.req_reset`` counterpart counts the number of time a client task
+was prematurely failed because the HTTP/2 stream it was processing was no
+longer open and the feature flag ``vcl_req_reset`` was raised.
 
 A new counter ``MAIN.n_superseded`` adds visibility on how many objects are
 inserted as the replacement of another object in the cache. This can give
