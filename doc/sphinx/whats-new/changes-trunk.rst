@@ -138,11 +138,6 @@ The CLI script specified with the ``-I`` option must end with a new line
 character or ``varnishd`` will fail to start. Previously, an incomplete last
 line would be ignored.
 
-TODO: Should we cover the rapid reset mitigation? It's new since 7.4.0 but not
-quite new since "7.4" after the security releases. Should it get a dedicated
-prominent headline? Or should it be dispatched in the various sections? Or a
-little bit of both?
-
 Changes to VCL
 ==============
 
