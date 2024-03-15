@@ -101,6 +101,10 @@ However, this could not work with bits parameters::
 If the ``feature`` parameter is changed, reusing the output of ``param.set``
 cannot guarantee the restoration that exact value::
 
+    # third party intervention
+    $ varnishadm param.set feature +no_coredump | jq -r '.[3].value'
+
+    # attempt at restoring the captured value
     $ varnishadm param.set -j feature +http2,+validate_headers | jq -r '.[3].value'
     +http2,+no_coredump,+validate_headers
 
