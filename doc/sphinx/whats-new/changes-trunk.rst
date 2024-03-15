@@ -13,6 +13,20 @@ merged, may be found in the `change log`_.
 
 .. _change log: https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst
 
+Security
+========
+
+CVE-2023-44487
+~~~~~~~~~~~~~~
+
+Also known as the HTTP/2 Rapid Reset Attack, or `VSV 13`_, this vulnerability
+is addressed with two mitigations introducing several changes since the 7.4.0
+release of Varnish Cache. The first one detects and stops Rapid Reset attacks
+and the second one interrupts the processing of HTTP/2 requests that are no
+longer open (stream reset, client disconnected etc).
+
+.. _VSV 13: https://varnish-cache.org/security/VSV00013.html
+
 varnishd
 ========
 
@@ -45,6 +59,18 @@ All the timeout parameters that can be disabled accept the "never" value:
 
 The :ref:`varnishd(1)` manual advertises the ``timeout`` flag for these
 parameters.
+
+The following parameters address the HTTP/2 Rapid Reset attach:
+
+- ``h2_rapid_reset`` (duration below which a reset is considered rapid)
+- ``h2_rapid_reset_limit`` (maximum number of rapid resets per period)
+- ``h2_rapid_reset_period`` (the sliding period to track rapid resets)
+
+A new bit flag ``vcl_req_reset`` for the ``feature`` parameter interrupts
+client request tasks during VCL transitions when an HTTP/2 stream is no longer
+open. The result is equivalent to a ``return (fail);`` statement and can save
+significant server resources. It can also break setups expecting requests to
+always be fully processed, even when they are not delivered.
 
 Bits parameters
 ~~~~~~~~~~~~~~~
@@ -117,20 +143,6 @@ quite new since "7.4" after the security releases. Should it get a dedicated
 prominent headline? Or should it be dispatched in the various sections? Or a
 little bit of both?
 
-List of rapid reset changes:
-  - param h2_rapid_reset
-  - param h2_rapid_reset_limit
-  - param h2_rapid_reset_period
-  - MAIN.sc_rapid_reset counter
-  - SessClose tag RAPID_RESET
-  - vmod_h2 (with per-h2_sess h2_rapid_* parameters)
-
-List of reset changes:
-  - param feature +vcl_req_reset
-  - MAIN.req_reset counter
-  - VSL Timestamp:Reset
-  - status 408 logged for reset streams
-
 Changes to VCL
 ==============
 
@@ -184,8 +196,20 @@ Other changes to VCL
 The new ``+fold`` flag for ACLs merges adjacent subnets together and optimize
 out subnets for which there exist another all-encompassing subnet.
 
+VMODs
+=====
+
+A new :ref:`vmod_h2(3)` can override the ``h2_rapid_reset*`` parameters on a
+per-session basis.
+
 varnishlog
 ==========
+
+The ``SessClose`` record may contain the ``RAPID_RESET`` reason. This can be
+used to monitor attacks successfully mitigated or detect false positives.
+
+When the ``feature`` flag ``vcl_req_reset`` is raised, an interrupted client
+logs a ``Reset`` timestamps, and the response status code 408 is logged.
 
 When a ``BackendClose`` record includes a reason field, it now shows the
 reason tag (for example ``RX_TIMEOUT``) instead of its description (Receive
@@ -213,6 +237,14 @@ without having to repeat it::
 
 varnishstat
 ===========
+
+A new ``MAIN.sc_rapid_reset`` counter counts the number of HTTP/2 connections
+closed because the number of rapid resets exceed the limit over the configured
+period.
+
+Its ``MAIN.req_reset`` counterpart counts the number of time a client task was
+prematurely failed because the HTTP/2 stream it was processing was no longer
+open and the feature flag ``vcl_req_reset`` was raised.
 
 A new counter ``MAIN.n_superseded`` adds visibility on how many objects are
 inserted as the replacement of another object in the cache. This can give
