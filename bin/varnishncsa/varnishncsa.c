@@ -93,7 +93,7 @@ enum e_frag {
 };
 
 struct fragment {
-	unsigned		gen;
+	uint64_t		gen;
 	const char		*b, *e;
 };
 
@@ -144,7 +144,7 @@ static struct ctx {
 
 	FILE			*fo;
 	struct vsb		*vsb;
-	unsigned		gen;
+	uint64_t		gen;
 	VTAILQ_HEAD(,format)	format;
 	int			quote_how;
 	char			*missing_string;
