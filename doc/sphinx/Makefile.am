@@ -186,6 +186,10 @@ include/vmod_cookie.generated.rst: $(top_builddir)/vmod/vmod_cookie.rst
 	cp $(top_builddir)/vmod/vmod_cookie.rst $@
 BUILT_SOURCES += include/vmod_cookie.generated.rst
 
+include/vmod_h2.generated.rst: $(top_builddir)/vmod/vmod_h2.rst
+	cp $(top_builddir)/vmod/vmod_h2.rst $@
+BUILT_SOURCES += include/vmod_h2.generated.rst
+
 include/vmod_unix.generated.rst: $(top_builddir)/vmod/vmod_unix.rst
 	cp $(top_builddir)/vmod/vmod_unix.rst $@
 BUILT_SOURCES += include/vmod_unix.generated.rst
