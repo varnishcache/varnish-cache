@@ -173,7 +173,7 @@ Req_New(struct sess *sp)
 	p = (void*)PRNDUP(p + sizeof(*req->vfc));
 
 	req->vdc = (void*)p;
-	memset(req->vdc, 0, sizeof *req->vdc);
+	ZERO_OBJ(req->vdc, sizeof *req->vdc);
 	p = (void*)PRNDUP(p + sizeof(*req->vdc));
 
 	req->htc = (void*)p;
