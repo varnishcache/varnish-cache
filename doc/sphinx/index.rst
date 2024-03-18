@@ -37,7 +37,7 @@ Longer listings like example command output and VCL look like this::
     $ /opt/varnish/sbin/varnishd -V
     varnishd (varnish-6.0.x revision 1234567)
     Copyright (c) 2006 Verdens Gang AS
-    Copyright (c) 2006-2022 Varnish Software AS
+    Copyright (c) 2006-2024 Varnish Software AS
 
 
 .. For maintainers:
