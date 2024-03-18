@@ -13,7 +13,7 @@ This section describes the changes and improvements between different
 versions of Varnish, and what upgrading between the different versions
 entail.
 
-Varnish **$NEXT_RELEASE**
+Varnish **7.5**
 -------------------------
 
 **Note: These are working documents for a future release, with running
@@ -23,8 +23,8 @@ released versions of Varnish, see the chapters listed below.**
 .. toctree::
    :maxdepth: 2
 
-   changes-trunk
-   upgrading-trunk
+   changes-7.5
+   upgrading-7.5
 
 Varnish 7.4
 -----------

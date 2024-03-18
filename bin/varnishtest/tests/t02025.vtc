@@ -25,12 +25,17 @@ logexpect l1 -v v1 -g raw -i Debug {
 } -start
 
 client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.err == NO_ERROR
+		expect goaway.laststream == 1
+	} -start
 	stream 1 {
 		txreq
 		barrier b1 sync
 		txrst
 	} -run
-	expect_close
+	stream 0 -wait
 } -start
 
 logexpect l1 -wait

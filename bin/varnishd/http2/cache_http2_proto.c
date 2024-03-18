@@ -47,10 +47,13 @@
 #include "vtim.h"
 
 #define H2_CUSTOM_ERRORS
-#define H2EC1(U,v,r,d) const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1,r}};
-#define H2EC2(U,v,r,d) const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0,r}};
-#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
-#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
+#define H2EC1(U,v,g,r,d)	\
+	const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1,g,r}};
+#define H2EC2(U,v,g,r,d)	\
+	const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0,g,r}};
+#define H2EC3(U,v,g,r,d) H2EC1(U,v,g,r,d) H2EC2(U,v,g,r,d)
+#define H2_ERROR(NAME, val, sc, goaway, reason, desc)	\
+	H2EC##sc(NAME, val, goaway, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -62,6 +65,7 @@ static const struct h2_error_s H2NN_ERROR[1] = {{
 	0xffffffff,
 	1,
 	1,
+	0,
 	SC_RX_JUNK
 }};
 
@@ -89,10 +93,11 @@ h2_framename(enum h2frame h2f)
  */
 
 static const h2_error stream_errors[] = {
-#define H2EC1(U,v,r,d)
-#define H2EC2(U,v,r,d) [v] = H2SE_##U,
-#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
-#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
+#define H2EC1(U,v,g,r,d)
+#define H2EC2(U,v,g,r,d) [v] = H2SE_##U,
+#define H2EC3(U,v,g,r,d) H2EC1(U,v,g,r,d) H2EC2(U,v,g,r,d)
+#define H2_ERROR(NAME, val, sc, goaway, reason, desc)	\
+	H2EC##sc(NAME, val, goaway, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -114,10 +119,11 @@ h2_streamerror(uint32_t u)
  */
 
 static const h2_error conn_errors[] = {
-#define H2EC1(U,v,r,d) [v] = H2CE_##U,
-#define H2EC2(U,v,r,d)
-#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
-#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
+#define H2EC1(U,v,g,r,d) [v] = H2CE_##U,
+#define H2EC2(U,v,g,r,d)
+#define H2EC3(U,v,g,r,d) H2EC1(U,v,g,r,d) H2EC2(U,v,g,r,d)
+#define H2_ERROR(NAME, val, sc, goaway, reason, desc)	\
+	H2EC##sc(NAME, val, goaway, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -389,12 +395,32 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 
+	h2->goaway = 1;
 	h2->goaway_last_stream = vbe32dec(h2->rxf_data);
 	h2->error = h2_connectionerror(vbe32dec(h2->rxf_data + 4));
 	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "GOAWAY %s", h2->error->name);
 	Lck_Unlock(&h2->sess->mtx);
 	return (h2->error);
+}
+
+static void
+h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
+{
+	char b[8];
+
+	ASSERT_RXTHR(h2);
+	AN(h2e);
+
+	if (h2->goaway || !h2e->send_goaway)
+		return;
+
+	h2->goaway = 1;
+	vbe32enc(b, h2->highest_stream);
+	vbe32enc(b + 4, h2e->val);
+	H2_Send_Get(wrk, h2, h2->req0);
+	H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
+	H2_Send_Rel(h2, h2->req0);
 }
 
 /**********************************************************************
@@ -837,11 +863,11 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_Lock(&h2->sess->mtx);
 	CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
 
-	if (h2->error || r2->error) {
+	if (h2->error != NULL || r2->error != NULL) {
 		if (r2->cond)
 			PTOK(pthread_cond_signal(r2->cond));
 		Lck_Unlock(&h2->sess->mtx);
-		return (h2->error ? h2->error : r2->error);
+		return (h2->error != NULL ? h2->error : r2->error);
 	}
 
 	/* Check padding if present */
@@ -1078,7 +1104,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 		} else
 			l = 0;
 
-		if (h2->error || r2->error)
+		if (h2->error != NULL || r2->error != NULL)
 			retval = VFP_ERROR;
 		else if (r2->state >= H2_S_CLOS_REM && l <= *lp)
 			retval = VFP_END;
@@ -1269,81 +1295,90 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 		if (r2->stream == h2->rxf_stream)
 			break;
 
-	if (h2->new_req != NULL &&
-	    !(r2 && h2->new_req == r2->req && h2f == H2_F_CONTINUATION))
+	if (h2->new_req != NULL && h2f != H2_F_CONTINUATION)
 		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
 
 	h2e = h2f->rxfunc(wrk, h2, r2);
-	if (h2e == 0)
-		return (0);
+	if (h2e == NULL)
+		return (NULL);
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
 	H2_Send_Get(wrk, h2, h2->req0);
 	H2_Send_RST(wrk, h2, h2->req0, h2->rxf_stream, h2e);
 	H2_Send_Rel(h2, h2->req0);
-	return (0);
+	return (NULL);
 }
 
-int
+h2_error
 h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 {
-	int r = 0;
+	h2_error h2e = NULL;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	Lck_AssertHeld(&h2->sess->mtx);
 
-	/* NB: when now is NAN, it means that idle_send_timeout was hit
+	/* NB: when now is NAN, it means that h2_window_timeout was hit
 	 * on a lock condwait operation.
 	 */
 	if (isnan(now))
 		AN(r2->t_winupd);
 
+	if (h2->error != NULL && h2->error->connection &&
+	    !h2->error->send_goaway)
+		return (h2->error);
+
 	if (r2->t_winupd == 0 && r2->t_send == 0)
-		return (0);
+		return (NULL);
 
 	if (isnan(now) || (r2->t_winupd != 0 &&
-	    now - r2->t_winupd > SESS_TMO(h2->sess, idle_send_timeout))) {
+	    now - r2->t_winupd > cache_param->h2_window_timeout)) {
 		VSLb(h2->vsl, SLT_Debug,
-		     "H2: stream %u: Hit idle_send_timeout waiting for"
-		     " WINDOW_UPDATE", r2->stream);
-		r = 1;
+		     "H2: stream %u: Hit h2_window_timeout", r2->stream);
+		h2e = H2SE_BROKE_WINDOW;
 	}
 
-	if (r == 0 && r2->t_send != 0 &&
+	if (h2e == NULL && r2->t_send != 0 &&
 	    now - r2->t_send > SESS_TMO(h2->sess, send_timeout)) {
 		VSLb(h2->vsl, SLT_Debug,
 		     "H2: stream %u: Hit send_timeout", r2->stream);
-		r = 1;
+		h2e = H2SE_CANCEL;
 	}
 
-	return (r);
+	return (h2e);
 }
 
-static int
+static h2_error
 h2_stream_tmo_unlocked(struct h2_sess *h2, const struct h2_req *r2)
 {
-	int r;
+	h2_error h2e;
 
 	Lck_Lock(&h2->sess->mtx);
-	r = h2_stream_tmo(h2, r2, h2->sess->t_idle);
+	h2e = h2_stream_tmo(h2, r2, h2->sess->t_idle);
 	Lck_Unlock(&h2->sess->mtx);
 
-	return (r);
+	return (h2e);
 }
 
 /*
  * This is the janitorial task of cleaning up any closed & refused
  * streams, and checking if the session is timed out.
  */
-static int
+static h2_error
 h2_sweep(struct worker *wrk, struct h2_sess *h2)
 {
-	int tmo = 0;
 	struct h2_req *r2, *r22;
+	h2_error h2e, tmo;
+	vtim_real now;
 
 	ASSERT_RXTHR(h2);
+
+	h2e = h2->error;
+	now = VTIM_real();
+	if (h2e == NULL && h2->open_streams == 0 &&
+	    h2->sess->t_idle + cache_param->timeout_idle < now)
+		h2e = H2CE_NO_ERROR;
 
 	h2->do_sweep = 0;
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
@@ -1368,10 +1403,9 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			/* FALLTHROUGH */
 		case H2_S_CLOS_LOC:
 		case H2_S_OPEN:
-			if (h2_stream_tmo_unlocked(h2, r2)) {
-				tmo = 1;
-				continue;
-			}
+			tmo = h2_stream_tmo_unlocked(h2, r2);
+			if (h2e == NULL)
+				h2e = tmo;
 			break;
 		case H2_S_IDLE:
 			/* Current code make this unreachable: h2_new_req is
@@ -1383,9 +1417,7 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			break;
 		}
 	}
-	if (tmo)
-		return (0);
-	return (h2->refcnt > 1);
+	return (h2e);
 }
 
 
@@ -1410,41 +1442,38 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	enum htc_status_e hs;
 	h2_frame h2f;
 	h2_error h2e;
-	const char *s = NULL;
-	char b[8];
 
 	ASSERT_RXTHR(h2);
+
+	if (h2->goaway && h2->open_streams == 0)
+		return (0);
+
 	VTCP_blocking(*h2->htc->rfd);
-	h2->sess->t_idle = VTIM_real();
-	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
-	    NULL, NULL, NAN,
-	    h2->sess->t_idle + SESS_TMO(h2->sess, timeout_idle),
-	    NAN, h2->local_settings.max_frame_size + 9);
+	hs = HTC_RxStuff(h2->htc, h2_frame_complete, NULL, NULL, NAN,
+	    VTIM_real() + 0.5, NAN, h2->local_settings.max_frame_size + 9);
+
+	h2e = NULL;
 	switch (hs) {
 	case HTC_S_COMPLETE:
+		h2->sess->t_idle = VTIM_real();
+		if (h2->do_sweep)
+			h2e = h2_sweep(wrk, h2);
 		break;
 	case HTC_S_TIMEOUT:
-		if (h2_sweep(wrk, h2))
-			return (1);
-
-		/* FALLTHROUGH */
+		h2e = h2_sweep(wrk, h2);
+		break;
 	default:
-		/* XXX: HTC_S_OVERFLOW / FRAME_SIZE_ERROR handling */
-#define HTC_STATUS(e, n, d, l)			\
-		do {				\
-			if (hs == HTC_S_ ## e)	\
-				s = #e;		\
-		} while (0);
-#include "tbl/htc.h"
-		Lck_Lock(&h2->sess->mtx);
-		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%s)", s);
-		h2->error = H2CE_NO_ERROR;
-		Lck_Unlock(&h2->sess->mtx);
+		h2e = H2CE_ENHANCE_YOUR_CALM;
+	}
+
+	if (h2e != NULL && h2e->connection) {
+		h2->error = h2e;
+		h2_tx_goaway(wrk, h2, h2e);
 		return (0);
 	}
 
-	if (h2->do_sweep)
-		(void)h2_sweep(wrk, h2);
+	if (hs != HTC_S_COMPLETE)
+		return (1);
 
 	h2->rxf_len = vbe32dec(h2->htc->rxbuf_b) >> 8;
 	h2->rxf_type = h2->htc->rxbuf_b[3];
@@ -1489,13 +1518,10 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	}
 
 	h2e = h2_procframe(wrk, h2, h2f);
-	if (h2->error == 0 && h2e) {
+	if (h2->error == NULL && h2e != NULL) {
 		h2->error = h2e;
-		vbe32enc(b, h2->highest_stream);
-		vbe32enc(b + 4, h2e->val);
-		H2_Send_Get(wrk, h2, h2->req0);
-		H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
-		H2_Send_Rel(h2, h2->req0);
+		h2_tx_goaway(wrk, h2, h2e);
 	}
-	return (h2->error ? 0 : 1);
+
+	return (h2->error != NULL ? 0 : 1);
 }
