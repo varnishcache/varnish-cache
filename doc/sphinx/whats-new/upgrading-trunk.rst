@@ -52,6 +52,9 @@ that purpose::
 
     varnishadm param.set pipe_timeout never
 
+The parameters ``idle_send_timeout`` and ``timeout_idle`` are now
+limited to a maximum of 1 hour.
+
 VRT
 ~~~
 
@@ -65,5 +68,21 @@ respective parameters due to a limitation in how VCL is compiled.
 
 As a convenience, a new macro ``VRT_BACKEND_INIT()`` behaves like ``INIT_OBJ``
 but initializes timeouts to a negative value.
+
+VCL COLD events have been fixed for directors vs. VMODs: VDI COLD now
+comes before VMOD COLD.
+
+Other changes relevant for VMOD / VEXT authors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Transports are now responsible for calling ``VDP_Close()`` in all
+cases.
+
+Storage engines are now responsible for deciding which
+``fetch_chunksize`` to use. When Varnish-Cache does not know the
+expected object size, it calls the ``objgetspace`` stevedore function
+with a zero ``sz`` argument.
+
+``(struct req).filter_list`` has been renamed to ``vdp_filter_list``.
 
 *eof*
