@@ -1,11 +1,11 @@
-.. _whatsnew_changes_CURRENT:
+.. _whatsnew_changes_7.5:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **${NEXT_RELEASE}**
+Changes in Varnish **7.5**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_7.5`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been

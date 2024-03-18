@@ -1,7 +1,7 @@
-.. _whatsnew_upgrading_CURRENT:
+.. _whatsnew_upgrading_7.5:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
+Upgrading to Varnish **7.5**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Logs

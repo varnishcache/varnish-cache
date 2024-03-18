@@ -46,9 +46,9 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
-#define VRT_MAJOR_VERSION	18U
+#define VRT_MAJOR_VERSION	19U
 
-#define VRT_MINOR_VERSION	1U
+#define VRT_MINOR_VERSION	0U
 
 /***********************************************************************
  * Major and minor VRT API versions.
@@ -57,7 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * NEXT (2024-03-15)
+ * 19.0 (2024-03-18)
  *	[cache.h] (struct req).filter_list renamed to vdp_filter_list
  *	order of vcl/vmod and director COLD events reversed to directors first
  *	VRT_u_sess_idle_send_timeout() added
