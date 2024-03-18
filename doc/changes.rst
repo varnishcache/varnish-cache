@@ -27,12 +27,16 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
-Varnish Cache 6.0.13 (unreleased)
+Varnish Cache 6.0.13 (2024-03-18)
 =================================
+
+* Add ``h2_window_timeout`` paramater to mitigate CVE-2023-43622 (VSV00014_).
 
 * The ``Process`` timestamp for ``vcl_synth {}`` was wrongly issued
   before the VCL callback, now it gets emitted after VCL returns for
   consistency with ``vcl_deliver {}``
+
+.. _VSV00014: https://varnish-cache.org/security/VSV00014.html
 
 =================================
 Varnish Cache 6.0.12 (2023-11-13)
