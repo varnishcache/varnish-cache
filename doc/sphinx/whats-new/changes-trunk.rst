@@ -118,7 +118,7 @@ raise::
     none,+http2,+validate_headers
 
     # very insistent systems administrator
-    $ varnishadm param.set feature +no_coredump | jq -r '.[3].value'
+    $ varnishadm param.set feature +no_coredump
 
     # successful attempt at restoring the captured value
     $ varnishadm param.set -j feature none,+http2,+validate_headers | jq -r '.[3].value'
