@@ -51,16 +51,16 @@ Varnish Cache NEXT (2024-03-15)
   ``sess.send_timeout`` can now be ``unset`` to use their default
   values from parameters.
 
-* Timeout and deadline parameters and VCL variables can now be set to
-  the special value ``never`` to apply an infinitely long
-  timeout. Parameters which used to be of type ``timeout`` but do not
-  accept ``never`` have been moved to the new type ``duration``.
+* Timeout and deadline parameters can now be set to a new special value
+  ``never`` to apply an infinitely long timeout. Parameters which used to
+  be of type ``timeout`` but do not accept ``never`` have been moved to
+  the new type ``duration``. VCL variables cannot be set to ``never``.
 
-* The implementation of the feature flag ``esi_include_onerror`` added
+* The implementation of the feature flag ``esi_include_onerror`` changed
   in Varnish-Cache 7.3.0 has been reverted to more closely match the
   behavior before that release: By default, fragments are included
   again, even errors. When ``esi_include_onerror`` is enabled and
-  errors are encountered while retrieving an ESI fragment, processing
+  errors are encountered while processing an ESI fragment, processing
   only continues if the ``onerror`` attribute of the ``<esi:include>``
   tag is present.
 
@@ -109,7 +109,8 @@ Varnish Cache NEXT (2024-03-15)
   function with a zero ``sz`` argument.
 
 * The ``Timestamp`` SLT with ``Process`` prefix is not emitted any
-  more when processing continues as for restarts.
+  more when processing continues as for restarts, or when ``vcl_deliver``
+  transitions to ``vcl_synth``.
 
 * The ``FetchError`` SLT with ``HTC`` prefix now contains a verbose
   explanation.
