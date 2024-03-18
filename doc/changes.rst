@@ -35,6 +35,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 7.4.3 (2024-03-18)
+================================
+
+* Add ``h2_window_timeout`` paramater to mitigate CVE-2023-43622 (VSV00014_).
+
+.. _VSV00014: https://varnish-cache.org/security/VSV00014.html
+
+================================
 Varnish Cache 7.4.2 (2023-11-13)
 ================================
 
