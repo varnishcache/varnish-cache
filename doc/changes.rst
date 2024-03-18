@@ -52,15 +52,15 @@ Varnish Cache NEXT (2024-03-15)
   values from parameters.
 
 * Timeout and deadline parameters and VCL variables can now be set to
-  the special value ``never`` to not apply an infinitely long
+  the special value ``never`` to apply an infinitely long
   timeout. Parameters which used to be of type ``timeout`` but do not
   accept ``never`` have been moved to the new type ``duration``.
 
 * The implementation of the feature flag ``esi_include_onerror`` added
-  in 7.3.0 has been reverted to more closely match the behavior of
-  Varnish-Cache before 7.3.0: By default, fragments are included
+  in Varnish-Cache 7.3.0 has been reverted to more closely match the
+  behavior before that release: By default, fragments are included
   again, even errors. When ``esi_include_onerror`` is enabled and
-  errors are encountered while processing ESI fragment, processing
+  errors are encountered while retrieving an ESI fragment, processing
   only continues if the ``onerror`` attribute of the ``<esi:include>``
   tag is present.
 
@@ -90,12 +90,12 @@ Varnish Cache NEXT (2024-03-15)
   cases.
 
 * The format of ``BackendClose`` VSL records has been changed to use
-  the short reason name for consistence with  ``SessClose``.
+  the short reason name for consistency with  ``SessClose``.
 
 * During ``varnishd`` shutdown, pooled backend connections are now
   closed bi-directionally.
 
-* Mode bits of files opened via the unix jail as ``JAIL_FIXFD_FILE``
+* Mode bits of files opened via the UNIX jail as ``JAIL_FIXFD_FILE``
   are now correctly set as ``0600``.
 
 * The ``busy_stats_rate`` feature now also works for HTTP/2.
@@ -105,8 +105,8 @@ Varnish Cache NEXT (2024-03-15)
 
 * Storage engines are now responsible for deciding which
   ``fetch_chunksize`` to use. When Varnish-Cache does not know the
-  expected object size, it calls the ``objgetspace`` with a zero
-  ``sz`` argument.
+  expected object size, it calls the ``objgetspace`` stevedore
+  function with a zero ``sz`` argument.
 
 * The ``Timestamp`` SLT with ``Process`` prefix is not emitted any
   more when processing continues as for restarts.
@@ -134,7 +134,7 @@ Varnish Cache NEXT (2024-03-15)
   ``EXP_Inspect``.
 
 * New VSL records of the ``ExpKill`` SLT with ``EXP_Removed`` are now
-  created to uniformly log all "object removed from cache" events.
+  emitted to uniformly log all "object removed from cache" events.
 
 * VSL records of the ``ExpKill`` SLT with ``EXP_Expired`` prefix now
   contain the number of hits on the removed object.
