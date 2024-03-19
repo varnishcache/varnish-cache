@@ -98,12 +98,46 @@ $Restrict vcl_hit vcl_miss
 
 $Function INT soft(DURATION ttl = 0, DURATION grace = -1, DURATION keep = -1)
 
-Sets the *ttl*, *grace* and *keep*.
+Sets the *ttl*, *grace* and *keep*. By default, *ttl* is set to ``0`` with
+*grace* and *keep* periods left untouched. Setting *grace* or *keep* to a
+negative value or to something higher than the objects current value leaves them
+untouched. Setting all three parameters to ``0`` is equivalent to a hard purge.
+Returns the number of soft-purged objects.
 
-By default, *ttl* is set to 0 with *grace* and *keep* periods left
-untouched. Setting a negative value for *grace* or *keep* periods
-leaves them untouched. Setting all three parameters to ``0`` is
-equivalent to a hard purge. It returns the number of soft-purged objects.
+A soft-purge can only decrease the lifetime of an object. Let's consider an
+object in cache created with *ttl*, *grace*, and *keep* of 60 seconds each:
+
+``purge.soft(ttl = 0s, grace = -1s, keep = -1s);``
+
+* If the object is **fresh**, the *ttl* is reduced to 0 seconds and the object
+  expires after 120 seconds.
+* If the object is **stale**, the expiry time is not changed.
+
+``purge.soft(ttl = 0s, grace = 10s, keep = 10s);``
+
+* If the object is **fresh**, the *ttl* is reduced to 0 seconds, *grace* and
+  *keep* are reduced to 10 seconds. The object expires after 20 seconds.
+* If the object has been **stale** for 5 seconds, *grace* is reduced to 5
+  seconds and *keep* is reduced to 10 seconds. The object expires after 15
+  seconds.
+* If the object has been **stale** for 15 seconds, *grace* is reduced to 0
+  seconds and *keep* is reduced to 5 seconds. The object expires after 5
+  seconds.
+* If the object has been **stale** for 20 seconds or more, the object
+  immediately expires.
+
+``purge.soft(ttl = 10s, grace = -1s, keep = -1s);``
+
+* If the object has been **fresh** for 5 seconds, the *ttl* is reduced to 10
+  seconds. The object expires after 130 seconds.
+* If the object has been **fresh** for 55 seconds, the *ttl* is not changed. The
+  object expires after 125 seconds.
+* If the object is **stale**, the expiry time is not changed.
+
+When the expiry time of an object is reduced due to a softpurge, an
+``EXP_Reduce`` entry is logged under the ``ExpKill`` VSL tag. If a softpurge
+does not reduce the expiry time of an object, an ``EXP_Unchanged`` entry is
+logged instead.
 
 $Restrict vcl_hit vcl_miss
 SEE ALSO
