@@ -1,0 +1,60 @@
+varnishtest "Softpurging a stale object"
+
+server s1 {
+	rxreq
+	txresp -hdr "version: 1"
+
+	rxreq
+	txresp -hdr "version: 2"
+} -start
+
+varnish v1 -vcl+backend {
+	import purge;
+
+	sub vcl_hit {
+		if (req.http.purge) {
+			set req.http.npurged = purge.soft();
+			return (synth(200));
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.grace = 3s;
+		set beresp.keep = 10s;
+	}
+
+	sub vcl_synth {
+		set resp.http.npurged = req.http.npurged;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.version == "1"
+
+	# Softpurge the object
+	txreq -hdr "purge: yes"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Wait for half the grace period
+	delay 1.5
+
+	# Softpurge the object again, this should not reset the expiry timer
+	txreq -hdr "purge: yes"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Wait for the object to enter keep
+	delay 1.5
+
+	# A grace hit should not be possible now
+	txreq
+	rxresp
+	expect resp.http.version == "2"
+	expect resp.status == 200
+} -run

@@ -747,7 +747,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 			if (is_purge)
 				EXP_Remove(ocp[i], NULL);
 			else
-				EXP_Rearm(ocp[i], ttl_now, ttl, grace, keep);
+				EXP_Reduce(ocp[i], ttl_now, ttl, grace, keep);
 			(void)HSH_DerefObjCore(wrk, &ocp[i], 0);
 			AZ(ocp[i]);
 			total++;

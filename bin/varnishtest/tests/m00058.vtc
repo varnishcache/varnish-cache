@@ -1,0 +1,86 @@
+varnishtest "Softpurging an object cannot increase grace or keep"
+
+server s1 {
+	rxreq
+	txresp -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -body "foo"
+
+	rxreq
+	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
+	txresp -body "bar"
+} -start
+
+varnish v1 -arg "-p vsl_mask=+ExpKill" -vcl+backend {
+	import purge;
+	import std;
+
+	sub vcl_hit {
+		if (req.http.purge) {
+			set req.http.npurged = purge.soft(
+			    grace = std.duration(req.http.grace, -1s),
+			    keep = std.duration(req.http.keep, -1s));
+			return (synth(200));
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = 1y;
+		set beresp.grace = 1y;
+		set beresp.keep = 1y;
+	}
+
+	sub vcl_synth {
+		set resp.http.npurged = req.http.npurged;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+
+	# Reduce the objects grace
+	txreq -hdr "purge: yes" -hdr "grace: 10s"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Reduce the objects keep
+	txreq -hdr "purge: yes" -hdr "keep: 10s"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Reduce the objects grace and keep
+	txreq -hdr "purge: yes" -hdr "grace: 1s" -hdr "keep: 5s"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Increasing the objects grace is not possible
+	txreq -hdr "purge: yes" -hdr "grace: 15s"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Increasing the objects keep is not possible
+	txreq -hdr "purge: yes" -hdr "keep: 105"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Increasing the objects grace and keep is not possible
+	txreq -hdr "purge: yes" -hdr "grace: 15s" -hdr "keep: 15s"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.npurged == 1
+
+	# Wait for the obejct to enter keep
+	delay 1
+
+	# We don't get a grace hit, but the backend gets an IMS header
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "bar"
+} -run
