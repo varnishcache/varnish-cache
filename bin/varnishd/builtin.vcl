@@ -257,6 +257,10 @@ sub vcl_backend_error {
 }
 
 sub vcl_builtin_backend_error {
+	call vcl_beresp_error;
+}
+
+sub vcl_beresp_error {
 	set beresp.http.Content-Type = "text/html; charset=utf-8";
 	set beresp.http.Retry-After = "5";
 	set beresp.body = {"<!DOCTYPE html>
