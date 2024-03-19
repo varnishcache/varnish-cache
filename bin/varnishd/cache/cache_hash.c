@@ -371,7 +371,7 @@ hsh_rush_match(struct req *req)
 	AZ(oc->flags & OC_F_BUSY);
 	AZ(oc->flags & OC_F_PRIVATE);
 	if (oc->flags & (OC_F_WITHDRAWN|OC_F_HFM|OC_F_HFP|OC_F_CANCEL|
-	    OC_F_FAILED|OC_F_DYING))
+	    OC_F_FAILED))
 		return (0);
 
 	if (req->vcf != NULL) /* NB: must operate under oh lock. */
