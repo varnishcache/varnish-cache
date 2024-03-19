@@ -378,19 +378,14 @@ This subroutine is called if we fail the backend fetch or if
 
 Returning with :ref:`abandon` does not leave a cache object.
 
-If returning with ``deliver`` and a ``beresp.ttl > 0s``, a synthetic
-cache object is generated in VCL, whose body may be constructed using
-the ``synthetic()`` function.
+If returning with ``deliver`` and ``beresp.uncacheable == false``, a
+synthetic cache object is generated in VCL, whose body may be constructed
+using the ``synthetic()`` function.
 
-When there is a waiting list on the object, the default ``ttl`` will
-be positive (currently one second), set before entering
-``vcl_backend_error``. This is to avoid request serialization and
-hammering on a potentially failing backend.
-
-Since these synthetic objects are cached in these special
-circumstances, be cautious with putting private information there. If
-you really must, then you need to explicitly set ``beresp.ttl`` to
-zero in ``vcl_backend_error``.
+Since these synthetic objects are cached in these special circumstances,
+be cautious with putting private information there. If you really must,
+then you need to explicitly set ``beresp.uncacheable`` to ``true`` in
+``vcl_backend_error``.
 
 The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:
