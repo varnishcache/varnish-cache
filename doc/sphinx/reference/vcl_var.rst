@@ -1378,7 +1378,8 @@ beresp.was_304
 
 	When ``true`` this indicates that we got a 304 response
 	to our conditional fetch from the backend and turned
-	that into ``beresp.status = 200``
+	that into ``beresp.status = 200``, unless the refresh
+	attempt failed.
 
 
 obj

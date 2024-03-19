@@ -29,13 +29,6 @@ varnish v1 -vcl+backend {
 		set beresp.grace = 0s;
 		set beresp.keep = 10s;
 	}
-	sub vcl_backend_error {
-		if (beresp.was_304) {
-			unset bereq.http.If-Modified-Since;
-			unset bereq.http.If-None-Match;
-			return (retry(fetch));
-		}
-	}
 	sub vcl_deliver {
 		set resp.http.obj-hits = obj.hits;
 	}

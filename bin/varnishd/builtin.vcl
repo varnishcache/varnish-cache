@@ -257,7 +257,16 @@ sub vcl_backend_error {
 }
 
 sub vcl_builtin_backend_error {
+	call vcl_refresh_error;
 	call vcl_beresp_error;
+}
+
+sub vcl_refresh_error {
+	if (beresp.was_304) {
+		unset bereq.http.If-Modified-Since;
+		unset bereq.http.If-None-Match;
+		return (retry(fetch));
+	}
 }
 
 sub vcl_beresp_error {
