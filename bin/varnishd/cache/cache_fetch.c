@@ -896,9 +896,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
  *
  * replaces a stale object unless
  * - abandoning the bereq or
- * - leaving vcl_backend_error with return (deliver) and beresp.ttl == 0s or
- * - there is a waitinglist on this object because in this case the default ttl
- *   would be 1s, so we might be looking at the same case as the previous
+ * - leaving vcl_backend_error with return (deliver)
  *
  * We do want the stale replacement to avoid an object pileup with short ttl and
  * long grace/keep, yet there could exist cases where a cache object is
@@ -954,23 +952,9 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	stale = bo->stale_oc;
 	oc->t_origin = now;
-	if (!VTAILQ_EMPTY(&oc->objhead->waitinglist)) {
-		/*
-		 * If there is a waitinglist, it means that there is no
-		 * grace-able object, so cache the error return for a
-		 * short time, so the waiting list can drain, rather than
-		 * each objcore on the waiting list sequentially attempt
-		 * to fetch from the backend.
-		 */
-		oc->ttl = 1;
-		oc->grace = 5;
-		oc->keep = 5;
-		stale = NULL;
-	} else {
-		oc->ttl = 0;
-		oc->grace = 0;
-		oc->keep = 0;
-	}
+	oc->ttl = 0;
+	oc->grace = 0;
+	oc->keep = 0;
 
 	synth_body = VSB_new_auto();
 	AN(synth_body);
