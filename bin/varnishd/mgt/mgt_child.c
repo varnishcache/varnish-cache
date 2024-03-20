@@ -341,7 +341,7 @@ mgt_launch_child(struct cli *cli)
 	if ((pid = fork()) < 0) {
 		VJ_master(JAIL_MASTER_LOW);
 		perror("Could not fork child");
-		exit(1);		// XXX Harsh ?
+		_exit(1);		// XXX Harsh ?
 	}
 	if (pid == 0) {
 

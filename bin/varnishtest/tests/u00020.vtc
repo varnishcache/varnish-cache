@@ -1,0 +1,35 @@
+varnishtest "panic during startup"
+
+varnish v1 -cliok "param.set feature +no_coredump"
+
+# late startup panic
+varnish v1 -vcl {
+	import vtc;
+
+	backend be none;
+
+	sub vcl_init {
+		vtc.panic("vcl_init");
+	}
+}
+
+varnish v1 -clierr 400 start
+varnish v1 -cliexpect vcl_init panic.show
+varnish v1 -cliok panic.clear
+varnish v1 -expectexit 0x40
+
+# early startup panic
+process p1 {
+	exec varnishd -F -n "${tmpdir}/p1/workdir" \
+		-a ${localhost}:0 -b ${localhost}:0 \
+		-p feature=+no_coredump -p debug=+startup_panic
+} -expect-exit 2 -run
+
+# post-mortem inspection
+shell -match "MGT.child_start( +)1" {
+	varnishstat -n "${tmpdir}/p1/workdir" -1
+}
+
+shell -match "MGT.child_panic( +)1" {
+	varnishstat -n "${tmpdir}/p1/workdir" -1
+}
