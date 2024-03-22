@@ -1,0 +1,71 @@
+varnishtest "waiting list rush from vcl_backend_error"
+
+barrier b1 sock 2
+barrier b2 sock 2
+
+server s1 {
+	rxreq
+	send garbage
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl,+waitinglist"
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_backend_fetch {
+		vtc.barrier_sync("${b1_sock}");
+		vtc.barrier_sync("${b2_sock}");
+	}
+	sub vcl_backend_error {
+		set beresp.http.error-vxid = bereq.xid;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.error-vxid == 1002
+} -start
+
+barrier b1 sync
+
+logexpect l1 -v v1 -q Debug -g raw {
+	loop 4 {
+		expect * * Debug "on waiting list"
+	}
+} -start
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.http.error-vxid == 1002
+} -start
+
+client c3 {
+	txreq
+	rxresp
+	expect resp.http.error-vxid == 1002
+} -start
+
+client c4 {
+	txreq
+	rxresp
+	expect resp.http.error-vxid == 1002
+} -start
+
+client c5 {
+	txreq
+	rxresp
+	expect resp.http.error-vxid == 1002
+} -start
+
+logexpect l1 -wait
+
+barrier b2 sync
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
+client c5 -wait
+
+varnish v1 -expect n_expired == 1

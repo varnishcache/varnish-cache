@@ -708,11 +708,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(oc->boc->state == BOS_REQ_DONE);
 
-	if (bo->do_stream) {
-		ObjSetState(wrk, oc, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, oc);
+	if (bo->do_stream)
 		ObjSetState(wrk, oc, BOS_STREAM);
-	}
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
 	    bo->htc->body_status->nbr, bo->htc->body_status->name,
@@ -747,11 +744,8 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream)
 		assert(oc->boc->state == BOS_STREAM);
-	else {
+	else
 		assert(oc->boc->state == BOS_REQ_DONE);
-		ObjSetState(wrk, oc, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, oc);
-	}
 
 	ObjSetState(wrk, oc, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
@@ -880,11 +874,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetFlag(bo->wrk, oc, OF_IMSCAND, 0);
 	AZ(ObjCopyAttr(bo->wrk, oc, stale_oc, OA_GZIPBITS));
 
-	if (bo->do_stream) {
-		ObjSetState(wrk, oc, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, oc);
+	if (bo->do_stream)
 		ObjSetState(wrk, oc, BOS_STREAM);
-	}
 
 	INIT_OBJ(vop, VBF_OBITER_PRIV_MAGIC);
 	vop->bo = bo;
@@ -905,9 +896,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
  *
  * replaces a stale object unless
  * - abandoning the bereq or
- * - leaving vcl_backend_error with return (deliver) and beresp.ttl == 0s or
- * - there is a waitinglist on this object because in this case the default ttl
- *   would be 1s, so we might be looking at the same case as the previous
+ * - leaving vcl_backend_error with return (deliver)
  *
  * We do want the stale replacement to avoid an object pileup with short ttl and
  * long grace/keep, yet there could exist cases where a cache object is
@@ -930,7 +919,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	oc = bo->fetch_objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->flags & OC_F_BUSY);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+	assert(oc->boc->state < BOS_STREAM);
 	assert(bo->director_state == DIR_S_NULL);
 
 	if (wrk->vpi->handling != VCL_RET_ERROR)
@@ -962,23 +952,9 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	stale = bo->stale_oc;
 	oc->t_origin = now;
-	if (!VTAILQ_EMPTY(&oc->objhead->waitinglist)) {
-		/*
-		 * If there is a waitinglist, it means that there is no
-		 * grace-able object, so cache the error return for a
-		 * short time, so the waiting list can drain, rather than
-		 * each objcore on the waiting list sequentially attempt
-		 * to fetch from the backend.
-		 */
-		oc->ttl = 1;
-		oc->grace = 5;
-		oc->keep = 5;
-		stale = NULL;
-	} else {
-		oc->ttl = 0;
-		oc->grace = 0;
-		oc->keep = 0;
-	}
+	oc->ttl = 0;
+	oc->grace = 0;
+	oc->keep = 0;
 
 	synth_body = VSB_new_auto();
 	AN(synth_body);
@@ -1028,8 +1004,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	}
 	AZ(ObjSetU64(wrk, oc, OA_LEN, o));
 	VSB_destroy(&synth_body);
-	ObjSetState(wrk, oc, BOS_PREP_STREAM);
-	HSH_Unbusy(wrk, oc);
+	ObjSetState(wrk, oc, BOS_STREAM);
 	if (stale != NULL && oc->ttl > 0)
 		HSH_Kill(stale);
 	ObjSetState(wrk, oc, BOS_FINISHED);
@@ -1050,10 +1025,8 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	assert(oc->boc->state < BOS_FINISHED);
-	HSH_Fail(oc);
-	if (!(oc->flags & OC_F_BUSY))
-		HSH_Kill(oc);
 	ObjSetState(wrk, oc, BOS_FAILED);
+	HSH_Kill(oc);
 	return (F_STP_DONE);
 }
 
@@ -1125,7 +1098,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	http_Teardown(bo->beresp);
 	// can not make assumptions about the number of references here #3434
 	if (bo->bereq_body != NULL)
-		(void) HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
+		(void)HSH_DerefObjCore(bo->wrk, &bo->bereq_body);
 
 	if (oc->boc->state == BOS_FINISHED) {
 		AZ(oc->flags & OC_F_FAILED);
@@ -1135,7 +1108,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	// AZ(oc->boc);	// XXX
 
 	if (bo->stale_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
+		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 
 	wrk->vsl = NULL;
 	HSH_DerefBoc(wrk, oc);
@@ -1159,7 +1132,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->flags & OC_F_BUSY);
 	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
 
 	bo = VBO_GetBusyObj(wrk, req);
@@ -1168,6 +1140,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	boc = HSH_RefBoc(oc);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	assert(boc->state < BOS_STREAM);
 
 	switch (mode) {
 	case VBF_PASS:
@@ -1226,7 +1199,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		    "No thread available for bgfetch");
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
+			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 		HSH_DerefBoc(wrk, oc);
 		SES_Rel(bo->sp);
 		THR_SetBusyobj(NULL);
@@ -1239,11 +1212,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 			(void)VRB_Ignore(req);
 		} else {
 			ObjWaitState(oc, BOS_STREAM);
-			if (oc->boc->state == BOS_FAILED) {
-				AN((oc->flags & OC_F_FAILED));
-			} else {
-				AZ(oc->flags & OC_F_BUSY);
-			}
+			AZ(oc->flags & OC_F_BUSY);
+			if (oc->boc->state == BOS_FAILED)
+				AN(oc->flags & OC_F_FAILED);
 		}
 	}
 	AZ(bo);
@@ -1251,5 +1222,5 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	assert(oc->boc == boc);
 	HSH_DerefBoc(wrk, oc);
 	if (mode == VBF_BACKGROUND)
-		(void)HSH_DerefObjCore(wrk, &oc, HSH_RUSH_POLICY);
+		(void)HSH_DerefObjCore(wrk, &oc);
 }
