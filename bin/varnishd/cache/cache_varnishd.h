@@ -240,6 +240,8 @@ void EXP_Remove(struct objcore *, const struct objcore *);
 /* cache_exp.c */
 void EXP_Rearm(struct objcore *oc, vtim_real now,
     vtim_dur ttl, vtim_dur grace, vtim_dur keep);
+void EXP_Reduce(struct objcore *oc, vtim_real now,
+    vtim_dur ttl, vtim_dur grace, vtim_dur keep);
 
 /* From cache_main.c */
 void BAN_Init(void);

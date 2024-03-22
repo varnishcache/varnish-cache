@@ -220,6 +220,28 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
+ * Reduce object timers
+ */
+
+void
+EXP_Reduce(struct objcore *oc, vtim_real now,
+    vtim_dur ttl, vtim_dur grace, vtim_dur keep)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->refcnt > 0);
+
+	if (!isnan(ttl) && now + ttl - oc->t_origin >= oc->ttl)
+		ttl = NAN;
+	if (!isnan(grace) && grace >= oc->grace)
+		grace = NAN;
+	if (!isnan(keep) && keep >= oc->keep)
+		keep = NAN;
+
+	EXP_Rearm(oc, now, ttl, grace, keep);
+}
+
+/*--------------------------------------------------------------------
  * We have changed one or more of the object timers, tell the exp_thread
  *
  */
