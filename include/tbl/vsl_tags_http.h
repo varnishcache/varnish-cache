@@ -72,6 +72,7 @@ SLTH(Reason,	HTTP_HDR_REASON,	0, 1, "reason",
 	"The HTTP response reason string.\n\n"
 )
 
+#ifndef SLTH_SKIP_EXTRA
 SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
 	"HTTP header contents.\n\n"
 	"The format is::\n\n"
@@ -97,8 +98,10 @@ SLTH(Unset,	HTTP_HDR_UNSET,		1, 1, "unset header",
 SLTH(Lost,	HTTP_HDR_LOST,		0, 0, "lost header",
 	""
 )
+#endif /* SLTH_SKIP_EXTRA */
 
 #undef HEADER_NOTICE
+#undef SLTH_SKIP_EXTRA
 #undef SLTH
 
 /*lint -restore */

@@ -666,6 +666,8 @@ int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
 const char *HTTP_GetHdrPack(struct worker *, struct objcore *, hdr_t);
 stream_close_t http_DoConnection(struct http *hp, stream_close_t sc_close);
 int http_IsFiltered(const struct http *hp, unsigned u, unsigned how);
+int HTTP_ValidateReq(const struct http *hp);
+int HTTP_ValidateResp(const struct http *hp);
 
 #define HTTPH_R_PASS		(1 << 0)	/* Request (c->b) in pass mode */
 #define HTTPH_R_FETCH		(1 << 1)	/* Request (c->b) for fetch */

@@ -34,6 +34,7 @@
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
 #include "cache_http1.h"
+#include "cache/cache_transport.h"
 
 #include "vtcp.h"
 
@@ -114,6 +115,14 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		v1d_error(req, boc, "workspace_session overflow");
 		return;
 	}
+
+	if (FEATURE(FEATURE_VALIDATE_CLIENT_RESPONSES) && HTTP_ValidateResp(req->resp)) {
+               VSLb(req->vsl, SLT_VCL_Error,
+                   "Response failed HTTP validation");
+		req->doclose = SC_TX_ERROR;
+		req->transport->minimal_response(req, 503);
+		return;
+       }
 
 	V1L_Open(req->wrk, req->wrk->aws, &req->sp->fd, req->vsl,
 	    req->t_prev + SESS_TMO(req->sp, send_timeout),
