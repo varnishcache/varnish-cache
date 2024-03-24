@@ -55,6 +55,9 @@ extern const int VRE_ERROR_NOMATCH;
 /* And those to PCRE2 compilation options */
 extern const unsigned VRE_CASELESS;
 
+/* we enforce a hard limit on the number of groups in VRE_compile() */
+#define VRE_MAX_CAPTURES	9
+
 vre_t *VRE_compile(const char *, unsigned, int *, int *, unsigned);
 vre_t *VRE_export(const vre_t *, size_t *);
 int VRE_error(struct vsb *, int err);

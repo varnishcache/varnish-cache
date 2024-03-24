@@ -56,6 +56,11 @@ struct vre {
 	pcre2_match_context	*re_ctx;
 };
 
+/* pcre2 16de9003e59e782ba8cc151708e45aafbfdd74b2 */
+#ifndef PCRE2_ERROR_TOO_MANY_CAPTURES
+#define PCRE2_ERROR_TOO_MANY_CAPTURES		   197
+#endif
+
 /*
  * We don't want to spread or even expose the majority of PCRE2 options
  * and errors so we establish our own symbols and implement hard linkage
@@ -70,6 +75,7 @@ VRE_compile(const char *pattern, unsigned options,
     int *errptr, int *erroffset, unsigned jit)
 {
 	PCRE2_SIZE erroff;
+	uint32_t ngroups;
 	vre_t *v;
 
 	AN(pattern);
@@ -91,12 +97,19 @@ VRE_compile(const char *pattern, unsigned options,
 		VRE_free(&v);
 		return (NULL);
 	}
+	AZ(pcre2_pattern_info(v->re, PCRE2_INFO_CAPTURECOUNT, &ngroups));
+	if (ngroups > VRE_MAX_CAPTURES) {
+		*errptr = PCRE2_ERROR_TOO_MANY_CAPTURES;
+		VRE_free(&v);
+		return (NULL);
+	}
 	v->re_ctx = pcre2_match_context_create(NULL);
 	if (v->re_ctx == NULL) {
 		*errptr = PCRE2_ERROR_NOMEMORY;
 		VRE_free(&v);
 		return (NULL);
 	}
+
 #if USE_PCRE2_JIT
 	if (jit)
 		(void)pcre2_jit_compile(v->re, PCRE2_JIT_COMPLETE);
@@ -113,6 +126,15 @@ VRE_error(struct vsb *vsb, int err)
 	int i;
 
 	CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC);
+	if (err == PCRE2_ERROR_TOO_MANY_CAPTURES) {
+		/* identical to pcre2's message except for the maximum
+		 * and tip
+		 */
+		VSB_printf(vsb, "too many capturing groups (maximum %d) - "
+		    "tip: use (?:...) for non capturing groups",
+		    VRE_MAX_CAPTURES);
+		return (0);
+	}
 	i = pcre2_get_error_message(err, (PCRE2_UCHAR *)buf, VRE_ERROR_LEN);
 	if (i == PCRE2_ERROR_BADDATA) {
 		VSB_printf(vsb, "unknown pcre2 error code (%d)", err);
@@ -209,7 +231,11 @@ vre_capture(const vre_t *code, const char *subject, size_t length,
 		AN(count);
 		AN(*count);
 		ovector = pcre2_get_ovector_pointer(data);
-		nov = vmin_t(size_t, pcre2_get_ovector_count(data), *count);
+		nov = pcre2_get_ovector_count(data);
+		if (nov > *count) {
+			nov = *count;
+			matches = nov + 1;
+		}
 		for (g = 0; g < nov; g++) {
 			b = ovector[2 * g];
 			e = ovector[2 * g + 1];
@@ -250,7 +276,6 @@ int
 VRE_capture(const vre_t *code, const char *subject, size_t length, int options,
     txt *groups, size_t count, const volatile struct vre_limits *lim)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	AN(subject);
@@ -260,12 +285,8 @@ VRE_capture(const vre_t *code, const char *subject, size_t length, int options,
 	if (length == 0)
 		length = PCRE2_ZERO_TERMINATED;
 	vre_limit(code, lim);
-	i = vre_capture(code, subject, length, 0, options,
-	    groups, &count, NULL);
-
-	if (i <= 0)
-		return (i);
-	return (count);
+	return (vre_capture(code, subject, length, 0, options,
+	    groups, &count, NULL));
 }
 
 int
