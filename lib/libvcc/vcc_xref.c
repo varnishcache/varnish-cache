@@ -405,7 +405,12 @@ vcc_instance_info(struct vcc *tl, const struct symbol *sym)
 	AN(sym->rname);
 	Fc(tl, 0, "\t{ .p = (uintptr_t *)&%s, .name = \"", sym->rname);
 	VCC_SymName(tl->fc, sym);
-	Fc(tl, 0, "\" },\n");
+	Fc(tl, 0, "\", .clip = ");
+	if (sym->extra)
+		Fc(tl, 0, "(uintptr_t *)&%s", sym->extra);
+	else
+		Fc(tl, 0, "NULL");
+	Fc(tl, 0, "},\n");
 }
 
 void
@@ -413,7 +418,7 @@ VCC_InstanceInfo(struct vcc *tl)
 {
 	Fc(tl, 0, "\nstatic const struct vpi_ii VGC_instance_info[] = {\n");
 	VCC_WalkSymbols(tl, vcc_instance_info, SYM_MAIN, SYM_INSTANCE);
-	Fc(tl, 0, "\t{ .p = NULL, .name = \"\" }\n");
+	Fc(tl, 0, "\t{ .p = NULL, .name = \"\", .clip = NULL }\n");
 	Fc(tl, 0, "};\n");
 }
 
