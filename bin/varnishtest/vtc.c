@@ -562,6 +562,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	struct vsb *vsb;
 	const char *p;
 
+	AN(tmpdir);
+
 	(void)signal(SIGPIPE, SIG_IGN);
 
 	PTOK(pthread_mutex_init(&vtc_vrnd_mtx, NULL));

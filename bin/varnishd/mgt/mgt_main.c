@@ -533,7 +533,7 @@ mgt_process_f_arg(struct cli *cli, unsigned C_flag, void **fap)
 	return (retval);
 }
 
-static const char *
+static char *
 create_bogo_n_arg(void)
 {
 	struct vsb *vsb;
@@ -807,8 +807,11 @@ main(int argc, char * const *argv)
 
 	assert(d_flag == 0 || F_flag == 0);
 
-	if (C_flag && n_arg == NULL)
-		n_arg = create_bogo_n_arg();
+	p = NULL;
+	if (C_flag && n_arg == NULL) {
+		p = create_bogo_n_arg();
+		n_arg = p;
+	}
 
 	if (S_arg != NULL && !strcmp(S_arg, "none")) {
 		fprintf(stderr,
@@ -825,6 +828,8 @@ main(int argc, char * const *argv)
 
 	workdir = VIN_n_Arg(n_arg);
 	AN(workdir);
+	if (p != NULL)
+		free(p);
 
 	if (i_arg == NULL || *i_arg == '\0')
 		i_arg = mgt_HostName();
