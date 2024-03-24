@@ -180,8 +180,12 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvsc/libvsc.la \
 	$(top_builddir)/lib/libvgz/libvgz.la \
-	@JEMALLOC_LDADD@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
+
+if WITH_JEMALLOC
+varnishd_CFLAGS += ${JEMALLOC_CFLAGS}
+varnishd_LDADD += ${JEMALLOC_LIBS}
+endif
 
 if WITH_UNWIND
 varnishd_CFLAGS += -DUNW_LOCAL_ONLY ${LIBUNWIND_CFLAGS}
