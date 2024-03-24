@@ -442,7 +442,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 		return ("");
 
 	/* XXX: handle stack overflow? */
-	char buf[l];
+	v_vla_(char, buf, l);
 
 	if (length <= 0)
 		length = -1;
