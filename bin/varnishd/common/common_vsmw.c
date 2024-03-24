@@ -33,16 +33,18 @@
 
 #include "config.h"
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -307,7 +309,12 @@ vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 
 	closefd(&fd);
 	assert(vc->ptr != MAP_FAILED);
-	(void)mlock(vc->ptr, len);
+
+	if (mlock(vc->ptr, len) != 0) {
+		/* XXX: how to reliably not syslog in vtc_mode? */
+		syslog(LOG_NOTICE, "Could not lock VSM segment %s: %s (%d)",
+		    vc->fn, vstrerror(errno), errno);
+	}
 
 	return (vc);
 }
