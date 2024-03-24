@@ -746,6 +746,14 @@ Example::
 
 	set req.http.real = std.time2real(now, 1.0);
 
+$Function REAL pow(REAL base, REAL power)
+
+Calculates the power raised to the base number.
+
+Example::
+
+	set req.http.x-p = std.pow(2.0, 2.0);
+
 SEE ALSO
 ========
 
