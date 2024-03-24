@@ -485,6 +485,7 @@ struct vmod_data {
 	const char			*proto;
 	const char			*json;
 	const char			*abi;
+	const char			*version;
 };
 
 /***********************************************************************

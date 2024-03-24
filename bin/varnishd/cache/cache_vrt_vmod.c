@@ -63,6 +63,7 @@ struct vmod {
 	const void		*funcs;
 	int			funclen;
 	const char		*abi;
+	const char		*version;
 	unsigned		vrt_major;
 	unsigned		vrt_minor;
 };
@@ -146,6 +147,7 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 		v->funclen = d->func_len;
 		v->funcs = d->func;
 		v->abi = d->abi;
+		v->version = d->version;
 		v->vrt_major = d->vrt_major;
 		v->vrt_minor = d->vrt_minor;
 
@@ -201,9 +203,17 @@ VMOD_Panic(struct vsb *vsb)
 
 	VSB_cat(vsb, "vmods = {\n");
 	VSB_indent(vsb, 2);
-	VTAILQ_FOREACH(v, &vmods, list)
-		VSB_printf(vsb, "%s = {%p, %s, %u.%u},\n",
-		    v->nm, v, v->abi, v->vrt_major, v->vrt_minor);
+	VTAILQ_FOREACH(v, &vmods, list) {
+		VSB_printf(vsb, "%s = {", v->nm);
+		VSB_indent(vsb, 2);
+		VSB_printf(vsb, "p=%p, abi=\"%s\", vrt=%u.%u,\n",
+			   v, v->abi, v->vrt_major, v->vrt_minor);
+		VSB_bcat(vsb, "version=", 8);
+		VSB_quote(vsb, v->version, -1, VSB_QUOTE_CSTR);
+		VSB_indent(vsb, -2);
+		VSB_bcat(vsb, "},\n", 3);
+	}
+
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }
