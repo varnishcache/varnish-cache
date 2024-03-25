@@ -27,7 +27,7 @@ longer open (stream reset, client disconnected etc).
 
 .. _VSV 13: https://varnish-cache.org/security/VSV00013.html
 
-CVE-2023-43622
+CVE-2024-30156
 ~~~~~~~~~~~~~~
 
 Another denial of service attack vector received a CVE number in the aftermath
