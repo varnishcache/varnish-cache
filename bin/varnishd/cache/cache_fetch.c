@@ -269,7 +269,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	}
 	http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 
-	if (bo->stale_oc != NULL &&
+	if (bo->stale_oc != NULL && !(bo->stale_oc->flags & OC_F_DYING) &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
 	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
 		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
@@ -834,6 +834,13 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	stale_oc = bo->stale_oc;
 	CHECK_OBJ_NOTNULL(stale_oc, OBJCORE_MAGIC);
+
+	if (stale_oc->flags & OC_F_DYING) {
+		(void)VFP_Error(bo->vfc, "Template object invalidated");
+		vbf_cleanup(bo);
+		wrk->stats->fetch_failed++;
+		return (F_STP_ERROR);
+	}
 
 	stale_boc = HSH_RefBoc(stale_oc);
 	CHECK_OBJ_ORNULL(stale_boc, BOC_MAGIC);
