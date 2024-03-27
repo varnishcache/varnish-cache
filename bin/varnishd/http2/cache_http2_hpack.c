@@ -37,6 +37,18 @@
 #include "http2/cache_http2.h"
 #include "vct.h"
 
+static void
+h2h_assert_ready(struct h2h_decode *d)
+{
+
+	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
+	AN(d->out);
+	assert(d->namelen >= 2); /* 2 chars from the ": " that we added */
+	assert(d->namelen <= d->out_u);
+	assert(d->out[d->namelen - 2] == ':');
+	assert(d->out[d->namelen - 1] == ' ');
+}
+
 // rfc9113,l,2493,2528
 static h2_error
 h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
@@ -125,132 +137,130 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 }
 
 static h2_error
-h2h_addhdr(struct h2h_decode *d, struct http *hp, char *b, size_t namelen,
-    size_t len)
+h2h_addhdr(struct http *hp, struct h2h_decode *d)
 {
 	/* XXX: This might belong in cache/cache_http.c */
-	const char *b0;
+	txt hdr, nm, val;
 	int disallow_empty;
+	const char *p;
 	unsigned n;
-	char *p;
-	unsigned u;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	AN(b);
-	assert(namelen >= 2);	/* 2 chars from the ': ' that we added */
-	assert(namelen <= len);
+	h2h_assert_ready(d);
+
+	/* Assume hdr is by default a regular header from what we decoded. */
+	hdr.b = d->out;
+	hdr.e = hdr.b + d->out_u;
+	n = hp->nhd;
+
+	/* nm and val are separated by ": " */
+	nm.b = hdr.b;
+	nm.e = nm.b + d->namelen - 2;
+	val.b = nm.e + 2;
+	val.e = hdr.e;
 
 	disallow_empty = 0;
 
-	if (len > UINT_MAX) {	/* XXX: cache_param max header size */
-		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.20s", b);
+	if (Tlen(hdr) > UINT_MAX) {	/* XXX: cache_param max header size */
+		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.20s", hdr.b);
 		return (H2SE_ENHANCE_YOUR_CALM);
 	}
 
-	b0 = b;
-	if (b[0] == ':') {
+	if (*nm.b == ':') {
 		/* Match H/2 pseudo headers */
 		/* XXX: Should probably have some include tbl for
 		   pseudo-headers */
-		if (!strncmp(b, ":method: ", namelen)) {
-			b += namelen;
-			len -= namelen;
+		if (!Tstrcmp(nm, ":method")) {
+			hdr.b = val.b;
 			n = HTTP_HDR_METHOD;
 			disallow_empty = 1;
 
-			/* First field cannot contain SP or CTL */
-			for (p = b, u = 0; u < len; p++, u++) {
-				if (vct_issp(*p) || vct_isctl(*p))
+			/* Check HTTP token */
+			for (p = hdr.b; p < hdr.e; p++) {
+				if (!vct_istchar(*p))
 					return (H2SE_PROTOCOL_ERROR);
 			}
-		} else if (!strncmp(b, ":path: ", namelen)) {
-			b += namelen;
-			len -= namelen;
+		} else if (!Tstrcmp(nm, ":path")) {
+			hdr.b = val.b;
 			n = HTTP_HDR_URL;
 			disallow_empty = 1;
 
 			// rfc9113,l,2693,2705
-			if (len > 0 && *b != '/' &&
-			    strncmp(b, "*", len) != 0) {
+			if (Tlen(val) > 0 && *val.b != '/' &&
+			    Tstrcmp(val, "*")) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal :path pseudo-header %.*s",
-				    (int)len, b);
+				    (int)Tlen(val), val.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 
-			/* Second field cannot contain LWS or CTL */
-			for (p = b, u = 0; u < len; p++, u++) {
+			/* Path cannot contain LWS or CTL */
+			for (p = hdr.b; p < hdr.e; p++) {
 				if (vct_islws(*p) || vct_isctl(*p))
 					return (H2SE_PROTOCOL_ERROR);
 			}
-		} else if (!strncmp(b, ":scheme: ", namelen)) {
+		} else if (!Tstrcmp(nm, ":scheme")) {
 			/* XXX: What to do about this one? (typically
 			   "http" or "https"). For now set it as a normal
 			   header, stripping the first ':'. */
 			if (d->has_scheme) {
 				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Duplicate pseudo-header %.*s%.*s",
-				    (int)namelen, b0,
-				    (int)(len > 20 ? 20 : len), b);
+				    "Duplicate pseudo-header :scheme: %.*s",
+				    vmin_t(int, Tlen(val), 20), val.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 
-			b++;
-			len-=1;
-			n = hp->nhd;
+			hdr.b++;
 			d->has_scheme = 1;
+			disallow_empty = 1;
 
-			for (p = b + namelen, u = 0; u < len-namelen;
-			    p++, u++) {
-				if (vct_issp(*p) || vct_isctl(*p))
+			/* Check HTTP token */
+			for (p = val.b; p < val.e; p++) {
+				if (!vct_istchar(*p))
 					return (H2SE_PROTOCOL_ERROR);
 			}
-
-			if (!u)
-				return (H2SE_PROTOCOL_ERROR);
-		} else if (!strncmp(b, ":authority: ", namelen)) {
-			b+=6;
-			len-=6;
-			memcpy(b, "host", 4);
-			n = hp->nhd;
+		} else if (!Tstrcmp(nm, ":authority")) {
+			/* NB: we inject "host" in place of "rity" for
+			 * the ":authority" pseudo-header.
+			 */
+			memcpy(d->out + 6, "host", 4);
+			hdr.b += 6;
+			nm = Tstr(":authority"); /* preserve original */
 		} else {
 			/* Unknown pseudo-header */
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Unknown pseudo-header: %.*s",
-			    (int)(len > 20 ? 20 : len), b);
+			    vmin_t(int, Tlen(hdr), 20), hdr.b);
 			return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,2990,2992
 		}
-	} else
-		n = hp->nhd;
+	}
+
+	if (disallow_empty && Tlen(val) == 0) {
+		VSLb(hp->vsl, SLT_BogoHeader,
+		    "Empty pseudo-header %.*s",
+		    (int)Tlen(nm), nm.b);
+		return (H2SE_PROTOCOL_ERROR);
+	}
 
 	if (n < HTTP_HDR_FIRST) {
-		/* Check for duplicate pseudo-header */
 		if (hp->hd[n].b != NULL) {
 			VSLb(hp->vsl, SLT_BogoHeader,
-			    "Duplicate pseudo-header %.*s%.*s",
-			    (int)namelen, b0, (int)(len > 20 ? 20 : len), b);
+			    "Duplicate pseudo-header %.*s",
+			    (int)Tlen(nm), nm.b);
 			return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,3158,3162
 		}
 	} else {
 		/* Check for space in struct http */
 		if (n >= hp->shd) {
-			VSLb(hp->vsl, SLT_LostHeader, "Too many headers: %.*s",
-			    (int)(len > 20 ? 20 : len), b);
+			VSLb(hp->vsl, SLT_LostHeader,
+			    "Too many headers: %.*s",
+			    vmin_t(int, Tlen(hdr), 20), hdr.b);
 			return (H2SE_ENHANCE_YOUR_CALM);
 		}
 		hp->nhd++;
 	}
 
-	hp->hd[n].b = b;
-	hp->hd[n].e = b + len;
-
-	if (disallow_empty && !Tlen(hp->hd[n])) {
-		VSLb(hp->vsl, SLT_BogoHeader,
-		    "Empty pseudo-header %.*s",
-		    (int)namelen, b0);
-		return (H2SE_PROTOCOL_ERROR);
-	}
-
+	hp->hd[n] = hdr;
 	return (0);
 }
 
@@ -388,8 +398,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			    d->out_u);
 			if (d->error)
 				break;
-			d->error = h2h_addhdr(d, hp, d->out,
-			    d->namelen, d->out_u);
+			d->error = h2h_addhdr(hp, d);
 			if (d->error)
 				break;
 			d->out[d->out_u++] = '\0'; /* Zero guard */
