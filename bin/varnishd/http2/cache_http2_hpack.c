@@ -145,7 +145,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 	txt hdr, nm, val;
 	int disallow_empty;
 	const char *p;
-	unsigned n;
+	unsigned n, has_dup;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	h2h_assert_ready(d);
@@ -162,6 +162,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 	val.e = hdr.e;
 
 	disallow_empty = 0;
+	has_dup = 0;
 
 	if (Tlen(hdr) > UINT_MAX) {	/* XXX: cache_param max header size */
 		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.20s", hdr.b);
@@ -205,14 +206,8 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 			/* XXX: What to do about this one? (typically
 			   "http" or "https"). For now set it as a normal
 			   header, stripping the first ':'. */
-			if (d->has_scheme) {
-				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Duplicate pseudo-header :scheme: %.*s",
-				    vmin_t(int, Tlen(val), 20), val.b);
-				return (H2SE_PROTOCOL_ERROR);
-			}
-
 			hdr.b++;
+			has_dup = d->has_scheme;
 			d->has_scheme = 1;
 			disallow_empty = 1;
 
@@ -228,6 +223,8 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 			memcpy(d->out + 6, "host", 4);
 			hdr.b += 6;
 			nm = Tstr(":authority"); /* preserve original */
+			has_dup = d->has_authority;
+			d->has_authority = 1;
 		} else {
 			/* Unknown pseudo-header */
 			VSLb(hp->vsl, SLT_BogoHeader,
@@ -244,14 +241,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 		return (H2SE_PROTOCOL_ERROR);
 	}
 
-	if (n < HTTP_HDR_FIRST) {
-		if (hp->hd[n].b != NULL) {
-			VSLb(hp->vsl, SLT_BogoHeader,
-			    "Duplicate pseudo-header %.*s",
-			    (int)Tlen(nm), nm.b);
-			return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,3158,3162
-		}
-	} else {
+	if (n >= HTTP_HDR_FIRST) {
 		/* Check for space in struct http */
 		if (n >= hp->shd) {
 			VSLb(hp->vsl, SLT_LostHeader,
@@ -260,6 +250,15 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 			return (H2SE_ENHANCE_YOUR_CALM);
 		}
 		hp->nhd++;
+		AZ(hp->hd[n].b);
+	}
+
+	if (has_dup || hp->hd[n].b != NULL) {
+		assert(nm.b[0] == ':');
+		VSLb(hp->vsl, SLT_BogoHeader,
+		    "Duplicate pseudo-header %.*s",
+		    (int)Tlen(nm), nm.b);
+		return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,3158,3162
 	}
 
 	hp->hd[n] = hdr;
