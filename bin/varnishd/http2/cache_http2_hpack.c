@@ -169,69 +169,64 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 		return (H2SE_ENHANCE_YOUR_CALM);
 	}
 
-	if (*nm.b == ':') {
-		/* Match H/2 pseudo headers */
-		/* XXX: Should probably have some include tbl for
-		   pseudo-headers */
-		if (!Tstrcmp(nm, ":method")) {
-			hdr.b = val.b;
-			n = HTTP_HDR_METHOD;
-			disallow_empty = 1;
+	/* Match H/2 pseudo headers */
+	/* XXX: Should probably have some include tbl for pseudo-headers */
+	if (!Tstrcmp(nm, ":method")) {
+		hdr.b = val.b;
+		n = HTTP_HDR_METHOD;
+		disallow_empty = 1;
 
-			/* Check HTTP token */
-			for (p = hdr.b; p < hdr.e; p++) {
-				if (!vct_istchar(*p))
-					return (H2SE_PROTOCOL_ERROR);
-			}
-		} else if (!Tstrcmp(nm, ":path")) {
-			hdr.b = val.b;
-			n = HTTP_HDR_URL;
-			disallow_empty = 1;
-
-			// rfc9113,l,2693,2705
-			if (Tlen(val) > 0 && *val.b != '/' &&
-			    Tstrcmp(val, "*")) {
-				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Illegal :path pseudo-header %.*s",
-				    (int)Tlen(val), val.b);
+		/* Check HTTP token */
+		for (p = hdr.b; p < hdr.e; p++) {
+			if (!vct_istchar(*p))
 				return (H2SE_PROTOCOL_ERROR);
-			}
-
-			/* Path cannot contain LWS or CTL */
-			for (p = hdr.b; p < hdr.e; p++) {
-				if (vct_islws(*p) || vct_isctl(*p))
-					return (H2SE_PROTOCOL_ERROR);
-			}
-		} else if (!Tstrcmp(nm, ":scheme")) {
-			/* XXX: What to do about this one? (typically
-			   "http" or "https"). For now set it as a normal
-			   header, stripping the first ':'. */
-			hdr.b++;
-			has_dup = d->has_scheme;
-			d->has_scheme = 1;
-			disallow_empty = 1;
-
-			/* Check HTTP token */
-			for (p = val.b; p < val.e; p++) {
-				if (!vct_istchar(*p))
-					return (H2SE_PROTOCOL_ERROR);
-			}
-		} else if (!Tstrcmp(nm, ":authority")) {
-			/* NB: we inject "host" in place of "rity" for
-			 * the ":authority" pseudo-header.
-			 */
-			memcpy(d->out + 6, "host", 4);
-			hdr.b += 6;
-			nm = Tstr(":authority"); /* preserve original */
-			has_dup = d->has_authority;
-			d->has_authority = 1;
-		} else {
-			/* Unknown pseudo-header */
-			VSLb(hp->vsl, SLT_BogoHeader,
-			    "Unknown pseudo-header: %.*s",
-			    vmin_t(int, Tlen(hdr), 20), hdr.b);
-			return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,2990,2992
 		}
+	} else if (!Tstrcmp(nm, ":path")) {
+		hdr.b = val.b;
+		n = HTTP_HDR_URL;
+		disallow_empty = 1;
+
+		// rfc9113,l,2693,2705
+		if (Tlen(val) > 0 && val.b[0] != '/' && Tstrcmp(val, "*")) {
+			VSLb(hp->vsl, SLT_BogoHeader,
+			    "Illegal :path pseudo-header %.*s",
+			    (int)Tlen(val), val.b);
+			return (H2SE_PROTOCOL_ERROR);
+		}
+
+		/* Path cannot contain LWS or CTL */
+		for (p = hdr.b; p < hdr.e; p++) {
+			if (vct_islws(*p) || vct_isctl(*p))
+				return (H2SE_PROTOCOL_ERROR);
+		}
+	} else if (!Tstrcmp(nm, ":scheme")) {
+		/* XXX: What to do about this one? (typically
+		   "http" or "https"). For now set it as a normal
+		   header, stripping the first ':'. */
+		hdr.b++;
+		has_dup = d->has_scheme;
+		d->has_scheme = 1;
+		disallow_empty = 1;
+
+		/* Check HTTP token */
+		for (p = val.b; p < val.e; p++) {
+			if (!vct_istchar(*p))
+				return (H2SE_PROTOCOL_ERROR);
+		}
+	} else if (!Tstrcmp(nm, ":authority")) {
+		/* NB: we inject "host" in place of "rity" for
+		 * the ":authority" pseudo-header.
+		 */
+		memcpy(d->out + 6, "host", 4);
+		hdr.b += 6;
+		nm = Tstr(":authority"); /* preserve original */
+		has_dup = d->has_authority;
+		d->has_authority = 1;
+	} else if (nm.b[0] == ':') {
+		VSLb(hp->vsl, SLT_BogoHeader,
+		    "Unknown pseudo-header: %.*s",
+		    vmin_t(int, Tlen(hdr), 20), hdr.b);
+		return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,2990,2992
 	}
 
 	if (disallow_empty && Tlen(val) == 0) {
