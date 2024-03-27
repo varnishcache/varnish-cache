@@ -873,7 +873,14 @@ http_GetHdrField(const struct http *hp, hdr_t hdr,
 	return (i);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Parse content-length header
+ *
+ * Return:
+ *	-2	invalid
+ *	-1	unknown length
+ *	>= 0	body length
+ */
 
 ssize_t
 http_GetContentLength(const struct http *hp)
@@ -895,6 +902,20 @@ http_GetContentLength(const struct http *hp)
 	return (cl);
 }
 
+/*--------------------------------------------------------------------
+ * Parse content-range header
+ *
+ * Return:
+ *	-2	invalid
+ *	-1	unknown length
+ *	0	not applicable
+ *	> 0	full body length
+ *
+ * lo, hi:
+ * 	-1	unknown position
+ * 	>= 0	position
+ */
+
 ssize_t
 http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 {
@@ -911,14 +932,14 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 	*lo = *hi = -1;
 
 	if (!http_GetHdr(hp, H_Content_Range, &b))
-		return (-1);
+		return (0);		// No content-range, ignore
 
 	t = strchr(b, ' ');
 	if (t == NULL)
 		return (-2);		// Missing space after range unit
 
 	if (!http_range_at(b, bytes, t - b))
-		return (-1);		// Unknown range unit, ignore
+		return (-2);		// Unknown range unit
 	b = t + 1;
 
 	if (*b == '*') {		// Content-Range: bytes */123
@@ -937,6 +958,8 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 	if (*b != '/')
 		return (-2);
 	if (b[1] == '*') {		// Content-Range: bytes 1-2/*
+		if (*lo == -1 && *hi == -1)
+			return (-2);	// Content-Range: bytes */*
 		cl = -1;
 		b += 2;
 	} else {
@@ -950,10 +973,11 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 		return (-2);
 	if (*lo > *hi)
 		return (-2);
-	assert(cl >= -1);
+	if (cl == -1)
+		return (-1);
+	assert(cl > 0);
 	if (*lo >= cl || *hi >= cl)
 		return (-2);
-	AN(cl);
 	return (cl);
 }
 

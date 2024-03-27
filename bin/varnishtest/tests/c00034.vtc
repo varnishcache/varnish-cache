@@ -134,7 +134,7 @@ varnish v1 -vsl_catchup
 server s1 {
 	loop 2 {
 		rxreq
-		txresp -nolen -hdr "Content-Length: 100"
+		txresp -hdr "Content-Length: 100"
 		send "0123456789"
 		send "0123456789"
 		send "0123456789"
@@ -210,8 +210,13 @@ varnish v1 -vsl_catchup
 server s1 {
 	rxreq
 	txresp
+
 	rxreq
 	txresp -hdr "Accept-Ranges: foobar"
+
+	rxreq
+	expect req.http.Range == foobar=1-2
+	txresp -status 206 -hdr "Content-Range: foobar 1-2/3"
 } -start
 
 varnish v1 -vcl+backend {
@@ -228,10 +233,16 @@ client c7 {
 	rxresp
 	expect resp.http.foobar == ""
 	expect resp.http.accept-ranges == <undef>
+
 	txreq
 	rxresp
 	expect resp.http.foobar == foobar
 	expect resp.http.accept-ranges == foobar
+
+	txreq -hdr "Range: foobar=1-2"
+	rxresp
+	expect resp.status == 503
+	expect resp.http.content-range == <undef>
 } -run
 
 server s1 {
@@ -265,6 +276,18 @@ server s1 {
 	rxreq
 	expect req.http.range == "bytes=0-0"
 	txresp -hdr "content-range: bytes */*" -bodylen 100
+
+	rxreq
+	expect req.http.range == "bytes=0-0"
+	txresp -hdr "content-range: bytes 0-0/*" -bodylen 100
+
+	# issue 4089
+	rxreq
+	expect req.http.range == "bytes=10-19"
+	txresp -status 206 -hdr "content-range: bytes 10-19/*" \
+		-hdr "transfer-encoding: chunked"
+	chunkedlen 10
+	chunkedlen 0
 } -start
 
 varnish v1 -vcl+backend {
@@ -305,6 +328,15 @@ client c8 {
 	txreq -hdr "range: bytes=0-0" -hdr "return: pass"
 	rxresp
 	expect resp.status == 503
+
+	txreq -hdr "range: bytes=0-0" -hdr "return: pass"
+	rxresp
+	expect resp.status == 503
+
+	# issue 4089
+	txreq -hdr "range: bytes=10-19" -hdr "return: pass"
+	rxresp
+	expect resp.status == 206
 } -run
 
 # range filter without a range header
