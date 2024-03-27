@@ -436,22 +436,20 @@ decode_hdr(struct http *hp, struct hpk_hdr *h, const struct vsb *vsb)
 		r = HPK_DecHdr(iter, h + n);
 		if (r == hpk_err )
 			break;
-		vtc_log(hp->vl, 4,
-				"header[%2d]: %s : %s",
-				n,
-				h[n].key.ptr,
-				h[n].value.ptr);
+		vtc_log(hp->vl, 4, "header[%2d]: %s: %s",
+		    n, h[n].key.ptr, h[n].value.ptr);
 		n++;
 		if (r == hpk_done)
 			break;
 	}
 
-	if (r != hpk_done)
+	if (r != hpk_done) {
 		vtc_log(hp->vl, hp->fatal ? 4 : 0,
-				"Header decoding failed (%d) %d", r, hp->fatal);
-	else if (n == MAX_HDR)
+		    "Header decoding failed (%d) %d", r, hp->fatal);
+	} else if (n == MAX_HDR) {
 		vtc_log(hp->vl, hp->fatal,
-				"Max number of headers reached (%d)", MAX_HDR);
+		    "Max number of headers reached (%d)", MAX_HDR);
+	}
 
 	HPK_FreeIter(iter);
 }
