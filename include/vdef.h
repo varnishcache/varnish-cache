@@ -241,3 +241,5 @@ typedef struct {
 
 #define Tcheck(t)	do { (void)pdiff((t).b, (t).e); } while (0)
 #define Tlen(t)		(pdiff((t).b, (t).e))
+#define Tstr(s)		((txt){(s), (s) + strlen(s)})
+#define Tstrcmp(t, s)	(strncmp((t).b, (s), Tlen(t)))
