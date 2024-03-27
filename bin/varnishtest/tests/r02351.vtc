@@ -1,4 +1,4 @@
-varnishtest "#2351: :path/:method error handling"
+varnishtest "#2351: h2 pseudo-headers error handling"
 
 server s1 {
 	rxreq
@@ -34,6 +34,16 @@ client c1 {
 	# Duplicate :path
 	stream 7 {
 		txreq -noadd -hdr ":path" "/" -hdr ":path" "/foo" -hdr ":method" "GET" -hdr ":authority" "example.com" -hdr ":scheme" "http"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c2 {
+	# Duplicate :authority
+	stream next {
+		txreq -noadd -hdr :path / -hdr :method GET -hdr :scheme http \
+		    -hdr :authority example.com -hdr :authority example.org
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
