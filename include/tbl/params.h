@@ -1207,6 +1207,12 @@ PARAM_SIMPLE(
 	/* flags */	WIZARD
 )
 
+#define H2_SETTING_NAME(nm) "SETTINGS_" #nm
+#define H2_SETTING_DESCR(nm)						\
+	"\n\nThe value of this parameter defines " H2_SETTING_NAME(nm)	\
+	" in the initial SETTINGS frame sent to the client when a new "	\
+	"HTTP2 session is established."
+
 PARAM_SIMPLE(
 	/* name */	h2_header_table_size,
 	/* type */	bytes_u,
@@ -1218,6 +1224,7 @@ PARAM_SIMPLE(
 	"HTTP2 header table size.\n"
 	"This is the size that will be used for the HPACK dynamic\n"
 	"decoding table."
+	H2_SETTING_DESCR(HEADER_TABLE_SIZE)
 )
 
 PARAM_SIMPLE(
@@ -1231,6 +1238,7 @@ PARAM_SIMPLE(
 	"HTTP2 Maximum number of concurrent streams.\n"
 	"This is the number of requests that can be active\n"
 	"at the same time for a single HTTP2 connection."
+	H2_SETTING_DESCR(MAX_CONCURRENT_STREAMS)
 )
 
 /* We have a strict min at the protocol default here. This is because we
@@ -1246,7 +1254,8 @@ PARAM_SIMPLE(
 	/* def */	"65535b",
 	/* units */	"bytes",
 	/* descr */
-	"HTTP2 initial flow control window size.",
+	"HTTP2 initial flow control window size."
+	H2_SETTING_DESCR(INITIAL_WINDOW_SIZE)
 )
 
 PARAM_SIMPLE(
@@ -1258,18 +1267,22 @@ PARAM_SIMPLE(
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 maximum per frame payload size we are willing to accept."
+	H2_SETTING_DESCR(MAX_FRAME_SIZE)
 )
 
 PARAM_SIMPLE(
 	/* name */	h2_max_header_list_size,
 	/* type */	bytes_u,
 	/* min */	"0b",
-	/* max */	NULL,
-	/* def */	"2147483647b",
+	/* max */	"4294967295b",
+	/* def */	"4294967295b",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 maximum size of an uncompressed header list."
 )
+
+#undef H2_SETTING_DESCR
+#undef H2_SETTING_NAME
 
 #define H2_RR_INFO \
 	"Changes to this parameter affect the default for new HTTP2 " \
