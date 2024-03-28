@@ -1816,6 +1816,12 @@ PARAM(
 	/* func */	NULL
 )
 
+#define H2_SETTING_NAME(nm) "SETTINGS_" #nm
+#define H2_SETTING_DESCR(nm)						\
+	"\n\nThe value of this parameter defines " H2_SETTING_NAME(nm)	\
+	" in the initial SETTINGS frame sent to the client when a new "	\
+	"HTTP2 session is established."
+
 PARAM(
 	/* name */      h2_header_table_size,
 	/* typ */       bytes_u,
@@ -1827,7 +1833,8 @@ PARAM(
 	/* s-text */
 	"HTTP2 header table size.\n"
 	"This is the size that will be used for the HPACK dynamic\n"
-	"decoding table.",
+	"decoding table."
+	H2_SETTING_DESCR(HEADER_TABLE_SIZE),
 	/* l-text */    "",
 	/* func */      NULL
 )
@@ -1843,7 +1850,8 @@ PARAM(
        /* s-text */
        "HTTP2 Maximum number of concurrent streams.\n"
        "This is the number of requests that can be active\n"
-       "at the same time for a single HTTP2 connection.",
+       "at the same time for a single HTTP2 connection."
+	H2_SETTING_DESCR(MAX_CONCURRENT_STREAMS),
        /* l-text */    "",
        /* func */      NULL
 )
@@ -1861,7 +1869,8 @@ PARAM(
 	/* units */     "bytes",
 	/* flags */     0,
 	/* s-text */
-	"HTTP2 initial flow control window size.",
+	"HTTP2 initial flow control window size."
+	H2_SETTING_DESCR(INITIAL_WINDOW_SIZE),
 	/* l-text */    "",
 	/* func */      NULL
 )
@@ -1875,7 +1884,8 @@ PARAM(
 	/* units */     "bytes",
 	/* flags */     0,
 	/* s-text */
-	"HTTP2 maximum per frame payload size we are willing to accept.",
+	"HTTP2 maximum per frame payload size we are willing to accept."
+	H2_SETTING_DESCR(MAX_FRAME_SIZE),
 	/* l-text */    "",
 	/* func */      NULL
 )
@@ -1884,8 +1894,8 @@ PARAM(
 	/* name */      h2_max_header_list_size,
 	/* typ */       bytes_u,
 	/* min */       "0b",
-	/* max */       NULL,
-	/* default */   "2147483647b",
+	/* max */	"4294967295b",
+	/* default */	"4294967295b",
 	/* units */     "bytes",
 	/* flags */     0,
 	/* s-text */
@@ -1893,6 +1903,9 @@ PARAM(
 	/* l-text */    "",
 	/* func */      NULL
 )
+
+#undef H2_SETTING_DESCR
+#undef H2_SETTING_NAME
 
 #if 0
 /* actual location mgt_param_tbl.c */
