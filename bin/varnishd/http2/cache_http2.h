@@ -50,6 +50,9 @@ struct h2_error_s {
 
 typedef const struct h2_error_s *h2_error;
 
+#define H2_ERROR_MATCH(err, target)			\
+	((err) != NULL && (err)->val == (target)->val)
+
 #define H2_CUSTOM_ERRORS
 #define H2EC1(U,v,g,r,d) extern const struct h2_error_s H2CE_##U[1];
 #define H2EC2(U,v,g,r,d) extern const struct h2_error_s H2SE_##U[1];
