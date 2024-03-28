@@ -195,6 +195,15 @@ H2_ERROR(
 	/* reason */	SC_BANKRUPT,
 	/* descr */	"http/2 bankrupt connection"
 )
+
+H2_ERROR(
+	/* name */	REQ_SIZE,
+	/* val */	11, /* ENHANCE_YOUR_CALM */
+	/* types */	2,
+	/* goaway */	0,
+	/* reason */	SC_NULL,
+	/* descr */	"HTTP/2 header list exceeded http_req_size"
+)
 #  undef H2_CUSTOM_ERRORS
 #endif
 
