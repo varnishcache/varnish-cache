@@ -269,7 +269,8 @@ h2h_decode_init(const struct h2_sess *h2)
 	d = h2->decode;
 	INIT_OBJ(d, H2H_DECODE_MAGIC);
 	VHD_Init(d->vhd);
-	d->out_l = WS_ReserveAll(h2->new_req->http->ws);
+	d->out_l = WS_ReserveSize(h2->new_req->http->ws,
+	    cache_param->http_req_size);
 	/*
 	 * Can't do any work without any buffer
 	 * space. Require non-zero size.
@@ -310,6 +311,10 @@ h2h_decode_fini(const struct h2_sess *h2)
 	} else
 		ret = d->error;
 	FINI_OBJ(d);
+	if (ret == H2SE_REQ_SIZE) {
+		VSLb(h2->new_req->http->vsl, SLT_LostHeader,
+		    "Header list too large");
+	}
 	return (ret);
 }
 
