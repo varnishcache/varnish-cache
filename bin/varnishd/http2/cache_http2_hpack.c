@@ -343,7 +343,8 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	/* Only H2E_ENHANCE_YOUR_CALM indicates that we should continue
 	   processing. Other errors should have been returned and handled
 	   by the caller. */
-	assert(d->error == 0 || d->error == H2SE_ENHANCE_YOUR_CALM);
+	if (d->error != NULL)
+		assert(H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM));
 
 	while (1) {
 		AN(d->out);
@@ -362,7 +363,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			break;
 		}
 
-		if (d->error == H2SE_ENHANCE_YOUR_CALM) {
+		if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
 			d->out_u = 0;
 			assert(d->out_u < d->out_l);
 			continue;
@@ -374,7 +375,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		case VHD_NAME:
 			assert(d->namelen == 0);
 			if (d->out_l - d->out_u < 2) {
-				d->error = H2SE_ENHANCE_YOUR_CALM;
+				d->error = H2SE_REQ_SIZE;
 				break;
 			}
 			d->out[d->out_u++] = ':';
@@ -387,7 +388,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		case VHD_VALUE:
 			assert(d->namelen > 0);
 			if (d->out_l - d->out_u < 1) {
-				d->error = H2SE_ENHANCE_YOUR_CALM;
+				d->error = H2SE_REQ_SIZE;
 				break;
 			}
 			d->error = h2h_addhdr(hp, d);
@@ -401,7 +402,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			break;
 
 		case VHD_BUF:
-			d->error = H2SE_ENHANCE_YOUR_CALM;
+			d->error = H2SE_REQ_SIZE;
 			break;
 
 		default:
@@ -409,7 +410,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			break;
 		}
 
-		if (d->error == H2SE_ENHANCE_YOUR_CALM) {
+		if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
 			d->out = d->reset;
 			d->out_l = e - d->out;
 			d->out_u = 0;
@@ -418,7 +419,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			break;
 	}
 
-	if (d->error == H2SE_ENHANCE_YOUR_CALM)
+	if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM))
 		return (0); /* Stream error, delay reporting until
 			       h2h_decode_fini so that we can process the
 			       complete header block */
