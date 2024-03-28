@@ -447,6 +447,6 @@ H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 	h2_send(wrk, r2, ftyp, flags, len, ptr, counter);
 
 	h2e = h2_errcheck(r2, r2->h2sess);
-	if (h2e != NULL && h2e->val == H2SE_CANCEL->val)
+	if (H2_ERROR_MATCH(h2e, H2SE_CANCEL))
 		H2_Send_RST(wrk, r2->h2sess, r2, r2->stream, h2e);
 }
