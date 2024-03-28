@@ -161,7 +161,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 	disallow_empty = 0;
 	has_dup = 0;
 
-	if (Tlen(hdr) > UINT_MAX) {	/* XXX: cache_param max header size */
+	if (Tlen(hdr) > cache_param->http_req_hdr_len) {
 		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.20s", hdr.b);
 		return (H2SE_ENHANCE_YOUR_CALM);
 	}
