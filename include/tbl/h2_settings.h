@@ -90,6 +90,7 @@ H2_SETTING(					// rfc7540,l,2150,2157
 	H2CE_PROTOCOL_ERROR
 )
 
+#ifndef H2_SETTINGS_PARAM_ONLY
 H2_SETTING(					// rfc7540,l,2159,2167
 	MAX_HEADER_LIST_SIZE,
 	max_header_list_size,
@@ -99,6 +100,7 @@ H2_SETTING(					// rfc7540,l,2159,2167
 	0xffffffff,
 	0
 )
+#endif
 #undef H2_SETTING
 
 /*lint -restore */

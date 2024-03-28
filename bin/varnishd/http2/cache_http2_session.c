@@ -85,6 +85,7 @@ h2_local_settings(struct h2_settings *h2s)
 	h2s->l = cache_param->h2_##l;
 #include "tbl/h2_settings.h"
 #undef H2_SETTINGS_PARAM_ONLY
+	h2s->max_header_list_size = cache_param->http_req_size;
 }
 
 /**********************************************************************
