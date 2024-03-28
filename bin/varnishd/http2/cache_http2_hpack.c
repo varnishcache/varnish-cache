@@ -51,9 +51,10 @@ h2h_assert_ready(struct h2h_decode *d)
 
 // rfc9113,l,2493,2528
 static h2_error
-h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
+h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 {
 	const char *p;
+	int l;
 	enum {
 		FLD_NAME_FIRST,
 		FLD_NAME,
@@ -61,40 +62,34 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 		FLD_VALUE
 	} state;
 
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	AN(b);
-	assert(namelen >= 2);	/* 2 chars from the ': ' that we added */
-	assert(namelen <= len);
-	assert(b[namelen - 2] == ':');
-	assert(b[namelen - 1] == ' ');
-
-	if (namelen == 2) {
-		VSLb(hp->vsl, SLT_BogoHeader, "Empty name");
+	if (Tlen(nm) == 0) {
+		VSLb(vsl, SLT_BogoHeader, "Empty name");
 		return (H2SE_PROTOCOL_ERROR);
 	}
 
-	// VSLb(hp->vsl, SLT_Debug, "CHDR [%.*s] [%.*s]",
-	//     (int)namelen, b, (int)(len - namelen), b + namelen);
+	// VSLb(vsl, SLT_Debug, "CHDR [%.*s] [%.*s]",
+	//     (int)Tlen(nm), nm.b, (int)Tlen(val), val.b);
 
+	l = vmin_t(int, Tlen(nm) + 2 + Tlen(val), 20);
 	state = FLD_NAME_FIRST;
-	for (p = b; p < b + namelen - 2; p++) {
+	for (p = nm.b; p < nm.e; p++) {
 		switch(state) {
 		case FLD_NAME_FIRST:
 			state = FLD_NAME;
 			if (*p == ':')
 				break;
-			/* FALL_THROUGH */
+			/* FALLTHROUGH */
 		case FLD_NAME:
 			if (isupper(*p)) {
-				VSLb(hp->vsl, SLT_BogoHeader,
+				VSLb(vsl, SLT_BogoHeader,
 				    "Illegal field header name (upper-case): %.*s",
-				    (int)(len > 20 ? 20 : len), b);
+				    l, nm.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 			if (!vct_istchar(*p) || *p == ':') {
-				VSLb(hp->vsl, SLT_BogoHeader,
+				VSLb(vsl, SLT_BogoHeader,
 				    "Illegal field header name (non-token): %.*s",
-				    (int)(len > 20 ? 20 : len), b);
+				    l, nm.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 			break;
@@ -104,22 +99,20 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 	}
 
 	state = FLD_VALUE_FIRST;
-	for (p = b + namelen; p < b + len; p++) {
+	for (p = val.b; p < val.e; p++) {
 		switch(state) {
 		case FLD_VALUE_FIRST:
 			if (vct_issp(*p)) {
-				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Illegal field value start %.*s",
-				    (int)(len > 20 ? 20 : len), b);
+				VSLb(vsl, SLT_BogoHeader,
+				    "Illegal field value start %.*s", l, nm.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 			state = FLD_VALUE;
-			/* FALL_THROUGH */
+			/* FALLTHROUGH */
 		case FLD_VALUE:
 			if (!vct_ishdrval(*p)) {
-				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Illegal field value %.*s",
-				    (int)(len > 20 ? 20 : len), b);
+				VSLb(vsl, SLT_BogoHeader,
+				    "Illegal field value %.*s", l, nm.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 			break;
@@ -127,10 +120,9 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			WRONG("http2 field value validation state");
 		}
 	}
-	if (state == FLD_VALUE && vct_issp(b[len - 1])) {
-		VSLb(hp->vsl, SLT_BogoHeader,
-		    "Illegal val (end) %.*s",
-		    (int)(len > 20 ? 20 : len), b);
+	if (state == FLD_VALUE && vct_issp(val.e[-1])) {
+		VSLb(vsl, SLT_BogoHeader,
+		    "Illegal field value (end) %.*s", l, nm.b);
 		return (H2SE_PROTOCOL_ERROR);
 	}
 	return (0);
@@ -144,6 +136,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 	int disallow_empty;
 	const char *p;
 	unsigned n, has_dup;
+	h2_error err;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	h2h_assert_ready(d);
@@ -158,6 +151,10 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 	nm.e = nm.b + d->namelen - 2;
 	val.b = nm.e + 2;
 	val.e = hdr.e;
+
+	err = h2h_checkhdr(hp->vsl, nm, val);
+	if (err != NULL)
+		return (err);
 
 	disallow_empty = 0;
 	has_dup = 0;
@@ -388,10 +385,6 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 				d->error = H2SE_ENHANCE_YOUR_CALM;
 				break;
 			}
-			d->error = h2h_checkhdr(hp, d->out, d->namelen,
-			    d->out_u);
-			if (d->error)
-				break;
 			d->error = h2h_addhdr(hp, d);
 			if (d->error)
 				break;
