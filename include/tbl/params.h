@@ -1277,12 +1277,20 @@ PARAM_SIMPLE(
 	/* type */	bytes_u,
 	/* min */	"0b",
 	/* max */	"4294967295b",
-	/* def */	"4294967295b",
+	/* def */	"0b",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 maximum size of an uncompressed header list. This parameter "
 	"is not mapped to " H2_SETTING_NAME(MAX_HEADER_LIST_SIZE) " in the "
-	"initial SETTINGS frame, the http_req_size parameter is instead."
+	"initial SETTINGS frame, the http_req_size parameter is instead.\n\n"
+	"The http_req_size advises HTTP2 clients of the maximum size for "
+	"the header list. Exceeding http_req_size results in a reset stream "
+	"after processing the HPACK block to perserve the connection, but "
+	"exceeding h2_max_header_list_size results in the HTTP2 connection "
+	"going away immediately.\n\n"
+	"If h2_max_header_list_size is lower than http_req_size, it has no "
+	"effect, except for the special value zero interpreted as 150% of "
+	"http_req_size."
 )
 
 #undef H2_SETTING_DESCR

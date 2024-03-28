@@ -1,0 +1,19 @@
+varnishtest "h2 CONTINUATION flood"
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set vsl_mask -H2RxHdr,-H2RxBody"
+varnish v1 -vcl { backend be none; } -start
+
+client c1 {
+	non_fatal
+	stream next {
+		txreq -nohdrend
+		loop 1000 {
+			txcont -nohdrend -hdr noise ${string,repeat,4096,x}
+		}
+		txcont -hdr last header
+	} -run
+} -run
+
+varnish v1 -expect MAIN.s_req_hdrbytes < 65536
+varnish v1 -expect MAIN.sc_overload == 1
