@@ -278,6 +278,14 @@ h2h_decode_init(const struct h2_sess *h2)
 	XXXAN(d->out_l);
 	d->out = WS_Reservation(h2->new_req->http->ws);
 	d->reset = d->out;
+
+	if (cache_param->h2_max_header_list_size == 0)
+		d->limit = h2->local_settings.max_header_list_size * 1.5;
+	else
+		d->limit = cache_param->h2_max_header_list_size;
+
+	if (d->limit < h2->local_settings.max_header_list_size)
+		d->limit = INT64_MAX;
 }
 
 /* Possible error returns:
@@ -351,7 +359,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	if (d->error != NULL)
 		assert(H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM));
 
-	while (1) {
+	while (d->limit >= 0) {
 		AN(d->out);
 		assert(d->out_u <= d->out_l);
 		d->vhd_ret = VHD_Decode(d->vhd, h2->dectbl, in, in_l, &in_u,
@@ -369,6 +377,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		}
 
 		if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
+			d->limit -= d->out_u;
 			d->out_u = 0;
 			assert(d->out_u < d->out_l);
 			continue;
@@ -402,6 +411,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			d->out[d->out_u++] = '\0'; /* Zero guard */
 			d->out += d->out_u;
 			d->out_l -= d->out_u;
+			d->limit -= d->out_u;
 			d->out_u = 0;
 			d->namelen = 0;
 			break;
@@ -418,15 +428,25 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
 			d->out = d->reset;
 			d->out_l = e - d->out;
+			d->limit -= d->out_u;
 			d->out_u = 0;
 			assert(d->out_l > 0);
 		} else if (d->error)
 			break;
 	}
 
-	if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM))
-		return (0); /* Stream error, delay reporting until
-			       h2h_decode_fini so that we can process the
-			       complete header block */
+	if (d->limit < 0) {
+		/* Fatal error, the client exceeded both http_req_size
+		 * and h2_max_header_list_size. */
+		VSLb(h2->vsl, SLT_SessError, "Header list too large");
+		return (H2CE_ENHANCE_YOUR_CALM);
+	}
+
+	if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
+		/* Stream error, delay reporting until h2h_decode_fini so
+		 * that we can process the complete header block. */
+		return (NULL);
+	}
+
 	return (d->error);
 }
