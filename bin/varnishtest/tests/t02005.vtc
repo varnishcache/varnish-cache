@@ -32,7 +32,7 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 logexpect l1 -v v1 -g raw {
 	expect	* 1001 ReqAcct	"80 7 87 78 8 86"
-	expect	* 1000 ReqAcct	"45 8 53 63 28 91"
+	expect	* 1000 ReqAcct	"45 8 53 63 34 97"
 } -start
 
 client c1 {
