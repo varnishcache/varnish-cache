@@ -1,0 +1,21 @@
+varnishtest "h2 req limits"
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set http_req_hdr_len 40b"
+varnish v1 -vcl {
+	backend be none;
+} -start
+
+logexpect l1 -v v1 -g raw -q BogoHeader {
+	expect 0 1001 BogoHeader "Header too large: :path"
+} -start
+
+client c1 {
+	stream next {
+		txreq -url ${string,repeat,4,/123456789}
+		rxrst
+		expect rst.err == ENHANCE_YOUR_CALM
+	} -run
+} -run
+
+logexpect l1 -wait
