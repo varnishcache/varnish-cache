@@ -2,17 +2,40 @@ varnishtest "h2 req limits"
 
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set http_req_hdr_len 40b"
+varnish v1 -cliok "param.set http_req_size 512b"
 varnish v1 -vcl {
 	backend be none;
 } -start
 
-logexpect l1 -v v1 -g raw -q BogoHeader {
+logexpect l1 -v v1 -g raw -q BogoHeader,LostHeader {
 	expect 0 1001 BogoHeader "Header too large: :path"
+	expect 0 1002 LostHeader "Header list too large"
 } -start
 
 client c1 {
 	stream next {
-		txreq -url ${string,repeat,4,/123456789}
+		txreq -url ${string,repeat,4,/123456789} \
+			-hdr limit http_req_hdr_len
+		rxrst
+		expect rst.err == ENHANCE_YOUR_CALM
+	} -run
+
+	stream next {
+		txreq -url "/http_req_size" \
+			-hdr hdr1 ${string,repeat,3,/123456789} \
+			-hdr hdr2 ${string,repeat,3,/123456789} \
+			-hdr hdr3 ${string,repeat,3,/123456789} \
+			-hdr hdr4 ${string,repeat,3,/123456789} \
+			-hdr hdr5 ${string,repeat,3,/123456789} \
+			-hdr hdr6 ${string,repeat,3,/123456789} \
+			-hdr hdr7 ${string,repeat,3,/123456789} \
+			-hdr hdr8 ${string,repeat,3,/123456789} \
+			-hdr hdr9 ${string,repeat,3,/123456789} \
+			-hdr hdr10 ${string,repeat,3,/123456789} \
+			-hdr hdr11 ${string,repeat,3,/123456789} \
+			-hdr hdr12 ${string,repeat,3,/123456789} \
+			-hdr hdr13 ${string,repeat,3,/123456789} \
+			-hdr hdr14 ${string,repeat,3,/123456789}
 		rxrst
 		expect rst.err == ENHANCE_YOUR_CALM
 	} -run
