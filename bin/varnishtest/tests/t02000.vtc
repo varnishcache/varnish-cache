@@ -69,7 +69,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 process p1 -stop
 # shell {cat ${tmpdir}/vlog}
 # SETTINGS with default initial window size
-shell -match {1001 H2TxHdr        c \[000006040000000000\]} {
+shell -match {1001 H2TxHdr        c \[00000c040000000000\]} {
 	cat ${tmpdir}/vlog
 }
 

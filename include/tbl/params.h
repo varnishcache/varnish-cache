@@ -605,11 +605,13 @@ PARAM_SIMPLE(
 	/* units */	"bytes",
 	/* descr */
 	"Maximum number of bytes of HTTP client request we will deal with. "
-	" This is a limit on all bytes up to the double blank line which "
-	"ends the HTTP request.\n"
+	"This is a limit on all bytes up to the double blank line which "
+	"ends the HTTP request. "
 	"The memory for the request is allocated from the client workspace "
 	"(param: workspace_client) and this parameter limits how much of "
-	"that the request is allowed to take up."
+	"that the request is allowed to take up.\n\n"
+	"For HTTP2 clients, it is advertised as MAX_HEADER_LIST_SIZE in "
+	"the initial SETTINGS frame."
 )
 
 PARAM_SIMPLE(
@@ -1290,7 +1292,9 @@ PARAM_SIMPLE(
 	/* def */	"4294967295b",
 	/* units */	"bytes",
 	/* descr */
-	"HTTP2 maximum size of an uncompressed header list."
+	"HTTP2 maximum size of an uncompressed header list. This parameter "
+	"is not mapped to " H2_SETTING_NAME(MAX_HEADER_LIST_SIZE) " in the "
+	"initial SETTINGS frame, the http_req_size parameter is instead."
 )
 
 #undef H2_SETTING_DESCR
