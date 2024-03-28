@@ -235,6 +235,7 @@ struct h2h_decode {
 	enum vhd_ret_e			vhd_ret;
 	char				*out;
 	char				*reset;
+	int64_t				limit;
 	size_t				out_l;
 	size_t				out_u;
 	size_t				namelen;
