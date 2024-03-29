@@ -42,6 +42,13 @@ client c1 {
 
 client c1 {
 	stream 1 {
+		txreq -scheme " space"
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
 		txreq -req " "
 		rxrst
 	} -run
