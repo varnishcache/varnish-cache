@@ -1009,7 +1009,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	/* SECTION: stream.spec.zexpect.settings SETTINGS specific
 	 *
 	 * settings.ack
-	 *	"true" if the ACK flag was set, else ""false.
+	 *	"true" if the ACK flag was set, else "false".
 	 *
 	 * settings.push
 	 *	"true" if the push settings was set to yes, "false" if set to
