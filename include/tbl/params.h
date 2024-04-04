@@ -1276,7 +1276,7 @@ PARAM_SIMPLE(
 	/* name */	h2_max_header_list_size,
 	/* type */	bytes_u,
 	/* min */	"0b",
-	/* max */	"4294967295b",
+	/* max */	"2147483647b", /* NB: not the RFC maximum */
 	/* def */	"0b",
 	/* units */	"bytes",
 	/* descr */
