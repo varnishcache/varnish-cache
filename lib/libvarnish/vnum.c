@@ -238,7 +238,7 @@ static struct test_case {
 	uintmax_t rel;
 	uintmax_t val;
 	const char *err;
-} test_cases[] = {
+} test_vnum_2bytes[] = {
 	{ "1",			(uintmax_t)0,	(uintmax_t)1 },
 	{ "1B",			(uintmax_t)0,	(uintmax_t)1<<0 },
 	{ "1 B",		(uintmax_t)0,	(uintmax_t)1<<0 },
@@ -277,6 +277,10 @@ static struct test_case {
 	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
 	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
 	{ "3%",			(uintmax_t)1024,	(uintmax_t)31 },
+
+	/* 32bit limits */
+	{ "4294967295b",	(uintmax_t)0,	(uintmax_t)4294967295ULL},
+	{ "4294967294b",	(uintmax_t)0,	(uintmax_t)4294967294ULL},
 
 	/* Check the error checks */
 	{ "",			0,	0,	err_miss_num },
@@ -347,7 +351,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	for (tc = test_cases; tc->str; ++tc) {
+	for (tc = test_vnum_2bytes; tc->str; ++tc) {
 		e = VNUM_2bytes(tc->str, &val, tc->rel);
 		if (e != NULL)
 			val = 0;
