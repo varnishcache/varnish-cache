@@ -35,7 +35,7 @@ client c1 {
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.reset h2_initial_window_size"
 
-client c1 {
+client c2 {
 	stream 1 {
 		txprio -weight 10 -stream 0
 	} -run
@@ -85,7 +85,7 @@ varnish v1 -syntax 4.1 -vcl+backend {
 	}
 }
 
-client c1 {
+client c3 {
 	stream 7 {
 		txreq -url "/uncached"
 		rxresp
@@ -101,5 +101,37 @@ client c1 {
 		expect resp.http.C-Sess-XID ~ "^[0-9]+$"
 		expect resp.http.B-Sess-XID ~ "^[0-9]+$"
 		expect resp.http.C-Sess-XID == resp.http.B-Sess-XID
+	} -run
+} -run
+
+# Check default settings
+
+varnish v1 -cliok "param.reset h2_header_table_size"
+varnish v1 -cliok "param.reset h2_max_concurrent_streams"
+varnish v1 -cliok "param.reset h2_initial_window_size"
+varnish v1 -cliok "param.reset h2_max_frame_size"
+varnish v1 -cliok "param.reset h2_max_header_list_size"
+varnish v1 -cliok "param.reset http_req_size"
+
+client c4 {
+	txpri
+	stream 0 {
+		# check initial settings from varnishd
+		txsettings
+		rxsettings
+		expect settings.ack == false
+		expect settings.push == <undef>
+		expect settings.hdrtbl == <undef>
+		expect settings.maxstreams == 100
+		expect settings.winsize == <undef>
+		expect settings.framesize == <undef>
+		expect settings.hdrsize ~ ^(12288|32768)$
+
+		# check (some) values not set by varnishd
+		expect stream.window == 65535
+
+		txsettings -ack
+		rxsettings
+		expect settings.ack == true
 	} -run
 } -run
