@@ -1896,7 +1896,7 @@ PARAM(
 	/* name */      h2_max_header_list_size,
 	/* typ */       bytes_u,
 	/* min */       "0b",
-	/* max */	"4294967295b",
+	/* max */       "2147483647b", /* NB: not the RFC maximum */
 	/* default */	"0b",
 	/* units */     "bytes",
 	/* flags */     0,
