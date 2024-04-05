@@ -1,0 +1,42 @@
+varnishtest "make sure an already setup secret file remains protected"
+
+varnish v1 -vcl { backend default none; } -start
+
+shell -match _.secret {
+	find "${tmpdir}"/v1/_.secret -perm 0640 -size 256c
+}
+
+varnish v1 -stop -wait
+
+shell {
+	test ! -f "${tmpdir}"/v1/_.secret
+}
+
+# since varnishtest destroys workdir silently before startup
+# this must fool varnishtest to not manage the workdir
+shell -match _.secret {
+	set -e
+	mkdir -p "${tmpdir}"/v2/
+	touch "${tmpdir}"/v2/_.secret
+	chmod 0666 "${tmpdir}"/v2/_.secret
+	find "${tmpdir}"/v2/_.secret -perm 0666 -size 0c
+}
+
+process p1 "exec varnishd -n ${tmpdir}/v2 -F -f '' -a :0" -start
+
+# wait for startup and check permissions have changed
+shell -match _.secret {
+	set -e
+	t=50
+	while [ "$t" -gt 0 ] && [ ! -d "${tmpdir}"/v2/_.vsm_mgt ]; do
+	    sleep 0.1
+	    t=$(($t - 1))
+	done
+	find "${tmpdir}"/v2/_.secret -perm 0640 -size 256c
+}
+
+process p1 -stop -wait
+
+shell {
+	test ! -f "${tmpdir}"/v2/_.secret
+}

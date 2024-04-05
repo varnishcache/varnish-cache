@@ -272,10 +272,16 @@ make_secret(const char *dirname)
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
 
 	VJ_master(JAIL_MASTER_FILE);
-	fdo = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0640);
-	if (fdo < 0)
+	if (unlink(fn) < 0 && errno != ENOENT) {
+		ARGV_ERR("Cannot remove pre-existing secret-file in %s (%s)\n",
+		    dirname, VAS_errtxt(errno));
+	}
+
+	fdo = open(fn, O_RDWR|O_CREAT|O_EXCL, 0640);
+	if (fdo < 0) {
 		ARGV_ERR("Cannot create secret-file in %s (%s)\n",
 		    dirname, VAS_errtxt(errno));
+	}
 
 	for (i = 0; i < 256; i++) {
 		AZ(VRND_RandomCrypto(&b, 1));
