@@ -79,7 +79,7 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 	VSB_printf(vsb, "refcnt = %d, bogosity = %d, error = %s\n",
 	    h2->refcnt, h2->bogosity, h2_panic_error(h2->error));
 	VSB_printf(vsb,
-	    "open_streams = %u, highest_stream = %u,"
+	    "open_streams = %d, highest_stream = %u,"
 	    " goaway_last_stream = %u,\n",
 	    h2->open_streams, h2->highest_stream, h2->goaway_last_stream);
 	VSB_cat(vsb, "local_settings = {");

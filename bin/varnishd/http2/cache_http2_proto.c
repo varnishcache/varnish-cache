@@ -732,7 +732,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		 * increase under our feet.
 		 */
 		if (h2->open_streams >=
-		    h2->local_settings.max_concurrent_streams) {
+		    (int)h2->local_settings.max_concurrent_streams) {
 			VSLb(h2->vsl, SLT_Debug,
 			     "H2: stream %u: Hit maximum number of "
 			     "concurrent streams", h2->rxf_stream);

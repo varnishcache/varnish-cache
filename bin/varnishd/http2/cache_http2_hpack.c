@@ -40,7 +40,7 @@
 #include "vct.h"
 
 static void
-h2h_assert_ready(struct h2h_decode *d)
+h2h_assert_ready(const struct h2h_decode *d)
 {
 
 	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
@@ -280,7 +280,8 @@ h2h_decode_init(const struct h2_sess *h2)
 	d->reset = d->out;
 
 	if (cache_param->h2_max_header_list_size == 0)
-		d->limit = h2->local_settings.max_header_list_size * 1.5;
+		d->limit =
+		    (long)(h2->local_settings.max_header_list_size * 1.5);
 	else
 		d->limit = cache_param->h2_max_header_list_size;
 
