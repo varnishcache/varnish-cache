@@ -1,0 +1,39 @@
+varnishtest "304 revalidations with purge.soft()"
+
+server s1 {
+	rxreq
+	txresp -hdr "etag: foo" -body "foo"
+
+	rxreq
+	expect req.http.If-None-Match == "foo"
+	txresp -status 304 -hdr "etag: foo"
+} -start
+
+varnish v1 -vcl+backend {
+	import purge;
+
+	sub vcl_hit {
+		if (req.restarts == 0) {
+			purge.soft();
+			return (restart);
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = 1d;
+		set beresp.grace = 1d;
+		set beresp.keep = 1d;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+} -run
