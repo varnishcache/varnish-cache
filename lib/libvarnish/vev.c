@@ -175,10 +175,11 @@ vev_get_sig(int sig)
 /*--------------------------------------------------------------------*/
 
 static void
-vev_sighandler(int sig)
+vev_sigaction(int sig, siginfo_t *siginfo, void *ctx)
 {
 	struct vevsig *es;
 
+	(void)ctx;
 	assert(sig < vev_nsig);
 	assert(vev_sigs != NULL);
 	es = &vev_sigs[sig];
@@ -278,8 +279,8 @@ VEV_Start(struct vev_root *evb, struct vev *e)
 		AZ(es->happened);
 		es->vev = e;
 		es->vevb = evb;
-		es->sigact.sa_flags = e->sig_flags;
-		es->sigact.sa_handler = vev_sighandler;
+		es->sigact.sa_flags = e->sig_flags | SA_SIGINFO;
+		es->sigact.sa_sigaction = vev_sigaction;
 	} else {
 		es = NULL;
 	}
