@@ -209,7 +209,7 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 	s = writev(h2->sess->fd, iov, len == 0 ? 1 : 2);
 	if (s != sizeof hdr + len) {
 		if (errno == EWOULDBLOCK) {
-			VSLb(h2->vsl, SLT_Debug,
+			H2S_Lock_VSLb(h2, SLT_Debug,
 			     "H2: stream %u: Hit idle_send_timeout", stream);
 		}
 		/*
@@ -414,9 +414,7 @@ H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
 	AN(H2_SEND_HELD(h2, r2));
 	AN(h2e);
 
-	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
-	Lck_Unlock(&h2->sess->mtx);
+	H2S_Lock_VSLb(h2, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
 	vbe32enc(b, h2e->val);
 
 	H2_Send_Frame(wrk, h2, H2_F_RST_STREAM, 0, sizeof b, stream, b);
