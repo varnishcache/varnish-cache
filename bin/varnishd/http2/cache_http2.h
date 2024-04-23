@@ -274,3 +274,7 @@ task_func_t h2_do_req;
 #ifdef TRANSPORT_MAGIC
 vtr_req_fail_f h2_req_fail;
 #endif
+
+/* cache_http2_session.c */
+void
+H2S_Lock_VSLb(const struct h2_sess *, enum VSL_tag_e, const char *, ...);
