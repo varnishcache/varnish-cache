@@ -325,7 +325,7 @@ h2h_decode_hdr_fini(const struct h2_sess *h2)
 		    "HPACK compression error/fini (%s)", VHD_Error(d->vhd_ret));
 		ret = H2CE_COMPRESSION_ERROR;
 	} else if (d->error == NULL && !d->has_scheme) {
-		VSLb(h2->vsl, SLT_Debug, "Missing :scheme");
+		H2S_Lock_VSLb(h2, SLT_Debug, "Missing :scheme");
 		ret = H2SE_MISSING_SCHEME; //rfc7540,l,3087,3090
 	} else
 		ret = d->error;
@@ -377,7 +377,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		    d->out, d->out_l, &d->out_u);
 
 		if (d->vhd_ret < 0) {
-			VSLb(hp->vsl, SLT_BogoHeader,
+			H2S_Lock_VSLb(h2, SLT_BogoHeader,
 			    "HPACK compression error (%s)",
 			    VHD_Error(d->vhd_ret));
 			d->error = H2CE_COMPRESSION_ERROR;
@@ -449,7 +449,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	if (d->limit < 0) {
 		/* Fatal error, the client exceeded both http_req_size
 		 * and h2_max_header_list_size. */
-		VSLb(h2->vsl, SLT_SessError, "Header list too large");
+		H2S_Lock_VSLb(h2, SLT_SessError, "Header list too large");
 		return (H2CE_ENHANCE_YOUR_CALM);
 	}
 

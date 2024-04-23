@@ -429,7 +429,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	while (h2_rxframe(wrk, h2)) {
 		HTC_RxInit(h2->htc, h2->ws);
 		if (WS_Overflowed(h2->ws)) {
-			VSLb(h2->vsl, SLT_Debug, "H2: Empty Rx Workspace");
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: Empty Rx Workspace");
 			h2->error = H2CE_INTERNAL_ERROR;
 			break;
 		}
@@ -439,8 +439,8 @@ h2_new_session(struct worker *wrk, void *arg)
 	AN(h2->error);
 
 	/* Delete all idle streams */
-	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
 	Lck_Lock(&h2->sess->mtx);
+	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		if (r2->error == 0)
 			r2->error = h2->error;
