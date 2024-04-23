@@ -301,11 +301,15 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 
-	if (h2->rxf_len != 8)				// rfc7540,l,2364,2366
+	if (h2->rxf_len != 8) { 			// rfc7540,l,2364,2366
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx ping with (len != 8)");
 		return (H2CE_FRAME_SIZE_ERROR);
+	}
 	AZ(h2->rxf_stream);				// rfc7540,l,2359,2362
-	if (h2->rxf_flags != 0)				// We never send pings
+	if (h2->rxf_flags != 0)	{			// We never send pings
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx ping ack");
 		return (H2SE_PROTOCOL_ERROR);
+	}
 	H2_Send_Get(wrk, h2, r2);
 	H2_Send_Frame(wrk, h2,
 	    H2_F_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
@@ -324,6 +328,7 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 	// rfc7540,l,2262,2267
+	H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx push promise");
 	return (H2CE_PROTOCOL_ERROR);
 }
 
@@ -373,8 +378,10 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
-	if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
+	if (h2->rxf_len != 4) {			// rfc7540,l,2003,2004
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx rst with (len != 4)");
 		return (H2CE_FRAME_SIZE_ERROR);
+	}
 	if (r2 == NULL)
 		return (0);
 	h2e = h2_rapid_reset(wrk, h2, r2);
@@ -432,8 +439,10 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
-	if (h2->rxf_len != 4)
+	if (h2->rxf_len != 4) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx winup with (len != 4)");
 		return (H2CE_FRAME_SIZE_ERROR);
+	}
 	wu = vbe32dec(h2->rxf_data) & ~(1LU<<31);
 	if (wu == 0)
 		return (H2SE_PROTOCOL_ERROR);
@@ -567,12 +576,18 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	AZ(h2->rxf_stream);
 
 	if (h2->rxf_flags == H2FF_SETTINGS_ACK) {
-		if (h2->rxf_len > 0)			// rfc7540,l,2047,2049
+		if (h2->rxf_len > 0) {			// rfc7540,l,2047,2049
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx settings ack with "
+			    "(len > 0)");
 			return (H2CE_FRAME_SIZE_ERROR);
+		}
 		return (0);
 	} else {
-		if (h2->rxf_len % 6)			// rfc7540,l,2062,2064
+		if (h2->rxf_len % 6) {			// rfc7540,l,2062,2064
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx settings with "
+			    "((len %% 6) != 0)");
 			return (H2CE_PROTOCOL_ERROR);
+		}
 		p = h2->rxf_data;
 		for (l = h2->rxf_len; l >= 6; l -= 6, p += 6) {
 			retval = h2_set_setting(h2, p);
@@ -667,8 +682,11 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 		/* A HEADER frame contained END_STREAM */
 		assert (req->req_body_status == BS_NONE);
 		r2->state = H2_S_CLOS_REM;
-		if (cl > 0)
+		if (cl > 0) {
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx header with END_STREAM "
+			    "and content-length > 0");
 			return (H2CE_PROTOCOL_ERROR); //rfc7540,l,1838,1840
+		}
 	}
 
 	if (req->http->hd[HTTP_HDR_METHOD].b == NULL) {
@@ -716,8 +734,10 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 
 	if (r2 == NULL) {
-		if (h2->rxf_stream <= h2->highest_stream)
+		if (h2->rxf_stream <= h2->highest_stream) {
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: new stream ID < highest stream");
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
+		}
 		/* NB: we don't need to guard the read of h2->open_streams
 		 * because headers are handled sequentially so it cannot
 		 * increase under our feet.
@@ -734,8 +754,10 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	}
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
-	if (r2->state != H2_S_IDLE)
+	if (r2->state != H2_S_IDLE) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers on non-idle stream");
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
+	}
 	r2->state = H2_S_OPEN;
 
 	req = r2->req;
@@ -763,14 +785,19 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	p = h2->rxf_data;
 	l = h2->rxf_len;
 	if (h2->rxf_flags & H2FF_HEADERS_PADDED) {
-		if (*p + 1 > l)
+		if (*p + 1 > l) {
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers with pad length > frame len");
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1884,1887
+		}
 		l -= 1 + *p;
 		p += 1;
 	}
 	if (h2->rxf_flags & H2FF_HEADERS_PRIORITY) {
-		if (l < 5)
+		if (l < 5) {
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers with incorrect "
+			    "priority data");
 			return (H2CE_PROTOCOL_ERROR);
+		}
 		l -= 5;
 		p += 5;
 	}
@@ -803,8 +830,11 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
-	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req)
+	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx unexpected CONT frame"
+		    " on stream %d", h2->rxf_stream);
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
+	}
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, h2->rxf_data, h2->rxf_len);
 	r2->req->acct.req_hdrbytes += h2->rxf_len;
@@ -1258,14 +1288,23 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 	h2_error h2e;
 
 	ASSERT_RXTHR(h2);
-	if (h2->rxf_stream == 0 && h2f->act_szero != 0)
+	if (h2->rxf_stream == 0 && h2f->act_szero != 0) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: unexpected %s frame on stream 0",
+		    h2f->name);
 		return (h2f->act_szero);
+	}
 
-	if (h2->rxf_stream != 0 && h2f->act_snonzero != 0)
+	if (h2->rxf_stream != 0 && h2f->act_snonzero != 0) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: unexpected %s frame on stream %d",
+		    h2f->name, h2->rxf_stream);
 		return (h2f->act_snonzero);
+	}
 
-	if (h2->rxf_stream > h2->highest_stream && h2f->act_sidle != 0)
+	if (h2->rxf_stream > h2->highest_stream && h2f->act_sidle != 0) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: unexpected %s frame on idle stream "
+		    "%d", h2f->name, h2->rxf_stream);
 		return (h2f->act_sidle);
+	}
 
 	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
 		// rfc7540,l,1140,1145
@@ -1280,8 +1319,11 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 		if (r2->stream == h2->rxf_stream)
 			break;
 
-	if (h2->new_req != NULL && h2f != H2_F_CONTINUATION)
+	if (h2->new_req != NULL && h2f != H2_F_CONTINUATION) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: expected continuation but "
+		    " received %s on stream %d", h2f->name, h2->rxf_stream);
 		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
+	}
 
 	h2e = h2f->rxfunc(wrk, h2, r2);
 	if (h2e == NULL)
@@ -1427,6 +1469,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	enum htc_status_e hs;
 	h2_frame h2f;
 	h2_error h2e;
+	const char *s, *r;
 
 	ASSERT_RXTHR(h2);
 
@@ -1452,6 +1495,8 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	}
 
 	if (h2e != NULL && h2e->connection) {
+		HTC_Status(hs, &s, &r);
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: HTC %s (%s)", s, r);
 		h2->error = h2e;
 		h2_tx_goaway(wrk, h2, h2e);
 		return (0);
