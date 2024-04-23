@@ -88,6 +88,30 @@ h2_local_settings(struct h2_settings *h2s)
 	h2s->max_header_list_size = cache_param->http_req_size;
 }
 
+void
+H2S_Lock_VSLb(const struct h2_sess *h2, enum VSL_tag_e tag, const char *fmt, ...)
+{
+	va_list ap;
+	int held = 0;
+
+	AN(h2);
+
+	if (VSL_tag_is_masked(tag))
+		return;
+
+	if (h2->highest_stream > 0) {
+		held = 1;
+		Lck_Lock(&h2->sess->mtx);
+	}
+
+	va_start(ap, fmt);
+	VSLbv(h2->vsl, tag, fmt, ap);
+	va_end(ap);
+
+	if (held)
+		Lck_Unlock(&h2->sess->mtx);
+}
+
 /**********************************************************************
  * The h2_sess struct needs many of the same things as a request,
  * WS, VSL, HTC &c,  but rather than implement all that stuff over, we
