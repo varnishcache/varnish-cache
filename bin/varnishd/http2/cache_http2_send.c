@@ -209,7 +209,7 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 	s = writev(h2->sess->fd, iov, len == 0 ? 1 : 2);
 	if (s != sizeof hdr + len) {
 		if (errno == EWOULDBLOCK) {
-			H2S_Lock_VSLb(h2, SLT_Debug,
+			H2S_Lock_VSLb(h2, SLT_SessError,
 			     "H2: stream %u: Hit idle_send_timeout", stream);
 		}
 		/*

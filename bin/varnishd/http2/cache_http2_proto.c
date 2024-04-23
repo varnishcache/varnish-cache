@@ -357,7 +357,7 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2->last_rst = now;
 
 	if (h2->rst_budget < 1.0) {
-		H2S_Lock_VSLb(h2, SLT_Error, "H2: Hit RST limit. Closing session.");
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: Hit RST limit. Closing session.");
 		return (H2CE_RAPID_RESET);
 	}
 	h2->rst_budget -= 1.0;
@@ -862,7 +862,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	len = h2->rxf_len;
 	if (h2->rxf_flags & H2FF_DATA_PADDED) {
 		if (*src >= len) {
-			VSLb(h2->vsl, SLT_Debug,
+			VSLb(h2->vsl, SLT_SessError,
 			    "H2: stream %u: Padding larger than frame length",
 			    h2->rxf_stream);
 			r2->error = H2CE_PROTOCOL_ERROR;
@@ -899,7 +899,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	/* Check and charge connection window. The entire frame including
 	 * padding (h2->rxf_len) counts towards the window. */
 	if (h2->rxf_len > h2->req0->r_window) {
-		VSLb(h2->vsl, SLT_Debug,
+		VSLb(h2->vsl, SLT_SessError,
 		    "H2: stream %u: Exceeded connection receive window",
 		    h2->rxf_stream);
 		r2->error = H2CE_FLOW_CONTROL_ERROR;
@@ -1271,7 +1271,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 		// rfc7540,l,1140,1145
 		// rfc7540,l,1153,1158
 		/* No even streams, we don't do PUSH_PROMISE */
-		H2S_Lock_VSLb(h2, SLT_Debug, "H2: illegal stream (=%u)",
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: illegal stream (=%u)",
 		    h2->rxf_stream);
 		return (H2CE_PROTOCOL_ERROR);
 	}
