@@ -617,6 +617,9 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 	} while (vfps == VFP_OK);
 
+	if (!vfc->failed && bo->htc->body_status == BS_TRAILERS)
+		vfc->failed = VDI_GetTrl(bo);
+
 	if (vfc->failed) {
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
 		bo->htc->doclose = SC_RX_BODY;

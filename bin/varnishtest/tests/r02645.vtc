@@ -17,7 +17,9 @@ varnish v1 -vcl+backend {
 
 client c1 -repeat 100 {
 	txreq -url "/"
-	# some responses will fail (503), some won't. All we care
-	# about here is the fact that we don't panic
+	# Some responses will fail (503), some won't. The server may not
+	# have enough space to process empty trailers. All we care about
+	# here is the fact that we don't panic
+	non_fatal
 	rxresp
 } -run

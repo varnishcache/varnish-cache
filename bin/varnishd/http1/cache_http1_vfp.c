@@ -260,9 +260,9 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		if (vfe->priv2 != 0)
 			return (VFP_OK);
 	}
+	htc->body_status = BS_TRAILERS;
 	AZ(vfe->priv2);
-	vfps = v1f_chunk_end(vc, htc);
-	return (vfps == VFP_OK ? VFP_END : vfps);
+	return (VFP_END);
 }
 
 static const struct vfp v1f_chunked = {
