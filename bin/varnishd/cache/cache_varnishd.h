@@ -179,6 +179,7 @@ void VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **busyobj);
 
 /* cache_director.c */
 int VDI_GetHdr(struct busyobj *);
+int VDI_GetTrl(struct busyobj *);
 VCL_IP VDI_GetIP(struct busyobj *);
 void VDI_Finish(struct busyobj *bo);
 stream_close_t VDI_Http1Pipe(struct req *, struct busyobj *);
