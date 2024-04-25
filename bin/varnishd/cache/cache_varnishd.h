@@ -305,6 +305,7 @@ uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
 uint16_t HTTP1_DissectTrailers(struct http_conn *, struct http *, unsigned);
 enum htc_status_e HTTP1_RxFields(struct http_conn *, struct http *,
     struct ws *, htc_complete_f *, vtim_dur, vtim_dur, size_t, const char *);
+int HTTP1_RxTrailers(struct req *, struct busyobj *);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 /* cache_main.c */
