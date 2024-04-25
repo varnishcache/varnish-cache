@@ -63,8 +63,8 @@ const int HTTP1_Resp[3] = {
  * Check if we have a complete HTTP request or response yet
  */
 
-enum htc_status_e v_matchproto_(htc_complete_f)
-HTTP1_Headers(struct http_conn *htc)
+static enum htc_status_e
+http1_fields(struct http_conn *htc, unsigned is_hdr)
 {
 	char *p;
 	enum htc_status_e retval;
@@ -73,16 +73,23 @@ HTTP1_Headers(struct http_conn *htc)
 	AN(WS_Reservation(htc->ws));
 	assert(pdiff(htc->rxbuf_b, htc->rxbuf_e) <= WS_ReservationSize(htc->ws));
 
-	/* Skip any leading white space */
-	for (p = htc->rxbuf_b ; p < htc->rxbuf_e && vct_islws(*p); p++)
-		continue;
-	if (p == htc->rxbuf_e)
-		return (HTC_S_EMPTY);
+	if (is_hdr) {
+		/* Skip any leading white space */
+		for (p = htc->rxbuf_b ; p < htc->rxbuf_e && vct_islws(*p); p++)
+			continue;
+		if (p == htc->rxbuf_e)
+			return (HTC_S_EMPTY);
 
-	/* Do not return a partial H2 connection preface */
-	retval = H2_prism_complete(htc);
-	if (retval != HTC_S_JUNK)
-		return (retval);
+		/* Do not return a partial H2 connection preface */
+		retval = H2_prism_complete(htc);
+		if (retval != HTC_S_JUNK)
+			return (retval);
+	} else {
+		/* Tolerate empty trailers */
+		p = htc->rxbuf_b;
+		if (vct_iscrlf(p, htc->rxbuf_e))
+			return (HTC_S_COMPLETE);
+	}
 
 	/*
 	 * Here we just look for NL[CR]NL to see that reception
@@ -100,6 +107,20 @@ HTTP1_Headers(struct http_conn *htc)
 			break;
 	}
 	return (HTC_S_COMPLETE);
+}
+
+enum htc_status_e v_matchproto_(htc_complete_f)
+HTTP1_Headers(struct http_conn *htc)
+{
+
+	return (http1_fields(htc, 1));
+}
+
+enum htc_status_e v_matchproto_(htc_complete_f)
+HTTP1_Trailers(struct http_conn *htc)
+{
+
+	return (http1_fields(htc, 0));
 }
 
 /*--------------------------------------------------------------------
