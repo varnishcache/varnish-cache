@@ -1,0 +1,24 @@
+varnishtest "Chunked response with trailers"
+
+server s0 {
+	rxreq
+	txresp -nolen \
+	    -hdr "Transfer-Encoding: chunked"
+	chunked chunk
+	chunked another
+	send "0\r\n"
+	send "Trailer: test\r\n"
+	send "\r\n"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+        expect resp.status == 200
+} -run
