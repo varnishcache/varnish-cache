@@ -566,6 +566,49 @@ HTTP1_RxFields(struct http_conn *htc, struct http *hp, struct ws *ws,
 	return (hs);
 }
 
+int
+HTTP1_RxTrailers(struct req *req, struct busyobj *bo)
+{
+	enum htc_status_e hs;
+	struct http_conn *htc;
+	struct http *hp;
+	vtim_dur td;
+	size_t maxlen, maxhdrlen;
+	const char *remote;
+
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+
+	if (req != NULL) {
+		htc = req->htc;
+		hp = req->http;
+		td = cache_param->timeout_idle;
+		maxlen = cache_param->http_req_size;
+		maxhdrlen = cache_param->http_req_hdr_len;
+		remote = "client";
+	} else {
+		AN(bo);
+		htc = bo->htc;
+		hp = bo->beresp;
+		td = cache_param->between_bytes_timeout;
+		maxlen = cache_param->http_resp_size;
+		maxhdrlen = cache_param->http_resp_hdr_len;
+		remote = "backend";
+	}
+
+	hs = HTTP1_RxFields(htc, hp, hp->ws, HTTP1_Trailers, NAN, td, maxlen,
+	    remote);
+	if (hs != HTC_S_COMPLETE) {
+		/* XXX: bump hdrbytes counter? */
+		VSLb(hp->vsl, SLT_FetchError, "Trailers read failed");
+		return (-1);
+	}
+
+	if (HTTP1_DissectTrailers(htc, hp, maxhdrlen))
+		return (-1);
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 static unsigned
