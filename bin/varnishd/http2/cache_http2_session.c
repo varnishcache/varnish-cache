@@ -287,6 +287,8 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	/* Start req thread */
 	r2 = h2_new_req(h2, 1, req);
+	AZ(h2->highest_stream);
+	h2->highest_stream = r2->stream;
 	req->transport = &HTTP2_transport;
 	assert(req->req_step == R_STP_TRANSPORT);
 	req->task->func = h2_do_req;
