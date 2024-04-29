@@ -386,6 +386,7 @@ typedef unsigned				VCL_BOOL;
 typedef int64_t					VCL_BYTES;
 typedef vtim_dur				VCL_DURATION;
 typedef const char *				VCL_ENUM;
+typedef const char *				VCL_ERROR;
 typedef const struct gethdr_s *			VCL_HEADER;
 typedef struct http *				VCL_HTTP;
 typedef void					VCL_INSTANCE;

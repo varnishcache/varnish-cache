@@ -1899,3 +1899,16 @@ storage.<name>.used_space
 	Used space in the named stevedore. Only available for the malloc
 	stevedore.
 
+Error messages
+--------------
+
+TODO: general introduction.
+
+error.connection_refused
+
+	Type: ERROR
+
+	Error message: Connection refused by the backend
+
+	TODO: description (maybe mention ECONNREFUSED etc)
+

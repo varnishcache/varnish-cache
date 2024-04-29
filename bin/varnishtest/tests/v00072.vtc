@@ -1,0 +1,17 @@
+varnishtest "VCL error messages"
+
+# Instead of adding coverage for all errors here, we should probably add
+# error.* coverage to existing test cases.
+
+server s1 "" -start -break
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_error {
+		return (fail(error.connection_refused));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run

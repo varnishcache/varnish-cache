@@ -114,6 +114,13 @@ const struct type ENUM[1] = {{
 	.tostring =		"",
 }};
 
+const struct type ERROR[1] = {{
+	.magic =		TYPE_MAGIC,
+	.name =			"ERROR",
+	.stringform =		1,
+	.tostring =		"(\v1)",
+}};
+
 const struct type HEADER[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"HEADER",
