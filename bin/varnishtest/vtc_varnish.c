@@ -386,7 +386,9 @@ varnish_launch(struct varnish *v)
 {
 	struct vsb *vsb, *vsb1;
 	int i, nfd, asock;
-	char abuf[128], pbuf[128];
+	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
+	char lbuf[PATH_MAX];
 	struct pollfd fd[3];
 	enum VCLI_status_e u;
 	const char *err;
@@ -506,19 +508,19 @@ varnish_launch(struct varnish *v)
 	if (u != CLIS_AUTH)
 		vtc_fatal(v->vl, "CLI auth demand expected: %u %s", u, r);
 
-	bprintf(abuf, "%s/_.secret", v->workdir);
-	nfd = open(abuf, O_RDONLY);
+	bprintf(lbuf, "%s/_.secret", v->workdir);
+	nfd = open(lbuf, O_RDONLY);
 	assert(nfd >= 0);
 
-	assert(sizeof abuf >= CLI_AUTH_RESPONSE_LEN + 7);
-	bstrcpy(abuf, "auth ");
-	VCLI_AuthResponse(nfd, r, abuf + 5);
+	assert(sizeof lbuf >= CLI_AUTH_RESPONSE_LEN + 7);
+	bstrcpy(lbuf, "auth ");
+	VCLI_AuthResponse(nfd, r, lbuf + 5);
 	closefd(&nfd);
 	free(r);
 	r = NULL;
-	strcat(abuf, "\n");
+	strcat(lbuf, "\n");
 
-	u = varnish_ask_cli(v, abuf, &r);
+	u = varnish_ask_cli(v, lbuf, &r);
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)
