@@ -786,7 +786,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		break;
 	case VAS_MISSING:
 		VSB_printf(pan_vsb,
-		    "Missing errorhandling code in %s(), %s line %d:\n"
+		    "Missing error handling code in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
 		break;
