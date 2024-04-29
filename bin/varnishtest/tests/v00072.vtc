@@ -7,7 +7,9 @@ server s1 "" -start -break
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_error {
-		return (fail(error.connection_refused));
+		if (beresp.error != error.connection_refused) {
+			return (abandon);
+		}
 	}
 } -start
 

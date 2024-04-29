@@ -1149,6 +1149,15 @@ beresp.filters
 	``beresp.do_*`` switches is a VCL error.
 
 
+beresp.error
+
+	Type: STRING
+
+	Readable from: vcl_backend_error
+
+	TODO: description (change type to ERROR?)
+
+
 .. _beresp.grace:
 
 beresp.grace
