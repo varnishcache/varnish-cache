@@ -1186,6 +1186,10 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	tk = tl->t;
 	vcc_NextToken(tl);
 	vcc_expr_add(tl, &e2, STRINGS);
+	if (e2->fmt != STRINGS && e2->fmt->stringform) {
+		/* NB: no concatenation processed by vcc_expr_add() */
+		vcc_expr_tostring(tl, &e2);
+	}
 	ERRCHK(tl);
 	if (e2->fmt != STRINGS) {
 		VSB_printf(tl->sb,
