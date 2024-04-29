@@ -232,11 +232,12 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2,
 		if (r2->cond != NULL)
 			PTOK(pthread_cond_signal(r2->cond));
 		r2 = NULL;
+		Lck_Unlock(&h2->sess->mtx);
 	} else {
+		Lck_Unlock(&h2->sess->mtx);
 		if (r2->state == H2_S_OPEN && h2->new_req == r2->req)
 			(void)h2h_decode_hdr_fini(h2);
 	}
-	Lck_Unlock(&h2->sess->mtx);
 	if (r2 != NULL)
 		h2_del_req(wrk, r2);
 }
