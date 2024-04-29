@@ -16,4 +16,5 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp
+	expect resp.body ~ "<p>Connection refused by the backend</p>"
 } -run
