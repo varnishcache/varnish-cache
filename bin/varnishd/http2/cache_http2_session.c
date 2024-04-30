@@ -283,7 +283,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	/* XXX: This call may assert on buffer overflow if the pipelined
 	   data exceeds the available space in the ws workspace. What to
 	   do about the overflowing data is an open issue. */
-	HTC_RxInit(h2->htc, h2->ws);
+	AZ(HTC_RxInit(h2->htc, h2->ws));
 
 	/* Start req thread */
 	r2 = h2_new_req(h2, 1, req);
@@ -382,7 +382,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	}
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
-	HTC_RxInit(h2->htc, h2->ws);
+	AZ(HTC_RxInit(h2->htc, h2->ws));
 	AN(WS_Reservation(h2->ws));
 	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
 
@@ -403,7 +403,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->cond = &wrk->cond;
 
 	while (h2_rxframe(wrk, h2)) {
-		HTC_RxInit(h2->htc, h2->ws);
+		AZ(HTC_RxInit(h2->htc, h2->ws));
 		if (WS_Overflowed(h2->ws)) {
 			VSLb(h2->vsl, SLT_Debug, "H2: Empty Rx Workspace");
 			h2->error = H2CE_INTERNAL_ERROR;

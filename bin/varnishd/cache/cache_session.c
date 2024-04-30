@@ -255,7 +255,7 @@ HTC_Status(enum htc_status_e e, const char **name, const char **desc)
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 HTC_RxInit(struct http_conn *htc, struct ws *ws)
 {
 	unsigned rollback;
@@ -270,12 +270,16 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 	 */
 	rollback = !strcasecmp(ws->id, "req") && htc->body_status == NULL;
 	l = WS_Pipeline(htc->ws, htc->pipeline_b, htc->pipeline_e, rollback);
-	xxxassert(l >= 0);
+	if (l < 0) {
+		WS_Release(htc->ws, 0);
+		return (-1);
+	}
 
 	htc->rxbuf_b = WS_Reservation(ws);
 	htc->rxbuf_e = htc->rxbuf_b + l;
 	htc->pipeline_b = NULL;
 	htc->pipeline_e = NULL;
+	return (0);
 }
 
 void

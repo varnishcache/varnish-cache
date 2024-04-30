@@ -543,7 +543,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 	assert(sizeof vpx1_sig == 5);
 	assert(sizeof vpx2_sig == 12);
 
-	HTC_RxInit(req->htc, req->ws);
+	AZ(HTC_RxInit(req->htc, req->ws));
 	hs = HTC_RxStuff(req->htc, vpx_complete, NULL, NULL, NAN,
 	    sp->t_idle + cache_param->timeout_idle, NAN, VPX_MAX_LEN);
 	if (hs != HTC_S_COMPLETE) {

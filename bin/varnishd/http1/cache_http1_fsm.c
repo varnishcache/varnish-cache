@@ -113,7 +113,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	HTC_RxInit(req->htc, req->ws);
+	AZ(HTC_RxInit(req->htc, req->ws));
 	if (!SES_Reserve_proto_priv(sp, &u, &sz)) {
 		/* Out of session workspace. Free the req, close the sess,
 		 * and do not set a new task func, which will exit the
@@ -143,7 +143,7 @@ http1_unwait(struct worker *wrk, void *arg)
 	req = Req_New(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->rfd = &sp->fd;
-	HTC_RxInit(req->htc, req->ws);
+	AZ(HTC_RxInit(req->htc, req->ws));
 	http1_setstate(sp, H1NEWREQ);
 	wrk->task->func = http1_req;
 	wrk->task->priv = req;
@@ -415,7 +415,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			}
 
 			Req_Cleanup(sp, wrk, req);
-			HTC_RxInit(req->htc, req->ws);
+			AZ(HTC_RxInit(req->htc, req->ws));
 			if (req->htc->rxbuf_e != req->htc->rxbuf_b)
 				wrk->stats->sess_readahead++;
 			if (FEATURE(FEATURE_BUSY_STATS_RATE))

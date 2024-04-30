@@ -192,7 +192,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	/* Receive response */
 
-	HTC_RxInit(htc, bo->ws);
+	AZ(HTC_RxInit(htc, bo->ws));
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
