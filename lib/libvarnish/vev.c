@@ -343,7 +343,7 @@ VEV_Stop(struct vev_root *evb, struct vev *e)
 		assert(es->vev == e);
 		es->vev = NULL;
 		es->vevb = NULL;
-		es->sigact.sa_flags = e->sig_flags;
+		es->sigact.sa_flags = 0;
 		es->sigact.sa_handler = SIG_DFL;
 		AZ(sigaction(e->sig, &es->sigact, NULL));
 		es->happened = 0;
