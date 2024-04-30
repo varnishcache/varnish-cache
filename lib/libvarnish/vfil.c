@@ -230,6 +230,11 @@ VFIL_allocate(int fd, uintmax_t size, int insist)
 {
 	struct stat st;
 	uintmax_t fsspace;
+	size_t l;
+	ssize_t l2, l3;
+	char *buf;
+	ssize_t bufsiz;
+	int retval = 0;
 
 	if (ftruncate(fd, size))
 		return (-1);
@@ -242,10 +247,6 @@ VFIL_allocate(int fd, uintmax_t size, int insist)
 		   is less than requested size */
 		errno = ENOSPC;
 		return (-1);
-	}
-	if (insist) {
-		/* This falls back to writing zeros, as we want */
-		return (posix_fallocate(fd, 0, size) ? -1 : 0);
 	}
 #if defined(__linux__) && defined(HAVE_FALLOCATE)
 	{
@@ -266,7 +267,31 @@ VFIL_allocate(int fd, uintmax_t size, int insist)
 		}
 	}
 #endif
-	return (0);
+	if (!insist)
+		return (0);
+
+	/* Write size zero bytes to make sure the entire file is allocated
+	   in the file system */
+	if (size > 65536)
+		bufsiz = 64 * 1024;
+	else
+		bufsiz = size;
+	buf = calloc(1, bufsiz);
+	AN(buf);
+	assert(lseek(fd, 0, SEEK_SET) == 0);
+	for (l = 0; l < size; l += l2) {
+		l2 = bufsiz;
+		if (l + l2 > size)
+			l2 = size - l;
+		l3 = write(fd, buf, l2);
+		if (l3 != l2) {
+			retval = -1;
+			break;
+		}
+	}
+	assert(lseek(fd, 0, SEEK_SET) == 0);
+	free(buf);
+	return (retval);
 }
 
 struct vfil_dir {
