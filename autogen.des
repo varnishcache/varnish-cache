@@ -16,7 +16,7 @@ fi
 
 if [ "x$DST" != "x" ] ; then
 	:
-elif [ "x`uname -o`" = "xFreeBSD" ] ; then
+elif [ "x`uname`" = "xFreeBSD" ] ; then
 	DST="--prefix=/usr/local --mandir=/usr/local/man"
 else
 	DST="--prefix=/opt/varnish --mandir=/opt/varnish/man"
