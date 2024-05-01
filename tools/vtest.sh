@@ -55,7 +55,7 @@ MAXRUNS="${MAXRUNS:-0}"
 
 enable_gcov=false
 
-SSH_DST="-p 203 vtest@varnish-cache.org"
+: ${SSH_DST:="-p 203 vtest@varnish-cache.org"}
 
 # make sure we use our own key
 unset SSH_AUTH_SOCK
@@ -283,6 +283,8 @@ do
 		echo "MANIFEST _autogen" >> "${VTEST_REPORT}"
 	else
 		echo "AUTOGEN GOOD" >> "${VTEST_REPORT}"
+		cp ${SRCDIR}/config.h "${REPORTDIR}"/_configh
+		echo "MANIFEST _configh" >> "${VTEST_REPORT}"
 		if $enable_gcov ; then
 			if makegcov >> "${REPORTDIR}"/_makegcov 2>&1 ; then
 				mv ${SRCDIR}/_gcov "${REPORTDIR}"/
