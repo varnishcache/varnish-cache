@@ -41,16 +41,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
-#ifdef HAVE_SYS_MOUNT_H
-#  include <sys/param.h>
-#  include <sys/mount.h>
-#endif
-#ifdef HAVE_SYS_STATVFS_H
-#  include <sys/statvfs.h>
-#endif
-#ifdef HAVE_SYS_VFS_H
-#  include <sys/vfs.h>
-#endif
+#include <sys/statvfs.h>
 #ifdef HAVE_FALLOCATE
 #  include <linux/magic.h>
 #endif
@@ -188,7 +179,6 @@ VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *psize, uintmax_t *pspace)
 {
 	unsigned bs;
 	uintmax_t size, space;
-#if defined(HAVE_SYS_STATVFS_H)
 	struct statvfs fsst;
 
 	if (fstatvfs(fd, &fsst))
@@ -196,17 +186,6 @@ VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *psize, uintmax_t *pspace)
 	bs = fsst.f_frsize;
 	size = fsst.f_blocks * fsst.f_frsize;
 	space = fsst.f_bavail * fsst.f_frsize;
-#elif defined(HAVE_SYS_MOUNT_H) || defined(HAVE_SYS_VFS_H)
-	struct statfs fsst;
-
-	if (fstatfs(fd, &fsst))
-		return (-1);
-	bs = fsst.f_bsize;
-	size = fsst.f_blocks * fsst.f_bsize;
-	space = fsst.f_bavail * fsst.f_bsize;
-#else
-#error no struct statfs / struct statvfs
-#endif
 
 	if (pbs)
 		*pbs = bs;

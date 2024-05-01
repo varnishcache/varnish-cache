@@ -214,10 +214,7 @@ CFLAGS="${save_CFLAGS}"
 # Checks for header files.
 AC_CHECK_HEADERS([sys/endian.h])
 AC_CHECK_HEADERS([sys/filio.h])
-AC_CHECK_HEADERS([sys/mount.h], [], [], [#include <sys/param.h>])
 AC_CHECK_HEADERS([sys/personality.h])
-AC_CHECK_HEADERS([sys/statvfs.h])
-AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([priv.h])
