@@ -98,6 +98,45 @@ static VTAILQ_HEAD(, varnish)	varnishes =
     VTAILQ_HEAD_INITIALIZER(varnishes);
 
 /**********************************************************************
+ * Fatal condition cleanup
+ * Invalid to call in any code path not followed by vtc_fatal().
+ */
+
+static void
+varnish_fatal_cleanup(const struct varnish *v)
+{
+	struct pollfd fd[1];
+	int n;
+
+	if (!pthread_equal(pthread_self(), vtc_thread))
+		return;
+
+	if (!v->tp_started)
+		return;
+
+	memset(fd, 0, sizeof(fd));
+	fd[0].fd = v->fds[0];
+	fd[0].events = POLLIN;
+
+	do {
+		n = poll(fd, sizeof(fd)/sizeof(fd[0]), 10);
+		if (n == 1 && (fd[0].revents & (POLLHUP|POLLERR)) != 0) {
+			PTOK(pthread_join(v->tp, NULL));
+			break;
+		}
+
+		if (n == 1)
+			usleep(10000);
+	} while (n > 0);
+}
+
+#define varnish_fatal(v, ...)						\
+    do {								\
+	    varnish_fatal_cleanup((v));					\
+	    vtc_fatal((v)->vl, __VA_ARGS__);				\
+    } while (0)
+
+/**********************************************************************
  * Ask a question over CLI
  */
 
@@ -112,16 +151,16 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 		vtc_dump(v->vl, 4, "CLI TX", cmd, -1);
 		i = write(v->cli_fd, cmd, strlen(cmd));
 		if (i != strlen(cmd) && !vtc_stop)
-			vtc_fatal(v->vl, "CLI write failed (%s) = %u %s",
+			varnish_fatal(v, "CLI write failed (%s) = %u %s",
 			    cmd, errno, strerror(errno));
 		i = write(v->cli_fd, "\n", 1);
 		if (i != 1 && !vtc_stop)
-			vtc_fatal(v->vl, "CLI write failed (%s) = %u %s",
+			varnish_fatal(v, "CLI write failed (%s) = %u %s",
 			    cmd, errno, strerror(errno));
 	}
 	i = VCLI_ReadResult(v->cli_fd, &retval, &r, vtc_maxdur);
 	if (i != 0 && !vtc_stop)
-		vtc_fatal(v->vl, "CLI failed (%s) = %d %u %s",
+		varnish_fatal(v, "CLI failed (%s) = %d %u %s",
 		    cmd != NULL ? cmd : "NULL", i, retval, r);
 	vtc_log(v->vl, 3, "CLI RX  %u", retval);
 	vtc_dump(v->vl, 4, "CLI RX", r, -1);
@@ -146,7 +185,7 @@ wait_stopped(const struct varnish *v)
 	while (1) {
 		st = varnish_ask_cli(v, "status", &r);
 		if (st != CLIS_OK)
-			vtc_fatal(v->vl,
+			varnish_fatal(v,
 			    "CLI status command failed: %u %s", st, r);
 		if (!strcmp(r, "Child in state stopped")) {
 			free(r);
@@ -171,17 +210,17 @@ wait_running(const struct varnish *v)
 		vtc_log(v->vl, 3, "wait-running");
 		st = varnish_ask_cli(v, "status", &r);
 		if (st != CLIS_OK)
-			vtc_fatal(v->vl,
+			varnish_fatal(v,
 			    "CLI status command failed: %u %s", st, r);
 		if (!strcmp(r, "Child in state stopped"))
-			vtc_fatal(v->vl,
+			varnish_fatal(v,
 			    "Child stopped before running: %u %s", st, r);
 		if (!strcmp(r, "Child in state running")) {
 			free(r);
 			r = NULL;
 			st = varnish_ask_cli(v, "debug.listen_address", &r);
 			if (st != CLIS_OK)
-				vtc_fatal(v->vl,
+				varnish_fatal(v,
 				    "CLI status command failed: %u %s", st, r);
 			free(r);
 			break;
@@ -399,7 +438,7 @@ varnish_launch(struct varnish *v)
 	/* Create listener socket */
 	asock = VTCP_listen_on(default_listen_addr, NULL, 1, &err);
 	if (err != NULL)
-		vtc_fatal(v->vl, "Create CLI listen socket failed: %s", err);
+		varnish_fatal(v, "Create CLI listen socket failed: %s", err);
 	assert(asock > 0);
 	VTCP_myname(asock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
@@ -490,15 +529,15 @@ varnish_launch(struct varnish *v)
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents, fd[2].revents);
 	if (i == 0)
-		vtc_fatal(v->vl, "FAIL timeout waiting for CLI connection");
+		varnish_fatal(v, "FAIL timeout waiting for CLI connection");
 	if (fd[1].revents & POLLHUP)
-		vtc_fatal(v->vl, "FAIL debug pipe closed");
+		varnish_fatal(v, "FAIL debug pipe closed");
 	if (!(fd[0].revents & POLLIN))
-		vtc_fatal(v->vl, "FAIL CLI connection wait failure");
+		varnish_fatal(v, "FAIL CLI connection wait failure");
 	nfd = accept(asock, NULL, NULL);
 	closefd(&asock);
 	if (nfd < 0)
-		vtc_fatal(v->vl, "FAIL no CLI connection accepted");
+		varnish_fatal(v, "FAIL no CLI connection accepted");
 
 	v->cli_fd = nfd;
 
@@ -510,7 +549,7 @@ varnish_launch(struct varnish *v)
 	if (vtc_error)
 		return;
 	if (u != CLIS_AUTH)
-		vtc_fatal(v->vl, "CLI auth demand expected: %u %s", u, r);
+		varnish_fatal(v, "CLI auth demand expected: %u %s", u, r);
 
 	bprintf(lbuf, "%s/_.secret", v->workdir);
 	nfd = open(lbuf, O_RDONLY);
@@ -528,7 +567,7 @@ varnish_launch(struct varnish *v)
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)
-		vtc_fatal(v->vl, "CLI auth command failed: %u %s", u, r);
+		varnish_fatal(v, "CLI auth command failed: %u %s", u, r);
 	free(r);
 
 	v->vsm_vsc = VSM_New();
@@ -630,7 +669,7 @@ varnish_start(struct varnish *v)
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)
-		vtc_fatal(v->vl, "CLI start command failed: %u %s", u, resp);
+		varnish_fatal(v, "CLI start command failed: %u %s", u, resp);
 	wait_running(v);
 	free(resp);
 	resp = NULL;
@@ -638,7 +677,7 @@ varnish_start(struct varnish *v)
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)
-		vtc_fatal(v->vl, "CLI debug.xid command failed: %u %s",
+		varnish_fatal(v, "CLI debug.xid command failed: %u %s",
 		    u, resp);
 	free(resp);
 	resp = NULL;
@@ -646,7 +685,7 @@ varnish_start(struct varnish *v)
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)
-		vtc_fatal(v->vl,
+		varnish_fatal(v,
 		    "CLI debug.listen_address command failed: %u %s", u, resp);
 	varnish_listen(v, resp);
 	free(resp);
@@ -718,7 +757,7 @@ varnish_wait(struct varnish *v)
 	varnish_stop(v);
 
 	if (varnish_ask_cli(v, "panic.show", NULL) != CLIS_CANT)
-		vtc_fatal(v->vl, "Unexpected panic");
+		varnish_fatal(v, "Unexpected panic");
 
 	varnish_cleanup(v);
 }
@@ -740,11 +779,11 @@ varnish_cli_json(struct varnish *v, const char *cli)
 	u = varnish_ask_cli(v, cli, &resp);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
 	if (u != CLIS_OK)
-		vtc_fatal(v->vl,
+		varnish_fatal(v,
 		    "FAIL CLI response %u expected %u", u, CLIS_OK);
 	vj = vjsn_parse(resp, &errptr);
 	if (vj == NULL)
-		vtc_fatal(v->vl, "FAIL CLI, not good JSON: %s", errptr);
+		varnish_fatal(v, "FAIL CLI, not good JSON: %s", errptr);
 	vjsn_delete(&vj);
 	free(resp);
 }
@@ -770,14 +809,14 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 			AZ(VRE_error(vsb, err));
 			AZ(VSB_finish(vsb));
 			VSB_fini(vsb);
-			vtc_fatal(v->vl, "Illegal regexp: %s (@%d)",
+			varnish_fatal(v, "Illegal regexp: %s (@%d)",
 			    errbuf, erroff);
 		}
 	}
 	u = varnish_ask_cli(v, cli, &resp);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
 	if (exp != 0 && exp != (unsigned)u)
-		vtc_fatal(v->vl, "FAIL CLI response %u expected %u", u, exp);
+		varnish_fatal(v, "FAIL CLI response %u expected %u", u, exp);
 	if (vre != NULL) {
 		err = VRE_match(vre, resp, 0, 0, NULL);
 		if (err < 1) {
@@ -785,7 +824,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 			AZ(VRE_error(vsb, err));
 			AZ(VSB_finish(vsb));
 			VSB_fini(vsb);
-			vtc_fatal(v->vl, "Expect failed (%s)", errbuf);
+			varnish_fatal(v, "Expect failed (%s)", errbuf);
 		}
 		VRE_free(&vre);
 	}
@@ -819,10 +858,10 @@ varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 	}
 	if (u == CLIS_OK && fail) {
 		VSB_destroy(&vsb);
-		vtc_fatal(v->vl, "VCL compilation succeeded expected failure");
+		varnish_fatal(v, "VCL compilation succeeded expected failure");
 	} else if (u != CLIS_OK && !fail) {
 		VSB_destroy(&vsb);
-		vtc_fatal(v->vl, "VCL compilation failed expected success");
+		varnish_fatal(v, "VCL compilation failed expected success");
 	} else if (fail)
 		vtc_log(v->vl, 2, "VCL compilation failed (as expected)");
 	VSB_destroy(&vsb);
@@ -859,7 +898,7 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 	if (u != CLIS_OK) {
 		VSB_destroy(&vsb);
 		VSB_destroy(&vsb2);
-		vtc_fatal(v->vl, "FAIL VCL does not compile");
+		varnish_fatal(v, "FAIL VCL does not compile");
 	}
 	VSB_clear(vsb);
 	VSB_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
@@ -1011,7 +1050,7 @@ varnish_expect(struct varnish *v, char * const *av)
 			continue;
 
 		if (not)
-			vtc_fatal(v->vl, "Found (not expected): %s", l);
+			varnish_fatal(v, "Found (not expected): %s", l);
 
 		good = -1;
 		if (!strcmp(av[1], "==")) good = (sp.lhs.val == sp.rhs.val);
@@ -1021,19 +1060,19 @@ varnish_expect(struct varnish *v, char * const *av)
 		if (!strcmp(av[1], ">=")) good = (sp.lhs.val >= sp.rhs.val);
 		if (!strcmp(av[1], "<=")) good = (sp.lhs.val <= sp.rhs.val);
 		if (good == -1)
-			vtc_fatal(v->vl, "comparison %s unknown", av[1]);
+			varnish_fatal(v, "comparison %s unknown", av[1]);
 		if (good)
 			break;
 	}
 	if (good == -1) {
-		vtc_fatal(v->vl, "VSM error: %s", VSM_Error(v->vsm_vsc));
+		varnish_fatal(v, "VSM error: %s", VSM_Error(v->vsm_vsc));
 	}
 	if (good == -2) {
 		if (not) {
 			vtc_log(v->vl, 2, "not found (as expected): %s", l);
 			return;
 		}
-		vtc_fatal(v->vl, "stats field %s unknown",
+		varnish_fatal(v, "stats field %s unknown",
 		    sp.lhs.good ? sp.rhs.pattern : sp.lhs.pattern);
 	}
 
@@ -1041,7 +1080,7 @@ varnish_expect(struct varnish *v, char * const *av)
 		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s (%ju)",
 		    av[0], sp.lhs.val, av[1], av[2], sp.rhs.val);
 	} else {
-		vtc_fatal(v->vl, "Not true: %s (%ju) %s %s (%ju)",
+		varnish_fatal(v, "Not true: %s (%ju) %s %s (%ju)",
 		    av[0], sp.lhs.val, av[1], av[2], sp.rhs.val);
 	}
 }
@@ -1272,7 +1311,7 @@ cmd_varnish(CMD_ARGS)
 			AN(av[2]);
 			varnish_vcl(v, av[2], 1, &r);
 			if (strstr(r, av[1]) == NULL)
-				vtc_fatal(v->vl,
+				varnish_fatal(v,
 				    "Did not find expected string: (\"%s\")",
 				    av[1]);
 			else
@@ -1356,7 +1395,7 @@ cmd_varnish(CMD_ARGS)
 			vsl_catchup(v);
 			continue;
 		}
-		vtc_fatal(v->vl, "Unknown varnish argument: %s", *av);
+		varnish_fatal(v, "Unknown varnish argument: %s", *av);
 	}
 }
 
