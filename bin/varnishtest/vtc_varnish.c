@@ -71,6 +71,7 @@ struct varnish {
 
 	pthread_t		tp;
 	pthread_t		tp_vsl;
+	int			tp_started;
 
 	int			expect_exit;
 
@@ -473,6 +474,8 @@ varnish_launch(struct varnish *v)
 	v->fds[0] = v->fds[2];
 	v->fds[2] = v->fds[3] = -1;
 	VSB_destroy(&vsb);
+	AZ(v->tp_started);
+	v->tp_started = 1;
 	PTOK(pthread_create(&v->tp, NULL, varnish_thread, v));
 
 	/* Wait for the varnish to call home */
@@ -682,8 +685,10 @@ varnish_cleanup(struct varnish *v)
 	closefd(&v->fds[1]);
 
 	/* Wait until STDOUT+STDERR closes */
+	AN(v->tp_started);
 	PTOK(pthread_join(v->tp, &p));
 	closefd(&v->fds[0]);
+	v->tp_started = 0;
 
 	/* Pick up the VSL thread */
 	PTOK(pthread_join(v->tp_vsl, &p));
