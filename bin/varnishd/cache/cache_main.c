@@ -37,9 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef HAVE_SIGALTSTACK
-#  include <sys/mman.h>
-#endif
+#include <sys/mman.h>
 
 #ifdef HAVE_PTHREAD_NP_H
 #  include <pthread_np.h>
@@ -159,17 +157,13 @@ THR_GetName(void)
 /*--------------------------------------------------------------------
  * Generic setup all our threads should call
  */
-#ifdef HAVE_SIGALTSTACK
 static stack_t altstack;
-#endif
 
 void
 THR_Init(void)
 {
-#ifdef HAVE_SIGALTSTACK
 	if (altstack.ss_sp != NULL)
 		AZ(sigaltstack(&altstack, NULL));
-#endif
 }
 
 /*--------------------------------------------------------------------
@@ -341,7 +335,6 @@ child_sigmagic(size_t altstksz)
 
 	memset(&sa, 0, sizeof sa);
 
-#ifdef HAVE_SIGALTSTACK
 	size_t sz = vmax_t(size_t, SIGSTKSZ + 4096, altstksz);
 	altstack.ss_sp = mmap(NULL, sz,  PROT_READ | PROT_WRITE,
 			      MAP_PRIVATE | MAP_ANONYMOUS,
@@ -351,9 +344,6 @@ child_sigmagic(size_t altstksz)
 	altstack.ss_size = sz;
 	altstack.ss_flags = 0;
 	sa.sa_flags |= SA_ONSTACK;
-#else
-	(void)altstksz;
-#endif
 
 	THR_Init();
 
