@@ -221,7 +221,6 @@ AC_CHECK_HEADERS([priv.h])
 AC_CHECK_HEADERS([fnmatch.h], [], [AC_MSG_ERROR([fnmatch.h is required])])
 
 # Checks for library functions.
-AC_CHECK_FUNCS([nanosleep])
 AC_CHECK_FUNCS([setppriv])
 AC_CHECK_FUNCS([fallocate])
 AC_CHECK_FUNCS([closefrom])

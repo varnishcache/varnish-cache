@@ -409,22 +409,11 @@ VTIM_parse(const char *p)
 void
 VTIM_sleep(vtim_dur t)
 {
-#ifdef HAVE_NANOSLEEP
 	struct timespec ts;
 
 	ts = VTIM_timespec(t);
 
 	(void)nanosleep(&ts, NULL);
-#else
-	if (t >= 1.) {
-		(void)sleep(floor(t));
-		t -= floor(t);
-	}
-	/* XXX: usleep() is not mandated to be thread safe */
-	t *= 1e6;
-	if (t > 0)
-		(void)usleep(floor(t));
-#endif
 }
 
 /*
