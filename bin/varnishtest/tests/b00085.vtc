@@ -1,4 +1,4 @@
-varnishtest "Chunked response with trailers"
+varnishtest "Chunked body with trailers"
 
 server s0 {
 	rxreq
@@ -9,9 +9,21 @@ server s0 {
 	send "0\r\n"
 	send "Trailer: test\r\n"
 	send "\r\n"
+
+	rxreq
+	expect req.body == "chunkanother"
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		if (req.url == "/2"){
+			std.cache_req_body(100k);
+		}
+	}
+
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
@@ -21,4 +33,15 @@ client c1 {
 	txreq
 	rxresp
         expect resp.status == 200
+
+	txreq -url /2 -method POST -nolen \
+	    -hdr "Transfer-encoding: chunked"
+	chunked chunk
+	chunked another
+	send "0\r\n"
+	send "Trailer: req_body_trailer\r\n"
+	send "\r\n"
+
+	rxresp
+	expect resp.status == 200
 } -run
