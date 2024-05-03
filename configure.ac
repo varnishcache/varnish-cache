@@ -93,7 +93,6 @@ _VARNISH_CHECK_PYTHON
 
 # Check for libraries.
 _VARNISH_SEARCH_LIBS(pthread, pthread_create, [thr pthread c_r])
-_VARNISH_CHECK_LIB(rt, clock_gettime)
 _VARNISH_CHECK_LIB(dl, dlopen)
 _VARNISH_CHECK_LIB(socket, socket)
 _VARNISH_CHECK_LIB(nsl, getaddrinfo)
