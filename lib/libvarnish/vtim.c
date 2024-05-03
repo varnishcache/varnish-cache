@@ -130,19 +130,13 @@ init(void)
 vtim_mono
 VTIM_mono(void)
 {
-#if defined(HAVE_CLOCK_GETTIME) && !defined(USE_GETHRTIME)
+#if defined(HAVE_GETHRTIME) && defined(USE_GETHRTIME)
+	return (gethrtime() * 1e-9);
+#else
 	struct timespec ts;
 
 	AZ(clock_gettime(CLOCK_MONOTONIC, &ts));
 	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
-#elif defined(HAVE_GETHRTIME)
-	return (gethrtime() * 1e-9);
-#elif defined(__MACH__)
-	uint64_t mt = mach_absolute_time() - mt_base;
-
-	return (mt * mt_scale);
-#else
-#error Varnish needs some monotonic time source
 #endif
 }
 
