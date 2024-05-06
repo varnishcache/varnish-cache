@@ -373,8 +373,11 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 	e = strchr(buf, '\0');
 	AN(e);
 	for (p = buf; p < e; p++) {
-		if (vtc_error || vtc_stop)
+		if (vtc_error || vtc_stop) {
+			vtc_log(vl, 1, "Aborting execution, test %s",
+			    vtc_error ? "failed" : "ended");
 			break;
+		}
 		/* Start of line */
 		if (isspace(*p))
 			continue;
