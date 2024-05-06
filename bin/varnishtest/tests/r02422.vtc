@@ -1,11 +1,21 @@
 varnishtest "long polling and low latency using req.ttl"
 
+# synchronizes the setup of all clients
+barrier b1 cond 2
+
+# makes c1..cN send their requests simultaneously-ish
+barrier b2 cond 7
+
+# synchronizes c4 with c5 and c6
+barrier b3 cond 3
+
 server s1 {
 	# s1 uses the etag as a version
 	rxreq
 	txresp -hdr {Etag: "5"}
 
 	rxreq
+	barrier b3 sync
 	# wait until the new version is ready
 	delay 1
 	txresp -hdr {Etag: "6"}
@@ -29,12 +39,6 @@ varnish v1 -vcl+backend {
 		set resp.http.Hit = obj.hits > 0;
 	}
 } -start
-
-# synchronizes the setup of all clients
-barrier b1 cond 2
-
-# makes c1..cN send their requests simultaneously-ish
-barrier b2 cond 7
 
 client c0 {
 	# wait for all clients to be ready
@@ -93,7 +97,7 @@ client c5 {
 	# up-to-date client, long polling
 	barrier b2 sync
 	# wait to make sure c4 gets the miss
-	delay 0.2
+	barrier b3 sync
 	txreq -hdr {If-None-Match: "5"}
 	rxresp
 	expect resp.status == 200
@@ -105,7 +109,7 @@ client c6 {
 	# up-to-date client, long polling
 	barrier b2 sync
 	# wait to make sure c4 gets the miss
-	delay 0.2
+	barrier b3 sync
 	txreq -hdr {If-None-Match: "5"}
 	rxresp
 	expect resp.status == 200
