@@ -487,7 +487,7 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 
 		if (!strcmp(token_s[0], "loop")) {
 			n = strtoul(token_s[1], NULL, 0);
-			for (m = 0; m < n; m++) {
+			for (m = 0; m < n && !vtc_error && !vtc_stop; m++) {
 				vtc_log(vl, 4, "Loop #%u", m);
 				parse_string(vl, priv, token_s[2]);
 			}
