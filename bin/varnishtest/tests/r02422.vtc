@@ -3,12 +3,12 @@ varnishtest "long polling and low latency using req.ttl"
 server s1 {
 	# s1 uses the etag as a version
 	rxreq
-	txresp -hdr "Etag: 5"
+	txresp -hdr {Etag: "5"}
 
 	rxreq
 	# wait until the new version is ready
 	delay 1
-	txresp -hdr "Etag: 6"
+	txresp -hdr {Etag: "6"}
 } -start
 
 varnish v1 -cliok "param.set default_grace 0"
@@ -43,7 +43,7 @@ client c0 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.ETag == 5
+	expect resp.http.ETag == {"5"}
 	expect resp.http.Hit == false
 	# let all other clients send their requests
 	barrier b2 sync
@@ -55,37 +55,37 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.ETag == 5
+	expect resp.http.ETag == {"5"}
 	expect resp.http.Hit == true
 } -start
 
 client c2 {
 	# late client, immediate hit
 	barrier b2 sync
-	txreq -hdr "If-None-Match: 2"
+	txreq -hdr {If-None-Match: "2"}
 	rxresp
 	expect resp.status == 200
-	expect resp.http.ETag == 5
+	expect resp.http.ETag == {"5"}
 	expect resp.http.Hit == true
 } -start
 
 client c3 {
 	# late client, immediate hit
 	barrier b2 sync
-	txreq -hdr "If-None-Match: 4"
+	txreq -hdr {If-None-Match: "4"}
 	rxresp
 	expect resp.status == 200
-	expect resp.http.ETag == 5
+	expect resp.http.ETag == {"5"}
 	expect resp.http.Hit == true
 } -start
 
 client c4 {
 	# up-to-date client, long polling
 	barrier b2 sync
-	txreq -hdr "If-None-Match: 5"
+	txreq -hdr {If-None-Match: "5"}
 	rxresp
 	expect resp.status == 200
-	expect resp.http.ETag == 6
+	expect resp.http.ETag == {"6"}
 	expect resp.http.Hit == false
 } -start
 
@@ -94,10 +94,10 @@ client c5 {
 	barrier b2 sync
 	# wait to make sure c4 gets the miss
 	delay 0.2
-	txreq -hdr "If-None-Match: 5"
+	txreq -hdr {If-None-Match: "5"}
 	rxresp
 	expect resp.status == 200
-	expect resp.http.ETag == 6
+	expect resp.http.ETag == {"6"}
 	expect resp.http.Hit == true
 } -start
 
@@ -106,10 +106,10 @@ client c6 {
 	barrier b2 sync
 	# wait to make sure c4 gets the miss
 	delay 0.2
-	txreq -hdr "If-None-Match: 5"
+	txreq -hdr {If-None-Match: "5"}
 	rxresp
 	expect resp.status == 200
-	expect resp.http.ETag == 6
+	expect resp.http.ETag == {"6"}
 	expect resp.http.Hit == true
 } -start
 
