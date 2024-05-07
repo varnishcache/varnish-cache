@@ -47,4 +47,5 @@ int VTE_cat(struct vte *, const char *);
 int VTE_printf(struct vte *, const char *, ...) v_printflike_(2, 3);
 int VTE_finish(struct vte *);
 int VTE_format(const struct vte *, VTE_format_f *func, void *priv);
+int VTE_dump(const struct vte *, VTE_format_f *func, void *priv);
 void VTE_destroy(struct vte **);

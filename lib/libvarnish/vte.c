@@ -240,6 +240,23 @@ VTE_finish(struct vte *vte)
 	} while (0)
 
 int
+VTE_dump(const struct vte *vte, VTE_format_f *func, void *priv)
+{
+	const char *p;
+
+	CHECK_OBJ_NOTNULL(vte, VTE_MAGIC);
+	AN(func);
+
+	if (vte->o_sep <= 0)
+		return (-1);
+
+	p = VSB_data(vte->vsb);
+	AN(p);
+	VTE_FORMAT(func, priv, "%s", p);
+	return (0);
+}
+
+int
 VTE_format(const struct vte *vte, VTE_format_f *func, void *priv)
 {
 	int fno, fsz, nsp, just_left;
