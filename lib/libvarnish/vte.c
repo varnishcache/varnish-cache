@@ -263,7 +263,7 @@ VTE_format(const struct vte *vte, VTE_format_f *func, void *priv)
 		if (*p == '\v') {
 			if (p > q) {
 				VTE_FORMAT(func, priv, "%.*s%s",
-				    (int)(p - q), q, sep);
+				    (int)((p - 1) - q), q, sep);
 			}
 			q = ++p;
 			just_left = 1;
@@ -310,6 +310,7 @@ static const char *test_vte =
     "foo\t\v1\tthe foo\n"
     "bar\t\v10\tthe bars\n"
     "baz\t\v0\t\n"
+    "\v0\t\v0\t\n"
     "qux\t\v-1\tno eol";
 
 static const char *test_fmt =
@@ -317,6 +318,7 @@ static const char *test_fmt =
     "foo     1  the foo\n"
     "bar    10  the bars\n"
     "baz     0  \n"
+    "   0    0  \n"
     "qux    -1  no eol";
 
 static int
