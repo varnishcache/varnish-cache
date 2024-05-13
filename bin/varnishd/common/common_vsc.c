@@ -91,7 +91,7 @@ vrt_vsc_mksegv(struct vsmw_cluster *vc, const char *category,
 	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
 	AN(vsg);
 	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, vc, category,
-	    VRT_VSC_Overhead(payload), fmt, va);
+	    VRT_VSC_Overhead(payload), NULL, fmt, va);
 	AN(vsg->seg);
 	vsg->vsm = heritage.proc_vsmw;
 	vsg->head = (void*)vsg->seg;
