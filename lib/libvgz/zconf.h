@@ -1,5 +1,5 @@
 /* zconf.h -- configuration of the zlib compression library
- * Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
+ * Copyright (C) 1995-2024 Jean-loup Gailly, Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -300,14 +300,6 @@
 #  endif
 #endif
 
-#ifndef Z_ARG /* function prototypes for stdarg */
-#  if defined(STDC) || defined(Z_HAVE_STDARG_H)
-#    define Z_ARG(args)  args
-#  else
-#    define Z_ARG(args)  ()
-#  endif
-#endif
-
 /* The following definitions for FAR are needed only for MSDOS mixed
  * model programming (small or medium model with some far allocations).
  * This was tested only with MSC; for other MSDOS compilers you may have
@@ -478,12 +470,8 @@ typedef uLong FAR uLongf;
 #endif
 
 #ifndef Z_HAVE_UNISTD_H
-#  ifdef __WATCOMC__
-#    define Z_HAVE_UNISTD_H
-#  endif
-#endif
-#ifndef Z_HAVE_UNISTD_H
-#  if defined(_LARGEFILE64_SOURCE) && !defined(_WIN32)
+#  if defined(__WATCOMC__) || defined(__GO32__) || \
+      (defined(_LARGEFILE64_SOURCE) && !defined(_WIN32))
 #    define Z_HAVE_UNISTD_H
 #  endif
 #endif
@@ -523,12 +511,14 @@ typedef uLong FAR uLongf;
 
 #if !defined(_WIN32) && defined(Z_LARGE64)
 #  define z_off64_t off64_t
+#elif defined(__MINGW32__)
+#  define z_off64_t long long
+#elif defined(_WIN32) && !defined(__GNUC__)
+#  define z_off64_t __int64
+#elif defined(__GO32__)
+#  define z_off64_t offset_t
 #else
-#  if defined(_WIN32) && !defined(__GNUC__)
-#    define z_off64_t __int64
-#  else
-#    define z_off64_t z_off_t
-#  endif
+#  define z_off64_t z_off_t
 #endif
 
 /* MVS linker does not support external names larger than 8 bytes */
