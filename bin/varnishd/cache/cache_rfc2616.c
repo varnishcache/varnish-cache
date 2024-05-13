@@ -151,7 +151,7 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 		 * or Expires are present. Uncacheable otherwise.
 		 */
 		*ttl = -1.;
-		/* FALL-THROUGH */
+		/* FALLTHROUGH */
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
 	case 204: /* No Content */

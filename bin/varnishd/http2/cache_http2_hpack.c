@@ -80,7 +80,7 @@ h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 			state = FLD_NAME;
 			if (*p == ':')
 				break;
-			/* FALL_THROUGH */
+			/* FALLTHROUGH */
 		case FLD_NAME:
 			if (isupper(*p)) {
 				VSLb(vsl, SLT_BogoHeader,
@@ -110,7 +110,7 @@ h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 				return (H2SE_PROTOCOL_ERROR);
 			}
 			state = FLD_VALUE;
-			/* FALL_THROUGH */
+			/* FALLTHROUGH */
 		case FLD_VALUE:
 			if (!vct_ishdrval(*p)) {
 				VSLb(vsl, SLT_BogoHeader,

@@ -72,7 +72,6 @@ UNDESIRABLE_WFLAGS = [
     "-Wno-system-headers", # Outside of our control
     "-Wno-thread-safety", # Does not understand our mutexs are wrapped
     "-Wno-sign-compare", # Fixable
-    "-Wno-implicit-fallthrough", # Probably Fixable
     "-Wno-missing-variable-declarations", # Complains about optreset
     "-Wno-nullability-completeness", # Barfs all over MacOSx
 ]
