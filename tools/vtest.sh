@@ -284,7 +284,9 @@ do
 	else
 		echo "AUTOGEN GOOD" >> "${VTEST_REPORT}"
 		cp ${SRCDIR}/config.h "${REPORTDIR}"/_configh
+		cp ${SRCDIR}/config.log "${REPORTDIR}"/_configlog
 		echo "MANIFEST _configh" >> "${VTEST_REPORT}"
+		echo "MANIFEST _configlog" >> "${VTEST_REPORT}"
 		if $enable_gcov ; then
 			if makegcov >> "${REPORTDIR}"/_makegcov 2>&1 ; then
 				mv ${SRCDIR}/_gcov "${REPORTDIR}"/
