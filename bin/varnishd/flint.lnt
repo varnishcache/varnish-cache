@@ -173,6 +173,10 @@
 --emacro((835),VBH_NOIDX)
 --emacro((835),O_CLOEXEC)
 
+// Deliberately exported, despite no in-tree users
+-esym(759, EXP_Rearm)
+-esym(765, EXP_Rearm)
+
 // Review all below this line ///////////////////////////////////////////////
 
 -e713	// 42 Loss of precision (___) (___ to ___)
