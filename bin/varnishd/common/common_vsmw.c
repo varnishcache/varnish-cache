@@ -381,6 +381,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
     const char *fmt, va_list va)
 {
 	struct vsmwseg *seg;
+	ssize_t l;
 
 	vsmw_do_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
@@ -391,13 +392,20 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	seg->len = PRNDUP(payload);
 
 	VSB_clear(vsmw->vsb);
-	if (prefix != NULL)
+	if (prefix != NULL) {
+		assert(prefix[0] != '\0');
 		VSB_cat(vsmw->vsb, prefix);
-	if (prefix != NULL && fmt[0] != '\0')
-		VSB_cat(vsmw->vsb, ".");
+		if (fmt[0] != '\0')
+			VSB_cat(vsmw->vsb, ".");
+	}
+	l = VSB_len(vsmw->vsb);
+	assert(l >= 0);
 	VSB_vprintf(vsmw->vsb, fmt, va);
 	AZ(VSB_finish(vsmw->vsb));
+	assert(fmt[0] == '\0' || l < VSB_len(vsmw->vsb));
+
 	REPLACE(seg->id, VSB_data(vsmw->vsb));
+	AN(seg->id);
 
 	if (vc == NULL)
 		vc = vsmw_newcluster(vsmw, seg->len, category);
