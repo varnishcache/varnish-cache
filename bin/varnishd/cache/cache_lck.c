@@ -257,7 +257,7 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		 * So far I have yet to see a failure if the exact same
 		 * call is repeated after a very short sleep.
 		 *
-		 * Calling pthread_yield_np() instead of sleaping /mostly/
+		 * Calling pthread_yield_np() instead of sleeping /mostly/
 		 * works as well, but still fails sometimes.
 		 *
 		 * Env:
