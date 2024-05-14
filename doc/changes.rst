@@ -41,6 +41,11 @@ Varnish Cache NEXT (2024-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* for backends using the ``.via`` attribute to connect through a
+  *proxy*, the ``connect_timeout``, ``first_byte_timeout`` and
+  ``between_bytes_timeout`` attributes are now inherited from *proxy*
+  unless explicitly given.
+
 * ``varnishd`` now creates a ``worker_tmpdir`` which can be used by
   VMODs for temporary files. The `VMOD deleveloper documentation`_ has
   details.

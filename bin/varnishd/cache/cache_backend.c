@@ -694,6 +694,18 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 #undef DA
 #undef DN
 
+#define CPTMO(a, b, x) do {				\
+		if ((a)->x < 0.0 || isnan((a)->x))	\
+			(a)->x = (b)->x;		\
+	} while(0)
+
+	if (viabe != NULL) {
+		CPTMO(be, viabe, connect_timeout);
+		CPTMO(be, viabe, first_byte_timeout);
+		CPTMO(be, viabe, between_bytes_timeout);
+	}
+#undef CPTMO
+
 	if (viabe || be->hosthdr == NULL) {
 		if (vrt->endpoint->uds_path != NULL)
 			sa = bogo_ip;
