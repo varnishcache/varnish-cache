@@ -474,8 +474,9 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 {
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+	PAN_CheckMagic(vsb, d, DIRECTOR_MAGIC);
+	bp = d->priv;
+	PAN_CheckMagic(vsb, bp, BACKEND_MAGIC);
 
 	VCP_Panic(vsb, bp->conn_pool);
 	VSB_printf(vsb, "hosthdr = %s,\n", bp->hosthdr);
