@@ -375,6 +375,14 @@ int PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
     const char *smagic, unsigned magic, const char *fmt, ...)
     v_printflike_(7,8);
 
+#define PAN_CheckMagic(vsb, ptr, exp)					\
+	do {								\
+		if ((ptr)->magic != (exp))				\
+			VSB_printf((vsb),				\
+			    "MAGIC at %p is 0x%08x (Should be: %s/0x%08x)\n", \
+			    ptr, (ptr)->magic, #exp, exp);		\
+	} while(0)
+
 #define PAN_dump_struct(vsb, ptr, magic, ...)		\
     PAN__DumpStruct(vsb, 1, 1, ptr, #magic, magic, __VA_ARGS__)
 
