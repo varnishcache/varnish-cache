@@ -748,7 +748,8 @@ SML_panic(struct vsb *vsb, const struct objcore *oc)
 	VSB_printf(vsb, "Simple = %p,\n", oc->stobj->priv);
 	if (oc->stobj->priv == NULL)
 		return;
-	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
+	o = oc->stobj->priv;
+	PAN_CheckMagic(vsb, o, OBJECT_MAGIC);
 	sml_panic_st(vsb, "Obj", o->objstore);
 
 #define OBJ_FIXATTR(U, l, sz) \
