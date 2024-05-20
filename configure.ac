@@ -213,7 +213,6 @@ CFLAGS="${save_CFLAGS}"
 # Checks for header files.
 AC_CHECK_HEADERS([sys/filio.h])
 AC_CHECK_HEADERS([sys/personality.h])
-AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([priv.h])
 AC_CHECK_HEADERS([fnmatch.h], [], [AC_MSG_ERROR([fnmatch.h is required])])
