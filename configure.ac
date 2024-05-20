@@ -211,7 +211,6 @@ AC_CHECK_HEADERS([ncursesw/curses.h ncursesw.h ncurses/curses.h ncurses.h curses
 CFLAGS="${save_CFLAGS}"
 
 # Checks for header files.
-AC_CHECK_HEADERS([sys/endian.h])
 AC_CHECK_HEADERS([sys/filio.h])
 AC_CHECK_HEADERS([sys/personality.h])
 AC_CHECK_HEADERS([endian.h])
