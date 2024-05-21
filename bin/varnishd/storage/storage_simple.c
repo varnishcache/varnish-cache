@@ -368,6 +368,13 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			break;
 		}
 		if (nl == ol) {
+			/*
+			 * note: the unguarded boc->state read could be
+			 * outdated, in which case we call ObjWaitExtend() again
+			 * for error handling but otherwise cause no harm. When
+			 * using this code as an example, DO NOT rely on
+			 * boc->state to be consistent
+			 */
 			if (boc->state == BOS_FINISHED)
 				break;
 			continue;
