@@ -362,23 +362,16 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	}
 	while (1) {
 		ol = len;
-		nl = ObjWaitExtend(wrk, oc, ol);
-		if (boc->state == BOS_FAILED) {
+		nl = ObjWaitExtend(wrk, oc, ol, &state);
+		if (state == BOS_FAILED) {
 			ret = -1;
 			break;
 		}
 		if (nl == ol) {
-			/*
-			 * note: the unguarded boc->state read could be
-			 * outdated, in which case we call ObjWaitExtend() again
-			 * for error handling but otherwise cause no harm. When
-			 * using this code as an example, DO NOT rely on
-			 * boc->state to be consistent
-			 */
-			if (boc->state == BOS_FINISHED)
-				break;
-			continue;
+			assert(state == BOS_FINISHED);
+			break;
 		}
+		assert(nl > ol);
 		Lck_Lock(&boc->mtx);
 		AZ(VTAILQ_EMPTY(&obj->list));
 		if (checkpoint == NULL) {
@@ -417,7 +410,6 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		st = VTAILQ_PREV(st, storagehead, list);
 		if (st != NULL && st->len == 0)
 			st = NULL;
-		state = boc->state;
 		Lck_Unlock(&boc->mtx);
 		assert(l > 0 || state == BOS_FINISHED);
 		u = 0;

@@ -41,6 +41,11 @@ Varnish Cache NEXT (2024-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The ObjWaitExtend() Object API function gained a ``statep`` argument
+  to optionally return the busy object state consistent with the
+  current extension. A ``NULL`` value may be passed if the caller does
+  not require it.
+
 * for backends using the ``.via`` attribute to connect through a
   *proxy*, the ``connect_timeout``, ``first_byte_timeout`` and
   ``between_bytes_timeout`` attributes are now inherited from *proxy*

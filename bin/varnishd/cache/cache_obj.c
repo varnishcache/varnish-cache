@@ -265,8 +265,10 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
  */
 
 uint64_t
-ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
+ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
+    enum boc_state_e *statep)
 {
+	enum boc_state_e state;
 	uint64_t rv;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -282,15 +284,16 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 			oc->boc->delivered_so_far = l;
 			PTOK(pthread_cond_signal(&oc->boc->cond));
 		}
-		if (rv > l || oc->boc->state >= BOS_FINISHED)
+		state = oc->boc->state;
+		if (rv > l || state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
 	}
-	rv = oc->boc->fetched_so_far;
 	Lck_Unlock(&oc->boc->mtx);
+	if (statep != NULL)
+		*statep = state;
 	return (rv);
 }
-
 /*====================================================================
  */
 
