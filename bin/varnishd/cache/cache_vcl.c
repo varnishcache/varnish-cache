@@ -474,6 +474,8 @@ VCL_Open(const char *fn, struct vsb *msg)
 	struct vcl *vcl;
 	void *dlh;
 	struct VCL_conf const *cnf;
+	const char *dlerr;
+	int err;
 
 	AN(fn);
 	AN(msg);
@@ -485,8 +487,15 @@ VCL_Open(const char *fn, struct vsb *msg)
 #endif
 	dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (dlh == NULL) {
+		err = errno;
+		dlerr = dlerror();
 		VSB_cat(msg, "Could not load compiled VCL.\n");
-		VSB_printf(msg, "\tdlopen() = %s\n", dlerror());
+		if (dlerr != NULL)
+			VSB_printf(msg, "\tdlopen() = %s\n", dlerr);
+		if (err) {
+			VSB_printf(msg, "\terror = %s (%d)\n",
+			    strerror(err), err);
+		}
 		VSB_cat(msg, "\thint: check for \"noexec\" mount\n");
 		return (NULL);
 	}
