@@ -57,6 +57,8 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * NEXT (2024-09-15)
+ *	[cache.h] http_GetContentRange() changed
  * 19.0 (2024-03-18)
  *	[cache.h] (struct req).filter_list renamed to vdp_filter_list
  *	order of vcl/vmod and director COLD events reversed to directors first

@@ -265,14 +265,14 @@ VRG_CheckBo(struct busyobj *bo)
 		return (-1);
 	}
 
-	if (crlo < 0 && crhi < 0 && crlen < 0) {
-		AZ(http_GetHdr(bo->beresp, H_Content_Range, NULL));
-		return (0);
-	}
-
-	if (rlo < 0 && rhi < 0) {
+	if (rlo < 0 && rhi < 0 && crlen != 0) {
 		VSLb(bo->vsl, SLT_Error, "Unexpected content-range header");
 		return (-1);
+	}
+
+	if (crlo < 0 && crhi < 0 && crlen == 0) {
+		AZ(http_GetHdr(bo->beresp, H_Content_Range, NULL));
+		return (0);
 	}
 
 	if (crlo < 0) {		// Content-Range: bytes */123
