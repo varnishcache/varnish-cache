@@ -497,6 +497,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 			    strerror(err), err);
 		}
 		VSB_cat(msg, "\thint: check for \"noexec\" mount\n");
+		VSB_cat(msg, "\thint: check \"vmod_path\" parameter\n");
 		return (NULL);
 	}
 	cnf = dlsym(dlh, "VCL_conf");
