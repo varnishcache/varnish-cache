@@ -170,20 +170,30 @@ enum vfp_status
 VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 {
 	enum vfp_status vp;
-	struct vfp_entry *vfe;
+	struct vfp_entry *vfe, *vfe_prev;
+	const char *prev_name = "<storage>";
+	ssize_t limit;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	AN(p);
 	AN(lp);
+	limit = *lp;
 	vfe = vc->vfp_nxt;
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	vc->vfp_nxt = VTAILQ_NEXT(vfe, list);
 
+	vfe_prev = VTAILQ_PREV(vfe, vfp_entry_s, list);
+	if (vfe_prev != NULL)
+		prev_name = vfe_prev->vfp->name;
+
 	if (vfe->closed == VFP_NULL) {
 		/* Layer asked to be bypassed when opened */
 		vp = VFP_Suck(vc, p, lp);
+		VFP_DEBUG(vc, "bypassing %s vp=%d", vfe->vfp->name, vp);
 	} else if (vfe->closed == VFP_OK) {
 		vp = vfe->vfp->pull(vc, vfe, p, lp);
+		VFP_DEBUG(vc, "%s pulled %zdB/%zdB from %s vp=%d",
+		    prev_name, *lp, limit, vfe->vfp->name, vp);
 		if (vp != VFP_OK && vp != VFP_END && vp != VFP_ERROR)
 			vp = VFP_Error(vc, "Fetch filter %s returned %d",
 			    vfe->vfp->name, vp);
@@ -195,6 +205,7 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 		/* Already closed filter */
 		*lp = 0;
 		vp = vfe->closed;
+		VFP_DEBUG(vc, "ignoring %s vp=%d", vfe->vfp->name, vp);
 	}
 	vc->vfp_nxt = vfe;
 	assert(vp != VFP_NULL);
