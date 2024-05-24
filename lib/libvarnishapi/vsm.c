@@ -181,6 +181,7 @@ vsm_mapseg(struct vsm *vd, struct vsm_seg *vg)
 {
 	size_t of, off, sz, ps, len;
 	struct vsb *vsb;
+	void *s;
 	int fd;
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
@@ -213,7 +214,7 @@ vsm_mapseg(struct vsm *vd, struct vsm_seg *vg)
 		return (vsm_diag(vd, "Could not open segment"));
 	}
 
-	vg->s = (void*)mmap(NULL, len,
+	s = (void*)mmap(NULL, len,
 	    PROT_READ,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    fd, (off_t)off);
@@ -221,9 +222,10 @@ vsm_mapseg(struct vsm *vd, struct vsm_seg *vg)
 	VSB_destroy(&vsb);
 
 	closefd(&fd);
-	if (vg->s == MAP_FAILED)
+	if (s == MAP_FAILED)
 		return (vsm_diag(vd, "Could not mmap segment"));
 
+	vg->s = s;
 	vg->b = (char*)(vg->s) + of - off;
 	vg->e = (char *)vg->b + sz;
 	vg->sz = len;
