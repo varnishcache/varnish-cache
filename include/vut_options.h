@@ -69,10 +69,10 @@
 	)
 
 #define VUT_OPT_n							\
-	VOPT("n:", "[-n <dir>]", "varnishd working directory",		\
-	    "Specify the varnishd working directory (also known as"	\
-	    " instance name) to get logs from. If -n is not specified,"	\
-	    " the host name is used."					\
+	VOPT("n:", "[-n <workdir>]", "varnish working directory",	\
+	     "Specify the varnish working directory of the instance "	\
+	     "to attach to. See :ref:`varnishd(1)` ``-n`` option "	\
+	     "documentation for additional information and defaults."	\
 	)
 
 #define VUT_OPT_Q							\

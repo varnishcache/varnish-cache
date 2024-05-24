@@ -129,11 +129,9 @@ data.
    in the service's ``[Service]]`` section of the unit file.
 
 Once you have the core, ``cd`` into varnish's working directory (as
-given by the ``-n`` parameter, whose default is
-``$PREFIX/var/varnish/$HOSTNAME`` with ``$PREFIX`` being the
-installation prefix, usually ``/usr/local``, open the core with
-``gdb`` and issue the command ``bt`` to get a stack trace of the
-thread that caused the segfault.
+given by the ``-n`` parameter (see :ref:`varnishd(1)` for defaults),
+open the core with ``gdb`` and issue the command ``bt`` to get a stack
+trace of the thread that caused the segfault.
 
 A basic debug session for varnish installed under ``/usr/local`` could look
 like this::

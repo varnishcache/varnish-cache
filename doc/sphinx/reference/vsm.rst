@@ -70,7 +70,7 @@ The Varnish way:
 
 When varnishd starts, it opens locked shared memory files, advising to
 use different -n arguments if an attempt is made to run multiple
-varnishd instances with the same name.
+varnishd instances on the same working directory.
 
 Child processes each use their own shared memory files, since a worker
 process restart marks a clean break in operation anyway.

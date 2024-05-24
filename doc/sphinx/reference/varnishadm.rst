@@ -19,17 +19,17 @@ Control a running Varnish instance
 SYNOPSIS
 ========
 
-varnishadm [-h] [-n ident] [-p] [-S secretfile] [-T [address]:port] [-t timeout] [command [...]]
+varnishadm [-h] [-n workdir] [-p] [-S secretfile] [-T [address]:port] [-t timeout] [command [...]]
 
 
 DESCRIPTION
 ===========
 
 The `varnishadm` utility establishes a CLI connection to varnishd either
-using -n *name* or using the -T and -S arguments. If -n *name* is
-given the location of the secret file and the address:port is looked
-up in shared memory. If neither is given `varnishadm` will look for an
-instance without a given name.
+using -n *workdir* or using the -T and -S arguments. If -n *workdir* is
+given, the location of the secret file and the address:port are looked
+up in shared memory. If neither is given, `varnishadm` uses the -n
+defaults documented for :ref:`varnishd(1)`.
 
 If a command is given, the command and arguments are sent over the CLI
 connection and the result returned on stdout.
@@ -43,8 +43,11 @@ OPTIONS
 -h
     Print program usage and exit.
 
--n ident
-    Connect to the instance of `varnishd` with this name.
+-n workdir
+
+    Specify the varnish working directory of the instance to attach
+    to. See :ref:`varnishd(1)` ``-n`` option documentation for
+    additional information and defaults.
 
 -p
     Force `pass` mode and make the output follow the VCLI protocol.
