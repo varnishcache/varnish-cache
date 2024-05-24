@@ -467,7 +467,6 @@ main(int argc, char * const *argv)
 		printf(OPTARG "\n");
 		exit(0);
 	}
-	n_arg = getenv("VARNISH_DEFAULT_N");
 	/*
 	 * By default linux::getopt(3) mangles the argv order, such that
 	 *	varnishadm -n bla param.set foo -bar

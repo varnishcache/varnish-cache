@@ -346,8 +346,6 @@ VSM_New(void)
 	ALLOC_OBJ(vd, VSM_MAGIC);
 	AN(vd);
 
-	REPLACE(vd->wdname, getenv("VARNISH_DEFAULT_N"));
-
 	vd->mgt = vsm_newset(VSM_MGT_DIRNAME);
 	vd->mgt->flag_running = VSM_MGT_RUNNING;
 	vd->mgt->flag_changed = VSM_MGT_CHANGED;
@@ -755,6 +753,9 @@ VSM_Attach(struct vsm *vd, int progress)
 		t0 = DBL_MAX;
 	else
 		t0 = VTIM_mono() + vd->patience;
+
+	if (vd->wdname == NULL)
+		REPLACE(vd->wdname, getenv("VARNISH_DEFAULT_N"));
 
 	if (vd->wdname == NULL) {
 		/* Use default (hostname) */
