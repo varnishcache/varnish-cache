@@ -131,6 +131,9 @@ process p1 -stop
 shell -match "0 CLI[ ]+- Wr 200 [0-9]+ PONG" \
 	{varnishlog -n ${v1_name} -d -g raw -X "Wr 200 [0-9]+ [^P]"}
 
+shell -match "0 CLI[ ]+- Wr 200 [0-9]+ PONG" \
+	{VARNISH_DEFAULT_N="${v1_name}" varnishlog -d -g raw -X "Wr 200 [0-9]+ [^P]"}
+
 client c1 {
 	txreq -url /foo
 	rxresp

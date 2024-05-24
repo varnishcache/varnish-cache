@@ -263,6 +263,7 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 	AZ(vut->vsl);
 	vut->vsl = VSL_New();
 	AN(vut->vsl);
+	REPLACE(vut->n_arg, getenv("VARNISH_DEFAULT_N"));
 	return (vut);
 }
 

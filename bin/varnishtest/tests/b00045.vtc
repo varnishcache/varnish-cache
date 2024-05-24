@@ -25,3 +25,7 @@ shell -err -expect {Error: Varnishd is already running} {
 shell -err -expect {Error: Varnishd is already running} {
 	varnishd -b None -a:0 -n ${tmpdir}/v1 -F
 }
+
+shell -err -expect {Error: Varnishd is already running} {
+	VARNISH_DEFAULT_N="${tmpdir}/v1" varnishd -b None -a:0 -F
+}

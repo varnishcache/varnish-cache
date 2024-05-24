@@ -614,7 +614,7 @@ main(int argc, char * const *argv)
 	const char *i_arg = NULL;
 	const char *j_arg = NULL;
 	const char *h_arg = "critbit";
-	const char *n_arg = NULL;
+	const char *n_arg = getenv("VARNISH_DEFAULT_N");
 	const char *S_arg = NULL;
 	const char *s_arg = "default,100m";
 	const char *W_arg = NULL;

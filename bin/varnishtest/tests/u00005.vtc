@@ -51,8 +51,12 @@ shell -err -expect "-t: Invalid argument: foo" \
 	"varnishstat -t foo"
 shell -err -expect "Could not get hold of varnishd" \
 	"varnishstat -n /nonexistent -t 1"
+shell -err -expect "Could not get hold of varnishd" \
+	{VARNISH_DEFAULT_N="/nonexistent" varnishstat -t 1}
 shell -expect "MAIN.uptime" \
 	"varnishstat -n ${v1_name} -1"
+shell -expect "MAIN.uptime" \
+	{VARNISH_DEFAULT_N="${v1_name}" varnishstat -1}
 shell -expect "<name>MAIN.uptime</name>" \
 	"varnishstat -n ${v1_name} -x"
 shell -match {"MAIN.uptime":} \

@@ -93,3 +93,5 @@ shell -expect {Tested} \
 	{varnishadm -T ${s1_sock} -S ${v1_name}/_.secret test}
 
 shell "varnishadm -n ${v1_name} help > /dev/null"
+
+shell {VARNISH_DEFAULT_N="${v1_name}" varnishadm help > /dev/null}

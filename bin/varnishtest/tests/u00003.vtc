@@ -118,6 +118,10 @@ shell -err -match "Usage: .*varnishncsa <options>" \
 shell -match {^${localhost} 100
 ${localhost} 0$} \
 	{varnishncsa -n ${v1_name} -b -d -F "%{Host}i %b"}
+# -b with VARNISH_DEFAULT_N
+shell -match {^${localhost} 100
+${localhost} 0$} \
+	{VARNISH_DEFAULT_N="${v1_name}" varnishncsa -b -d -F "%{Host}i %b"}
 # -c
 shell -match {^${localhost} 100
 ${localhost} \d+

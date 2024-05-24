@@ -13,6 +13,7 @@ client c1 {
 } -run
 
 shell -expect "fetch" "varnishtop -n ${v1_name} -1"
+shell -expect "fetch" {VARNISH_DEFAULT_N="${v1_name}" varnishtop  -1}
 
 process p1 "varnishtop -n ${v1_name} -d" -start
 delay 1

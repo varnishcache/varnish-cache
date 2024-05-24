@@ -41,6 +41,11 @@ Varnish Cache NEXT (2024-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The environment variable ``VARNISH_DEFAULT_N`` now provides the
+  default "varnish name" / "workdir" as otherwise specified by he
+  ``-n`` argument to ``varnishd`` and ``varnish*`` utilities except
+  ``varnishtest``.
+
 ================================
 Varnish Cache 7.5.0 (2024-03-18)
 ================================

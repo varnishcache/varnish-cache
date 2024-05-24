@@ -71,9 +71,12 @@ VIN_n_Arg(const char *n_arg)
 void
 VIN_DumpDefaults(void)
 {
+	printf("  The default is taken from the ``VARNISH_DEFAULT_N`` "
+	       "environment variable.\n\n");
 	printf("  Relative paths will be appended to ``%s``.\n\n",
 	       VARNISH_STATE_DIR);
-	printf("  The default value is ``%s``.\n\n",
+	printf("  If neither ``VARNISH_DEFAULT_N`` nor ``-n`` are "
+	       "present, the value is ``%s``.\n\n",
 	       VARNISH_STATE_DIR "/" VARNISH_DEFAULT_REL_NAME);
 	printf("  Note: These defaults may be distribution specific.\n\n");
 }
