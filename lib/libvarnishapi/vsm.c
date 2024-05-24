@@ -791,9 +791,24 @@ VSM_Attach(struct vsm *vd, int progress)
 /*--------------------------------------------------------------------*/
 
 static struct vsm_seg *
+vsm_set_findseg(const struct vsm_set *vs, uintptr_t serial)
+{
+	struct vsm_seg *vg;
+
+	VTAILQ_FOREACH(vg, &vs->segs, list) {
+		if (vg->serial == serial)
+			return (vg);
+	}
+	VTAILQ_FOREACH(vg, &vs->stale, list) {
+		if (vg->serial == serial)
+			return (vg);
+	}
+	return (NULL);
+}
+
+static struct vsm_seg *
 vsm_findseg(const struct vsm *vd, const struct vsm_fantom *vf)
 {
-	struct vsm_set *vs;
 	struct vsm_seg *vg;
 	uint64_t x;
 
@@ -807,26 +822,9 @@ vsm_findseg(const struct vsm *vd, const struct vsm_fantom *vf)
 	}
 
 	x = VSM_PRIV_LOW(vf->priv);
-	vs = vd->mgt;
-	VTAILQ_FOREACH(vg, &vs->segs, list)
-		if (vg->serial == x)
-			break;
-	if (vg == NULL) {
-		VTAILQ_FOREACH(vg, &vs->stale, list)
-			if (vg->serial == x)
-				break;
-	}
-	vs = vd->child;
-	if (vg == NULL) {
-		VTAILQ_FOREACH(vg, &vs->segs, list)
-			if (vg->serial == x)
-				break;
-	}
-	if (vg == NULL) {
-		VTAILQ_FOREACH(vg, &vs->stale, list)
-			if (vg->serial == x)
-				break;
-	}
+	vg = vsm_set_findseg(vd->mgt, x);
+	if (vg == NULL)
+		vg = vsm_set_findseg(vd->child, x);
 	if (vg == NULL)
 		return (NULL);
 
