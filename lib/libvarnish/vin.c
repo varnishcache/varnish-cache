@@ -42,6 +42,7 @@
 #include "vin.h"
 #include "vsb.h"
 
+#define VARNISH_DEFAULT_REL_NAME "varnishd"
 char *
 VIN_n_Arg(const char *n_arg)
 {
@@ -52,7 +53,7 @@ VIN_n_Arg(const char *n_arg)
 	AN(vsb);
 	if (n_arg == NULL || n_arg[0] == '\0') {
 		VSB_cat(vsb, VARNISH_STATE_DIR);
-		VSB_cat(vsb, "/varnishd");
+		VSB_cat(vsb, "/" VARNISH_DEFAULT_REL_NAME);
 	} else if (n_arg[0] == '/') {
 		VSB_cat(vsb, n_arg);
 	} else {
@@ -65,4 +66,14 @@ VIN_n_Arg(const char *n_arg)
 	retval = strdup(VSB_data(vsb));
 	VSB_destroy(&vsb);
 	return (retval);
+}
+
+void
+VIN_DumpDefaults(void)
+{
+	printf("  Relative paths will be appended to ``%s``.\n\n",
+	       VARNISH_STATE_DIR);
+	printf("  The default value is ``%s``.\n\n",
+	       VARNISH_STATE_DIR "/" VARNISH_DEFAULT_REL_NAME);
+	printf("  Note: These defaults may be distribution specific.\n\n");
 }

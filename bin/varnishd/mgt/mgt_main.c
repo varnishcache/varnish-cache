@@ -79,6 +79,19 @@ static const char opt_spec[] = "?a:b:CdE:f:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 /*--------------------------------------------------------------------*/
 
+// Basic options documentation with compile time dependencies
+static void
+mgt_DumpOptions(void)
+{
+	printf(".. _opt_n:\n\n");
+	printf("-n workdir\n\n");
+	printf("  Runtime directory for the shared memory, "
+	       "compiled VCLs etc.\n\n");
+	printf("  In performance critical applications, this directory "
+	       "should be on a RAM backed filesystem.\n\n");
+	VIN_DumpDefaults();
+}
+
 static void
 usage(void)
 {
@@ -121,6 +134,7 @@ usage(void)
 	printf(FMT, "-x cli", "CLI command documentation");
 	printf(FMT, "-x builtin", "Builtin VCL program");
 	printf(FMT, "-x optstring", "List of getopt options");
+	printf(FMT, "-x options", "Dynamic options documentation");
 
 	printf("\nOperations options:\n");
 
@@ -359,6 +373,8 @@ mgt_x_arg(const char *x_arg)
 		mgt_DumpBuiltin();
 	else if (!strcmp(x_arg, "optstring"))
 		(void)printf("%s\n", opt_spec);
+	else if (!strcmp(x_arg, "options"))
+		mgt_DumpOptions();
 	else
 		ARGV_ERR("Invalid -x argument\n");
 }

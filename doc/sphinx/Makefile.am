@@ -85,6 +85,11 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/params.rst
 
+include/options.rst: $(top_builddir)/bin/varnishd/varnishd
+	$(top_builddir)/bin/varnishd/varnishd -x options > ${@}_
+	mv -f ${@}_ ${@}
+BUILT_SOURCES += include/options.rst
+
 include/counters.rst:
 	ln -s $(abs_top_builddir)/lib/libvsc/counters.rst $@
 BUILT_SOURCES += include/counters.rst

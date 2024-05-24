@@ -78,7 +78,8 @@ varnishadm.1: $(top_builddir)/doc/sphinx/reference/varnishadm.rst
 
 varnishd.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishd.rst \
-	$(top_builddir)/doc/sphinx/include/params.rst
+	$(top_builddir)/doc/sphinx/include/params.rst \
+	$(top_builddir)/doc/sphinx/include/options.rst
 	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishd.rst $@
 
 varnishncsa.1: \

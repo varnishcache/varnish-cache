@@ -142,19 +142,7 @@ Basic options
   could later be accessed remotely, starting `varnishd` requires
   local privileges.
 
-.. _opt_n:
-
--n workdir
-
-  Runtime directory for the shared memory, compiled VCLs etc.
-
-  In performance critical applications, this directory should be
-  on a RAM backed filesystem.
-
-  Relative paths will be appended to `/var/run/` (NB: Binary packages
-  of Varnish may have adjusted this to the platform.)
-
-  The default value is `/var/run/varnishd` (NB: as above.)
+.. include:: ../include/options.rst
 
 Documentation options
 ---------------------
