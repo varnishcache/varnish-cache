@@ -34,12 +34,16 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-================================
-Varnish Cache 7.5.0 (2024-03-18)
-================================
+===============================
+Varnish Cache NEXT (2024-09-15)
+===============================
 
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
+
+================================
+Varnish Cache 7.5.0 (2024-03-18)
+================================
 
 * Add ``h2_window_timeout`` paramater to mitigate CVE-2023-43622 (VSV00014_).
 
