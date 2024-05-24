@@ -865,8 +865,7 @@ main(int argc, char * const *argv)
 		    workdir, VAS_errtxt(errno));
 
 	VJ_master(JAIL_MASTER_SYSTEM);
-	AZ(system("rm -rf vmod_cache"));
-	AZ(system("rm -rf vext_cache"));
+	AZ(system("rm -rf vmod_cache vext_cache"));
 	VJ_master(JAIL_MASTER_LOW);
 
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
