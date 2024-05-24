@@ -43,6 +43,7 @@
 #include "vsb.h"
 
 #define VARNISH_DEFAULT_REL_NAME "varnishd"
+
 char *
 VIN_n_Arg(const char *n_arg)
 {
