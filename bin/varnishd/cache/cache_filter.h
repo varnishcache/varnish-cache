@@ -36,6 +36,14 @@ struct vdp_ctx;
 
 /* Fetch processors --------------------------------------------------*/
 
+#define VFP_DEBUG(ctx, fmt, ...)					\
+	do {								\
+		if (!DO_DEBUG(DBG_PROCESSORS))				\
+			break;						\
+		VSLb((ctx)->wrk->vsl, SLT_Debug, "VFP:%s:%d: " fmt,	\
+		    __func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+
 enum vfp_status {
 	VFP_ERROR = -1,
 	VFP_OK = 0,
