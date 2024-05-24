@@ -876,7 +876,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (arg_list_count("E") &&
-	    VJ_make_subdir("vext_cache", "VMOD cache", NULL)) {
+	    VJ_make_subdir("vext_cache", "VEXT cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vext_cache): %s\n",
 		    workdir, VAS_errtxt(errno));
