@@ -133,6 +133,8 @@ struct vsm_set {
 	unsigned		flag_running;
 	unsigned		flag_changed;
 	unsigned		flag_restarted;
+
+	int			couldkill;
 };
 
 struct vsm {
@@ -151,8 +153,6 @@ struct vsm {
 
 	int			attached;
 	double			patience;
-
-	int			couldkill;
 };
 
 /*--------------------------------------------------------------------*/
@@ -301,6 +301,8 @@ vsm_newset(const char *dirname)
 	vs->dfd = vs->fd = -1;
 	vs->vlu = VLU_New(vsm_vlu_func, vs, 0);
 	AN(vs->vlu);
+	if (getenv("VSM_NOPID") != NULL)
+		vs->couldkill = -1;
 	return (vs);
 }
 
@@ -364,8 +366,6 @@ VSM_New(void)
 	vd->child->vsm = vd;
 	vd->wdfd = -1;
 	vd->patience = 5;
-	if (getenv("VSM_NOPID") != NULL)
-		vd->couldkill = -1;
 	return (vd);
 }
 
@@ -486,8 +486,28 @@ vsm_findcluster(const struct vsm_set *vs, const char *cnam)
 	return (NULL);
 }
 
+static unsigned
+vsm_running(struct vsm_set *vs, pid_t pid)
+{
+
+	AN(vs);
+
+	if (pid == 0)
+		return (0);
+	assert(pid > 1);
+
+	if (kill(pid, 0) == 0) {
+		vs->couldkill = 1;
+		return (1);
+	}
+	if (errno == EPERM)	/* a process exists, assume running */
+		return (1);
+	assert(errno != EINVAL);
+	return (0);
+}
+
 static int
-vsm_vlu_hash(struct vsm *vd, struct vsm_set *vs, const char *line)
+vsm_vlu_hash(struct vsm_set *vs, const char *line)
 {
 	int i;
 	uintmax_t id1, id2;
@@ -497,9 +517,9 @@ vsm_vlu_hash(struct vsm *vd, struct vsm_set *vs, const char *line)
 		vs->retval |= vs->flag_restarted;
 		return (0);
 	}
-	if (vd->couldkill >= 0 && !kill(id1, 0)) {
-		vd->couldkill = 1;
-	} else if (vd->couldkill > 0 && errno == ESRCH) {
+	if (vs->couldkill >= 0 && vsm_running(vs, id1)) {
+		/* nothing to do */
+	} else if (vs->couldkill > 0 && errno == ESRCH) {
 		vs->retval |= vs->flag_restarted | VSM_MGT_CHANGED;
 		return (0);
 	}
@@ -614,7 +634,7 @@ vsm_vlu_func(void *priv, const char *line)
 
 	switch (line[0]) {
 	case '#':
-		i = vsm_vlu_hash(vd, vs, line);
+		i = vsm_vlu_hash(vs, line);
 		VTAILQ_FOREACH(vs->vg, &vs->segs, list)
 			vs->vg->flags &= ~VSM_FLAG_MARKSCAN;
 		if (!(vs->retval & vs->flag_restarted))
@@ -706,7 +726,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 
 	vs->fst.st_size = lseek(vs->fd, 0L, SEEK_CUR);
 
-	if (vd->couldkill < 1 || !kill(vs->id1, 0))
+	if (vs->couldkill < 0 || vsm_running(vs, vs->id1))
 		vs->retval |= vs->flag_running;
 	return (vs->retval);
 }
@@ -748,8 +768,12 @@ VSM_Status(struct vsm *vd)
 
 	if (vd->wdfd >= 0) {
 		retval |= vsm_refresh_set(vd, vd->mgt);
+		if (vd->mgt->couldkill > 0 && (retval & VSM_MGT_RESTARTED))
+			vd->mgt->couldkill = 0;
 		if (retval & VSM_MGT_RUNNING)
 			retval |= vsm_refresh_set(vd, vd->child);
+		if (vd->child->couldkill > 0 && (retval & VSM_WRK_RESTARTED))
+			vd->child->couldkill = 0;
 	}
 	return (retval);
 }
