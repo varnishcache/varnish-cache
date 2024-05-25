@@ -743,6 +743,7 @@ VSM_Status(struct vsm *vd)
 int
 VSM_Attach(struct vsm *vd, int progress)
 {
+	const char *def;
 	double t0;
 	unsigned u;
 	int i, n = 0;
@@ -754,12 +755,11 @@ VSM_Attach(struct vsm *vd, int progress)
 	else
 		t0 = VTIM_mono() + vd->patience;
 
-	if (vd->wdname == NULL)
-		REPLACE(vd->wdname, getenv("VARNISH_DEFAULT_N"));
-
 	if (vd->wdname == NULL) {
-		/* Use default (hostname) */
-		i = VSM_Arg(vd, 'n', "");
+		def = getenv("VARNISH_DEFAULT_N");
+		if (def == NULL)
+			def = ""; /* Use default (hostname) */
+		i = VSM_Arg(vd, 'n', def);
 		if (i < 0)
 			return (i);
 		AN(vd->wdname);
