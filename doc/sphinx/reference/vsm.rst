@@ -102,3 +102,22 @@ a chance to discover the deallocation.
 
 The include file <vapi/vsm.h> provides the supported API for accessing
 VSM files.
+
+VSM and Containers
+------------------
+
+The varnish way works great with single purpose containers. By sharing
+the varnish working directory read-only, vsm readers can be run in
+containers separate from those running varnishd instances on the same
+host.
+
+When running varnishd and vsm readers in the same process namespace,
+pid information can be used by vsm readers to determine if varnishd
+processes are alive.
+
+But, when running varnishd and vsm readers in different containers,
+the pid information has no relevance and may even be ambiguous across
+name spaces.
+
+Thus, with such setups, the environment variable VSM_NOPID needs to be
+set for vsm readers to disable use of pid information.
