@@ -39,6 +39,10 @@ process p1 -expect-text 0 0 "VBE.vcl1.s1.req"
 process p1 -expect-text 0 0 "DIAG"
 process p1 -screen_dump
 
+varnish v1 -stop
+process p1 -expect-text 2 1 "Uptime child:   Not Running"
+process p1 -screen_dump
+
 process p1 -write {dek}
 process p1 -expect-text 0 1 "Concurrent connections used:"
 process p1 -screen_dump
