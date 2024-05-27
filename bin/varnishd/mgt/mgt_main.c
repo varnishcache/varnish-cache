@@ -319,6 +319,7 @@ mgt_Cflag_atexit(void)
 		VJ_rmdir("vext_cache");
 	}
 	VJ_rmdir("vmod_cache");
+	VJ_rmdir("worker_tmpdir");
 	(void)chdir("/");
 	VJ_rmdir(workdir);
 }
@@ -865,7 +866,7 @@ main(int argc, char * const *argv)
 		    workdir, VAS_errtxt(errno));
 
 	VJ_master(JAIL_MASTER_SYSTEM);
-	AZ(system("rm -rf vmod_cache vext_cache"));
+	AZ(system("rm -rf vmod_cache vext_cache worker_tmpdir"));
 	VJ_master(JAIL_MASTER_LOW);
 
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
@@ -878,6 +879,13 @@ main(int argc, char * const *argv)
 	    VJ_make_subdir("vext_cache", "VEXT cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vext_cache): %s\n",
+		    workdir, VAS_errtxt(errno));
+	}
+
+	if (VJ_make_subdir("worker_tmpdir",
+	    "TMPDIR for the worker process", NULL)) {
+		ARGV_ERR(
+		    "Cannot create vmod directory (%s/worker_tmpdir): %s\n",
 		    workdir, VAS_errtxt(errno));
 	}
 

@@ -55,6 +55,7 @@ struct priv_vcl {
 	VCL_BACKEND		be;
 	unsigned		cold_be;
 	unsigned		cooling_be;
+	int			tmpf;
 };
 
 
@@ -401,12 +402,18 @@ VCL_VOID v_matchproto_(td_debug_test_priv_vcl)
 xyzzy_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
+	char t[PATH_MAX];
+	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(priv);
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+
+	l = pread(priv_vcl->tmpf, t, sizeof t, 0);
+	assert(l > 0);
+
 	AN(priv_vcl->foo);
-	assert(!strcmp(priv_vcl->foo, "FOO"));
+	assert(!strncmp(priv_vcl->foo, t, l));
 }
 
 VCL_VOID v_matchproto_(td_debug_rot104)
@@ -501,7 +508,9 @@ priv_vcl_fini(VRT_CTX, void *priv)
 	struct priv_vcl *priv_vcl;
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv, PRIV_VCL_MAGIC);
+	AZ(close(priv_vcl->tmpf));
 	AN(priv_vcl->foo);
+	AZ(unlink(priv_vcl->foo));
 	free(priv_vcl->foo);
 	if (priv_vcl->obj_cb != 0) {
 		ObjUnsubscribeEvents(&priv_vcl->obj_cb);
@@ -534,8 +543,11 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 
 	ALLOC_OBJ(priv_vcl, PRIV_VCL_MAGIC);
 	AN(priv_vcl);
-	priv_vcl->foo = strdup("FOO");
+	priv_vcl->foo = strdup("worker_tmpdir/vmod_debug.XXXXXX");
 	AN(priv_vcl->foo);
+	priv_vcl->tmpf = mkstemp(priv_vcl->foo);
+	assert(priv_vcl->tmpf >= 0);
+	AN(write(priv_vcl->tmpf, priv_vcl->foo, strlen(priv_vcl->foo)));
 	priv->priv = priv_vcl;
 	priv->methods = priv_vcl_methods;
 

@@ -858,3 +858,47 @@ You should call ``VSC_*_New()`` when your VMOD is loaded and
 ``VSC_*_Destroy()`` when it is unloaded. See the generated
 ``VSC_*.h`` file for the full details about the structure that contains
 your counters.
+
+Temporary Files
+===============
+
+``varnishd`` creates a directroy named ``worker_tmpdir`` under the
+varnish working directory (see ``varnishd -n`` argument) for
+read/write access by the worker process.
+
+From the perspective of VMODs, the relative path is always
+``worker_tmpdir``.
+
+This directory is intended (though not limited) to provide a place for
+VMODs to create temporary files using ``mkstemp()`` and related libc
+functions. VMODs are responsible for cleaning up files which are no
+longer required, and they will ultimately be removed when the
+``varnishd`` worker process restarts. There is no isolation between
+VMODs (as is the case anyway).
+
+A simple example for how to use it::
+
+	#include <stdlib.h>
+	#include <unistd.h>
+
+	#include "vdef.h"
+	#include "vas.h"
+
+	static void
+	tmpfile_example(void) {
+	    int fd;
+	    char name[] = "worker_tmpdir/myvmod.XXXXXX";
+
+	    fd = mkstemp(name);
+	    if (fd < 0) {
+		// handle error
+		return;
+	    }
+
+	    // hide file
+	    AZ(unlink(name));
+
+	    // use fd
+
+	    AZ(close(fd));
+	}
