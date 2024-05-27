@@ -304,6 +304,7 @@ vju_fixfd(int fd, enum jail_fixfd_e what)
 		AZ(fchown(fd, vju_uid, vju_gid));
 		break;
 	case JAIL_FIXFD_VSMWRK:
+	case JAIL_FIXFD_WRKTMP:
 		AZ(fchmod(fd, 0750));
 		AZ(fchown(fd, vju_wrkuid, vju_wrkgid));
 		break;

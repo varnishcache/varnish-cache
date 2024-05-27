@@ -131,6 +131,7 @@ enum jail_fixfd_e {
 	JAIL_FIXFD_FILE,
 	JAIL_FIXFD_VSMMGT,
 	JAIL_FIXFD_VSMWRK,
+	JAIL_FIXFD_WRKTMP,
 };
 
 typedef int jail_init_f(char **);

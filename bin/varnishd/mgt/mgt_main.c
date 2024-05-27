@@ -889,6 +889,12 @@ main(int argc, char * const *argv)
 		    workdir, VAS_errtxt(errno));
 	}
 
+	o = open("worker_tmpdir", O_RDONLY);
+	VJ_master(JAIL_MASTER_SYSTEM);
+	VJ_fix_fd(o, JAIL_FIXFD_WRKTMP);
+	VJ_master(JAIL_MASTER_LOW);
+	closefd(&o);
+
 	if (C_flag)
 		AZ(atexit(mgt_Cflag_atexit));
 
