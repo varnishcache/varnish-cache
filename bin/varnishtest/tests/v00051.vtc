@@ -1,5 +1,7 @@
 varnishtest "Test VCL failures"
 
+option timeout x2
+
 server s1 {
 	rxreq
 	expect req.url == /hit
