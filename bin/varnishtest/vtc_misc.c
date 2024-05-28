@@ -660,3 +660,52 @@ cmd_feature(CMD_ARGS)
 		return;
 	}
 }
+
+static void
+set_timeout(struct vtclog *vl, const char *val)
+{
+	double num;
+	char *s = NULL;
+
+	if (val == NULL || *val == '\0') {
+		vtc_fatal(vl, "FAIL test, missing \"option timeout\" value");
+		return;
+	}
+	if (*val == 'x') {
+		num = strtod(val + 1, &s);
+		num *= vtc_maxdur;
+	} else
+		num = VNUM_duration(val);
+
+	if (isnan(num) || (s != NULL && *s != '\0')) {
+		vtc_fatal(vl, "FAIL test, invalid \"option timeout\": %s", val);
+		return;
+	}
+	vtc_maxdur = num;
+	vtc_log(vl, 4, "new timeout %.2f", vtc_maxdur);
+}
+
+/* SECTION: option <option> <value>
+ *
+ * Set varnishtest options
+ *
+ * timeout <duration>
+ *         Override -t argument
+ * timeout x<factor>
+ *         Scale timeout by a <factor>
+ */
+
+void v_matchproto_(cmd_f)
+cmd_option(CMD_ARGS)
+{
+
+	(void)priv;
+
+	if (av == NULL)
+		return;
+	av++;
+	if (!strcmp(av[0], "timeout"))
+		set_timeout(vl, av[1]);
+	else
+		vtc_fatal(vl, "FAIL test, unknown option: %s", av[0]);
+}
