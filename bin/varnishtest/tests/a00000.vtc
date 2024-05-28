@@ -1,8 +1,5 @@
 varnishtest "Test varnishtest itself"
 
-option timeout 60s
-option timeout x1.1
-
 shell -exit 1 -expect {varnishtest [options]} {varnishtest -h}
 
 shell -exit 1 -match {-D.*Define macro} {varnishtest -h}
