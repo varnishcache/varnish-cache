@@ -667,20 +667,16 @@ set_timeout(struct vtclog *vl, const char *val)
 	double num;
 	char *s = NULL;
 
-	if (val == NULL || *val == '\0') {
+	if (val == NULL || *val == '\0')
 		vtc_fatal(vl, "FAIL test, missing \"option timeout\" value");
-		return;
-	}
 	if (*val == 'x') {
 		num = strtod(val + 1, &s);
 		num *= vtc_maxdur;
 	} else
 		num = VNUM_duration(val);
 
-	if (isnan(num) || (s != NULL && *s != '\0')) {
+	if (isnan(num) || (s != NULL && *s != '\0'))
 		vtc_fatal(vl, "FAIL test, invalid \"option timeout\": %s", val);
-		return;
-	}
 	vtc_maxdur = num;
 	vtc_log(vl, 4, "new timeout %.2f", vtc_maxdur);
 }
