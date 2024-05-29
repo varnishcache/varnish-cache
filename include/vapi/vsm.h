@@ -182,7 +182,7 @@ int VSM_Get(struct vsm *, struct vsm_fantom *vf,
 
 char *VSM_Dup(struct vsm*, const char *category, const char *ident);
 	/*
-	 * Returns a malloc'ed copy of the fanton.
+	 * Returns a malloc'ed copy of the fantom.
 	 *
 	 * Return:
 	 *   NULL = Failure
