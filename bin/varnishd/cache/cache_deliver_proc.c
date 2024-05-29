@@ -194,7 +194,6 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 		vdc->retval = 0;
 	else
 		vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv, initctx);
-	initctx->oc = NULL;
 
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
