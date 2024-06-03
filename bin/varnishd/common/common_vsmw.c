@@ -405,7 +405,6 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	assert(fmt[0] == '\0' || l < VSB_len(vsmw->vsb));
 
 	REPLACE(seg->id, VSB_data(vsmw->vsb));
-	AN(seg->id);
 
 	if (vc == NULL)
 		vc = vsmw_newcluster(vsmw, seg->len, category);
