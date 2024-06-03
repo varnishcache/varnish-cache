@@ -101,6 +101,7 @@ struct vsc_seg {
 	int			mapped;
 	int			exposed;
 };
+VTAILQ_HEAD(vsc_seg_head, vsc_seg);
 
 struct vsc {
 	unsigned		magic;
@@ -108,7 +109,7 @@ struct vsc {
 
 	unsigned		raw;
 	struct vsc_sf_head	sf_list;
-	VTAILQ_HEAD(,vsc_seg)	segs;
+	struct vsc_seg_head	segs;
 
 	VSC_new_f		*fnew;
 	VSC_destroy_f		*fdestroy;
@@ -319,15 +320,6 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 	point->point.raw = vsc->raw;
 }
 
-static void
-vsc_del_seg(struct vsc_seg *sp)
-{
-	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
-	AZ(sp->exposed);
-	AZ(sp->mapped);
-	FREE_OBJ(sp);
-}
-
 static struct vsc_seg *
 vsc_new_seg(const struct vsm_fantom *fp, enum vsc_seg_type type)
 {
@@ -508,6 +500,23 @@ vsc_expose(const struct vsc *vsc, struct vsc_seg *sp, int del)
 /*--------------------------------------------------------------------
  */
 
+static void
+vsc_del_segs(struct vsc *vsc, struct vsm *vsm, struct vsc_seg_head *head)
+{
+	struct vsc_seg *sp, *sp2;
+
+	VTAILQ_FOREACH_SAFE(sp, head, list, sp2) {
+		CHECK_OBJ(sp, VSC_SEG_MAGIC);
+		VTAILQ_REMOVE(head, sp, list);
+		vsc_expose(vsc, sp, 1);
+		vsc_unmap_seg(vsc, vsm, sp);
+		FREE_OBJ(sp);
+	}
+}
+
+/*--------------------------------------------------------------------
+ */
+
 static int
 vsc_iter_seg(const struct vsc *vsc, const struct vsc_seg *sp,
     VSC_iter_f *fiter, void *priv)
@@ -533,7 +542,7 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 	enum vsc_seg_type type;
 	struct vsm_fantom ifantom;
 	struct vsc_seg *sp, *sp2;
-	VTAILQ_HEAD(, vsc_seg) removed;
+	struct vsc_seg_head removed;
 	int i = 0;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
@@ -595,16 +604,7 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 		VTAILQ_INSERT_TAIL(&removed, sp2, list);
 	}
 
-	/* Clean up any removed segs */
-	while (!VTAILQ_EMPTY(&removed)) {
-		sp = VTAILQ_FIRST(&removed);
-		CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
-		VTAILQ_REMOVE(&removed, sp, list);
-
-		vsc_expose(vsc, sp, 1);
-		vsc_unmap_seg(vsc, vsm, sp);
-		vsc_del_seg(sp);
-	}
+	vsc_del_segs(vsc, vsm, &removed);
 
 	/* Iterate our shadow list, reporting on each pointer value */
 	VTAILQ_FOREACH(sp, &vsc->segs, list) {
@@ -682,7 +682,6 @@ VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
 {
 	struct vsc *vsc;
 	struct vsc_sf *sf, *sf2;
-	struct vsc_seg *sp, *sp2;
 
 	TAKE_OBJ_NOTNULL(vsc, vscp, VSC_MAGIC);
 
@@ -692,11 +691,7 @@ VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
 		free(sf->pattern);
 		FREE_OBJ(sf);
 	}
-	VTAILQ_FOREACH_SAFE(sp, &vsc->segs, list, sp2) {
-		VTAILQ_REMOVE(&vsc->segs, sp, list);
-		vsc_expose(vsc, sp, 1);
-		vsc_unmap_seg(vsc, vsm, sp);
-		vsc_del_seg(sp);
-	}
+
+	vsc_del_segs(vsc, vsm, &vsc->segs);
 	FREE_OBJ(vsc);
 }
