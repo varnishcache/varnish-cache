@@ -79,18 +79,26 @@ struct vsc_pt {
 	char			*name;
 };
 
+enum vsc_seg_type {
+	VSC_SEG_COUNTERS = 1,
+	VSC_SEG_DOCS,
+};
+
 struct vsc_seg {
 	unsigned		magic;
 #define VSC_SEG_MAGIC		0x801177d4
+	enum vsc_seg_type	type;
 	VTAILQ_ENTRY(vsc_seg)	list;
 	struct vsm_fantom	fantom[1];
-	struct vsc_head		*head;
-	char			*body;
+	const struct vsc_head	*head;
+	const char		*body;
 
 	struct vjsn		*vj;
 
 	unsigned		npoints;
 	struct vsc_pt		*points;
+
+	int			mapped;
 	int			exposed;
 };
 
@@ -307,36 +315,74 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 	vt = vjsn_child(vv, "index");
 	AN(vt);
 
-	point->point.ptr = (volatile void*)(seg->body + atoi(vt->value));
+	point->point.ptr = (volatile const void*)(seg->body + atoi(vt->value));
 	point->point.raw = vsc->raw;
 }
 
 static void
-vsc_del_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg **spp)
+vsc_del_seg(struct vsc_seg *sp)
 {
-	unsigned u;
-	struct vsc_pt *pp;
-	struct vsc_seg *sp;
-
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	AN(vsm);
-	TAKE_OBJ_NOTNULL(sp, spp, VSC_SEG_MAGIC);
-	AZ(VSM_Unmap(vsm, sp->fantom));
-	if (sp->vj != NULL) {
-		vjsn_delete(&sp->vj);
-	} else {
-		pp = sp->points;
-		for (u = 0; u < sp->npoints; u++, pp++)
-			vsc_clean_point(pp);
-		free(sp->points);
-	}
+	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
+	AZ(sp->exposed);
+	AZ(sp->mapped);
 	FREE_OBJ(sp);
 }
 
 static struct vsc_seg *
-vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
+vsc_new_seg(const struct vsm_fantom *fp, enum vsc_seg_type type)
 {
-	struct vsc_seg *sp, *spd;
+	struct vsc_seg *sp;
+
+	ALLOC_OBJ(sp, VSC_SEG_MAGIC);
+	AN(sp);
+	*sp->fantom = *fp;
+	sp->type = type;
+
+	return (sp);
+}
+
+static void
+vsc_unmap_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
+{
+	unsigned u;
+	struct vsc_pt *pp;
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	AN(vsm);
+	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
+
+	AZ(sp->exposed);
+	if (!sp->mapped)
+		return;
+
+	if (sp->type == VSC_SEG_COUNTERS) {
+		pp = sp->points;
+		for (u = 0; u < sp->npoints; u++, pp++)
+			vsc_clean_point(pp);
+		free(sp->points);
+		sp->points = NULL;
+		sp->npoints = 0;
+		AZ(sp->vj);
+	} else if (sp->type == VSC_SEG_DOCS) {
+		if (sp->vj != NULL)
+			vjsn_delete(&sp->vj);
+		AZ(sp->vj);
+		AZ(sp->points);
+	} else {
+		WRONG("Invalid segment type");
+	}
+
+	AZ(VSM_Unmap(vsm, sp->fantom));
+	sp->head = NULL;
+	sp->body = NULL;
+	sp->mapped = 0;
+}
+
+static int
+vsc_map_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
+{
+	const struct vsc_head *head;
+	struct vsc_seg *spd;
 	const char *e;
 	struct vjsn_val *vv, *vve;
 	struct vsb *vsb;
@@ -344,32 +390,56 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	AN(vsm);
+	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
 
-	ALLOC_OBJ(sp, VSC_SEG_MAGIC);
-	AN(sp);
-	*sp->fantom = *fp;
-	if (VSM_Map(vsm, sp->fantom)) {
-		/*
-		 * If the seg was removed between our call to VSM_Status()
-		 * and now, we won't be able to map it.
-		 */
-		FREE_OBJ(sp);
-		return (NULL);
-	}
-	sp->head = sp->fantom->b;
-	if (sp->head->ready == 0) {
-		VRMB();
+	if (sp->mapped)
+		return (0);
+
+	AZ(sp->exposed);
+
+	if (VSM_Map(vsm, sp->fantom))
+		return (-1);
+	head = sp->fantom->b;
+	if (head->ready == 0) {
+		/* It isn't ready yet. Sleep and try again. If it still
+		 * isn't ready, fail the mapping. The transitions inside
+		 * varnishd that we are waiting for are just some memcpy()
+		 * operations, so there is no reason to allow a long retry
+		 * time. */
 		usleep(100000);
+		if (head->ready == 0) {
+			VSM_Unmap(vsm, sp->fantom);
+			return (-1);
+		}
 	}
-	assert(sp->head->ready > 0);
-	sp->body = (char*)sp->fantom->b + sp->head->body_offset;
 
-	if (!strcmp(fp->category, VSC_CLASS)) {
-		VTAILQ_FOREACH(spd, &vsc->segs, list)
+	sp->head = head;
+	sp->body = (char*)sp->fantom->b + sp->head->body_offset;
+	sp->mapped = 1;
+
+	if (sp->type == VSC_SEG_COUNTERS) {
+		/* Find the corresponding DOCS seg. We are not able to
+		 * read and match on the doc_id until the DOCS section is
+		 * mapped. Iterate over all the DOCS sections, attempt to
+		 * map if needed, and then check the doc_id. */
+		VTAILQ_FOREACH(spd, &vsc->segs, list) {
+			CHECK_OBJ_NOTNULL(spd, VSC_SEG_MAGIC);
+			if (spd->type != VSC_SEG_DOCS)
+				continue;
+			if (!spd->mapped && vsc_map_seg(vsc, vsm, spd))
+				continue; /* Failed to map it */
+			AN(spd->mapped);
 			if (spd->head->doc_id == sp->head->doc_id)
-				break;
-		AN(spd);
-		// XXX: Refcount ?
+				break; /* We have a match */
+		}
+		if (spd == NULL) {
+			/* Could not find the right DOCS seg. Leave this
+			 * seg as unmapped. */
+			vsc_unmap_seg(vsc, vsm, sp);
+			return (-1);
+		}
+
+		/* Create the VSC points list */
 		vve = vjsn_child(spd->vj->value, "elements");
 		AN(vve);
 		sp->npoints = strtoul(vve->value, NULL, 0);
@@ -385,13 +455,16 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 			pp++;
 		}
 		VSB_destroy(&vsb);
-		return (sp);
+	} else if (sp->type == VSC_SEG_DOCS) {
+		/* Parse the DOCS json */
+		sp->vj = vjsn_parse(sp->body, &e);
+		XXXAZ(e);
+		AN(sp->vj);
+	} else {
+		WRONG("");
 	}
-	assert(!strcmp(fp->category, VSC_DOC_CLASS));
-	sp->vj = vjsn_parse(sp->body, &e);
-	XXXAZ(e);
-	AN(sp->vj);
-	return (sp);
+
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -403,6 +476,11 @@ vsc_expose(const struct vsc *vsc, struct vsc_seg *sp, int del)
 	struct vsc_pt *pp;
 	unsigned u;
 	int expose;
+
+	if (!sp->mapped) {
+		AZ(sp->exposed);
+		return;
+	}
 
 	if (vsc->fnew != NULL && !sp->exposed &&
 	    !del && sp->head->ready == 1)
@@ -450,52 +528,105 @@ vsc_iter_seg(const struct vsc *vsc, const struct vsc_seg *sp,
 int
 VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 {
+	enum vsc_seg_type type;
 	struct vsm_fantom ifantom;
 	struct vsc_seg *sp, *sp2;
+	VTAILQ_HEAD(, vsc_seg) removed;
 	int i = 0;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	AN(vsm);
+
+	/* First walk the VSM segment list and consolidate with the shadow
+	 * VSC seg list. We avoid calling any of the callback functions
+	 * while iterating the VSMs. This removes any headaches wrt to
+	 * callbacks calling VSM_Status(). */
+	VTAILQ_INIT(&removed);
 	sp = VTAILQ_FIRST(&vsc->segs);
 	VSM_FOREACH(&ifantom, vsm) {
 		AN(ifantom.category);
-		if (strcmp(ifantom.category, VSC_CLASS) &&
-		    strcmp(ifantom.category, VSC_DOC_CLASS))
+		if (!strcmp(ifantom.category, VSC_CLASS))
+			type = VSC_SEG_COUNTERS;
+		else if (!strcmp(ifantom.category, VSC_DOC_CLASS))
+			type = VSC_SEG_DOCS;
+		else {
+			/* Not one of the categories we care about */
 			continue;
-		while (sp != NULL &&
-		    (strcmp(ifantom.ident, sp->fantom->ident) ||
-		    VSM_StillValid(vsm, sp->fantom) != VSM_valid)) {
+		}
+
+		while (sp != NULL) {
+			CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
+			if (VSM_StillValid(vsm, sp->fantom) == VSM_valid &&
+			    !strcmp(ifantom.ident, sp->fantom->ident)) {
+				/* sp matches the expected value */
+				break;
+			}
+
+			/* sp is no longer in the VSM list. Remove it from
+			 * our list. */
 			sp2 = sp;
 			sp = VTAILQ_NEXT(sp, list);
 			VTAILQ_REMOVE(&vsc->segs, sp2, list);
-			vsc_expose(vsc, sp2, 1);
-			vsc_del_seg(vsc, vsm, &sp2);
-		}
-		if (sp == NULL) {
-			sp = vsc_add_seg(vsc, vsm, &ifantom);
-			if (sp != NULL) {
-				VTAILQ_INSERT_TAIL(&vsc->segs, sp, list);
-				vsc_expose(vsc, sp, 0);
-			}
-		} else {
-			vsc_expose(vsc, sp, 0);
-		}
-		if (sp != NULL) {
-			if (fiter != NULL && sp->head->ready < 2)
-				i = vsc_iter_seg(vsc, sp, fiter, priv);
-			sp = VTAILQ_NEXT(sp, list);
+			VTAILQ_INSERT_TAIL(&removed, sp2, list);
 		}
 
+		if (sp == NULL) {
+			/* New entries are always appended last in the VSM
+			 * list. Since we have iterated past all the
+			 * entries in our shadow list, the VSM entry is a
+			 * new entry we have not seen before. */
+			sp = vsc_new_seg(&ifantom, type);
+			AN(sp);
+			VTAILQ_INSERT_TAIL(&vsc->segs, sp, list);
+		}
+
+		assert(sp->type == type);
+		sp = VTAILQ_NEXT(sp, list);
+	}
+	while (sp != NULL) {
+		/* Clean up the tail end of the shadow list. */
+		CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
+		sp2 = sp;
+		sp = VTAILQ_NEXT(sp, list);
+
+		VTAILQ_REMOVE(&vsc->segs, sp2, list);
+		VTAILQ_INSERT_TAIL(&removed, sp2, list);
+	}
+
+	/* Clean up any removed segs */
+	while (!VTAILQ_EMPTY(&removed)) {
+		sp = VTAILQ_FIRST(&removed);
+		CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
+		VTAILQ_REMOVE(&removed, sp, list);
+
+		vsc_expose(vsc, sp, 1);
+		vsc_unmap_seg(vsc, vsm, sp);
+		vsc_del_seg(sp);
+	}
+
+	/* Iterate our shadow list, reporting on each pointer value */
+	VTAILQ_FOREACH(sp, &vsc->segs, list) {
+		CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
+
+		if (sp->type != VSC_SEG_COUNTERS)
+			continue;
+
+		/* Attempt to map the VSM. This is a noop if it was
+		 * already mapped. If we fail we skip this seg on this
+		 * call to VSC_Iter(), but will attempt again the next
+		 * time VSC_Iter() is called. */
+		if (vsc_map_seg(vsc, vsm, sp))
+			continue;
+
+		/* Expose the counters if necessary */
+		vsc_expose(vsc, sp, 0);
+
+		if (fiter != NULL && sp->head->ready == 1)
+			i = vsc_iter_seg(vsc, sp, fiter, priv);
 		if (i)
 			break;
 	}
-	while (sp != NULL) {
-		sp2 = sp;
-		sp = VTAILQ_NEXT(sp, list);
-		VTAILQ_REMOVE(&vsc->segs, sp2, list);
-		vsc_expose(vsc, sp2, 1);
-		vsc_del_seg(vsc, vsm, &sp2);
-	}
+
 	return (i);
 }
 
@@ -562,8 +693,8 @@ VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
 	VTAILQ_FOREACH_SAFE(sp, &vsc->segs, list, sp2) {
 		VTAILQ_REMOVE(&vsc->segs, sp, list);
 		vsc_expose(vsc, sp, 1);
-		vsc_del_seg(vsc, vsm, &sp);
+		vsc_unmap_seg(vsc, vsm, sp);
+		vsc_del_seg(sp);
 	}
 	FREE_OBJ(vsc);
 }
-
