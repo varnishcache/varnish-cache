@@ -116,6 +116,8 @@ vbp_delete(struct vbp_target *vt)
 {
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
+	assert(vt->heap_idx == VBH_NOIDX);
+
 #define DN(x)	/**/
 	VRT_BACKEND_PROBE_HANDLE();
 #undef DN
@@ -462,7 +464,6 @@ vbp_task(struct worker *wrk, void *priv)
 	Lck_Lock(&vbp_mtx);
 	if (vt->running < 0) {
 		assert(vt->state == vbp_state_deleted);
-		assert(vt->heap_idx == VBH_NOIDX);
 		vbp_delete(vt);
 	} else {
 		assert(vt->state == vbp_state_running);
@@ -752,10 +753,8 @@ VBP_Remove(struct backend *be)
 	} else
 		assert(vt->state == vbp_state_cold);
 	Lck_Unlock(&vbp_mtx);
-	if (vt != NULL) {
-		assert(vt->heap_idx == VBH_NOIDX);
+	if (vt != NULL)
 		vbp_delete(vt);
-	}
 }
 
 /*-------------------------------------------------------------------*/
