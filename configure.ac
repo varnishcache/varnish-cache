@@ -329,6 +329,8 @@ AC_SUBST(JEMALLOC_LDADD)
 
 AC_CHECK_FUNCS([setproctitle])
 
+AC_SEARCH_LIBS(backtrace, [execinfo], [AC_CHECK_HEADERS([[execinfo.h]])])
+
 # if the default libexecinfo on alpine causes issues, you can use libunwind
 AC_ARG_WITH([unwind],
             [AS_HELP_STRING([--with-unwind],
@@ -354,10 +356,10 @@ fi
 if test "$have_unwind" = yes; then
     AC_DEFINE([WITH_UNWIND], [1],
               [Define to 1 to use libunwind instead of libexecinfo])
-else
-    AC_SEARCH_LIBS(backtrace, [execinfo], [], [
-        AC_MSG_ERROR([Could not find backtrace() support])
-    ])
+elif test "$ac_cv_search_backtrace" = no; then
+	AC_MSG_ERROR([Could not find backtrace() support])
+elif test "$ac_cv_header_execinfo_h" = no; then
+	AC_MSG_ERROR([Could not find execinfo.h])
 fi
 
 AM_CONDITIONAL([WITH_UNWIND], [test "$have_unwind" = yes])
