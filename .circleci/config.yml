@@ -391,7 +391,7 @@ workflows:
           name: build_centos_stream
           prefix: quay.io/centos/
           dist: centos
-          release: stream
+          release: stream9
       - build:
           name: build_almalinux_8
           dist: almalinux
