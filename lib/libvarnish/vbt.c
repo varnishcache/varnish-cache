@@ -39,7 +39,9 @@
 #  include <libunwind.h>
 #endif
 
-#include <execinfo.h>
+#ifdef HAVE_EXECINFO_H
+#  include <execinfo.h>
+#endif
 
 #include "vdef.h"
 #include "vas.h"
@@ -91,7 +93,8 @@ vbt_unwind(struct vsb *vsb)
 }
 #endif
 
-#define BACKTRACE_LEVELS	20
+#ifdef HAVE_EXECINFO_H
+#  define BACKTRACE_LEVELS	20
 
 static void
 vbt_execinfo(struct vsb *vsb)
@@ -129,6 +132,7 @@ vbt_execinfo(struct vsb *vsb)
 		free(strings);
 	}
 }
+#endif
 
 void
 VBT_format(struct vsb *vsb)
@@ -137,7 +141,12 @@ VBT_format(struct vsb *vsb)
 #ifdef WITH_UNWIND
 	if (!vbt_unwind(vsb))
 		return;
+#  ifdef HAVE_EXECINFO_H
 	VSB_cat(vsb, "Falling back to execinfo backtrace\n");
+#  endif
 #endif
+
+#ifdef HAVE_EXECINFO_H
 	vbt_execinfo(vsb);
+#endif
 }
