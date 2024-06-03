@@ -208,24 +208,21 @@ vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs, unsigned vxid)
 	AN(vxp->t->dec);
 	ALLOC_OBJ(*prhs, VEX_RHS_MAGIC);
 	AN(*prhs);
+	endptr = NULL;
 	if (strchr(vxp->t->dec, '.')) {
 		(*prhs)->type = VEX_FLOAT;
-		(*prhs)->val_float = VNUM(vxp->t->dec);
-		if (isnan((*prhs)->val_float)) {
-			VSB_cat(vxp->sb, "Floating point parse error ");
-			vxp_ErrWhere(vxp, vxp->t, -1);
-			return;
-		}
+		(*prhs)->val_float = strtod(vxp->t->dec, &endptr);
 	} else {
 		(*prhs)->type = VEX_INT;
 		(*prhs)->val_int = strtoll(vxp->t->dec, &endptr, 0);
-		while (isspace(*endptr))
-			endptr++;
-		if (*endptr != '\0') {
-			VSB_cat(vxp->sb, "Integer parse error ");
-			vxp_ErrWhere(vxp, vxp->t, -1);
-			return;
-		}
+	}
+	while (isspace(*endptr))
+		endptr++;
+	if (*endptr != '\0') {
+		VSB_printf(vxp->sb, "%s parse error ",
+		    (*prhs)->type == VEX_FLOAT ? "Floating point" : "Integer");
+		vxp_ErrWhere(vxp, vxp->t, -1);
+		return;
 	}
 	if (vxid && (*prhs)->type != VEX_INT) {
 		VSB_printf(vxp->sb, "Expected integer got '%.*s' ",

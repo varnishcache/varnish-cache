@@ -1,11 +1,11 @@
-varnishtest "VSL query lenient int comparisons"
+varnishtest "VSL query lenient int #3463 and float precision comparisons #4088"
 
 varnish v1 -vcl {
 	import std;
 	backend be none;
 	sub vcl_recv {
 		if (req.http.skip != "log") {
-			std.log("float1: 123.456");
+			std.log("float1: 123.4567");
 			std.log("float2: 123.");
 			std.log("float3: .456");
 			std.log("float4: 123");
@@ -37,6 +37,12 @@ logexpect l5 -v v1 -q "VCL_Log:float5 != 42 or ReqHeader:skip eq log" {
 	fail clear
 } -start
 
+#4088
+logexpect l6 -v v1 -q "VCL_Log:float1 > 123.456" {
+	expect 0 1001 Begin rxreq
+} -start
+
+
 client c1 {
 	txreq
 	rxresp
@@ -50,3 +56,4 @@ logexpect l2 -wait
 logexpect l3 -wait
 logexpect l4 -wait
 logexpect l5 -wait
+logexpect l6 -wait

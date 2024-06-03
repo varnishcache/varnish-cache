@@ -122,8 +122,9 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	const struct vex_rhs *rhs;
 	long long lhs_int = 0;
 	double lhs_float = 0.;
-	const char *b, *e, *q;
+	const char *b, *e;
 	int i, dq;
+	char *q = NULL;
 
 	AN(vex);
 	AN(rec);
@@ -205,20 +206,24 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		if (*b == '\0')
 			/* Empty string doesn't match */
 			return (0);
+		errno = 0;
 		switch (rhs->type) {
 		case VEX_INT:
-			lhs_int = (long long)SF_Parse_Number(&b, 0, &q);
-			if (errno)
+			lhs_int = strtoll(b, &q, 0);
+			AN(q);
+			if (q != e && *q != '.')
 				return (0);
 			break;
 		case VEX_FLOAT:
-			lhs_float = SF_Parse_Decimal(&b, 0, &q);
-			if (errno)
+			lhs_float = strtod(b, &q);
+			if (q != e)
 				return (0);
 			break;
 		default:
 			WRONG("Wrong RHS type");
 		}
+		if (errno != 0)
+			return (0);
 		break;
 	default:
 		break;
