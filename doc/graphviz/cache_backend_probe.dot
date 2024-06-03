@@ -5,31 +5,33 @@ digraph cache_backend_probe {
 	scheduled
 	running
 	cold
-	deleted
+	cooling	# going cold while task runs
+	deleted # from cooling, removed while task runs
 	FREE
 
 	edge [fontname=Courier]
 
-	edge [label="vbp_task()"]
-	deleted -> FREE
+	# via vbp_task() or vbp_thread() scheduling error
+	edge [label="vbp_task_complete()"]
 	running -> scheduled
+	cooling -> cold
+	deleted -> FREE
 
 	edge [label="vbp_thread()"]
 	scheduled -> running
 
-	edge [label="vbp_thread() error"]
-	scheduled -> scheduled
-
-	edge [label="VBP_Control()"]
+	edge [label="VBP_Control(enable)"]
+	cooling -> running
 	cold -> scheduled
+
+	edge [label="VBP_Control(disable)"]
+	running -> cooling
 	scheduled -> cold
-	running -> cold
 
 	edge [label="VBP_Insert()"]
 	ALLOC -> cold
 
 	edge [label="VBP_Remove()"]
-	running -> deleted # should not happen. we should go through some cool first
-	scheduled -> FREE # This should not happen. VBP_Control should have set cold
+	cooling -> deleted
 	cold -> FREE
 }
