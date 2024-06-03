@@ -419,53 +419,53 @@ vsc_map_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
 	sp->body = (char*)sp->fantom->b + sp->head->body_offset;
 	sp->mapped = 1;
 
-	if (sp->type == VSC_SEG_COUNTERS) {
-		/* Find the corresponding DOCS seg. We are not able to
-		 * read and match on the doc_id until the DOCS section is
-		 * mapped. Iterate over all the DOCS sections, attempt to
-		 * map if needed, and then check the doc_id. */
-		VTAILQ_FOREACH(spd, &vsc->segs, list) {
-			CHECK_OBJ_NOTNULL(spd, VSC_SEG_MAGIC);
-			if (spd->type != VSC_SEG_DOCS)
-				continue;
-			if (!spd->mapped && vsc_map_seg(vsc, vsm, spd))
-				continue; /* Failed to map it */
-			AN(spd->mapped);
-			if (spd->head->doc_id == sp->head->doc_id)
-				break; /* We have a match */
-		}
-		if (spd == NULL) {
-			/* Could not find the right DOCS seg. Leave this
-			 * seg as unmapped. */
-			vsc_unmap_seg(vsc, vsm, sp);
-			return (-1);
-		}
-
-		/* Create the VSC points list */
-		vve = vjsn_child(spd->vj->value, "elements");
-		AN(vve);
-		sp->npoints = strtoul(vve->value, NULL, 0);
-		sp->points = calloc(sp->npoints, sizeof *sp->points);
-		AN(sp->points);
-		vsb = VSB_new_auto();
-		AN(vsb);
-		vve = vjsn_child(spd->vj->value, "elem");
-		AN(vve);
-		pp = sp->points;
-		VTAILQ_FOREACH(vv, &vve->children, list) {
-			vsc_fill_point(vsc, sp, vv, vsb, pp);
-			pp++;
-		}
-		VSB_destroy(&vsb);
-	} else if (sp->type == VSC_SEG_DOCS) {
+	if (sp->type == VSC_SEG_DOCS) {
 		/* Parse the DOCS json */
 		sp->vj = vjsn_parse(sp->body, &e);
 		XXXAZ(e);
 		AN(sp->vj);
-	} else {
-		WRONG("");
+		return (0);
 	}
 
+	assert(sp->type == VSC_SEG_COUNTERS);
+
+	/* Find the corresponding DOCS seg. We are not able to
+	 * read and match on the doc_id until the DOCS section is
+	 * mapped. Iterate over all the DOCS sections, attempt to
+	 * map if needed, and then check the doc_id. */
+	VTAILQ_FOREACH(spd, &vsc->segs, list) {
+		CHECK_OBJ_NOTNULL(spd, VSC_SEG_MAGIC);
+		if (spd->type != VSC_SEG_DOCS)
+			continue;
+		if (!spd->mapped && vsc_map_seg(vsc, vsm, spd))
+			continue; /* Failed to map it */
+		AN(spd->mapped);
+		if (spd->head->doc_id == sp->head->doc_id)
+			break; /* We have a match */
+	}
+	if (spd == NULL) {
+		/* Could not find the right DOCS seg. Leave this
+		 * seg as unmapped. */
+		vsc_unmap_seg(vsc, vsm, sp);
+		return (-1);
+	}
+
+	/* Create the VSC points list */
+	vve = vjsn_child(spd->vj->value, "elements");
+	AN(vve);
+	sp->npoints = strtoul(vve->value, NULL, 0);
+	sp->points = calloc(sp->npoints, sizeof *sp->points);
+	AN(sp->points);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	vve = vjsn_child(spd->vj->value, "elem");
+	AN(vve);
+	pp = sp->points;
+	VTAILQ_FOREACH(vv, &vve->children, list) {
+		vsc_fill_point(vsc, sp, vv, vsb, pp);
+		pp++;
+	}
+	VSB_destroy(&vsb);
 	return (0);
 }
 
