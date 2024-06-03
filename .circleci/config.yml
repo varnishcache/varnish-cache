@@ -173,7 +173,7 @@ jobs:
             esac
 
             case "<< parameters.platform >>" in
-                centos:stream)      REPO=quay.io/centos/ ;;
+                centos:stream9)     REPO=quay.io/centos/ ;;
                 *)                  REPO= ;;
             esac
 
@@ -238,13 +238,13 @@ jobs:
             centos|almalinux|fedora)
                 yum groupinstall -y "Development Tools"
                 case "<< parameters.dist >>:<< parameters.release >>" in
-                    almalinux:9)
+                    centos:stream9|almalinux:9)
                         dnf install -y "dnf-command(config-manager)"
                         yum config-manager --set-enabled crb
                         yum install -y diffutils
                         yum install -y epel-release
                         ;;
-                    centos:stream|almalinux:8)
+                    almalinux:8)
                         dnf install -y "dnf-command(config-manager)"
                         yum config-manager --set-enabled powertools
                         yum install -y diffutils
@@ -387,7 +387,7 @@ workflows:
           dist: centos
           release: "7"
       - build:
-          name: build_centos_stream
+          name: build_centos_stream_9
           prefix: quay.io/centos/
           dist: centos
           release: stream9
@@ -464,7 +464,7 @@ workflows:
                 - debian:bullseye
                 - debian:bookworm
                 - centos:7
-                - centos:stream
+                - centos:stream9
                 - almalinux:8
                 - almalinux:9
                 - fedora:latest
