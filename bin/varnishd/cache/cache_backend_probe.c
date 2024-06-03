@@ -56,6 +56,17 @@
 
 #include "VSC_vbe.h"
 
+struct vbp_state {
+	const char			*name;
+};
+
+#define VBP_STATE(n) const struct vbp_state vbp_state_ ## n [1] = {{ .name = #n }}
+VBP_STATE(scheduled);
+VBP_STATE(running);
+VBP_STATE(cold);
+VBP_STATE(deleted);
+#undef VBP_STATE
+
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4
 
@@ -83,6 +94,7 @@ struct vbp_target {
 	double				rate;
 
 	vtim_real			due;
+	const struct vbp_state		*state;
 	int				running;
 	int				heap_idx;
 	struct pool_task		task[1];
@@ -449,15 +461,18 @@ vbp_task(struct worker *wrk, void *priv)
 
 	Lck_Lock(&vbp_mtx);
 	if (vt->running < 0) {
+		assert(vt->state == vbp_state_deleted);
 		assert(vt->heap_idx == VBH_NOIDX);
 		vbp_delete(vt);
 	} else {
+		assert(vt->state == vbp_state_running);
 		vt->running = 0;
 		if (vt->heap_idx != VBH_NOIDX) {
 			vt->due = VTIM_real() + vt->interval;
 			VBH_delete(vbp_heap, vt->heap_idx);
 			vbp_heap_insert(vt);
 		}
+		vt->state = vbp_state_scheduled;
 	}
 	Lck_Unlock(&vbp_mtx);
 }
@@ -490,15 +505,22 @@ vbp_thread(struct worker *wrk, void *priv)
 			vt->due = now + vt->interval;
 			VBH_insert(vbp_heap, vt);
 			if (!vt->running) {
+				assert(vt->state == vbp_state_scheduled);
+				vt->state = vbp_state_running;
 				vt->running = 1;
 				vt->task->func = vbp_task;
 				vt->task->priv = vt;
 				Lck_Unlock(&vbp_mtx);
 				r = Pool_Task_Any(vt->task, TASK_QUEUE_REQ);
 				Lck_Lock(&vbp_mtx);
-				if (r)
+				if (r) {
 					vt->running = 0;
+					vt->state = vbp_state_scheduled;
+				}
 			}
+			else
+				assert(vt->state == vbp_state_running);
+
 		}
 	}
 	NEEDLESS(Lck_Unlock(&vbp_mtx));
@@ -658,12 +680,18 @@ VBP_Control(const struct backend *be, int enable)
 
 	Lck_Lock(&vbp_mtx);
 	if (enable) {
+		// XXX next two assertions are WRONG, see #4108 - WIP
+		assert(vt->state == vbp_state_cold);
 		assert(vt->heap_idx == VBH_NOIDX);
 		vt->due = VTIM_real();
 		vbp_heap_insert(vt);
+		vt->state = vbp_state_scheduled;
 	} else {
+		assert(vt->state == vbp_state_scheduled ||
+		    vt->state == vbp_state_running);
 		assert(vt->heap_idx != VBH_NOIDX);
 		VBH_delete(vbp_heap, vt->heap_idx);
+		vt->state = vbp_state_cold;
 	}
 	Lck_Unlock(&vbp_mtx);
 }
@@ -686,6 +714,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
 	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
 	XXXAN(vt);
 
+	vt->state = vbp_state_cold;
 	vt->conn_pool = tp;
 	VCP_AddRef(vt->conn_pool);
 	vt->backend = b;
@@ -711,13 +740,17 @@ VBP_Remove(struct backend *be)
 	be->probe = NULL;
 	vt->backend = NULL;
 	if (vt->running) {
+		assert(vt->state == vbp_state_running);
 		// task scheduled, it calls vbp_delete()
 		vt->running = -1;
 		vt = NULL;
+		vt->state = vbp_state_deleted;
 	} else if (vt->heap_idx != VBH_NOIDX) {
+		assert(vt->state == vbp_state_scheduled);
 		// task done, not yet rescheduled
 		VBH_delete(vbp_heap, vt->heap_idx);
-	}
+	} else
+		assert(vt->state == vbp_state_cold);
 	Lck_Unlock(&vbp_mtx);
 	if (vt != NULL) {
 		assert(vt->heap_idx == VBH_NOIDX);

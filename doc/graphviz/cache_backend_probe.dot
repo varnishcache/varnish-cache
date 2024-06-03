@@ -1,0 +1,35 @@
+# cache_backend_probe struct vbp_state
+
+digraph cache_backend_probe {
+	ALLOC
+	scheduled
+	running
+	cold
+	deleted
+	FREE
+
+	edge [fontname=Courier]
+
+	edge [label="vbp_task()"]
+	deleted -> FREE
+	running -> scheduled
+
+	edge [label="vbp_thread()"]
+	scheduled -> running
+
+	edge [label="vbp_thread() error"]
+	scheduled -> scheduled
+
+	edge [label="VBP_Control()"]
+	cold -> scheduled
+	scheduled -> cold
+	running -> cold
+
+	edge [label="VBP_Insert()"]
+	ALLOC -> cold
+
+	edge [label="VBP_Remove()"]
+	running -> deleted # should not happen. we should go through some cool first
+	scheduled -> FREE # This should not happen. VBP_Control should have set cold
+	cold -> FREE
+}
