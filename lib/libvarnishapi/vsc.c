@@ -89,6 +89,7 @@ struct vsc_seg {
 #define VSC_SEG_MAGIC		0x801177d4
 	enum vsc_seg_type	type;
 	VTAILQ_ENTRY(vsc_seg)	list;
+	VTAILQ_ENTRY(vsc_seg)	doc_list;
 	struct vsm_fantom	fantom[1];
 	const struct vsc_head	*head;
 	const char		*body;
@@ -110,6 +111,7 @@ struct vsc {
 	unsigned		raw;
 	struct vsc_sf_head	sf_list;
 	struct vsc_seg_head	segs;
+	struct vsc_seg_head	docs;
 
 	VSC_new_f		*fnew;
 	VSC_destroy_f		*fdestroy;
@@ -144,6 +146,7 @@ VSC_New(void)
 		return (vsc);
 	VTAILQ_INIT(&vsc->sf_list);
 	VTAILQ_INIT(&vsc->segs);
+	VTAILQ_INIT(&vsc->docs);
 	return (vsc);
 }
 
@@ -425,10 +428,9 @@ vsc_map_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
 	 * read and match on the doc_id until the DOCS section is
 	 * mapped. Iterate over all the DOCS sections, attempt to
 	 * map if needed, and then check the doc_id. */
-	VTAILQ_FOREACH(spd, &vsc->segs, list) {
+	VTAILQ_FOREACH(spd, &vsc->docs, doc_list) {
 		CHECK_OBJ_NOTNULL(spd, VSC_SEG_MAGIC);
-		if (spd->type != VSC_SEG_DOCS)
-			continue;
+		assert(spd->type == VSC_SEG_DOCS);
 		if (!spd->mapped && vsc_map_seg(vsc, vsm, spd))
 			continue; /* Failed to map it */
 		AN(spd->mapped);
@@ -508,6 +510,8 @@ vsc_del_segs(struct vsc *vsc, struct vsm *vsm, struct vsc_seg_head *head)
 	VTAILQ_FOREACH_SAFE(sp, head, list, sp2) {
 		CHECK_OBJ(sp, VSC_SEG_MAGIC);
 		VTAILQ_REMOVE(head, sp, list);
+		if (sp->type == VSC_SEG_DOCS)
+			VTAILQ_REMOVE(&vsc->docs, sp, doc_list);
 		vsc_expose(vsc, sp, 1);
 		vsc_unmap_seg(vsc, vsm, sp);
 		FREE_OBJ(sp);
@@ -589,6 +593,8 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 			sp = vsc_new_seg(&ifantom, type);
 			AN(sp);
 			VTAILQ_INSERT_TAIL(&vsc->segs, sp, list);
+			if (type == VSC_SEG_DOCS)
+				VTAILQ_INSERT_TAIL(&vsc->docs, sp, doc_list);
 		}
 
 		assert(sp->type == type);
@@ -693,5 +699,6 @@ VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
 	}
 
 	vsc_del_segs(vsc, vsm, &vsc->segs);
+	assert(VTAILQ_EMPTY(&vsc->docs));
 	FREE_OBJ(vsc);
 }
