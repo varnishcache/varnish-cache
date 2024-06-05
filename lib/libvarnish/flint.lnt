@@ -14,3 +14,6 @@
 
 --emacro((835),VBH_NOIDX)
 --emacro((835),O_CLOEXEC)
+
++libh(/usr/include/libunwind.h)
+-elib(849)
