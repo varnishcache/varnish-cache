@@ -41,7 +41,6 @@
 #include "miniobj.h"
 
 #include "vbm.h"
-#include "vnum.h"
 #include "vqueue.h"
 #include "vre.h"
 #include "vsb.h"
@@ -211,18 +210,19 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		case VEX_INT:
 			lhs_int = strtoll(b, &q, 0);
 			AN(q);
-			if (q != e && *q != '.')
-				return (0);
+			if (q != e && (*q == '.' || *q == 'e')) {
+				lhs_float = strtod(b, &q);
+				lhs_int = trunc(lhs_float);
+				lhs_float = 0.;
+			}
 			break;
 		case VEX_FLOAT:
 			lhs_float = strtod(b, &q);
-			if (q != e)
-				return (0);
 			break;
 		default:
 			WRONG("Wrong RHS type");
 		}
-		if (errno != 0)
+		if (q != e || errno != 0)
 			return (0);
 		break;
 	default:
