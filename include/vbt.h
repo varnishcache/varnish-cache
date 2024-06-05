@@ -31,3 +31,4 @@
 struct vsb;
 
 void VBT_format(struct vsb *);
+int VBT_dump(size_t len, char [len]);
