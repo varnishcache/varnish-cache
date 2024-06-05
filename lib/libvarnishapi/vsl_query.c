@@ -212,7 +212,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			AN(q);
 			if (q != e && (*q == '.' || *q == 'e')) {
 				lhs_float = strtod(b, &q);
-				lhs_int = trunc(lhs_float);
+				lhs_int = (long long)lhs_float;
 				lhs_float = 0.;
 			}
 			break;
