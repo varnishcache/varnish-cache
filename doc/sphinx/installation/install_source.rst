@@ -29,7 +29,7 @@ Build dependencies on FreeBSD
 To get the dependencies required to build varnish from source
 you can either::
 
-	pkg install automake pkgconf py36-sphinx py36-docutils pcre2 libtool
+	pkg install git automake pkgconf py39-sphinx py39-docutils pcre2 libtool
 
 .. XXX does cpio need to be installed on FreeBSD?
 
