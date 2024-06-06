@@ -126,7 +126,7 @@ jobs:
         description: the Linux distribution, with release, e.g. debian:buster, centos:7
         type: string
       rclass:
-        description: the resource class to use, usuall arm.medium or medium
+        description: the resource class to use, usually arm.medium or medium
         type: string
     machine:
       image: ubuntu-2004:202111-02
@@ -219,8 +219,13 @@ jobs:
         description: platform-specific configure arguments
         default: ""
         type: string
+      rclass:
+        description: job-specific resource class
+        default: medium
+        type: string
     docker:
       - image: centos:7
+    resource_class: << parameters.rclass >>
     working_directory: /workspace
     steps:
       - setup_remote_docker
@@ -432,8 +437,9 @@ workflows:
           name: build_ubuntu_noble
           dist: ubuntu
           release: noble
+          rclass: large
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
-          make_target: check -j2
+          make_target: check
       - build:
           name: build_alpine
           dist: alpine
