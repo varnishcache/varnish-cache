@@ -27,6 +27,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * We tend to print back-traces when there is a fatal error, so the VBT code
+ * should avoid assertions.
  */
 
 #include "config.h"
@@ -47,6 +50,8 @@
 #include "vas.h"
 #include "vbt.h"
 #include "vsb.h"
+
+#include "miniobj.h"
 
 #ifdef WITH_UNWIND
 static int
@@ -138,6 +143,8 @@ void
 VBT_format(struct vsb *vsb)
 {
 
+	if (!VALID_OBJ(vsb, VSB_MAGIC))
+		return;
 #ifdef WITH_UNWIND
 	if (!vbt_unwind(vsb))
 		return;
