@@ -732,7 +732,7 @@ VSM_Status(struct vsm *vd)
 	/* Open workdir */
 	if (vd->wdfd < 0) {
 		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
-		retval |= VSM_WRK_RESTARTED | VSM_MGT_CHANGED;
+		retval |= VSM_WRK_RESTARTED | VSM_WRK_CHANGED;
 		vd->wdfd = open(vd->wdname, O_RDONLY);
 		if (vd->wdfd < 0)
 			(void)vsm_diag(vd,
