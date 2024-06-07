@@ -106,18 +106,18 @@ VSM files.
 VSM and Containers
 ------------------
 
-The varnish way works great with single purpose containers. By sharing
-the varnish working directory read-only, vsm readers can be run in
-containers separate from those running varnishd instances on the same
-host.
+The Varnish Shared Memory model works well in single-purpose containers.
+By sharing the Varnish working directory read-only, VSM readers can run
+in individual containers separate from those running varnishd instances on
+the same host.
 
-When running varnishd and vsm readers in the same process namespace,
-pid information can be used by vsm readers to determine if varnishd
-processes are alive.
+On Linux, if varnishd and VSM readers run in the same process namespace, the
+VSM readers can rely on the PID advertised by varnishd to determine whether
+the manager and cache processes are alive.
 
-But, when running varnishd and vsm readers in different containers,
-the pid information has no relevance and may even be ambiguous across
-name spaces.
+However, if they live in different containers, exposing the Varnish working
+directory as a volume to containers running VSM readers, the PIDs exposed by
+varnishd are no longer relevant across namespaces.
 
-Thus, with such setups, the environment variable VSM_NOPID needs to be
-set for vsm readers to disable use of pid information.
+To disable liveness checks based on PIDs, the variable ``VSM_NOPID`` needs to
+be present in the environment of VSM readers.
