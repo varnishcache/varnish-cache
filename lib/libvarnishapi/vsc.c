@@ -405,7 +405,7 @@ vsc_map_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
 		usleep(10000);
 
 	if (head->ready == 0) {
-		VSM_Unmap(vsm, sp->fantom);
+		AZ(VSM_Unmap(vsm, sp->fantom));
 		return (-1);
 	}
 
