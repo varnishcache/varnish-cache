@@ -123,7 +123,7 @@ jobs:
   package:
     parameters:
       platform:
-        description: the Linux distribution, with release, e.g. debian:buster, centos:7
+        description: the Linux distribution, with release, e.g. debian:buster, fedora:latest
         type: string
       rclass:
         description: the resource class to use, usually arm.medium or medium
@@ -163,18 +163,12 @@ jobs:
           command: |
             mkdir -p packages
             case "<< parameters.platform >>" in
-                debian:*|ubuntu:*)  EXT=deb ;;
-                centos:*|fedora:*)  EXT=rpm ;;
-                almalinux:*)        EXT=rpm ;;
-                alpine:*)           EXT=apk ;;
+                debian:*|ubuntu:*)    EXT=deb ;;
+                almalinux:*|fedora:*) EXT=rpm ;;
+                alpine:*)             EXT=apk ;;
                 *)
                     echo "unrecognized platform: << parameters.platform >>"
                     exit 1
-            esac
-
-            case "<< parameters.platform >>" in
-                centos:stream9)     REPO=quay.io/centos/ ;;
-                *)                  REPO= ;;
             esac
 
             case "<< parameters.rclass >>" in
@@ -190,7 +184,7 @@ jobs:
               -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) \
               -v$(pwd):/varnish-cache \
               --platform linux/$ARCH \
-              ${REPO}<< parameters.platform >> \
+              << parameters.platform >> \
               /varnish-cache/.circleci/make-$EXT-packages.sh
       - run:
           name: List created packages
@@ -240,26 +234,23 @@ jobs:
             docker cp /workspace workspace:/
             docker run --volumes-from workspace -w /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> sh -c '
             case "<< parameters.dist >>" in
-            centos|almalinux|fedora)
-                yum groupinstall -y "Development Tools"
+            almalinux|fedora)
+                dnf -y groupinstall "Development Tools"
                 case "<< parameters.dist >>:<< parameters.release >>" in
-                    centos:stream9|almalinux:9)
-                        dnf install -y "dnf-command(config-manager)"
-                        yum config-manager --set-enabled crb
-                        yum install -y diffutils
-                        yum install -y epel-release
+                    almalinux:9)
+                        dnf -y install "dnf-command(config-manager)"
+                        dnf config-manager --set-enabled crb
+                        dnf -y install diffutils
+                        dnf -y install epel-release
                         ;;
                     almalinux:8)
-                        dnf install -y "dnf-command(config-manager)"
-                        yum config-manager --set-enabled powertools
-                        yum install -y diffutils
-                        yum install -y epel-release
-                        ;;
-                    centos:7)
-                        yum install -y epel-release
+                        dnf -y install "dnf-command(config-manager)"
+                        dnf config-manager --set-enabled powertools
+                        dnf -y install diffutils
+                        dnf -y install epel-release
                         ;;
                 esac
-                yum install -y \
+                dnf -y install \
                     cpio \
                     automake \
                     git \
@@ -335,7 +326,7 @@ jobs:
             archlinux)
                 useradd varnish
                 ;;
-            centos|almalinux|fedora)
+            almalinux|fedora)
                 adduser varnish
                 ;;
             *)
@@ -387,15 +378,6 @@ workflows:
         - << pipeline.parameters.build-pkgs >>
         - << pipeline.parameters.dist-url >>
     jobs:
-      - build:
-          name: build_centos_7
-          dist: centos
-          release: "7"
-      - build:
-          name: build_centos_stream_9
-          prefix: quay.io/centos/
-          dist: centos
-          release: stream9
       - build:
           name: build_almalinux_8
           dist: almalinux
@@ -469,8 +451,6 @@ workflows:
                 - debian:buster
                 - debian:bullseye
                 - debian:bookworm
-                - centos:7
-                - centos:stream9
                 - almalinux:8
                 - almalinux:9
                 - fedora:latest
