@@ -422,7 +422,7 @@ workflows:
       - build:
           name: build_alpine
           dist: alpine
-          release: "latest"
+          release: latest
           extra_conf: --without-contrib
           make_target: check
       - build:
@@ -450,7 +450,7 @@ workflows:
                 - almalinux:8
                 - almalinux:9
                 - fedora:latest
-                - alpine:3
+                - alpine:latest
               rclass:
                 - arm.medium
                 - medium
