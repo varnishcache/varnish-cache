@@ -123,7 +123,7 @@ jobs:
   package:
     parameters:
       platform:
-        description: the Linux distribution, with release, e.g. debian:buster, fedora:latest
+        description: the Linux distribution, with release, e.g. debian:bookworm, fedora:latest
         type: string
       rclass:
         description: the resource class to use, usually arm.medium or medium
@@ -203,7 +203,7 @@ jobs:
         description: the Linux distribution (debian|ubuntu)
         type: string
       release:
-        description: the release name (buster|bullseye|bookworm|focal|jammy|noble)
+        description: the release name (bullseye|bookworm|focal|jammy|noble)
         type: string
       make_target:
         description: the make target to execute during the build
@@ -394,14 +394,10 @@ workflows:
           make_target: witness.dot
       # oldest debian goes 32bit
       - build:
-          name: build_debian_buster
-          dist: debian
-          release: buster
-          prefix: i386/
-      - build:
           name: build_debian_bullseye
           dist: debian
           release: bullseye
+          prefix: i386/
       - build:
           name: build_debian_bookworm
           dist: debian
@@ -448,7 +444,6 @@ workflows:
                 - ubuntu:focal
                 - ubuntu:jammy
                 - ubuntu:noble
-                - debian:buster
                 - debian:bullseye
                 - debian:bookworm
                 - almalinux:8
