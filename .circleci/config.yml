@@ -29,13 +29,12 @@ jobs:
   dist:
     description: Build or download varnish-x.y.z.tar.gz that is used later for the packaging jobs
     docker:
-      - image: centos:7
+      - image: fedora:latest
     steps:
       - run:
           name: Install deps
           command: |
-            yum install -y epel-release
-            yum install -y \
+            dnf -y install \
                 automake \
                 jemalloc-devel \
                 git \
@@ -45,7 +44,7 @@ jobs:
                 make \
                 pcre-devel \
                 python3 \
-                python-sphinx
+                python3-sphinx
       - checkout
       - when:
           condition: << pipeline.parameters.dist-url >>
@@ -97,7 +96,7 @@ jobs:
   tar_pkg_tools:
     description: Builds archives with the packaging tools from https://github.com/varnishcache/pkg-varnish-cache
     docker:
-      - image: centos:7
+      - image: fedora:latest
     steps:
       - add_ssh_keys:
           fingerprints:
@@ -105,7 +104,7 @@ jobs:
       - run:
           name: Grab the pkg repo
           command: |
-            yum install -y git
+            dnf -y install git
             mkdir -p ~/.ssh
             ssh-keyscan -H github.com >> ~/.ssh/known_hosts
             echo ${CIRCLE_REPOSITORY_URL}
@@ -218,21 +217,14 @@ jobs:
         default: medium
         type: string
     docker:
-      - image: centos:7
+      - image: << parameters.prefix >><< parameters.dist >>:<< parameters.release >>
     resource_class: << parameters.rclass >>
     working_directory: /workspace
     steps:
-      - setup_remote_docker
-      - run:
-          name: Install docker
-          command: yum install -y docker
       - checkout
       - run:
           name: Extract and build
           command: |
-            docker create --name workspace -v /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> /bin/true
-            docker cp /workspace workspace:/
-            docker run --volumes-from workspace -w /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> sh -c '
             case "<< parameters.dist >>" in
             almalinux|fedora)
                 dnf -y groupinstall "Development Tools"
@@ -336,27 +328,23 @@ jobs:
 
             chown -R varnish:varnish .
 
-            export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
-            export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
-            export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
-            export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
-
-            sudo -u varnish \
+            sudo -u varnish sh -c '
+                export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
+                export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
+                export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
+                export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
                 autoreconf -i -v
-            sudo -u varnish \
                 ./configure \
-                << pipeline.parameters.configure_args >> \
-                << parameters.extra_conf >>
-            sudo -u varnish \
-                --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
+                    << pipeline.parameters.configure_args >> \
+                    << parameters.extra_conf >>
                 make -j 4 -k << parameters.make_target >> VERBOSE=1 \
-                DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
+                    DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
             '
 
   collect_packages:
     docker:
-      - image: centos:7
+      - image: fedora:latest
     steps:
       - attach_workspace:
           at: ~/project
