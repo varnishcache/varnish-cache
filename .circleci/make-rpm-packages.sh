@@ -6,30 +6,27 @@ echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
 
 if [ -z "$PARAM_RELEASE" ]; then
-    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=stream, for CentOS stream"
+    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=9, for almalinux"
     exit 1
 elif [ -z "$PARAM_DIST" ]; then
-    echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=centos"
+    echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=fedora"
     exit 1
 fi
 
 case "$PARAM_DIST:$PARAM_RELEASE" in
     almalinux:9)
-        dnf install -y 'dnf-command(config-manager)'
-        yum config-manager --set-enabled crb
-        yum install -y epel-release
+        dnf -y install 'dnf-command(config-manager)'
+        dnf config-manager --set-enabled crb
+        dnf -y install epel-release
         ;;
-    centos:stream|almalinux:8)
-        dnf install -y 'dnf-command(config-manager)'
-        yum config-manager --set-enabled powertools
-        yum install -y epel-release
-        ;;
-    centos:7)
-        yum install -y epel-release
+    almalinux:8)
+        dnf -y install 'dnf-command(config-manager)'
+        dnf config-manager --set-enabled powertools
+        dnf -y install epel-release
         ;;
 esac
 
-yum install -y rpm-build yum-utils
+dnf -y install rpm-build dnf-utils
 
 export DIST_DIR=build
 
@@ -73,7 +70,7 @@ rpmbuild() {
         "$@"
 }
 
-yum-builddep -y "$DIST_DIR"/redhat/varnish.spec
+dnf builddep -y "$DIST_DIR"/redhat/varnish.spec
 rpmbuild -bs "$DIST_DIR"/redhat/varnish.spec
 rpmbuild --rebuild "$RESULT_DIR"/varnish-*.src.rpm
 
