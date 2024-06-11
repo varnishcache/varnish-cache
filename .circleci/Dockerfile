@@ -1,8 +1,7 @@
-FROM centos:7
+FROM fedora-latest
 
-RUN set -e;\
-	yum install -y epel-release; \
-	yum install -y \
+RUN set -e; \
+	dnf -y install \
 	    automake \
 	    git \
 	    jemalloc-devel \
@@ -12,4 +11,4 @@ RUN set -e;\
 	    make \
 	    pcre2-devel \
 	    python3 \
-	    python-sphinx
+	    python3-sphinx
