@@ -308,24 +308,19 @@ AM_COND_IF([ENABLE_WORKSPACE_EMULATOR], [
               [Define to 1 if the workspace emulator is enabled])
 ])
 
-# Use jemalloc on Linux
-JEMALLOC_LDADD=
+# --with-jemalloc
 AC_ARG_WITH([jemalloc],
-            [AS_HELP_STRING([--with-jemalloc],
-              [use jemalloc memory allocator.  Default is yes on Linux,  no elsewhere])],
-            [],
-            [with_jemalloc=check])
+	[AS_HELP_STRING([--with-jemalloc],
+		[use jemalloc memory allocator. Default is no.])],
+		[PKG_CHECK_MODULES([JEMALLOC], [jemalloc],
+			[have_jemalloc=yes], [have_jemalloc=no])],
+	[with_jemalloc=no])
 
-case $target in
-    *-*-linux*)
-        if test "x$with_jemalloc" != xno; then
-            AC_CHECK_LIB([jemalloc], [malloc_conf],
-                  [JEMALLOC_LDADD="-ljemalloc"],
-                  [AC_MSG_WARN([No system jemalloc found, using system malloc])])
-	fi
-	;;
-esac
-AC_SUBST(JEMALLOC_LDADD)
+if test "$with_jemalloc" = yes && test "$have_jemalloc" != yes; then
+        AC_MSG_ERROR([Could not find jemalloc])
+fi
+
+AM_CONDITIONAL([WITH_JEMALLOC], [test "$have_jemalloc" = yes])
 
 AC_CHECK_FUNCS([setproctitle])
 
