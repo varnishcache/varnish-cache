@@ -378,9 +378,6 @@ BAN_Commit(struct ban_proto *bp)
 	if (b->flags & BANS_FLAG_REQ)
 		VSC_C_main->bans_req++;
 
-	if (bi != NULL)
-		ban_info_new(b->spec, ln);	/* Notify stevedores */
-
 	if (cache_param->ban_dups) {
 		/* Hunt down duplicates, and mark them as completed */
 		for (bi = VTAILQ_NEXT(b, list); bi != NULL;
@@ -392,8 +389,12 @@ BAN_Commit(struct ban_proto *bp)
 			}
 		}
 	}
+
 	if (!(b->flags & BANS_FLAG_REQ))
 		ban_kick_lurker();
+
+	if (bi != NULL)
+		ban_info_new(b->spec, ln);	/* Notify stevedores */
 	Lck_Unlock(&ban_mtx);
 
 	BAN_Abandon(bp);
