@@ -510,6 +510,20 @@ AC_CHECK_DECL([SO_ACCEPTFILTER],
         #include <sys/socket.h>
     ])
 
+AC_CHECK_DECL([SO_REUSEPORT],
+    AC_DEFINE(HAVE_REUSEPORT,1,[Define to 1 if you have reuseport]),
+    [], [
+        #include <sys/types.h>
+        #include <sys/socket.h>
+    ])
+
+AC_CHECK_DECL([SO_REUSEPORT_LB],
+    AC_DEFINE(HAVE_REUSEPORT_LB,1,[Define to 1 if you have reuseport lb]),
+    [], [
+        #include <sys/types.h>
+        #include <sys/socket.h>
+    ])
+
 AC_CHECK_DECL([SO_RCVTIMEO],
     [],
     AC_MSG_ERROR([SO_RCVTIMEO is needed to build Varnish.]), [

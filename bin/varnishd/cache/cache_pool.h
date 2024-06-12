@@ -64,5 +64,5 @@ struct pool {
 void *pool_herder(void*);
 task_func_t pool_stat_summ;
 extern struct lock			pool_mtx;
-void VCA_NewPool(struct pool *);
+void VCA_NewPool(struct pool *, unsigned);
 void VCA_DestroyPool(struct pool *);

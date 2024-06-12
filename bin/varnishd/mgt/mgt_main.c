@@ -784,9 +784,6 @@ main(int argc, char * const *argv)
 	/* Process delayed arguments */
 	VTAILQ_FOREACH(alp, &arglist, list) {
 		switch(alp->arg[0]) {
-		case 'a':
-			MAC_Arg(alp->val);
-			break;
 		case 'f':
 			if (*alp->val != '\0')
 				alp->priv = mgt_f_read(alp->val);
@@ -819,6 +816,19 @@ main(int argc, char * const *argv)
 			break;
 		case 's':
 			STV_Config(alp->val);
+			break;
+		default:
+			break;
+		}
+		cli_check(cli);
+	}
+
+	MCF_ParamProtect(cli, "reuseport");
+
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		switch(alp->arg[0]) {
+		case 'a':
+			MAC_Arg(alp->val);
 			break;
 		default:
 			break;

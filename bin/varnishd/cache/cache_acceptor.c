@@ -599,12 +599,18 @@ vca_accept_task(struct worker *wrk, void *arg)
  */
 
 void
-VCA_NewPool(struct pool *pp)
+VCA_NewPool(struct pool *pp, unsigned pool_no)
 {
 	struct listen_sock *ls;
 	struct poolsock *ps;
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+
+		if (cache_param->reuseport && !ls->uds &&
+		    ls->pool_no != pool_no)
+			continue;
+
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
 		AN(ps);
 		ps->lsock = ls;
