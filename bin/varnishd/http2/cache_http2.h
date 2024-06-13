@@ -128,7 +128,8 @@ struct h2_rxbuf {
 	uint64_t			tail;
 	uint64_t			head;
 	struct stv_buffer		*stvbuf;
-	uint8_t				data[];
+	uint8_t				data[]
+	    v_counted_by_(size - PRNDUP(sizeof(struct stv_buffer)));
 };
 
 struct h2_req {
