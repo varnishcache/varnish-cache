@@ -234,8 +234,8 @@ struct h2h_decode {
 	unsigned			has_scheme:1;
 	h2_error			error;
 	enum vhd_ret_e			vhd_ret;
+	struct ws			*ws;
 	char				*out;
-	char				*reset;
 	int64_t				limit;
 	size_t				out_l;
 	size_t				out_u;
@@ -243,8 +243,8 @@ struct h2h_decode {
 	struct vhd_decode		vhd[1];
 };
 
-void h2h_decode_init(const struct h2_sess *h2);
-h2_error h2h_decode_fini(const struct h2_sess *h2);
+void h2h_decode_hdr_init(const struct h2_sess *h2);
+h2_error h2h_decode_hdr_fini(const struct h2_sess *h2);
 h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
     size_t len);
 
