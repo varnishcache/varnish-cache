@@ -290,6 +290,16 @@ h2h_decode_init(const struct h2_sess *h2, struct ws *ws)
 }
 
 void
+h2h_decode_trl_init(const struct h2_sess *h2)
+{
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(h2->srq, REQ_MAGIC);
+	AZ(h2->new_req);
+	h2h_decode_init(h2, h2->srq->ws);
+}
+
+void
 h2h_decode_hdr_init(const struct h2_sess *h2)
 {
 
@@ -333,6 +343,42 @@ h2h_decode_hdr_fini(const struct h2_sess *h2)
 	if (ret == H2SE_REQ_SIZE) {
 		VSLb(h2->new_req->http->vsl, SLT_LostHeader,
 		    "Header list too large");
+	}
+	return (ret);
+}
+
+h2_error
+h2h_decode_trl_fini(const struct h2_sess *h2, struct h2_req *r2)
+{
+	h2_error ret;
+	struct h2h_decode *d;
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(h2->srq, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
+	AZ(h2->new_req);
+	d = h2->decode;
+	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
+	WS_ReleaseP(d->ws, d->out);
+	if (d->vhd_ret != VHD_OK) {
+		/* HPACK header block didn't finish at an instruction
+		   boundary */
+		Lck_Lock(&h2->sess->mtx);
+		VSLb(h2->vsl, SLT_BogoHeader,
+		    "HPACK compression error/fini (%s)", VHD_Error(d->vhd_ret));
+		Lck_Unlock(&h2->sess->mtx);
+		ret = H2CE_COMPRESSION_ERROR;
+	} else if (d->error == NULL && d->has_pseudo) {
+		VSLb(h2->vsl, SLT_Debug, "pseudo-header found in trailers");
+		ret = H2SE_PSEUDO_TRAILER;
+	} else
+		ret = d->error;
+	FINI_OBJ(d);
+	if (ret == H2SE_REQ_SIZE) {
+		VSLb(r2->req->vsl, SLT_LostHeader,
+		    "Trailer list too large");
+		ret = NULL;
 	}
 	return (ret);
 }
@@ -419,7 +465,9 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l,
 			}
 			if (*d->out == ':')
 				d->has_pseudo = 1;
-			d->error = h2h_addhdr(hp, d);
+			/* Skip trailers for now. */
+			if (req->req_body_status != BS_TRAILERS)
+				d->error = h2h_addhdr(hp, d);
 			if (d->error)
 				break;
 			d->out[d->out_u++] = '\0'; /* Zero guard */

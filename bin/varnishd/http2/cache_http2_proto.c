@@ -629,21 +629,31 @@ static h2_error
 h2_end_headers(struct worker *wrk, struct h2_sess *h2,
     struct req *req, struct h2_req *r2)
 {
-	h2_error h2e;
+	h2_error h2e = NULL;
 	ssize_t cl;
 
 	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
-	h2e = h2h_decode_hdr_fini(h2);
-	h2->new_req = NULL;
-	if (h2e != NULL) {
+	if (r2->req->req_body_status == BS_TRAILERS) {
+		r2->state = H2_S_CLOS_REM;
 		Lck_Lock(&h2->sess->mtx);
-		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
+		if (r2->cond != NULL)
+			PTOK(pthread_cond_signal(r2->cond));
 		Lck_Unlock(&h2->sess->mtx);
-		assert(!WS_IsReserved(r2->req->ws));
-		h2_del_req(wrk, r2);
-		return (h2e);
+		return (NULL);
+	} else {
+		h2e = h2h_decode_hdr_fini(h2);
+		h2->new_req = NULL;
+		if (h2e != NULL) {
+			Lck_Lock(&h2->sess->mtx);
+			VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
+			Lck_Unlock(&h2->sess->mtx);
+			assert(!WS_IsReserved(r2->req->ws));
+			h2_del_req(wrk, r2);
+			return (h2e);
+		}
 	}
+	AZ(h2->new_req);
 	VSLb_ts_req(req, "Req", req->t_req);
 
 	// XXX: Smarter to do this already at HPACK time into tail end of
@@ -743,7 +753,23 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	}
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
-	if (r2->state != H2_S_IDLE)
+	if (r2->state == H2_S_OPEN) {
+		AN(r2->req->req_body_status);
+		assert(r2->req->req_body_status != BS_TRAILERS);
+		if (!(h2->rxf_flags & H2FF_HEADERS_END_STREAM)) { // rfc9113,l,2416,2419
+			Lck_Lock(&h2->sess->mtx);
+			VSLb(h2->vsl, SLT_Debug,
+			    "H2: Received trailers without END_STREAM"
+			    " flag on stream %u", h2->rxf_stream);
+			if (r2->cond != NULL)
+				PTOK(pthread_cond_signal(r2->cond));
+			Lck_Unlock(&h2->sess->mtx);
+			return (H2SE_PROTOCOL_ERROR);
+		}
+
+		r2->req->req_body_status = BS_TRAILERS;
+		h2h_decode_trl_init(h2);
+	} else if (r2->state != H2_S_IDLE)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 
 	req = r2->req;
@@ -797,10 +823,32 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK(hdr) %s", h2e->name);
 		Lck_Unlock(&h2->sess->mtx);
-		(void)h2h_decode_hdr_fini(h2);
-		assert(!WS_IsReserved(r2->req->ws));
-		h2_del_req(wrk, r2);
+		if (r2->req->req_body_status == BS_TRAILERS) {
+			(void)h2h_decode_trl_fini(h2, r2);
+			assert(!WS_IsReserved(h2->srq->ws));
+			r2->error = h2e;
+			if (r2->cond != NULL)
+				PTOK(pthread_cond_signal(r2->cond));
+		} else {
+			(void)h2h_decode_hdr_fini(h2);
+			assert(!WS_IsReserved(r2->req->ws));
+			h2_del_req(wrk, r2);
+		}
 		return (h2e);
+	}
+
+	if (r2->req->req_body_status == BS_TRAILERS) {
+		h2e = h2h_decode_trl_fini(h2, r2);
+		if (h2e != NULL) {
+			Lck_Lock(&h2->sess->mtx);
+			VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
+			Lck_Unlock(&h2->sess->mtx);
+			assert(!WS_IsReserved(h2->srq->ws));
+			r2->error = h2e;
+			if (r2->cond != NULL)
+				PTOK(pthread_cond_signal(r2->cond));
+			return (h2e);
+		}
 	}
 
 	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
@@ -820,7 +868,10 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
-	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req)
+	if (r2 != NULL && r2->state == H2_S_OPEN &&
+	    r2->req->req_body_status == BS_TRAILERS)
+		h2h_decode_trl_init(h2);
+	else if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, h2->rxf_data, h2->rxf_len, req);
@@ -829,11 +880,34 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK(cont) %s", h2e->name);
 		Lck_Unlock(&h2->sess->mtx);
-		(void)h2h_decode_hdr_fini(h2);
-		assert(!WS_IsReserved(r2->req->ws));
-		h2_del_req(wrk, r2);
+		if (r2->req->req_body_status == BS_TRAILERS) {
+			(void)h2h_decode_trl_fini(h2, r2);
+			assert(!WS_IsReserved(h2->srq->ws));
+			r2->error = h2e;
+			if (r2->cond != NULL)
+				PTOK(pthread_cond_signal(r2->cond));
+		} else {
+			(void)h2h_decode_hdr_fini(h2);
+			assert(!WS_IsReserved(r2->req->ws));
+			h2_del_req(wrk, r2);
+		}
 		return (h2e);
 	}
+
+	if (r2->req->req_body_status == BS_TRAILERS) {
+		h2e = h2h_decode_trl_fini(h2, r2);
+		if (h2e != NULL) {
+			Lck_Lock(&h2->sess->mtx);
+			VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
+			Lck_Unlock(&h2->sess->mtx);
+			assert(!WS_IsReserved(h2->srq->ws));
+			r2->error = h2e;
+			if (r2->cond != NULL)
+				PTOK(pthread_cond_signal(r2->cond));
+			return (h2e);
+		}
+	}
+
 	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
 		return (h2_end_headers(wrk, h2, req, r2));
 	return (0);
@@ -864,6 +938,13 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2->state >= H2_S_CLOS_REM) {
 		r2->error = H2SE_STREAM_CLOSED;
 		return (H2SE_STREAM_CLOSED); // rfc7540,l,1766,1769
+	}
+
+	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
+
+	if (r2->req->req_body_status == BS_TRAILERS) {
+		r2->error = H2SE_PROTOCOL_ERROR;
+		return (H2SE_PROTOCOL_ERROR);
 	}
 
 	Lck_Lock(&h2->sess->mtx);
@@ -1300,6 +1381,10 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 	VTAILQ_FOREACH(r2, &h2->streams, list)
 		if (r2->stream == h2->rxf_stream)
 			break;
+
+	if (r2 != NULL && r2->req->req_body_status == BS_TRAILERS &&
+	    h2f != H2_F_CONTINUATION)
+		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
 
 	if (h2->new_req != NULL && h2f != H2_F_CONTINUATION)
 		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
