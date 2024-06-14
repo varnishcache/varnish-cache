@@ -257,27 +257,25 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 	return (0);
 }
 
-void
-h2h_decode_init(const struct h2_sess *h2)
+static void
+h2h_decode_init(const struct h2_sess *h2, struct ws *ws)
 {
 	struct h2h_decode *d;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->new_req->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+
 	AN(h2->decode);
 	d = h2->decode;
 	INIT_OBJ(d, H2H_DECODE_MAGIC);
 	VHD_Init(d->vhd);
-	d->out_l = WS_ReserveSize(h2->new_req->http->ws,
-	    cache_param->http_req_size);
+	d->out_l = WS_ReserveSize(ws, cache_param->http_req_size);
 	/*
 	 * Can't do any work without any buffer
 	 * space. Require non-zero size.
 	 */
 	XXXAN(d->out_l);
-	d->out = WS_Reservation(h2->new_req->http->ws);
-	d->reset = d->out;
+	d->out = WS_Reservation(ws);
 
 	if (cache_param->h2_max_header_list_size == 0)
 		d->limit =
@@ -287,6 +285,18 @@ h2h_decode_init(const struct h2_sess *h2)
 
 	if (d->limit < h2->local_settings.max_header_list_size)
 		d->limit = INT64_MAX;
+
+	d->ws = ws;
+}
+
+void
+h2h_decode_hdr_init(const struct h2_sess *h2)
+{
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(h2->new_req->http, HTTP_MAGIC);
+	h2h_decode_init(h2, h2->new_req->ws);
 }
 
 /* Possible error returns:
@@ -298,7 +308,7 @@ h2h_decode_init(const struct h2_sess *h2)
  * is a stream level error.
  */
 h2_error
-h2h_decode_fini(const struct h2_sess *h2)
+h2h_decode_hdr_fini(const struct h2_sess *h2)
 {
 	h2_error ret;
 	struct h2h_decode *d;
@@ -307,7 +317,7 @@ h2h_decode_fini(const struct h2_sess *h2)
 	d = h2->decode;
 	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
-	WS_ReleaseP(h2->new_req->http->ws, d->out);
+	WS_ReleaseP(d->ws, d->out);
 	if (d->vhd_ret != VHD_OK) {
 		/* HPACK header block didn't finish at an instruction
 		   boundary */
@@ -347,12 +357,12 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
 	hp = h2->new_req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(hp->ws, WS_MAGIC);
-	r = WS_Reservation(hp->ws);
-	AN(r);
-	e = r + WS_ReservationSize(hp->ws);
 	d = h2->decode;
 	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
+	CHECK_OBJ_NOTNULL(d->ws, WS_MAGIC);
+	r = WS_Reservation(d->ws);
+	AN(r);
+	e = r + WS_ReservationSize(d->ws);
 
 	/* Only H2E_ENHANCE_YOUR_CALM indicates that we should continue
 	   processing. Other errors should have been returned and handled
@@ -427,7 +437,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		}
 
 		if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
-			d->out = d->reset;
+			d->out = WS_Reservation(d->ws);
 			d->out_l = e - d->out;
 			d->limit -= d->out_u;
 			d->out_u = 0;
@@ -444,7 +454,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	}
 
 	if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
-		/* Stream error, delay reporting until h2h_decode_fini so
+		/* Stream error, delay reporting until h2h_decode_hdr_fini so
 		 * that we can process the complete header block. */
 		return (NULL);
 	}
