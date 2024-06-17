@@ -512,6 +512,62 @@ HTTP1_DissectTrailers(struct http_conn *htc, struct http *hp, unsigned maxlen)
 
 /*--------------------------------------------------------------------*/
 
+enum htc_status_e
+HTTP1_RxFields(struct http_conn *htc, struct http *hp, struct ws *ws,
+    htc_complete_f *func, vtim_dur ti, vtim_dur td, size_t maxlen,
+    const char *remote)
+{
+	enum htc_status_e hs;
+	const char *name, *desc;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	assert(*htc->rfd > 0);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	assert(func == HTTP1_Headers || func == HTTP1_Trailers);
+	assert(maxlen > 0);
+	AN(remote);
+
+	if (HTC_RxInit(htc, ws))
+		hs = HTC_S_OVERFLOW;
+	else
+		hs = HTC_RxStuff(htc, func, NULL, NULL, ti, NAN, td, maxlen);
+
+	switch (hs) {
+	case HTC_S_COMPLETE:
+		break;
+	case HTC_S_JUNK:
+		VSLb(hp->vsl, SLT_FetchError, "Received junk");
+		htc->doclose = SC_RX_JUNK;
+		break;
+	case HTC_S_CLOSE:
+		VSLb(hp->vsl, SLT_FetchError, "%s closed", remote);
+		htc->doclose = SC_RESP_CLOSE;
+		break;
+	case HTC_S_TIMEOUT:
+		VSLb(hp->vsl, SLT_FetchError, "timeout");
+		htc->doclose = SC_RX_TIMEOUT;
+		break;
+	case HTC_S_OVERFLOW:
+		VSLb(hp->vsl, SLT_FetchError, "overflow");
+		htc->doclose = SC_RX_OVERFLOW;
+		break;
+	case HTC_S_IDLE:
+		VSLb(hp->vsl, SLT_FetchError, "first byte timeout");
+		htc->doclose = SC_RX_TIMEOUT;
+		break;
+	default:
+		HTC_Status(hs, &name, &desc);
+		VSLb(hp->vsl, SLT_FetchError, "HTC %s (%s)",
+		     name, desc);
+		htc->doclose = SC_RX_BAD;
+		break;
+	}
+	return (hs);
+}
+
+/*--------------------------------------------------------------------*/
+
 static unsigned
 http1_WrTxt(const struct worker *wrk, const txt *hh, const char *suf)
 {
