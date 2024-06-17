@@ -221,8 +221,8 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 	WS_Assert(ws);
 }
 
-unsigned
-WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
+int
+WS_Pipeline(struct ws *ws, const void *b, const void *e, unsigned rollback)
 {
 	struct ws_emu *we;
 	struct ws_alloc *wa;
@@ -232,15 +232,12 @@ WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
 	AZ(ws->f);
 	AZ(ws->r);
 
-	if (strcasecmp(ws->id, "req"))
-		AZ(b);
-
 	/* Nothing to pipeline, this can be implemented as a simple
 	 * reservation.
 	 */
 	if (b == NULL) {
 		AZ(e);
-		if (!strcasecmp(ws->id, "req"))
+		if (rollback)
 			WS_Rollback(ws, 0);
 		(void)WS_ReserveAll(ws);
 		return (0);
@@ -261,15 +258,17 @@ WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
 
 	AN(e);
 	l = pdiff(b, e);
-	assert(l <= wa->len);
-	memcpy(wa->ptr, b, l);
+	if (l <= wa->len)
+		memcpy(wa->ptr, b, l);
 
-	if (!strcasecmp(ws->id, "req"))
+	if (rollback)
 		WS_Rollback(ws, 0);
 	ws->f = wa->ptr;
 	ws->r = ws->f + wa->len;
 	VTAILQ_INSERT_TAIL(&we->head, wa, list);
 	WS_Assert(ws);
+	if (l > wa->len)
+		return (-1);
 	return (l);
 }
 

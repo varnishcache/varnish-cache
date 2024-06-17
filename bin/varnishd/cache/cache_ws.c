@@ -135,17 +135,15 @@ WS_Reset(struct ws *ws, uintptr_t pp)
  * may not originate from the same workspace.
  */
 
-unsigned
-WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
+int
+WS_Pipeline(struct ws *ws, const void *b, const void *e, unsigned rollback)
 {
 	unsigned r, l;
 
 	WS_Assert(ws);
 
-	if (!strcasecmp(ws->id, "req"))
+	if (rollback)
 		WS_Rollback(ws, 0);
-	else
-		AZ(b);
 
 	r = WS_ReserveAll(ws);
 
@@ -156,7 +154,8 @@ WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
 
 	AN(e);
 	l = pdiff(b, e);
-	assert(l <= r);
+	if (l > r)
+		return (-1);
 	memmove(ws->f, b, l);
 	return (l);
 }
