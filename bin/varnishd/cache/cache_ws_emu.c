@@ -235,6 +235,9 @@ WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
 	if (strcasecmp(ws->id, "req"))
 		AZ(b);
 
+	/* Nothing to pipeline, this can be implemented as a simple
+	 * reservation.
+	 */
 	if (b == NULL) {
 		AZ(e);
 		if (!strcasecmp(ws->id, "req"))
@@ -243,6 +246,12 @@ WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
 		return (0);
 	}
 
+	/* In order to emulate a memmove() from the same workspace without
+	 * triggering a use-after-free the sequence of events must start with
+	 * a detached allocation into which the pipeline is copied.
+	 * The allocation is then manually turned into a reservation after
+	 * potentially unwinding (freeing) past allocations.
+	 */
 	we = ws_emu(ws);
 	ALLOC_OBJ(wa, WS_ALLOC_MAGIC);
 	AN(wa);
@@ -255,7 +264,8 @@ WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
 	assert(l <= wa->len);
 	memcpy(wa->ptr, b, l);
 
-	WS_Rollback(ws, 0);
+	if (!strcasecmp(ws->id, "req"))
+		WS_Rollback(ws, 0);
 	ws->f = wa->ptr;
 	ws->r = ws->f + wa->len;
 	VTAILQ_INSERT_TAIL(&we->head, wa, list);
