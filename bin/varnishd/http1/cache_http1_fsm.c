@@ -319,7 +319,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			AZ(req->esi_level);
 			AN(WS_Reservation(req->htc->ws));
 
-			hs = HTC_RxStuff(req->htc, HTTP1_Complete,
+			hs = HTC_RxStuff(req->htc, HTTP1_Headers,
 			    &req->t_first, &req->t_req,
 			    sp->t_idle + SESS_TMO(sp, timeout_linger),
 			    sp->t_idle + SESS_TMO(sp, timeout_idle),
