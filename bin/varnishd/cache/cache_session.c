@@ -258,12 +258,20 @@ HTC_Status(enum htc_status_e e, const char **name, const char **desc)
 void
 HTC_RxInit(struct http_conn *htc, struct ws *ws)
 {
-	unsigned l;
+	unsigned rollback;
+	int l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	htc->ws = ws;
 
-	l = WS_ReqPipeline(htc->ws, htc->pipeline_b, htc->pipeline_e);
+	/* NB: HTTP/1 keep-alive triggers a rollback, so does the first
+	 * request of a session or an h2 request where the rollback is a
+	 * no-op in terms of workspace usage.
+	 */
+	rollback = !strcasecmp(ws->id, "req") && htc->body_status == NULL;
+	l = WS_Pipeline(htc->ws, htc->pipeline_b, htc->pipeline_e, rollback);
+	xxxassert(l >= 0);
+
 	htc->rxbuf_b = WS_Reservation(ws);
 	htc->rxbuf_e = htc->rxbuf_b + l;
 	htc->pipeline_b = NULL;
