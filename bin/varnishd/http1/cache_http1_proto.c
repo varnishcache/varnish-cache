@@ -64,7 +64,7 @@ const int HTTP1_Resp[3] = {
  */
 
 enum htc_status_e v_matchproto_(htc_complete_f)
-HTTP1_Complete(struct http_conn *htc)
+HTTP1_Headers(struct http_conn *htc)
 {
 	char *p;
 	enum htc_status_e retval;
@@ -206,7 +206,7 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 		}
 	}
 	i = vct_iscrlf(p, htc->rxbuf_e);
-	assert(i > 0);		/* HTTP1_Complete guarantees this */
+	assert(i > 0);		/* HTTP1_Headers guarantees this */
 	p += i;
 	HTC_RxPipeline(htc, p);
 	htc->rxbuf_e = p;

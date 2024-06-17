@@ -296,7 +296,7 @@ void HTTP_Init(void);
 
 /* cache_http1_proto.c */
 
-htc_complete_f HTTP1_Complete;
+htc_complete_f HTTP1_Headers;
 uint16_t HTTP1_DissectRequest(struct http_conn *, struct http *);
 uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
     const struct http *req);
