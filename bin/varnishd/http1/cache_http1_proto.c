@@ -135,9 +135,8 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 	char *q, *r, *s;
 	int i;
 
-	assert(p > htc->rxbuf_b);
+	assert(p >= htc->rxbuf_b);
 	assert(p <= htc->rxbuf_e);
-	hp->nhd = HTTP_HDR_FIRST;
 	r = NULL;		/* For FlexeLint */
 	for (; p < htc->rxbuf_e; p = r) {
 
@@ -215,6 +214,9 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 			return (400);
 		}
 
+		if (htc->body_status == BS_TRAILERS)
+			continue;
+
 		if (hp->nhd < hp->shd) {
 			hp->hdf[hp->nhd] = 0;
 			hp->hd[hp->nhd].b = p;
@@ -245,11 +247,16 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 	char *p, *q;
 	int i;
 
-	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	assert(htc->rxbuf_e >= htc->rxbuf_b);
 
+	if (htc->body_status == BS_TRAILERS) {
+		AZ(hf); /* No start-line, go straight to header lines. */
+		return (http1_dissect_hdrs(hp, htc->rxbuf_b, htc, maxhdr));
+	}
+
+	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	AZ(hp->hd[hf[0]].b);
 	AZ(hp->hd[hf[1]].b);
 	AZ(hp->hd[hf[2]].b);
@@ -316,6 +323,7 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 
 	http_Proto(hp);
 
+	hp->nhd = HTTP_HDR_FIRST;
 	return (http1_dissect_hdrs(hp, p, htc, maxhdr));
 }
 
@@ -481,6 +489,25 @@ HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
 	htc->body_status = http1_body_status(hp, htc, 0);
 
 	return (retval);
+}
+
+/*--------------------------------------------------------------------*/
+
+uint16_t
+HTTP1_DissectTrailers(struct http_conn *htc, struct http *hp, unsigned maxlen)
+{
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (http1_splitline(hp, htc, NULL, maxlen)) {
+		VSLb(hp->vsl, SLT_HttpGarbage, "%.*s",
+		    (int)(htc->rxbuf_e - htc->rxbuf_b), htc->rxbuf_b);
+		http_SetStatus(hp, 503, NULL);
+		return (503);
+	}
+
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
