@@ -342,6 +342,16 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 	return (-1);
 }
 
+static int v_matchproto_(vdi_gettrls_f)
+vbe_dir_gettrls(VRT_CTX, VCL_BACKEND d)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (HTTP1_RxTrailers(NULL, ctx->bo));
+}
+
 static VCL_IP v_matchproto_(vdi_getip_f)
 vbe_dir_getip(VRT_CTX, VCL_BACKEND d)
 {
@@ -536,6 +546,7 @@ static const struct vdi_methods vbe_methods[1] = {{
 	.type =			"backend",
 	.http1pipe =		vbe_dir_http1pipe,
 	.gethdrs =		vbe_dir_gethdrs,
+	.gettrls =		vbe_dir_gettrls,
 	.getip =		vbe_dir_getip,
 	.finish =		vbe_dir_finish,
 	.event =		vbe_dir_event,
@@ -550,6 +561,7 @@ static const struct vdi_methods vbe_methods_noprobe[1] = {{
 	.type =			"backend",
 	.http1pipe =		vbe_dir_http1pipe,
 	.gethdrs =		vbe_dir_gethdrs,
+	.gettrls =		vbe_dir_gettrls,
 	.getip =		vbe_dir_getip,
 	.finish =		vbe_dir_finish,
 	.event =		vbe_dir_event,
