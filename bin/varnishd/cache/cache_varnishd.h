@@ -555,7 +555,7 @@ WS_IsReserved(const struct ws *ws)
 
 void *WS_AtOffset(const struct ws *ws, unsigned off, unsigned len);
 unsigned WS_ReservationOffset(const struct ws *ws);
-unsigned WS_ReqPipeline(struct ws *, const void *b, const void *e);
+int WS_Pipeline(struct ws *, const void *b, const void *e, unsigned rollback);
 
 /* cache_ws_common.c */
 void WS_Id(const struct ws *ws, char *id);
