@@ -416,6 +416,8 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 				d->error = H2SE_REQ_SIZE;
 				break;
 			}
+			if (*d->out == ':')
+				d->has_pseudo = 1;
 			d->error = h2h_addhdr(hp, d);
 			if (d->error)
 				break;
