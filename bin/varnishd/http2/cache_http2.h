@@ -247,7 +247,7 @@ struct h2h_decode {
 void h2h_decode_hdr_init(const struct h2_sess *h2);
 h2_error h2h_decode_hdr_fini(const struct h2_sess *h2);
 h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
-    size_t len);
+    size_t len, struct req *req);
 
 /* cache_http2_send.c */
 void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);

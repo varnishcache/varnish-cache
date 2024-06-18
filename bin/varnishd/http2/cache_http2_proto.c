@@ -792,7 +792,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		l -= 5;
 		p += 5;
 	}
-	h2e = h2h_decode_bytes(h2, p, l);
+	h2e = h2h_decode_bytes(h2, p, l, req);
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK(hdr) %s", h2e->name);
@@ -823,7 +823,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	req = r2->req;
-	h2e = h2h_decode_bytes(h2, h2->rxf_data, h2->rxf_len);
+	h2e = h2h_decode_bytes(h2, h2->rxf_data, h2->rxf_len, req);
 	r2->req->acct.req_hdrbytes += h2->rxf_len;
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);

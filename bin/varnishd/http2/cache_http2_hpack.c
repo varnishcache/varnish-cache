@@ -346,7 +346,8 @@ h2h_decode_hdr_fini(const struct h2_sess *h2)
  *		       Violation of field name/value charsets
  */
 h2_error
-h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
+h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l,
+    struct req *req)
 {
 	struct http *hp;
 	struct h2h_decode *d;
@@ -354,8 +355,8 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	const char *r, *e;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
-	hp = h2->new_req->http;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	hp = req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	d = h2->decode;
 	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
