@@ -327,17 +327,23 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	assert(bo->director_state == DIR_S_NULL);
 
 	/* reset other bo attributes - See VBO_GetBusyObj */
-	bo->storage = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 	bo->was_304 = 0;
 	bo->err_code = 0;
 	bo->err_reason = NULL;
+	if (bo->htc != NULL)
+		bo->htc->doclose = SC_NULL;
+
+	if (bo->retry_fetch) {
+		bo->retry_fetch = 0;
+		return (F_STP_STARTFETCH);
+	}
+
+	bo->storage = NULL;
 	bo->connect_timeout = NAN;
 	bo->first_byte_timeout = NAN;
 	bo->between_bytes_timeout = NAN;
-	if (bo->htc != NULL)
-		bo->htc->doclose = SC_NULL;
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
