@@ -232,6 +232,7 @@ struct h2h_decode {
 
 	unsigned			has_authority:1;
 	unsigned			has_scheme:1;
+	unsigned			has_pseudo:1;
 	h2_error			error;
 	enum vhd_ret_e			vhd_ret;
 	struct ws			*ws;
