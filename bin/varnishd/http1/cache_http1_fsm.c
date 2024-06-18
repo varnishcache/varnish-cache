@@ -344,6 +344,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				WRONG("htc_status (nonbad)");
 
 			if (H2_prism_complete(req->htc) == HTC_S_COMPLETE) {
+				// XXX: req_hdrbytes += sizeof H2_prism?
 				if (!FEATURE(FEATURE_HTTP2)) {
 					SES_Close(req->sp, SC_REQ_HTTP20);
 					assert(!WS_IsReserved(req->ws));
