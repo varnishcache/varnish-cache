@@ -42,6 +42,7 @@
 #define FETCH_STEPS \
 	FETCH_STEP(mkbereq,           MKBEREQ) \
 	FETCH_STEP(retry,             RETRY) \
+	FETCH_STEP(prepfetch,         PREPFETCH) \
 	FETCH_STEP(startfetch,        STARTFETCH) \
 	FETCH_STEP(condfetch,         CONDFETCH) \
 	FETCH_STEP(fetch,             FETCH) \
@@ -298,7 +299,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 		bo->req = NULL;
 		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
 	}
-	return (F_STP_STARTFETCH);
+	return (F_STP_PREPFETCH);
 }
 
 /*--------------------------------------------------------------------
@@ -343,7 +344,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Start", bo->t_prev);
 	http_VSL_log(bo->bereq);
 
-	return (F_STP_STARTFETCH);
+	return (F_STP_PREPFETCH);
 }
 
 /*--------------------------------------------------------------------
@@ -388,17 +389,11 @@ vbf_304_logic(struct busyobj *bo)
  */
 
 static const struct fetch_step * v_matchproto_(vbf_state_f)
-vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
+vbf_stp_prepfetch(struct worker *wrk, struct busyobj *bo)
 {
-	int i;
-	vtim_real now;
-	unsigned handling;
-	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	oc = bo->fetch_objcore;
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AZ(bo->storage);
 	bo->storage = bo->uncacheable ? stv_transient : STV_next();
@@ -416,6 +411,25 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	assert (wrk->vpi->handling == VCL_RET_FETCH ||
 	    wrk->vpi->handling == VCL_RET_ERROR);
+	return (F_STP_STARTFETCH);
+}
+
+/*--------------------------------------------------------------------
+ * Send bereq, fetch beresp, run vcl_backend_response
+ */
+
+static const struct fetch_step * v_matchproto_(vbf_state_f)
+vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
+{
+	struct objcore *oc;
+	unsigned handling;
+	vtim_real now;
+	int i;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
