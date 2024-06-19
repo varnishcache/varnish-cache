@@ -95,7 +95,10 @@
  *         Use caseless regex
  *
  * \-i <taglist>
- *         Include tags
+ *         Include tags.
+ *
+ *         By default Witness records are excluded, the Witness tag can be
+ *         included explicitly with "-i Witness" when a logexpect is created.
  *
  * \-I <[taglist:]regex>
  *         Include by regex
@@ -297,6 +300,10 @@ logexp_new(const char *name, const char *varg)
 		vtc_fatal(le->vl, "-v argument error: %s",
 		    VSM_Error(le->vsm));
 	VSB_destroy(&n_arg);
+	if (VSL_Arg(le->vsl, 'x', "Witness") <= 0) {
+		vtc_fatal(le->vl, "could not ignore Witness records: %s",
+		    VSL_Error(le->vsl));
+	}
 	if (VSM_Attach(le->vsm, -1))
 		vtc_fatal(le->vl, "VSM_Attach: %s", VSM_Error(le->vsm));
 	return (le);
