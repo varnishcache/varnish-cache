@@ -1,5 +1,7 @@
 varnishtest	"trivial run of varnishadm in pass mode"
 
+feature cmd "! grep -q ID=alpine /etc/os-release"
+
 server s1 {
 	rxreq
 	txresp
