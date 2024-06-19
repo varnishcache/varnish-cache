@@ -3,7 +3,7 @@ varnishtest "Test Basic persistence"
 feature persistent_storage
 
 process p1 -dump {
-	varnishd -spersistent -b localhost -n ${tmpdir} -a :0 -d 2>&1
+	varnishd -spersistent -b ${localhost} -n ${tmpdir} -a :0 -d 2>&1
 } -start -expect-exit 1
 
 process p1 -expect-text 0 0 {to launch}
