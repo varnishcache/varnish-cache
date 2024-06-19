@@ -1,0 +1,20 @@
+FROM alpine
+
+RUN set -e; \
+	apk update; \
+	apk add -q \
+	    autoconf \
+	    automake \
+	    build-base \
+	    ca-certificates \
+	    cpio \
+	    git \
+	    gzip \
+	    libedit-dev \
+	    libtool \
+	    libunwind-dev \
+	    linux-headers \
+	    pcre-dev \
+	    py-docutils \
+	    py3-sphinx \
+	    tar
