@@ -125,8 +125,9 @@ vcl.h: \
 	    $(top_srcdir) $(top_builddir)
 
 GEN_H = \
-	tbl/vrt_stv_var.h \
+	tbl/vcl_context.h \
 	tbl/vcl_returns.h \
+	tbl/vrt_stv_var.h \
 	vrt_obj.h
 
 $(GEN_H): vcl.h
@@ -157,7 +158,7 @@ BUILT_SOURCES = \
 	vmod_abi.h \
 	vrt_test.c
 
-MAINTAINERCLEANFILES = $(GENERATED_H)
+DISTCLEANFILES = $(GENERATED_H)
 
 CLEANFILES = vrt_test.c
 
