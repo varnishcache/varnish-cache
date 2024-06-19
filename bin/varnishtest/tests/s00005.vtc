@@ -8,9 +8,9 @@ server s1 {
 varnish v1 -vcl+backend {}
 
 # VCL name must be C-names
-varnish v1 -clierr 106 {vcl.inline 0000 "vcl 4.0; backend b { .host = \"localhost\";} "}
-varnish v1 -clierr 106 {vcl.inline a00/ "vcl 4.0; backend b { .host = \"localhost\";} "}
-varnish v1 -clierr 106 {vcl.inline a00å "vcl 4.0; backend b { .host = \"localhost\";} "}
+varnish v1 -clierr 106 {vcl.inline 0000 "vcl 4.0; backend b { .host = \"${localhost}\";} "}
+varnish v1 -clierr 106 {vcl.inline a00/ "vcl 4.0; backend b { .host = \"${localhost}\";} "}
+varnish v1 -clierr 106 {vcl.inline a00å "vcl 4.0; backend b { .host = \"${localhost}\";} "}
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
