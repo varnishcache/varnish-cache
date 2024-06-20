@@ -384,3 +384,11 @@ vmod_timed_call(VRT_CTX, VCL_SUB sub)
 	VRT_call(ctx, sub);
 	return (VTIM_mono() - b);
 }
+
+VCL_REAL v_matchproto_(td_std_pow)
+vmod_pow(VRT_CTX, VCL_REAL base, VCL_REAL power)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (pow(base, power));
+}
