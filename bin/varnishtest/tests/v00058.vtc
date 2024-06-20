@@ -139,7 +139,7 @@ varnish v1 -vcl+backend {
 		set req.http.Baz = "baz";
 		set req.http.Quux = "quux";
 
-		vtc.workspace_alloc(client, -12);
+		vtc.workspace_alloc(client, -11);
 
 		if (req.url == "/1") {
 			# VRT_StrandsWS() marks the WS as overflowed,
