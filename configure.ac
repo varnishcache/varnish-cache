@@ -708,6 +708,10 @@ if test $? -ne 0 ; then
   AC_MSG_ERROR([wflags.py failure])
 fi
 
+# Do not allow Variable Length Arrays (VLA) by default
+AX_CHECK_COMPILE_FLAG([-Wvla], [DEVELOPER_CFLAGS="$DEVELOPER_CFLAGS -Wvla"
+      AC_DEFINE([HAVE_WVLA], [1], [Define to 1 if we have -Wvla])], [], [])
+
 # zlib-specific flags
 AC_SUBST(VGZ_CFLAGS)
 

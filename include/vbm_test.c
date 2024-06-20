@@ -30,9 +30,12 @@
  * Test Self-sizeing bitmap operations static initialization with dynamic growth
  */
 
+#include "config.h"
+
 #include <assert.h>
 #include <stdio.h>
 
+#include "vdef.h"
 #include "vbm.h"
 
 int
@@ -40,7 +43,7 @@ main(void)
 {
 
 	const unsigned sz = VBITMAP_SZ(1);
-	char spc[sz];
+	v_vla_(char, spc, sz);
 	struct vbitmap *vb = vbit_init(spc, sz);
 
 	VBITMAP_TYPE	*obits;

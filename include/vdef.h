@@ -247,6 +247,19 @@ int __llvm_gcov_flush(void);
 #  define v_cold_
 #endif
 
+/*
+ *  Define Variable Length Arrays (vla)
+ */
+#ifdef HAVE_WVLA
+#  define v_vla_(type, name, count)			\
+	_Pragma("GCC diagnostic push")			\
+	_Pragma("GCC diagnostic ignored \"-Wvla\"")	\
+	type name[count];				\
+	_Pragma("GCC diagnostic pop")
+#else
+#  define v_vla_(type, name, count)	type name[count]
+#endif
+
 /* VTIM API overhaul WIP */
 typedef double vtim_mono;
 typedef double vtim_real;

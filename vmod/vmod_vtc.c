@@ -249,7 +249,7 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 {
 	struct ws *ws;
 	VCL_BYTES l, maxlen = 1024;
-	unsigned char buf[maxlen];
+	v_vla_(unsigned char, buf, maxlen);
 	const char *p, *err;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
