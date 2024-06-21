@@ -998,6 +998,12 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				    4, &CTX.frag[F_O],
 				    0, NULL);
 				break;
+			case SLT_ConnectAcct:
+				frag_fields(0, b, e,
+				    2, &CTX.frag[F_I],
+				    3, &CTX.frag[F_O],
+				    0, NULL);
+				break;
 			case SLT_BackendOpen:
 				frag_fields(1, b, e,
 				    3, &CTX.frag[F_h],
@@ -1044,12 +1050,14 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 				} else if (ISPREFIX("Resp:", b, e, &p) ||
 				    ISPREFIX("PipeSess:", b, e, &p) ||
+				    ISPREFIX("ConnectSess:", b, e, &p) ||
 				    ISPREFIX("BerespBody:", b, e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
 				} else if (ISPREFIX("Process:", b, e, &p) ||
 				    ISPREFIX("Pipe:", b, e, &p) ||
+				    ISPREFIX("Connect:", b, e, &p) ||
 				    ISPREFIX("Beresp:", b, e, &p)) {
 					frag_fields(0, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
