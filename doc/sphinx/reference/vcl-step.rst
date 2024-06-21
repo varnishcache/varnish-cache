@@ -100,6 +100,14 @@ Common actions for the client side
     Switch to pipe mode. Control will eventually pass to
     :ref:`vcl_pipe`.
 
+.. _connect:
+
+``connect``
+~~~~~~~~~~~
+
+   Switch to connect mode. Control will eventually pass to
+   :ref:`vcl_connect`
+
 .. _restart:
 
 ``restart``

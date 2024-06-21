@@ -845,6 +845,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 static enum req_fsm_nxt
 cnt_connect(struct worker *wrk, struct req *req)
 {
+	struct busyobj *bo;
+	enum req_fsm_nxt nxt;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -856,9 +858,33 @@ cnt_connect(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
-	wrk->stats->s_connect++;
+	bo = VBO_GetBusyObj(wrk, req);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	INCOMPL();
+	VCL_connect_method(req->vcl, wrk, req, NULL, NULL);
+
+	switch (wrk->vpi->handling) {
+	case VCL_RET_FAIL:
+		req->res_mode = 0;
+		req->req_step = R_STP_VCLFAIL;
+		nxt = REQ_FSM_MORE;
+		break;
+	case VCL_RET_SYNTH:
+		req->res_mode = 0;
+		req->req_step = R_STP_SYNTH;
+		nxt = REQ_FSM_MORE;
+		break;
+	case VCL_RET_CONNECT:
+		bo->wrk = req->wrk;
+		wrk->stats->s_connect++;
+		SES_Close(req->sp, VDI_Http1Pipe(req, bo));
+		nxt = REQ_FSM_DONE;
+		break;
+	default:
+		WRONG("Illegal return from vcl_connect{}");
+	}
+	VBO_ReleaseBusyObj(wrk, &bo);
+	return (nxt);
 }
 
 /*--------------------------------------------------------------------
