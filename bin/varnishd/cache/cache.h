@@ -473,6 +473,7 @@ struct req {
 	unsigned		res_mode;
 #define RES_ESI			(1<<4)
 #define RES_PIPE		(1<<7)
+#define RES_CONNECT		(1<<9)
 
 	const struct req_step	*req_step;
 	struct reqtop		*top;	/* esi_level == 0 request */
@@ -802,6 +803,11 @@ static inline void
 VSLb_ts_busyobj(struct busyobj *bo, const char *event, vtim_real now)
 {
 
+	/* NB: if the busyobj was not created to carry its own task
+	 * it should not log a timestamp for a task.
+	 */
+	if (bo->vsl->wid.vxid == 0)
+		return;
 	if (isnan(bo->t_first) || bo->t_first == 0.)
 		bo->t_first = bo->t_prev = now;
 	VSLb_ts(bo->vsl, event, bo->t_first, &bo->t_prev, now);
