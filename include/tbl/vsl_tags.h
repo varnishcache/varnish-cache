@@ -703,6 +703,17 @@ SLTM(VdpAcct, 0, "Deliver filter accounting",
 )
 
 
+SLTM(ConnectAcct, 0, "CONNECT byte counts",
+	"Contains byte counters for CONNECT tunnels.\n\n"
+	"The format is::\n\n"
+	"\t%d %d %d\n"
+	"\t|  |  |\n"
+	"\t|  |  +------- Tunnelled bytes to client\n"
+	"\t|  +---------- Tunnelled bytes from client\n"
+	"\t+------------- Client request headers\n"
+	"\n"
+)
+
 #undef NOSUP_NOTICE
 #undef NODEF_NOTICE
 #undef SLTM

@@ -97,12 +97,22 @@ void
 V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 {
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(a);
 	AN(b);
-	VSLb(req->vsl, SLT_PipeAcct, "%ju %ju %ju %ju",
-	    (uintmax_t)a->req,
-	    (uintmax_t)a->bereq,
-	    (uintmax_t)a->in,
-	    (uintmax_t)a->out);
+	if (req->res_mode & RES_CONNECT) {
+		AZ(a->bereq);
+		VSLb(req->vsl, SLT_ConnectAcct, "%ju %ju %ju",
+		    (uintmax_t)a->req,
+		    (uintmax_t)a->in,
+		    (uintmax_t)a->out);
+	} else {
+		VSLb(req->vsl, SLT_PipeAcct, "%ju %ju %ju %ju",
+		    (uintmax_t)a->req,
+		    (uintmax_t)a->bereq,
+		    (uintmax_t)a->in,
+		    (uintmax_t)a->out);
+	}
 
 	Lck_Lock(&pipestat_mtx);
 	VSC_C_main->s_pipe_hdrbytes += a->req;
