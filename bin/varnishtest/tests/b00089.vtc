@@ -1,0 +1,63 @@
+varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Error and synth from vcl_connect"
+
+# Error in connect
+
+server s1 {} -start
+
+varnish v1 -vcl+backend {
+	#import debug;
+	import std;
+
+	sub vcl_recv {
+		if (req.method == "CONNECT") {
+			return (connect);
+		}
+	}
+
+	sub vcl_connect {
+		set req.http.not = "Should not happen";
+		return (fail);
+	}
+} -start
+
+client c1 {
+	txreq -req CONNECT -url "somehost:22"
+	rxresp -no_obj
+	expect resp.status == 503
+} -run
+
+varnish v1 -expect MAIN.backend_conn == 0
+varnish v1 -expect MAIN.s_connect == 0
+varnish v1 -expect MAIN.s_connect_hdrbytes == 0
+varnish v1 -expect MAIN.s_connect_in == 0
+varnish v1 -expect MAIN.s_connect_out == 0
+varnish v1 -expect VBE.vcl1.s1.connect_in == 0
+varnish v1 -expect VBE.vcl1.s1.connect_out == 0
+varnish v1 -expect MAIN.s_pipe == 0
+
+# Synth from connect
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (connect);
+	}
+
+	sub vcl_connect {
+		return (synth(204));
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 204
+} -run
+
+varnish v1 -expect MAIN.backend_conn == 0
+varnish v1 -expect MAIN.s_connect == 0
+varnish v1 -expect MAIN.s_connect_hdrbytes == 0
+varnish v1 -expect MAIN.s_connect_in == 0
+varnish v1 -expect MAIN.s_connect_out == 0
+varnish v1 -expect VBE.vcl2.s1.connect_in == 0
+varnish v1 -expect VBE.vcl2.s1.connect_out == 0
+varnish v1 -expect MAIN.s_pipe == 0

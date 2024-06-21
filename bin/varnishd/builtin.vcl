@@ -108,6 +108,10 @@ sub vcl_pipe {
 sub vcl_builtin_pipe {
 }
 
+sub vcl_connect {
+    return (connect);
+}
+
 sub vcl_pass {
 	call vcl_builtin_pass;
 	return (fetch);

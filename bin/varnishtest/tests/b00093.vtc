@@ -1,0 +1,60 @@
+varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Chained varnish with proxy auth"
+
+server s1 {
+	recv 5
+	send "bye"
+	expect_close
+} -start
+
+varnish v1 -proto PROXY -vcl {
+
+	backend b1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = b1;
+		if (req.method == "CONNECT") {
+			return (connect);
+		}
+	}
+} -start
+
+varnish v2 -proto PROXY -vcl {
+
+	backend bv1 {
+		.host = "${v1_addr}";
+		.port = "${v1_port}";
+		.proxy_header = 1;
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = bv1;
+		if (req.method == "CONNECT") {
+			if (req.http.proxy-authorization == "basic aGVsbG86d29ybGQ=") {
+				unset req.http.proxy-authorization;
+			} else {
+				return (synth(403));
+			}
+		}
+	}
+} -start
+
+client c1 -proxy1 "1.2.3.4:1234 ${v2_addr}:${v2_port}" -connect ${v2_sock} {
+	txreq -req CONNECT -url "${v2_addr}:${v2_port}"
+	rxresp -no_obj
+	expect resp.status == 403
+	send "hello"
+	recv 3
+} -run
+
+client c1 -proxy1 "1.2.3.4:1234 ${v2_addr}:${v2_port}" -connect ${v2_sock} {
+	txreq -req CONNECT -url "${v2_addr}:${v2_port}" -hdr "Proxy-Authorization: basic aGVsbG86d29ybGQ="
+	rxresp -no_obj
+	expect resp.status == 200
+	send "hello"
+	recv 3
+} -run
+
+server s1 -wait

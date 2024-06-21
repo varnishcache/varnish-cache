@@ -1,0 +1,51 @@
+varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Happy path"
+
+# https://varnish.zendesk.com/agent/tickets/20033
+
+server s1 {
+	recv 5
+	send "bye"
+	expect_close
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	# NB: this adds coverage for backend resolution.
+	sub vcl_init {
+		new dir = directors.round_robin();
+		dir.add_backend(s1);
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = dir.backend();
+		if (req.method == "CONNECT") {
+			return (connect);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1001 ConnectAcct "65 5 3"
+} -start
+
+client c1 {
+	txreq -req CONNECT -url "somehost:22"
+	rxresp -no_obj
+	expect resp.status == 200
+	send "hello"
+	recv 3
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect MAIN.backend_conn == 1
+varnish v1 -expect MAIN.s_connect == 1
+varnish v1 -expect MAIN.s_connect_hdrbytes == 65
+varnish v1 -expect MAIN.s_connect_in == 5
+varnish v1 -expect MAIN.s_connect_out == 3
+varnish v1 -expect VBE.vcl1.s1.connect_in == 3
+varnish v1 -expect VBE.vcl1.s1.connect_out == 5
+varnish v1 -expect MAIN.s_pipe == 0
+
+shell -expect "in=5 out=3" {varnishncsa -n "${v1_name}" -d -F "in=%I out=%O"}

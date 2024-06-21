@@ -1,0 +1,74 @@
+varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Check data flushing on tunnel closing by either end"
+
+server s1 {
+	recv 5
+	send "bye"
+	send "byebyebye"
+} -start
+
+varnish v1 -cliok "param.set vcc_feature +allow_connect" -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		set req.backend_hint = s1;
+		if (req.method == "CONNECT") {
+			return (connect);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1001 ConnectAcct "65 5 12"
+} -start
+
+client c1 {
+	txreq -req CONNECT -url "somehost:22"
+	rxresp -no_obj
+	expect resp.status == 200
+	send "hello"
+	recv 3
+	delay 2
+	recv 9
+} -run
+
+varnish v1 -expect MAIN.s_connect == 1
+varnish v1 -expect MAIN.s_connect_hdrbytes == 65
+varnish v1 -expect MAIN.s_connect_in == 5
+varnish v1 -expect MAIN.s_connect_out == 12
+varnish v1 -expect VBE.vcl1.s1.connect_in == 12
+varnish v1 -expect VBE.vcl1.s1.connect_out == 5
+varnish v1 -expect MAIN.s_pipe == 0
+
+server s1 -wait
+logexpect l1 -wait
+
+server s1 {
+	recv 5
+	send "bye"
+	delay 2
+	recv 10
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1003 ConnectAcct "65 15 3"
+} -start
+
+client c1 {
+	txreq -req CONNECT -url "somehost:22"
+	rxresp -no_obj
+	expect resp.status == 200
+	send "hello"
+	recv 3
+	send "hellohello"
+} -run
+
+varnish v1 -expect MAIN.s_connect == 2
+varnish v1 -expect MAIN.s_connect_hdrbytes == 130
+varnish v1 -expect MAIN.s_connect_in == 20
+varnish v1 -expect MAIN.s_connect_out == 15
+varnish v1 -expect VBE.vcl1.s1.connect_in == 15
+varnish v1 -expect VBE.vcl1.s1.connect_out == 20
+varnish v1 -expect MAIN.s_pipe == 0
+
+server s1 -wait
+logexpect l1 -wait

@@ -66,7 +66,8 @@
   REQ_STEP(deliver,             DELIVER,	static) \
   REQ_STEP(vclfail,             VCLFAIL,	static) \
   REQ_STEP(synth,               SYNTH,		static) \
-  REQ_STEP(transmit,            TRANSMIT,	static)
+  REQ_STEP(transmit,            TRANSMIT,	static) \
+  REQ_STEP(connect,             CONNECT,	static)
 
 #define REQ_STEP(l, U, priv) \
     static req_state_f cnt_##l; \
@@ -1072,6 +1073,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	case VCL_RET_HASH:
 		req->req_step = R_STP_LOOKUP;
 		break;
+	case VCL_RET_CONNECT:
 	case VCL_RET_PIPE:
 		if (!IS_TOPREQ(req)) {
 			VSLb(req->vsl, SLT_VCL_Error,
@@ -1083,9 +1085,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 			    "vcl_recv{} returns pipe for HTTP/2 request."
 			    "  Doing pass.");
 			req->req_step = R_STP_PASS;
-		} else {
+		} else if (recv_handling == VCL_RET_CONNECT)
+			req->req_step = R_STP_CONNECT;
+		else
 			req->req_step = R_STP_PIPE;
-		}
 		break;
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;

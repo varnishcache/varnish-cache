@@ -275,7 +275,8 @@ It must only appear after a ``$Method`` or ``$Function`` and has the following s
 
 Possible scope values are:
 ``backend, client, housekeeping, vcl_recv, vcl_pipe, vcl_pass, vcl_hash, vcl_purge, vcl_miss, vcl_hit,
-vcl_deliver, vcl_synth, vcl_backend_fetch, vcl_backend_response, vcl_backend_error, vcl_init, vcl_fini``
+vcl_deliver, vcl_synth, vcl_backend_fetch, vcl_backend_response, vcl_backend_error, vcl_init, vcl_fini,
+vcl_connect``
 
 Deprecated Aliases
 ------------------

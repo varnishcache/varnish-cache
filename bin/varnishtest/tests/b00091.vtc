@@ -1,0 +1,38 @@
+varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Bad backend"
+
+varnish v1 -vcl {
+
+	backend bad { .host = "${bad_backend}"; }
+
+	sub vcl_recv {
+		set req.backend_hint = bad;
+		if (req.method == "CONNECT") {
+			return (connect);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1001 FetchError "CONNECT failed, returning 503"
+	expect * = ConnectAcct "65 0 0"
+} -start
+
+client c1 {
+	txreq -req CONNECT -url "somehost:22"
+	rxresp -no_obj
+	expect resp.status == 503
+	expect_close
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect MAIN.backend_conn == 0
+varnish v1 -expect MAIN.s_connect == 1
+varnish v1 -expect MAIN.s_connect_hdrbytes == 65
+varnish v1 -expect MAIN.s_connect_in == 0
+varnish v1 -expect MAIN.s_connect_out == 0
+varnish v1 -expect VBE.vcl1.bad.connect_in == 0
+varnish v1 -expect VBE.vcl1.bad.connect_out == 0
+varnish v1 -expect MAIN.s_pipe == 0
+
+shell -expect "in=0 out=0" {varnishncsa -n "${v1_name}" -d -F "in=%I out=%O"}
