@@ -115,12 +115,20 @@ V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 	}
 
 	Lck_Lock(&pipestat_mtx);
-	VSC_C_main->s_pipe_hdrbytes += a->req;
-	VSC_C_main->s_pipe_in += a->in;
-	VSC_C_main->s_pipe_out += a->out;
-	b->pipe_hdrbytes += a->bereq;
-	b->pipe_out += a->in;
-	b->pipe_in += a->out;
+	if (req->res_mode & RES_CONNECT) {
+		VSC_C_main->s_connect_hdrbytes += a->req;
+		VSC_C_main->s_connect_in += a->in;
+		VSC_C_main->s_connect_out += a->out;
+		b->connect_out += a->in;
+		b->connect_in += a->out;
+	} else {
+		VSC_C_main->s_pipe_hdrbytes += a->req;
+		VSC_C_main->s_pipe_in += a->in;
+		VSC_C_main->s_pipe_out += a->out;
+		b->pipe_hdrbytes += a->bereq;
+		b->pipe_out += a->in;
+		b->pipe_in += a->out;
+	}
 	Lck_Unlock(&pipestat_mtx);
 }
 

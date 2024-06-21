@@ -77,6 +77,22 @@
 
 	Total number of bytes forwarded from backend in pipe sessions
 
+.. varnish_vsc:: connect_out
+	:type:	counter
+	:level:	info
+	:format: bytes
+	:oneliner:	CONNECT bytes tunnelled to backend
+
+	Total number of bytes forwarded to backend in CONNECT tunnels
+
+.. varnish_vsc:: connect_in
+	:type:	counter
+	:level:	info
+	:format: bytes
+	:oneliner:	CONNECT bytes tunnelled from backend
+
+	Total number of bytes forwarded from backend in CONNECT tunnels
+
 .. varnish_vsc:: conn
 	:type:	gauge
 	:level:	info
