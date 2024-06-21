@@ -839,6 +839,29 @@ cnt_pipe(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
+ * Handle CONNECT method
+ */
+
+static enum req_fsm_nxt
+cnt_connect(struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
+	AZ(req->stale_oc);
+	AN(req->vcl);
+
+	req->res_mode |= RES_CONNECT;
+
+	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
+
+	wrk->stats->s_connect++;
+
+	INCOMPL();
+}
+
+/*--------------------------------------------------------------------
  * Handle restart events
  */
 

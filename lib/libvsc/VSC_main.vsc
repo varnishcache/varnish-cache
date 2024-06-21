@@ -463,6 +463,11 @@
 	:oneliner:	Total pipe sessions seen
 
 
+.. varnish_vsc:: s_connect
+	:group: wrk
+	:oneliner:	Total CONNECT sessions seen
+
+
 .. varnish_vsc:: s_pass
 	:group: wrk
 	:oneliner:	Total pass-ed requests seen
