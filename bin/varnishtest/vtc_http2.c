@@ -1602,7 +1602,7 @@ cmd_tx11obj(CMD_ARGS)
 					break;
 				av += i;
 				if (i > 1) {
-					ENC(hdr, ":content-encoding", "gzip");
+					ENC(hdr, "content-encoding", "gzip");
 					f.flags &= ~END_STREAM;
 				}
 			}
