@@ -90,29 +90,45 @@ in the following shell commands, replace ``sudo yum install`` if needed.
 
 Install sphinx
 
-* On Red Hat / CentOS 8, sphinx is not included in the default
-  repositories, so execute these steps to include it from the
-  powertools repository::
+* On Red Hat / CentOS 9, some packages are not included in the
+  default repositories, so execute these steps to include them
+  from the CRB repository::
 
     sudo dnf install -y 'dnf-command(config-manager)'
-    sudo yum config-manager --set-enabled powertools
-    sudo yum install -y diffutils python3-sphinx
+    sudo dnf config-manager --set-enabled crb
+    sudo dnf install -y \
+            diffutils \
+            python3-sphinx
 
-* On Red Hat / CentOS <= 7, install sphinx::
+* On Red Hat / CentOS 8, some packages are not included in the
+  default repositories, so execute these steps to include them
+  from the powertools repository::
 
-    sudo yum install -y python-sphinx
+    sudo dnf install -y 'dnf-command(config-manager)'
+    sudo dnf config-manager --set-enabled powertools
+    sudo dnf install -y \
+            diffutils \
+            jemalloc-devel \
+            libunwind-devel \
+            python3-sphinx
 
-The following step should conclude installation of the required
-packages::
+* On Red Hat / CentOS <= 7, install the packages from the default
+  repository::
+
+    sudo yum install -y \
+            jemalloc-devel \
+            libunwind-devel \
+            python-sphinx
+
+The following step should conclude installation of the remaining
+package dependencies::
 
   yum install -y \
 	make \
 	autoconf \
 	automake \
-	jemalloc-devel \
 	libedit-devel \
 	libtool \
-	libunwind-devel \
 	ncurses-devel \
 	pcre2-devel \
 	pkgconfig \
