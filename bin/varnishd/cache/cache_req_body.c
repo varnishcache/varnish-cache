@@ -207,7 +207,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 	}
 	if (req->req_body_status == BS_NONE)
 		return (0);
-	if (req->req_body_status == BS_TAKEN) {
+	if (req->req_body_taken) {
 		VSLb(vsl, SLT_VCL_Error,
 		    "Uncached req.body can only be consumed once.");
 		return (-1);
@@ -219,7 +219,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 	}
 	Lck_Lock(&req->sp->mtx);
 	if (req->req_body_status->avail > 0) {
-		req->req_body_status = BS_TAKEN;
+		req->req_body_taken = 1;
 		i = 0;
 	} else
 		i = -1;
@@ -277,6 +277,7 @@ VRB_Free(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
+	req->req_body_taken = 0;
 	if (req->body_oc == NULL) {
 		AZ(req->req_body_cached);
 		return;
