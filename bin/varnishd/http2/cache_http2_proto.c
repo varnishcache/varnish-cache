@@ -843,7 +843,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			Lck_Lock(&h2->sess->mtx);
 			VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
 			Lck_Unlock(&h2->sess->mtx);
-			assert(!WS_IsReserved(r2->req->ws));
+			assert(!WS_IsReserved(h2->srq->ws));
 			r2->error = h2e;
 			if (r2->cond != NULL)
 				PTOK(pthread_cond_signal(r2->cond));
