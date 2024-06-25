@@ -93,7 +93,7 @@ Attribute ``.host_header``
 
 A host header to add to probes and regular backend requests if they have no such header::
 
-    .host_header = "Host: example.com";
+    .host_header = "example.com";
 
 Timeout Attributes
 ------------------
