@@ -267,7 +267,7 @@ haproxy_cli_recv(struct haproxy_cli *hc)
 		}
 		/* Connection closed. */
 		if (ret == 0) {
-			if (hc->rxbuf[rdz - 1] != '\n')
+			if (rdz > 0 && hc->rxbuf[rdz - 1] != '\n')
 				vtc_fatal(hc->vl,
 				    "CLI rx timeout (fd: %d %.3fs ret: %zd)",
 				    hc->sock, hc->timeout, ret);
