@@ -270,8 +270,10 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 	 */
 	rollback = !strcasecmp(ws->id, "req") && htc->body_status == NULL;
 	l = WS_Pipeline(htc->ws, htc->pipeline_b, htc->pipeline_e, rollback);
-	if (l < 0)
+	if (l < 0) {
+		WS_Release(htc->ws, 0);
 		return (-1);
+	}
 
 	htc->rxbuf_b = WS_Reservation(ws);
 	htc->rxbuf_e = htc->rxbuf_b + l;
