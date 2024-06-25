@@ -169,7 +169,7 @@ http_write(const struct http *hp, int lvl,
 }
 
 static int
-get_bytes(const struct http *hp, char *buf, int n)
+get_bytes(const struct http *hp, char *buf, size_t n)
 {
 	int i;
 	struct pollfd pfd[1];
@@ -197,7 +197,7 @@ get_bytes(const struct http *hp, char *buf, int n)
 		i = read(hp->sess->fd, buf, n);
 		if (!(pfd[0].revents & POLLIN))
 			vtc_log(hp->vl, 4,
-			    "HTTP2 rx poll (fd:%d revents: %x n=%d, i=%d)",
+			    "HTTP2 rx poll (fd:%d revents: %x n=%zu, i=%d)",
 			    hp->sess->fd, pfd[0].revents, n, i);
 		if (i == 0)
 			vtc_log(hp->vl, 3,
