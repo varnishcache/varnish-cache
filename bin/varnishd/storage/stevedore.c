@@ -199,18 +199,27 @@ STV_open(void)
 }
 
 void
+STV_warn(void)
+{
+	struct stevedore *stv;
+
+	ASSERT_CLI();
+	/* First send close warning */
+	STV_Foreach(stv)
+		if (stv->close != NULL)
+			stv->close(stv, 0);
+}
+
+void
 STV_close(void)
 {
 	struct stevedore *stv;
-	int i;
 
 	ASSERT_CLI();
-	for (i = 1; i >= 0; i--) {
-		/* First send close warning */
-		STV_Foreach(stv)
-			if (stv->close != NULL)
-				stv->close(stv, i);
-	}
+	/* First send close warning */
+	STV_Foreach(stv)
+		if (stv->close != NULL)
+			stv->close(stv, 1);
 }
 
 /*-------------------------------------------------------------------

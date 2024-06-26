@@ -1037,3 +1037,25 @@ VCL_Init(void)
 	Lck_New(&vcl_mtx, lck_vcl);
 	VSL_Setup(&vsl_cli, NULL, 0);
 }
+
+void
+VCL_Shutdown(void)
+{
+	struct vcl *vcl;
+	unsigned c = 0;
+
+	while (1) {
+		Lck_Lock(&vcl_mtx);
+		VTAILQ_FOREACH(vcl, &vcl_head, list)
+			if (vcl->busy)
+				break;
+		Lck_Unlock(&vcl_mtx);
+		if (vcl == NULL)
+			return;
+		if (++c % 10 == 0) {
+			fprintf(stderr, "shutdown waiting for vcl %u\t%s\n",
+				vcl->busy, vcl->loaded_name);
+		}
+		usleep(100 * 1000);
+	}
+}

@@ -491,6 +491,7 @@ struct vsb *VCL_Rel_CliCtx(struct vrt_ctx **);
 void VCL_Panic(struct vsb *, const char *nm, const struct vcl *);
 void VCL_Poll(void);
 void VCL_Init(void);
+void VCL_Shutdown(void);
 
 #define VCL_MET_MAC(l,u,t,b) \
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
@@ -569,6 +570,7 @@ void V2D_Init(void);
 
 /* stevedore.c */
 void STV_open(void);
+void STV_warn(void);
 void STV_close(void);
 const struct stevedore *STV_next(void);
 int STV_BanInfoDrop(const uint8_t *ban, unsigned len);

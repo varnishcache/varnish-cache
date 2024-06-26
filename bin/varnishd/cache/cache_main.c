@@ -363,6 +363,20 @@ cli_quit(int sig)
 }
 
 /*=====================================================================
+ * XXX Generalize?
+ */
+
+static void
+bit_set(volatile uint8_t *p, unsigned no)
+{
+	uint8_t b;
+
+	p += (no >> 3);
+	b = (0x80 >> (no & 7));
+	*p |= b;
+}
+
+/*=====================================================================
  * Run the child process
  */
 
@@ -452,12 +466,16 @@ child_main(int sigmagic, size_t altstksz)
 
 	CLI_Run();
 
+	bit_set(cache_param->debug_bits, DBG_VCLREL);
+
 	if (shutdown_delay > 0)
 		VTIM_sleep(shutdown_delay);
 
 	VCA_Shutdown();
 	BAN_Shutdown();
 	EXP_Shutdown();
+	STV_warn();
+	VCL_Shutdown();
 	STV_close();
 
 	printf("Child dies\n");
