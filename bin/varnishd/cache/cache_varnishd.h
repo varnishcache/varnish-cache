@@ -604,3 +604,6 @@ void SMP_Ready(void);
 		if (DO_DEBUG(debug_bit))			\
 			WRK_Log(SLT_Debug, __VA_ARGS__);	\
 	} while (0)
+
+/* cache_vsync.c */
+void SYNC_Init(void);
