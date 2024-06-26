@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Interaction with the linvgz (zlib) library.
+ * Interaction with the libvgz (zlib) library.
  *
  * The zlib library pollutes namespace a LOT when you include the "vgz.h"
  * (aka "zlib.h") file so we contain the damage by vectoring all access
