@@ -623,6 +623,17 @@ VRT_r_beresp_backend(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+VCL_STRING
+VRT_r_beresp_error(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->err_resp);
+}
+
+/*--------------------------------------------------------------------*/
+
 VCL_VOID
 VRT_u_bereq_body(VRT_CTX)
 {

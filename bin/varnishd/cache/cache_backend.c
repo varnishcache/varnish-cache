@@ -49,6 +49,7 @@
 #include "cache_vcl.h"
 #include "http1/cache_http1.h"
 #include "proxy/cache_proxy.h"
+#include "vrt_obj.h"
 
 #include "VSC_vbe.h"
 
@@ -60,7 +61,7 @@ static struct lock backends_mtx;
 
 /*--------------------------------------------------------------------*/
 
-void
+const char *
 VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 {
 
@@ -81,7 +82,7 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 		break;
 	case ECONNREFUSED:
 		vsc->fail_econnrefused++;
-		break;
+		return (VRT_c_error_connection_refused());
 	case ENETUNREACH:
 		vsc->fail_enetunreach++;
 		break;
@@ -91,6 +92,7 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 	default:
 		vsc->fail_other++;
 	}
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -158,7 +160,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	pfd = VCP_Get(bp->conn_pool, tmod, wrk, force_fresh, &err);
 	if (pfd == NULL) {
 		Lck_Lock(bp->director->mtx);
-		VBE_Connect_Error(bp->vsc, err);
+		bo->err_resp = VBE_Connect_Error(bp->vsc, err);
 		Lck_Unlock(bp->director->mtx);
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",

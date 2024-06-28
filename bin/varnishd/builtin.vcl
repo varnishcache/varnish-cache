@@ -266,7 +266,13 @@ sub vcl_builtin_backend_error {
   </head>
   <body>
     <h1>Error "} + beresp.status + " " + beresp.reason + {"</h1>
-    <p>"} + beresp.reason + {"</p>
+    <p>"};
+	if (beresp.error) {
+		set beresp.body += beresp.error;
+	} else {
+		set beresp.body += beresp.reason;
+	}
+	set beresp.body += {"</p>
     <h3>Guru Meditation:</h3>
     <p>XID: "} + bereq.xid + {"</p>
     <hr>
