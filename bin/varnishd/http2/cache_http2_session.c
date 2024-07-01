@@ -88,6 +88,27 @@ h2_local_settings(struct h2_settings *h2s)
 	h2s->max_header_list_size = cache_param->http_req_size;
 }
 
+void
+H2S_Lock_VSLb(const struct h2_sess *h2, enum VSL_tag_e tag, const char *fmt, ...)
+{
+	va_list ap;
+	int held = 0;
+
+	AN(h2);
+
+	if (h2->highest_stream > 0) {
+		held = 1;
+		Lck_Lock(&h2->sess->mtx);
+	}
+
+	va_start(ap, fmt);
+	VSLbv(h2->vsl, tag, fmt, ap);
+	va_end(ap);
+
+	if (held)
+		Lck_Unlock(&h2->sess->mtx);
+}
+
 /**********************************************************************
  * The h2_sess struct needs many of the same things as a request,
  * WS, VSL, HTC &c,  but rather than implement all that stuff over, we
@@ -405,7 +426,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	while (h2_rxframe(wrk, h2)) {
 		HTC_RxInit(h2->htc, h2->ws);
 		if (WS_Overflowed(h2->ws)) {
-			VSLb(h2->vsl, SLT_Debug, "H2: Empty Rx Workspace");
+			H2S_Lock_VSLb(h2, SLT_SessError, "H2: Empty Rx Workspace");
 			h2->error = H2CE_INTERNAL_ERROR;
 			break;
 		}
@@ -415,8 +436,8 @@ h2_new_session(struct worker *wrk, void *arg)
 	AN(h2->error);
 
 	/* Delete all idle streams */
-	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
 	Lck_Lock(&h2->sess->mtx);
+	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		if (r2->error == 0)
 			r2->error = h2->error;
