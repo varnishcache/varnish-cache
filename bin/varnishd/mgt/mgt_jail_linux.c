@@ -35,6 +35,7 @@
 
 #include <fcntl.h>
 #include <grp.h>
+#include <linux/magic.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +43,7 @@
 #include <unistd.h>
 #include <sys/prctl.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -71,7 +73,26 @@ static int vjl_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 }
 
 static int vjl_make_workdir(const char *dname, const char *what, struct vsb *vsb) {
-	return jail_tech_unix.make_workdir(dname, what, vsb);
+	struct statfs info;
+
+	if (jail_tech_unix.make_workdir(dname, what, vsb) != 0)
+		return (1);
+	vjl_master(JAIL_MASTER_FILE);
+	if (statfs(dname, &info) != 0) {
+		if (vsb)
+			VSB_printf(vsb, "Could not stat working directory '%s': %s (%d)\n", dname, VAS_errtxt(errno), errno);
+		else
+			MGT_Complain(C_ERR, "Could not stat working directory '%s': %s (%d)", dname, VAS_errtxt(errno), errno);
+		return (1);
+	}
+	if (info.f_type != TMPFS_MAGIC) {
+		if (vsb != NULL)
+			VSB_printf(vsb, "Working directory not mounted on tmpfs partition\n");
+		else
+			MGT_Complain(C_INFO, "Working directory not mounted on tmpfs partition");
+	}
+	vjl_master(JAIL_MASTER_LOW);
+	return (0);
 }
 
 static void vjl_fixfd(int fd, enum jail_fixfd_e what) {
