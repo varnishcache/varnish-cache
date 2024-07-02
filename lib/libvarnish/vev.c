@@ -67,6 +67,7 @@ static int			vev_nsig;
 struct vev_root {
 	unsigned		magic;
 #define VEV_BASE_MAGIC		0x477bcf3d
+	unsigned		n_fd_events;
 	struct pollfd		*pfd;
 	struct vev		**pev;
 	unsigned		npfd;
@@ -325,6 +326,12 @@ VEV_Stop(struct vev_root *evb, struct vev *e)
 	assert(e->__binheap_idx == VBH_NOIDX);
 	evb->lpfd--;
 
+	if (e->fd_events) {
+		assert(evb->n_fd_events > 0);
+		evb->n_fd_events--;
+		e->fd_events = 0;
+	}
+
 	if (e->sig > 0) {
 		assert(e->sig < vev_nsig);
 		es = &vev_sigs[e->sig];
@@ -409,6 +416,7 @@ VEV_Once(struct vev_root *evb)
 	struct vev *e;
 	int i, k, tmo, retval = 1;
 	unsigned u;
+	int progress;
 
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
 	assert(pthread_equal(evb->thread, pthread_self()));
@@ -447,16 +455,18 @@ VEV_Once(struct vev_root *evb)
 			return (vev_sched_timeout(evb, e, t));
 	}
 
-	k = 0;
+	AZ(evb->n_fd_events);
 	for (u = 1; u < evb->lpfd; u++) {
+		AZ(evb->pev[u]->fd_events);
 		evb->pev[u]->fd_events = evb->pfd[u].revents;
 		if (evb->pev[u]->fd_events)
-			k++;
+			evb->n_fd_events++;
 	}
-	assert(k == i);
+	assert(evb->n_fd_events == i);
 
 	DBG(evb, "EVENTS %d\n", i);
-	while (i > 0) {
+	while (evb->n_fd_events > 0) {
+		progress = 0;
 		for (u = VBH_NOIDX + 1; u < evb->lpfd; u++) {
 			e = evb->pev[u];
 			if (e->fd_events == 0)
@@ -465,7 +475,9 @@ VEV_Once(struct vev_root *evb)
 			    e, u, e->fd, e->fd_events, i);
 			k = e->callback(e, e->fd_events);
 			e->fd_events = 0;
-			i--;
+			assert(evb->n_fd_events > 0);
+			evb->n_fd_events--;
+			progress++;
 			if (k) {
 				VEV_Stop(evb, e);
 				free(e);
@@ -473,7 +485,8 @@ VEV_Once(struct vev_root *evb)
 			if (k < 0)
 				retval = k;
 		}
+		assert(progress > 0);
 	}
-	AZ(i);
+
 	return (retval);
 }
