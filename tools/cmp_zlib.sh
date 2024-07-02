@@ -11,7 +11,7 @@ else
     (cd ${LZ} && git pull)
 fi
 
-for i in varnish-cache/lib/libvgz/*.[ch]
+for i in lib/libvgz/*.[ch]
 do
 	b=`basename $i`
 	if [ "$b" == "vgz.h" ] ; then
