@@ -227,6 +227,7 @@ AC_CHECK_FUNCS([fnmatch], [], [AC_MSG_ERROR([fnmatch(3) is required])])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
+AC_CHECK_FUNCS([pthread_setname_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 AC_CHECK_FUNCS([pthread_getattr_np])
 LIBS="${save_LIBS}"

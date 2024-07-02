@@ -134,12 +134,14 @@ THR_SetName(const char *name)
 {
 
 	PTOK(pthread_setspecific(name_key, name));
-#if defined(__APPLE__)
+#if defined(HAVE_PTHREAD_SETNAME_NP)
+#  if defined(__APPLE__)
 	(void)pthread_setname_np(name);
-#elif defined(__NetBSD__)
+#  elif defined(__NetBSD__)
 	(void)pthread_setname_np(pthread_self(), "%s", (char *)(uintptr_t)name);
-#else
+#  else
 	(void)pthread_setname_np(pthread_self(), name);
+#  endif
 #endif
 }
 
