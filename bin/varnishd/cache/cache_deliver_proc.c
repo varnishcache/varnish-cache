@@ -70,19 +70,16 @@ VDP_Fini(const struct vdp_ctx *vdc)
 }
 
 void
-VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
-    struct req *req)
+VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl)
 {
 	AN(vdc);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vsl);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	INIT_OBJ(vdc, VDP_CTX_MAGIC);
 	VTAILQ_INIT(&vdc->vdp);
 	vdc->wrk = wrk;
 	vdc->vsl = vsl;
-	vdc->req = req;
 }
 
 /* VDP_bytes
@@ -144,9 +141,18 @@ VDP_bytes(struct vdp_ctx *vdc, enum vdp_action act,
 	return (vdc->retval);
 }
 
+/*
+ * oc: optional, only passed to the first VDP
+ * req: optional, for client-side only VDPs
+ * hd: headers to modify (request or response)
+ * cl: known content-length or -1, settable
+ */
+
 int
-VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
-    void *priv)
+VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws,
+     const struct vdp *vdp, void *priv,
+     struct objcore *oc, struct req *req,
+     struct http *hd, intmax_t *cl)
 {
 	struct vdp_entry *vdpe;
 
@@ -156,6 +162,11 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 	AN(vdp);
 	AN(vdp->name);
 	AN(vdp->bytes);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(hd, HTTP_MAGIC);
+	AN(cl);
+	assert(*cl >= -1);
 
 	if (vdc->retval)
 		return (vdc->retval);
@@ -180,7 +191,7 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 		return (vdc->retval);
 
 	vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv,
-	    vdpe == vdc->nxt ? vdc->req->objcore : NULL);
+	    vdpe == vdc->nxt ? oc : NULL, req, hd, cl);
 
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
@@ -229,8 +240,8 @@ VDP_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 
 /*--------------------------------------------------------------------*/
 
-static int v_matchproto_(objiterate_f)
-vdp_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
+int v_matchproto_(objiterate_f)
+VDP_ObjIterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
 	enum vdp_action act;
 
@@ -254,9 +265,8 @@ VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
 	AN(vdc->vsl);
-	vdc->req = NULL;
 	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
-	r = ObjIterate(vdc->wrk, oc, vdc, vdp_objiterate, final);
+	r = ObjIterate(vdc->wrk, oc, vdc, VDP_ObjIterate, final);
 	if (r < 0)
 		return (r);
 	return (0);

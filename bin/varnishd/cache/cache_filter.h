@@ -112,8 +112,16 @@ enum vdp_action {
 	VDP_END,		/* Last buffer or after, implies VDP_FLUSH */
 };
 
+
+/*
+ * oc: optional, only passed to the first VDP
+ * req: optional, for client-side only VDPs
+ * hd: headers to modify (request or response)
+ * cl: known content-length or -1, settable
+ */
 typedef int vdp_init_f(VRT_CTX, struct vdp_ctx *, void **priv,
-    struct objcore *);
+    struct objcore *oc, struct req *req,
+    struct http *hd, intmax_t *cl);
 /*
  * Return value:
  *	negative:	Error - abandon delivery
@@ -155,7 +163,6 @@ struct vdp_ctx {
 	struct vdp_entry	*nxt;
 	struct worker		*wrk;
 	struct vsl_log		*vsl;
-	struct req		*req;
 };
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *, ssize_t);
