@@ -1,0 +1,121 @@
+varnishtest "h2 trailers support"
+
+server s0 {
+	rxreq
+	txresp -bodylen 100
+} -dispatch
+
+varnish v1 -arg "-p feature=+http2 -p debug=+syncvsl" -vcl+backend  {
+
+} -start
+
+client c1  {
+	stream 1 {
+		txreq -nostrend
+		txdata -nostrend
+		txreq -noadd
+
+		rxresp
+		expect resp.status == 200
+		expect resp.bodylen == 100
+	} -run
+} -run
+
+client c2  {
+	stream 1 {
+		txreq -nostrend -nohdrend
+		txcont -nohdrend
+		txcont
+		txdata -nostrend
+		txdata -nostrend
+
+		txreq  -noadd -nohdrend -hdr "test" "trl"
+		txcont -nohdrend -hdr "test2" "trl2"
+		txcont
+
+		rxresp
+		expect resp.status == 200
+		expect resp.bodylen == 100
+	} -run
+} -run
+
+client c3  {
+	stream 1 {
+		txreq -nostrend
+		txreq  -noadd
+
+		rxresp
+		expect resp.status == 200
+		expect resp.bodylen == 100
+	} -run
+} -run
+
+#
+client c4  {
+	stream 1 {
+		txreq -nostrend -nohdrend
+		txcont -nohdrend
+		txcont
+		txreq  -noadd -nohdrend
+		txcont -nohdrend
+		txcont
+
+		rxresp
+		expect resp.status == 200
+		expect resp.bodylen == 100
+	} -run
+} -run
+
+client c5  {
+	stream 1 {
+		txreq -nostrend
+		txdata -nostrend
+		txreq -noadd -nohdrend
+		txdata -nostrend
+	} -run
+
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 1
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c6  {
+	stream 1 {
+		txreq -nostrend
+		txdata -nostrend
+		txreq -noadd
+		txreq -noadd
+	} -run
+
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 1
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c7  {
+	stream 1 {
+		txreq -nostrend
+		txdata -nostrend
+		txreq -noadd -nostrend
+
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c8  {
+	stream 1 {
+		txreq -nostrend
+		txdata -nostrend
+		txreq -noadd -hdr ":pseudo" "illegal"
+
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+varnish v1 -vsl_catchup

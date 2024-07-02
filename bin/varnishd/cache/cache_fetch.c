@@ -141,9 +141,7 @@ Bereq_Rollback(VRT_CTX)
 	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	if (bo->htc != NULL &&
-	    bo->htc->body_status != BS_NONE &&
-	    bo->htc->body_status != BS_TAKEN)
+	if (bo->htc != NULL && bo->htc->body_status != BS_NONE)
 		bo->htc->doclose = SC_RESP_CLOSE;
 
 	vbf_cleanup(bo);
@@ -288,13 +286,13 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Clone(bo->bereq, bo->bereq0);
 
-	if (bo->req->req_body_status->avail == 0) {
-		bo->req = NULL;
-		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
-	} else if (bo->req->req_body_status == BS_CACHED) {
+	if (bo->req->req_body_cached) {
 		AN(bo->req->body_oc);
 		bo->bereq_body = bo->req->body_oc;
 		HSH_Ref(bo->bereq_body);
+		bo->req = NULL;
+		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
+	} else if (bo->req->req_body_status->avail == 0) {
 		bo->req = NULL;
 		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
 	}
@@ -618,6 +616,9 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 				est = 0;
 		}
 	} while (vfps == VFP_OK);
+
+	if (!vfc->failed && bo->htc->body_status == BS_TRAILERS)
+		vfc->failed = VDI_GetTrl(bo);
 
 	if (vfc->failed) {
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");

@@ -60,12 +60,14 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	const struct stevedore *stv;
 	ssize_t req_bodybytes = 0;
 	unsigned flush = OBJ_ITER_FLUSH;
+	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vfc, VFP_CTX_MAGIC);
 	vfc = req->vfc;
+	AN(maxsize);
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
@@ -176,7 +178,17 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		    (uintmax_t)req_bodybytes);
 	}
 
-	req->req_body_status = BS_CACHED;
+	if (req->htc->body_status == BS_TRAILERS) {
+		i = HTTP1_RxTrailers(req, NULL);
+		if (i < 0) {
+			VSLb(req->vsl, SLT_FetchError,
+			    "Invalid trailers on req body");
+			return (-1);
+		}
+		req->acct.req_hdrbytes += i;  // XXX: acct.req_trlbytes ?
+	}
+
+	req->req_body_cached = 1;
 	return (req_bodybytes);
 }
 
@@ -198,7 +210,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
-	if (req->req_body_status == BS_CACHED) {
+	if (req->req_body_cached) {
 		AN(req->body_oc);
 		if (ObjIterate(wrk, req->body_oc, priv, func, 0))
 			return (-1);
@@ -206,7 +218,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 	}
 	if (req->req_body_status == BS_NONE)
 		return (0);
-	if (req->req_body_status == BS_TAKEN) {
+	if (req->req_body_taken) {
 		VSLb(vsl, SLT_VCL_Error,
 		    "Uncached req.body can only be consumed once.");
 		return (-1);
@@ -218,7 +230,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 	}
 	Lck_Lock(&req->sp->mtx);
 	if (req->req_body_status->avail > 0) {
-		req->req_body_status = BS_TAKEN;
+		req->req_body_taken = 1;
 		i = 0;
 	} else
 		i = -1;
@@ -276,10 +288,14 @@ VRB_Free(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req->body_oc == NULL)
+	req->req_body_taken = 0;
+	if (req->body_oc == NULL) {
+		AZ(req->req_body_cached);
 		return;
+	}
 
 	r = HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
+	req->req_body_cached = 0;
 
 	// each busyobj may have gained a reference
 	assert (r >= 0);
@@ -300,20 +316,24 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert (req->req_step == R_STP_RECV);
-	assert(maxsize >= 0);
+
+	if (maxsize <= 0) {
+		VSLb(req->vsl, SLT_VCL_Error, "Cannot cache an empty req.body");
+		return (-1);
+	}
 
 	/*
 	 * We only allow caching to happen the first time through vcl_recv{}
 	 * where we know we will have no competition or conflicts for the
 	 * updates to req.http.* etc.
 	 */
-	if (req->restarts > 0 && req->req_body_status != BS_CACHED) {
+	if (req->restarts > 0 && !req->req_body_cached) {
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "req.body must be cached before restarts");
 		return (-1);
 	}
 
-	if (req->req_body_status == BS_CACHED) {
+	if (req->req_body_cached) {
 		AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
 		return (u);
 	}

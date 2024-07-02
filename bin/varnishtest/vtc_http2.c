@@ -1510,7 +1510,7 @@ cmd_tx11obj(CMD_ARGS)
 			scheme_done = 1;
 		}
 		else if (AV_IS("-hdr")) {
-			if (av[2] == NULL)
+			if (av[1] == NULL || av[2] == NULL)
 				vtc_fatal(vl, "-hdr takes two arguments in http2");
 			ENC(hdr, av[1], av[2]);
 			av += 2;
@@ -1602,7 +1602,7 @@ cmd_tx11obj(CMD_ARGS)
 					break;
 				av += i;
 				if (i > 1) {
-					ENC(hdr, ":content-encoding", "gzip");
+					ENC(hdr, "content-encoding", "gzip");
 					f.flags &= ~END_STREAM;
 				}
 			}

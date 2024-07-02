@@ -221,45 +221,46 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 	WS_Assert(ws);
 }
 
-unsigned
-WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
+int
+WS_Pipeline(struct ws *ws, const void *b, const void *e, unsigned rollback)
 {
-	struct ws_emu *we;
-	struct ws_alloc *wa;
-	unsigned l;
+	void *tmp;
+	unsigned r, l;
 
 	WS_Assert(ws);
 	AZ(ws->f);
 	AZ(ws->r);
 
-	if (strcasecmp(ws->id, "req"))
-		AZ(b);
+	/* NB: the pipeline cannot be moved if it comes from the same
+	 * workspace because a rollback would free the memory. This is
+	 * emulated with two copies instead.
+	 */
 
-	if (b == NULL) {
+	if (b != NULL) {
+		AN(e);
+		l = pdiff(b, e);
+		tmp = malloc(l);
+		AN(tmp);
+		memcpy(tmp, b, l);
+	} else {
 		AZ(e);
-		if (!strcasecmp(ws->id, "req"))
-			WS_Rollback(ws, 0);
-		(void)WS_ReserveAll(ws);
-		return (0);
+		l = 0;
+		tmp = NULL;
 	}
 
-	we = ws_emu(ws);
-	ALLOC_OBJ(wa, WS_ALLOC_MAGIC);
-	AN(wa);
-	wa->len = we->len;
-	wa->ptr = malloc(wa->len);
-	AN(wa->ptr);
+	if (rollback)
+		WS_Rollback(ws, 0);
 
-	AN(e);
-	l = pdiff(b, e);
-	assert(l <= wa->len);
-	memcpy(wa->ptr, b, l);
+	r = WS_ReserveAll(ws);
 
-	WS_Rollback(ws, 0);
-	ws->f = wa->ptr;
-	ws->r = ws->f + wa->len;
-	VTAILQ_INSERT_TAIL(&we->head, wa, list);
-	WS_Assert(ws);
+	if (l > r) {
+		free(tmp);
+		return (-1);
+	}
+
+	if (l > 0)
+		memcpy(ws->f, tmp, l);
+	free(tmp);
 	return (l);
 }
 

@@ -54,6 +54,8 @@ vbf_iter_req_body(void *priv, unsigned flush, const void *ptr, ssize_t l)
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	if (l > 0) {
+		if (DO_DEBUG(DBG_SLOW_BEREQ))
+			VTIM_sleep(1.0);
 		(void)V1L_Write(bo->wrk, ptr, l);
 		if (flush && V1L_Flush(bo->wrk) != SC_NULL)
 			return (-1);
@@ -111,11 +113,13 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		    bo, vbf_iter_req_body, 0);
 	} else if (bo->req != NULL &&
 	    bo->req->req_body_status != BS_NONE) {
+		if (DO_DEBUG(DBG_FLUSH_HEAD))
+			(void)V1L_Flush(wrk);
 		if (do_chunked)
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
 
-		if (bo->req->req_body_status != BS_CACHED)
+		if (!bo->req->req_body_cached)
 			bo->no_retry = "req.body not cached";
 
 		if (bo->req->req_body_status == BS_ERROR) {
@@ -175,62 +179,27 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	double t;
 	struct http_conn *htc;
 	enum htc_status_e hs;
-	const char *name, *desc;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
-
 	htc = bo->htc;
-	assert(*htc->rfd > 0);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
+	hp = bo->beresp;
 
 	VSC_C_main->backend_req++;
 
 	/* Receive response */
 
-	HTC_RxInit(htc, bo->ws);
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-
 	t = VTIM_real() + htc->first_byte_timeout;
-	hs = HTC_RxStuff(htc, HTTP1_Complete, NULL, NULL,
-	    t, NAN, htc->between_bytes_timeout, cache_param->http_resp_size);
+	hs = HTTP1_RxFields(htc, hp, bo->ws, HTTP1_Headers,
+	    t, htc->between_bytes_timeout, cache_param->http_resp_size,
+	    "backend");
 	if (hs != HTC_S_COMPLETE) {
 		bo->acct.beresp_hdrbytes +=
 		    htc->rxbuf_e - htc->rxbuf_b;
-		switch (hs) {
-		case HTC_S_JUNK:
-			VSLb(bo->vsl, SLT_FetchError, "Received junk");
-			htc->doclose = SC_RX_JUNK;
-			break;
-		case HTC_S_CLOSE:
-			VSLb(bo->vsl, SLT_FetchError, "backend closed");
-			htc->doclose = SC_RESP_CLOSE;
-			break;
-		case HTC_S_TIMEOUT:
-			VSLb(bo->vsl, SLT_FetchError, "timeout");
-			htc->doclose = SC_RX_TIMEOUT;
-			break;
-		case HTC_S_OVERFLOW:
-			VSLb(bo->vsl, SLT_FetchError, "overflow");
-			htc->doclose = SC_RX_OVERFLOW;
-			break;
-		case HTC_S_IDLE:
-			VSLb(bo->vsl, SLT_FetchError, "first byte timeout");
-			htc->doclose = SC_RX_TIMEOUT;
-			break;
-		default:
-			HTC_Status(hs, &name, &desc);
-			VSLb(bo->vsl, SLT_FetchError, "HTC %s (%s)",
-			     name, desc);
-			htc->doclose = SC_RX_BAD;
-			break;
-		}
 		return (htc->rxbuf_e == htc->rxbuf_b ? 1 : -1);
 	}
 	VTCP_set_read_timeout(*htc->rfd, htc->between_bytes_timeout);
-
-	hp = bo->beresp;
 
 	i = HTTP1_DissectResponse(htc, hp, bo->bereq);
 	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;

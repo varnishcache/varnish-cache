@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Various ways to handle the body coming from the backend.
+ * Various ways to handle a req or beresp body.
  */
 
 /*lint -save -e525 -e539 */
@@ -38,8 +38,7 @@ BODYSTATUS(ERROR,	error,		1,	-1,	0)
 BODYSTATUS(CHUNKED,	chunked,	2,	1,	0)
 BODYSTATUS(LENGTH,	length,		3,	1,	1)
 BODYSTATUS(EOF,		eof,		4,	1,	0)
-BODYSTATUS(TAKEN,	taken,		5,	0,	0)
-BODYSTATUS(CACHED,	cached,		6,	2,	1)
+BODYSTATUS(TRAILERS,	trailers,	6,	1,	1)
 #undef BODYSTATUS
 
 /*lint -restore */
