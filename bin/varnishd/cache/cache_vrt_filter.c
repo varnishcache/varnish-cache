@@ -254,26 +254,49 @@ VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 }
 
 int
-VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
+VCL_StackVDP(struct vdp_ctx *vdc, const struct vcl *vcl, const char *fl,
+    struct req *req, struct busyobj *bo, intmax_t *cl)
 {
 	const struct vfilter *vp;
 	struct vrt_ctx ctx[1];
+	struct objcore *oc;
+	struct http *hd;
 
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	AN(vcl);
 	AN(fl);
-	VSLbs(req->vsl, SLT_Filters, TOSTRAND(fl));
+
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	AN(cl);
+
+	assert((req ? 1 : 0) ^ (bo ? 1 : 0));
+
+	VSLbs(vdc->vsl, SLT_Filters, TOSTRAND(fl));
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
-	VCL_Req2Ctx(ctx, req);
+
+	if (req) {
+		VCL_Req2Ctx(ctx, req);
+		oc = req->objcore;
+		hd = req->resp;
+	}
+	else {
+		VCL_Bo2Ctx(ctx, bo);
+		oc = bo->bereq_body;
+		hd = bo->bereq;
+	}
 
 	while (1) {
 		vp = vcl_filter_list_iter(0, &vrt_filters, &vcl->filters, &fl);
 		if (vp == NULL)
 			return (0);
 		if (vp == vfilter_error) {
-			VSLb(req->vsl, SLT_Error,
+			VSLb(vdc->vsl, SLT_Error,
 			    "Filter '...%s' not found", fl);
 			return (-1);
 		}
-		if (VDP_Push(ctx, req->vdc, req->ws, vp->vdp, NULL))
+		if (VDP_Push(ctx, vdc, ctx->ws, vp->vdp, NULL,
+		    oc, hd, cl))
 			return (-1);
 	}
 }

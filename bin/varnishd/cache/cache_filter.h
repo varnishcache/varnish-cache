@@ -33,6 +33,7 @@ struct req;
 struct vfp_entry;
 struct vfp_ctx;
 struct vdp_ctx;
+struct vdp_init_ctx;
 
 /* Fetch processors --------------------------------------------------*/
 
@@ -112,8 +113,9 @@ enum vdp_action {
 	VDP_END,		/* Last buffer or after, implies VDP_FLUSH */
 };
 
+
 typedef int vdp_init_f(VRT_CTX, struct vdp_ctx *, void **priv,
-    struct objcore *);
+    const struct vdp_init_ctx *);
 /*
  * Return value:
  *	negative:	Error - abandon delivery
@@ -155,7 +157,14 @@ struct vdp_ctx {
 	struct vdp_entry	*nxt;
 	struct worker		*wrk;
 	struct vsl_log		*vsl;
-	struct req		*req;
+};
+
+struct vdp_init_ctx {
+	unsigned		magic;
+#define VDP_INIT_CTX_MAGIC	0x3b876157
+	struct objcore		*oc; // Only first filter, if at all
+	struct http		*hd;
+	intmax_t		*cl;
 };
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *, ssize_t);

@@ -70,19 +70,16 @@ VDP_Fini(const struct vdp_ctx *vdc)
 }
 
 void
-VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
-    struct req *req)
+VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl)
 {
 	AN(vdc);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vsl);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	INIT_OBJ(vdc, VDP_CTX_MAGIC);
 	VTAILQ_INIT(&vdc->vdp);
 	vdc->wrk = wrk;
 	vdc->vsl = vsl;
-	vdc->req = req;
 }
 
 /* VDP_bytes
@@ -146,8 +143,9 @@ VDP_bytes(struct vdp_ctx *vdc, enum vdp_action act,
 
 int
 VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
-    void *priv)
+    void *priv, struct objcore *oc, struct http *hd, intmax_t *cl)
 {
+	struct vdp_init_ctx initctx[1];
 	struct vdp_entry *vdpe;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -156,6 +154,19 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 	AN(vdp);
 	AN(vdp->name);
 	AN(vdp->bytes);
+
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(hd, HTTP_MAGIC);
+	AN(cl);
+	assert(*cl >= -1);
+
+	if (vdc->retval)
+		return (vdc->retval);
+
+	INIT_OBJ(initctx, VDP_INIT_CTX_MAGIC);
+	initctx->oc = oc;
+	initctx->hd = hd;
+	initctx->cl = cl;
 
 	if (vdc->retval)
 		return (vdc->retval);
@@ -175,12 +186,14 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 	VTAILQ_INSERT_TAIL(&vdc->vdp, vdpe, list);
 	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
+	if (vdc->nxt != vdpe)
+		initctx->oc = NULL;
+
 	AZ(vdc->retval);
 	if (vdpe->vdp->init == NULL)
-		return (vdc->retval);
-
-	vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv,
-	    vdpe == vdc->nxt ? vdc->req->objcore : NULL);
+		vdc->retval = 0;
+	else
+		vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv, initctx);
 
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
@@ -254,7 +267,6 @@ VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
 	AN(vdc->vsl);
-	vdc->req = NULL;
 	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
 	r = ObjIterate(vdc->wrk, oc, vdc, vdp_objiterate, final);
 	if (r < 0)
