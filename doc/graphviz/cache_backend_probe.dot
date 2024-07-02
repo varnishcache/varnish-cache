@@ -1,0 +1,37 @@
+# cache_backend_probe struct vbp_state
+
+digraph cache_backend_probe {
+	ALLOC
+	scheduled
+	running
+	cold
+	cooling	# going cold while task runs
+	deleted # from cooling, removed while task runs
+	FREE
+
+	edge [fontname=Courier]
+
+	# via vbp_task() or vbp_thread() scheduling error
+	edge [label="vbp_task_complete()"]
+	running -> scheduled
+	cooling -> cold
+	deleted -> FREE
+
+	edge [label="vbp_thread()"]
+	scheduled -> running
+
+	edge [label="VBP_Control() enable"]
+	cooling -> running
+	cold -> scheduled
+
+	edge [label="VBP_Control() disable"]
+	running -> cooling
+	scheduled -> cold
+
+	edge [label="VBP_Insert()"]
+	ALLOC -> cold
+
+	edge [label="VBP_Remove()"]
+	cooling -> deleted
+	cold -> FREE
+}
