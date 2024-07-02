@@ -184,6 +184,7 @@ local void bi_windup(deflate_state *s) {
     } else if (s->bi_valid > 0) {
         put_byte(s, (Byte)s->bi_buf);
     }
+    s->bi_used = ((s->bi_valid - 1) & 7) + 1;
     s->bi_buf = 0;
     s->bi_valid = 0;
 #ifdef ZLIB_DEBUG
@@ -466,6 +467,7 @@ void ZLIB_INTERNAL _tr_init(deflate_state *s) {
 
     s->bi_buf = 0;
     s->bi_valid = 0;
+    s->bi_used = 0;
 #ifdef ZLIB_DEBUG
     s->compressed_len = 0L;
     s->bits_sent = 0L;

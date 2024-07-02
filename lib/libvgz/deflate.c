@@ -501,7 +501,7 @@ int ZEXPORT deflateInit2_(z_streamp strm, int level, int method,
      */
 
     s->pending_buf = (uchf *) ZALLOC(strm, s->lit_bufsize, LIT_BUFS);
-    s->pending_buf_size = (ulg)s->lit_bufsize * LIT_BUFS;
+    s->pending_buf_size = (ulg)s->lit_bufsize * 4;	// Pretty sure this should be LIT_BUFS /phk
 
     if (s->window == Z_NULL || s->prev == Z_NULL || s->head == Z_NULL ||
         s->pending_buf == Z_NULL) {
@@ -732,6 +732,14 @@ int ZEXPORT deflatePending(z_streamp strm, unsigned *pending, int *bits) {
         *pending = strm->state->pending;
     if (bits != Z_NULL)
         *bits = strm->state->bi_valid;
+    return Z_OK;
+}
+
+/* ========================================================================= */
+int ZEXPORT deflateUsed(z_streamp strm, int *bits) {
+    if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
+    if (bits != Z_NULL)
+        *bits = strm->state->bi_used;
     return Z_OK;
 }
 
@@ -1743,7 +1751,7 @@ local block_state deflate_stored(deflate_state *s, int flush) {
             s->strm->total_out += len;
         }
     } while (last == 0);
-    if (last) 
+    if (last)
         s->strm->stop_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
 
