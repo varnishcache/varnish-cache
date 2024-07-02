@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/prctl.h>
 #include <sys/stat.h>
 
 #include "mgt/mgt.h"
@@ -55,6 +56,14 @@ static void vjl_master(enum jail_master_e jme) {
 
 static void vjl_subproc(enum jail_subproc_e jse) {
 	jail_tech_unix.subproc(jse);
+	/*
+	 * On linux mucking about with uid/gid disables core-dumps,
+	 * reenable them again.
+	 */
+	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
+		MGT_Complain(C_INFO,
+		    "Could not set dumpable bit.  Core dumps turned off");
+	}
 }
 
 static int vjl_make_subdir(const char *dname, const char *what, struct vsb *vsb) {
