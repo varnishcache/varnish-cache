@@ -1,5 +1,7 @@
 varnishtest "ESI max_esi_depth"
 
+feature !sanitizer
+
 # test that the default stack size is sufficent for hitting
 # max_esi_depth
 
