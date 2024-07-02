@@ -96,6 +96,20 @@ FEATURE_BIT(VCL_REQ_RESET,			vcl_req_reset,
     "When this happens MAIN.req_reset is incremented."
 )
 
+FEATURE_BIT(VALIDATE_CLIENT_RESPONSES,	validate_client_responses,
+    "Check client HTTP responses for invalid characters."
+    " All HTTP responses will be checked for illegal characters set by the"
+    " VCL program before sending. Failures will cause a VCL_Error state"
+    " to be logged, and `vcl_synth` to be called."
+)
+
+FEATURE_BIT(VALIDATE_BACKEND_REQUESTS,	validate_backend_requests,
+    "Check backend HTTP requests for invalid characters."
+    " All backend HTTP requests will be checked for illegal characters set"
+    " by the VCL program before sending. Failures will cause a VCL_Error"
+    " state to be logged, and `vcl_backend_error` to be called."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

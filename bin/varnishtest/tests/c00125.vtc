@@ -1,0 +1,123 @@
+varnishtest "HTTP request and response egress validation"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -syntax 4.0 -vcl+backend {
+	import blob;
+
+	sub vcl_recv {
+		if (req.http.do_recv_url) {
+			set req.url = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+	}
+
+	sub vcl_deliver {
+		if (req.http.do_deliver_proto) {
+			set resp.proto = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+		if (req.http.do_deliver_reason) {
+			set resp.reason = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+		if (req.http.do_deliver_header) {
+			set resp.http.foo = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+		if (req.http.do_synth_header) {
+			return (synth(200));
+		}
+	}
+
+	sub vcl_synth {
+		if (req.http.do_synth_header) {
+			set resp.http.foo = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.url == "/do_backend_fetch_method") {
+			set bereq.method = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+		if (bereq.url == "/do_backend_fetch_url") {
+			set bereq.url = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+		if (bereq.url == "/do_backend_fetch_header") {
+			set bereq.http.foo = blob.transcode(encoded="new%0aline", decoding=URL);
+		}
+	}
+} -start
+
+# Prime the cache
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+# Test bad vcl_deliver
+client c1 {
+	txreq -hdr "do_deliver_proto: true"
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+client c1 {
+	txreq -hdr "do_deliver_reason: true"
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+client c1 {
+	txreq -hdr "do_deliver_header: true"
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+# Test bad vcl_synth
+client c2 {
+	txreq -hdr "do_synth_header: true"
+	rxresp
+	expect resp.status == 500
+	expect_close
+} -run
+
+# Test bad vcl_backend_fetch
+client c3 {
+	txreq -url /do_backend_fetch_method
+	rxresp
+	expect resp.status == 503
+	# No expect_close as this will be a regular 503 object delivery
+} -run
+client c3 {
+	txreq -url /do_backend_fetch_url
+	rxresp
+	expect resp.status == 503
+	# No expect_close as this will be a regular 503 object delivery
+} -run
+client c3 {
+	txreq -url /do_backend_fetch_header
+	rxresp
+	expect resp.status == 503
+	# No expect_close as this will be a regular 503 object delivery
+} -run
+
+# Test vcl_backend_fetch on bad URL inherited from request
+client c4 {
+	txreq -hdr "do_recv_url: true"
+	rxresp
+	expect resp.status == 503
+	# No expect_close as this will be a regular 503 object delivery
+} -run
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c5 {
+	stream 1 {
+		txreq -hdr "do_deliver_proto" "true"
+		rxresp
+		expect resp.status == 503
+
+	} -run
+} -run
