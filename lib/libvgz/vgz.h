@@ -602,11 +602,11 @@ ZEXTERN int ZEXPORT deflateInit2 (z_streamp strm,
    Z_RLE is almost as fast as Z_HUFFMAN_ONLY, but should give better
    compression for PNG image data than Huffman only.  The degree of string
    matching from most to none is: Z_DEFAULT_STRATEGY, Z_FILTERED, Z_RLE, then
-   Z_HUFFMAN. The strategy parameter affects the compression ratio but never
-   the correctness of the compressed output, even if it is not set optimally
-   for the given data.  Z_FIXED uses the default string matching, but prevents
-   the use of dynamic Huffman codes, allowing for a simpler decoder for special
-   applications.
+   Z_HUFFMAN_ONLY. The strategy parameter affects the compression ratio but
+   never the correctness of the compressed output, even if it is not set
+   optimally for the given data.  Z_FIXED uses the default string matching, but
+   prevents the use of dynamic Huffman codes, allowing for a simpler decoder
+   for special applications.
 
      deflateInit2 returns Z_OK if success, Z_MEM_ERROR if there was not enough
    memory, Z_STREAM_ERROR if any parameter is invalid (such as an invalid
@@ -794,6 +794,18 @@ ZEXTERN int ZEXPORT deflatePending (z_streamp strm,
 
      deflatePending returns Z_OK if success, or Z_STREAM_ERROR if the source
    stream state was inconsistent.
+ */
+
+ZEXTERN int ZEXPORT deflateUsed(z_streamp strm,
+                                int *bits);
+/*
+     deflateUsed() returns in *bits the most recent number of deflate bits used
+   in the last byte when flushing to a byte boundary. The result is in 1..8, or
+   0 if there has not yet been a flush. This helps determine the location of
+   the last bit of a deflate stream.
+
+     deflateUsed returns Z_OK if success, or Z_STREAM_ERROR if the source
+    stream state was inconsistent.
  */
 
 ZEXTERN int ZEXPORT deflatePrime (z_streamp strm,
