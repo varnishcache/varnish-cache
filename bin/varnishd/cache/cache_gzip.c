@@ -288,11 +288,10 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  */
 
 static int v_matchproto_(vdp_init_f)
-vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
 	struct vgz *vg;
 	struct boc *boc;
-	struct req *req;
 	enum boc_state_e bos;
 	const char *p;
 	ssize_t dl;
@@ -300,9 +299,10 @@ vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
-	req = vdc->req;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hd, HTTP_MAGIC);
+	AN(vdc->cl);
+	AN(priv);
 
 	vg = VGZ_NewGunzip(vdc->vsl, "U D -");
 	AN(vg);
@@ -314,27 +314,27 @@ vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 	*priv = vg;
 
-	http_Unset(req->resp, H_Content_Encoding);
+	http_Unset(vdc->hd, H_Content_Encoding);
 
-	req->resp_len = -1;
+	*vdc->cl = -1;
 
-	if (oc == NULL)
+	if (vdc->oc == NULL)
 		return (0);
 
-	boc = HSH_RefBoc(oc);
+	boc = HSH_RefBoc(vdc->oc);
 	if (boc != NULL) {
 		CHECK_OBJ(boc, BOC_MAGIC);
 		bos = boc->state;
-		HSH_DerefBoc(vdc->wrk, oc);
+		HSH_DerefBoc(vdc->wrk, vdc->oc);
 		if (bos < BOS_FINISHED)
 			return (0); /* OA_GZIPBITS is not stable yet */
 	}
 
-	p = ObjGetAttr(vdc->wrk, oc, OA_GZIPBITS, &dl);
+	p = ObjGetAttr(vdc->wrk, vdc->oc, OA_GZIPBITS, &dl);
 	if (p != NULL && dl == 32) {
 		u = vbe64dec(p + 24);
 		if (u != 0)
-			req->resp_len = u;
+			*vdc->cl = u;
 	}
 	return (0);
 }

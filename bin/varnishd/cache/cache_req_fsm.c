@@ -460,11 +460,11 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		sendbody = 1;
 	}
 
-	VDP_Init(req->vdc, req->wrk, req->vsl, req);
+	VDP_Init(req->vdc, req->wrk, req->vsl, req, NULL, &req->resp_len);
 	if (req->vdp_filter_list == NULL)
 		req->vdp_filter_list = resp_Get_Filter_List(req);
 	if (req->vdp_filter_list == NULL ||
-	    VCL_StackVDP(req, req->vcl, req->vdp_filter_list)) {
+	    VCL_StackVDP(req->vdc, req->vcl, req->vdp_filter_list, req, NULL)) {
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 		req->acct.resp_bodybytes +=

@@ -71,18 +71,35 @@ VDP_Fini(const struct vdp_ctx *vdc)
 
 void
 VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
-    struct req *req)
+    struct req *req, struct busyobj *bo, intmax_t *cl)
 {
 	AN(vdc);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vsl);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	AN(cl);
+
+	assert((req ? 1 : 0) ^ (bo ? 1 : 0));
+
+	AN(cl);
+	assert(*cl >= -1);
 
 	INIT_OBJ(vdc, VDP_CTX_MAGIC);
 	VTAILQ_INIT(&vdc->vdp);
 	vdc->wrk = wrk;
 	vdc->vsl = vsl;
-	vdc->req = req;
+	vdc->cl = cl;
+
+	if (req) {
+		vdc->oc = req->objcore;
+		vdc->hd = req->resp;
+	}
+	else {
+		vdc->oc = bo->bereq_body;
+		vdc->hd = bo->bereq;
+	}
 }
 
 /* VDP_bytes
@@ -152,6 +169,10 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hd, HTTP_MAGIC);
+	AN(vdc->cl);
+	assert(*vdc->cl >= -1);
 	AN(ws);
 	AN(vdp);
 	AN(vdp->name);
@@ -177,10 +198,10 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 
 	AZ(vdc->retval);
 	if (vdpe->vdp->init == NULL)
-		return (vdc->retval);
-
-	vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv,
-	    vdpe == vdc->nxt ? vdc->req->objcore : NULL);
+		vdc->retval = 0;
+	else
+		vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv);
+	vdc->oc = NULL;
 
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
@@ -254,7 +275,9 @@ VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
 	AN(vdc->vsl);
-	vdc->req = NULL;
+	AZ(vdc->oc);
+	vdc->hd = NULL;
+	vdc->cl = NULL;
 	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
 	r = ObjIterate(vdc->wrk, oc, vdc, vdp_objiterate, final);
 	if (r < 0)

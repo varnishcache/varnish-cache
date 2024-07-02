@@ -73,7 +73,7 @@ V2D_Init(void)
 /**********************************************************************/
 
 static int v_matchproto_(vdp_init_f)
-h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
 	struct h2_req *r2;
 
@@ -82,7 +82,6 @@ h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 	AN(priv);
 	CAST_OBJ_NOTNULL(r2, *priv, H2_REQ_MAGIC);
 	(void)r2;
-	(void)oc;
 	return (0);
 }
 
@@ -348,7 +347,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	if (sendbody) {
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
-		if (!VDP_Push(ctx, req->vdc, req->ws, &h2_vdp, r2))
+		if (! VDP_Push(ctx, req->vdc, req->ws, &h2_vdp, r2))
 			(void)VDP_DeliverObj(req->vdc, req->objcore);
 	}
 
