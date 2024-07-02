@@ -40,6 +40,7 @@
 #include "vtc_log.h"
 
 #include "vtim.h"
+#include "vbt.h"
 
 static pthread_mutex_t	vtclog_mtx;
 static char		*vtclog_buf;
@@ -296,20 +297,30 @@ static void v_noreturn_
 vtc_log_VAS_Fail(const char *func, const char *file, int line,
     const char *cond, enum vas_e why)
 {
+	char buf[4096] = "";
 	struct vtclog *vl;
 	int e = errno;
 
 	(void)why;
+
+	if (VBT_dump(sizeof buf, buf) < 0) {
+		bprintf(buf, "Failed to print backtrace: %d (%s)\n",
+		    errno, strerror(errno));
+	}
+
 	vl = pthread_getspecific(log_key);
 	if (vl == NULL || vl->act) {
 		fprintf(stderr,
 		    "Assert error in %s(), %s line %d:\n"
-		    "  Condition(%s) not true. (errno=%d %s)\n",
-		    func, file, line, cond, e, strerror(e));
+		    "  Condition(%s) not true. (errno=%d %s)\n"
+		    "%s\n",
+		    func, file, line, cond, e, strerror(e), buf);
 	} else
 		vtc_fatal(vl, "Assert error in %s(), %s line %d:"
 		    "  Condition(%s) not true."
-		    "  Errno=%d %s", func, file, line, cond, e, strerror(e));
+		    "  Errno=%d %s\n"
+		    "%s\n",
+		    func, file, line, cond, e, strerror(e), buf);
 	abort();
 }
 
