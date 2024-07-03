@@ -288,6 +288,7 @@ VCL_VRT_Init(void)
 	AZ(vrt_addfilter(NULL, &VFP_esi_gzip, NULL));
 	AZ(vrt_addfilter(NULL, NULL, &VDP_esi));
 	AZ(vrt_addfilter(NULL, NULL, &VDP_gunzip));
+	AZ(vrt_addfilter(NULL, NULL, &VDP_gzip_breach));
 	AZ(vrt_addfilter(NULL, NULL, &VDP_range));
 }
 

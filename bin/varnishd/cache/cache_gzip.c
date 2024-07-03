@@ -49,6 +49,7 @@
 #include "vend.h"
 
 #include "vgz.h"
+#include "vrnd.h"
 
 struct vgz {
 	unsigned		magic;
@@ -400,6 +401,164 @@ const struct vdp VDP_gunzip = {
 	.init =		vdp_gunzip_init,
 	.bytes =	vdp_gunzip_bytes,
 	.fini =		vdp_gunzip_fini,
+};
+
+/*--------------------------------------------------------------------
+ * VDP for BREACH mitigation
+ */
+
+#define BREACH_PAD 256U
+
+struct breach {
+	unsigned	magic;
+#define BREACH_MAGIC	0xafe85758
+	unsigned	skip;
+	const char	*comm;
+};
+
+static const unsigned char breach_hdr[] = {
+	0x1f, 0x8b,		/* magic markers ID1 and ID2 */
+	0x08,			/* deflate compression */
+	1 << 4,			/* FCOMMENT flag */
+	0x00, 0x00, 0x00, 0x00,	/* no mtime */
+	0x02,			/* slowest compression */
+	0xff,			/* unknown OS */
+};
+
+static const char *
+breach_comment(struct ws *ws, size_t *plen)
+{
+	static const char *alpha =
+	    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	    "abcdefghijklmnopqrstuvwxyz"
+	    "0123456789!{}$%/&*()_+-=[]";
+	char buf[BREACH_PAD], *c, *e;
+	size_t len;
+
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	len = 1 + VRND_RandomTestable() % BREACH_PAD;
+	e = buf + len - 1;
+	for (c = buf; c < e; c++)
+		*c = alpha[VRND_RandomTestable() % sizeof alpha];
+	*c = '\0';
+	if (plen != NULL)
+		*plen = len;
+	return (WS_Copy(ws, buf, len));
+}
+
+static int
+breach_bytes(struct breach *br, struct vdp_ctx *vdc)
+{
+	int ret;
+
+	if (VDP_bytes(vdc, VDP_NULL, breach_hdr, sizeof breach_hdr))
+		return (vdc->retval);
+
+	ret = VDP_bytes(vdc, VDP_NULL, br->comm, strlen(br->comm) + 1);
+	br->comm = NULL;
+	return (ret);
+}
+
+static int v_matchproto_(vdp_init_f)
+vdp_gzip_breach_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
+    struct objcore *oc)
+{
+	struct breach *br;
+	struct boc *boc;
+	struct req *req;
+	enum boc_state_e bos;
+	const char *p, *comm;
+	size_t start_bit, len;
+	ssize_t dl;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	req = vdc->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (req->esi_level > 0 || oc == NULL)
+		return (1);
+
+	boc = HSH_RefBoc(oc);
+	if (boc != NULL) {
+		CHECK_OBJ(boc, BOC_MAGIC);
+		bos = boc->state;
+		HSH_DerefBoc(vdc->wrk, oc);
+		if (bos < BOS_FINISHED)
+			return (1); /* OA_GZIPBITS is not stable yet */
+	}
+
+	p = ObjGetAttr(vdc->wrk, oc, OA_GZIPBITS, &dl);
+	if (p == NULL || dl != 32)
+		return (1);
+
+	start_bit = vbe64dec(p);
+	assert(start_bit >= 80);
+	AZ(start_bit & 7);
+
+	/* NB: a gzip header comment is null-terminated. */
+	br = WS_Alloc(ctx->ws, sizeof *br);
+	comm = breach_comment(ctx->ws, &len);
+	if (br == NULL || comm == NULL) {
+		VSLb(ctx->vsl, SLT_Error, "gzip_breach: Out of workspace");
+		return (VFP_ERROR);
+	}
+
+	INIT_OBJ(br, BREACH_MAGIC);
+	br->skip = start_bit / 8;
+	br->comm = comm;
+
+	if (req->resp_len > 0)
+		req->resp_len += sizeof breach_hdr + len - br->skip;
+
+	*priv = br;
+	return (0);
+}
+
+static int v_matchproto_(vdp_fini_f)
+vdp_gzip_breach_fini(struct vdp_ctx *vdc, void **priv)
+{
+	struct breach *br;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	TAKE_OBJ_NOTNULL(br, priv, BREACH_MAGIC);
+	FINI_OBJ(br);
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
+vdp_gzip_breach_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	struct breach *br;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CAST_OBJ_NOTNULL(br, *priv, BREACH_MAGIC);
+
+	if (len <= 0)
+		return (len);
+
+	if (br->skip > len) {
+		br->skip -= len;
+		return (0);
+	}
+
+	ptr = (const char *)ptr + br->skip;
+	len -= br->skip;
+	br->skip = 0;
+
+	if (br->comm != NULL && breach_bytes(br, vdc))
+		return (vdc->retval);
+
+	return (VDP_bytes(vdc, act, ptr, len));
+}
+
+const struct vdp VDP_gzip_breach = {
+	.name =		"gzip_breach",
+	.init =		vdp_gzip_breach_init,
+	.bytes =	vdp_gzip_breach_bytes,
+	.fini =		vdp_gzip_breach_fini,
 };
 
 /*--------------------------------------------------------------------*/
