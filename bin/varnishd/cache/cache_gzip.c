@@ -481,7 +481,7 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 	if (vg->dir == VGZ_UN)
 		vbe64enc(p + 24, vg->vz.total_out);
 
-	if (vg->dir == VGZ_UN) {
+	if (EXPERIMENT(EXPERIMENT_UPSTREAM_ZLIB)) {
 		assert(vg->start_bit == vg->vz.start_bit);
 		assert(vg->stop_bit == vg->vz.stop_bit);
 		assert(vg->last_bit == vg->vz.last_bit);
