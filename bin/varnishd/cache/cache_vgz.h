@@ -43,7 +43,14 @@ enum vgzret_e {
 	VGZ_STUCK = 2,
 };
 
-enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
+enum vgz_flag {
+	VGZ_START = -1,
+	VGZ_NORMAL,
+	VGZ_ALIGN,
+	VGZ_RESET,
+	VGZ_FINISH
+};
+
 // struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
 struct vgz *VGZ_NewGzip(struct vsl_log *vsl, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);

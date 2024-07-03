@@ -29,8 +29,8 @@ varnish v1 -cliok "param.set gzip_memlevel 1"
 
 logexpect l1 -v v1 -g vxid {
 	expect * * Fetch_Body
-	expect 0 = ESI_xmlerror {^ERR after 24 ESI 1.0 <esi:include> element nested in <esi:remove>$}
-	expect 0 = ESI_xmlerror {^ERR after 24 ESI 1.0 Nested <!--esi element in <esi:remove>$}
+	expect 0 = ESI_xmlerror {^ERR after 19 ESI 1.0 <esi:include> element nested in <esi:remove>$}
+	expect 0 = ESI_xmlerror {^ERR after 19 ESI 1.0 Nested <!--esi element in <esi:remove>$}
 	expect 0 = Gzip         {^G}
 	expect 0 = Gzip         {^U}
 	expect 0 = BackendClose

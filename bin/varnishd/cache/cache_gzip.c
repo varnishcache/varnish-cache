@@ -254,15 +254,20 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, ssize_t *plen,
 	return (VGZ_ERROR);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Compress the available input. This may result in recursive calls
+ * with different flags to exhaust either input or output.
+ */
 
 enum vgzret_e
 VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 {
-	int i;
-	int zflg;
-	ssize_t l;
 	const uint8_t *before;
+	enum vgzret_e vr;
+	int i, zflg, left;
+	unsigned pending;
+	size_t avail_in;
+	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
@@ -272,12 +277,44 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 	AN(vg->vz.avail_out);
 	before = vg->vz.next_out;
 	switch (flags) {
+	case VGZ_START:
 	case VGZ_NORMAL:	zflg = Z_NO_FLUSH; break;
 	case VGZ_ALIGN:		zflg = Z_SYNC_FLUSH; break;
 	case VGZ_RESET:		zflg = Z_FULL_FLUSH; break;
 	case VGZ_FINISH:	zflg = Z_FINISH; break;
 	default:		WRONG("Invalid VGZ flag");
 	}
+
+	/* We pretend that there is no input until the gzip header is fully
+	 * written. In the absence of customization the header we generate
+	 * needs only 10B. It is possible to get an output buffer lower than
+	 * that if we try to gzip a beresp with a content-length below this
+	 * threshold.
+	 */
+	if (vg->start_bit == 0 && flags != VGZ_START) {
+		avail_in = vg->vz.avail_in;
+		vg->vz.avail_in = 0;
+		vr = VGZ_Gzip(vg, pptr, plen, VGZ_START);
+		vg->vz.avail_in = avail_in;
+		if (vr != VGZ_STUCK)
+			return (vr);
+		vg->start_bit = vg->vz.total_out * 8;
+	}
+
+	/* We consume the remaining input in the current block, which will be
+	 * the last block. At which point we may collect the beginning of the
+	 * last deflate block before flushing it with the gzip trailer.
+	 */
+	if (flags == VGZ_FINISH && vg->last_bit == 0) {
+		do {
+			vr = VGZ_Gzip(vg, pptr, plen, VGZ_NORMAL);
+		} while (vr == VGZ_OK);
+		if (vr != VGZ_STUCK || !VGZ_IbufEmpty(vg))
+			return (vr);
+		assert(deflatePending(&vg->vz, &pending, &left) == Z_OK);
+		vg->last_bit = (vg->vz.total_out - pending) * 8 + left;
+	}
+
 	i = deflate(&vg->vz, zflg);
 	if (i == Z_OK || i == Z_STREAM_END) {
 		*pptr = before;
@@ -287,8 +324,11 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 	vg->last_i = i;
 	if (i == Z_OK)
 		return (VGZ_OK);
-	if (i == Z_STREAM_END)
+	if (i == Z_STREAM_END) {
+		assert(deflateUsed(&vg->vz, &left) == Z_OK);
+		vg->stop_bit = (vg->vz.total_out - 9) * 8 + left;
 		return (VGZ_END);
+	}
 	if (i == Z_BUF_ERROR)
 		return (VGZ_STUCK);
 	VSLb(vg->vsl, SLT_Gzip, "Gzip error: %d (%s)", i, vgz_msg(vg));

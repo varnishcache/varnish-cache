@@ -67,7 +67,7 @@ client c1 {
 
 	txreq -url /bar -hdr "Accept-Encoding: gzip"
 	rxresp
-	expect resp.bodylen == 34
+	expect resp.bodylen == 29
 	expect resp.http.Vary == "Accept-Encoding"
 
 	# /baz
@@ -78,7 +78,7 @@ client c1 {
 
 	txreq -url /baz -hdr "Accept-Encoding: gzip"
 	rxresp
-	expect resp.bodylen == 34
+	expect resp.bodylen == 29
 	expect resp.http.Vary == "Accept-Encoding"
 
 	# /qux
@@ -89,7 +89,7 @@ client c1 {
 
 	txreq -url /qux -hdr "Accept-Encoding: gzip"
 	rxresp
-	expect resp.bodylen == 34
+	expect resp.bodylen == 29
 	expect resp.http.Vary == "qux, Accept-Encoding"
 
 	# /fubar
@@ -100,7 +100,7 @@ client c1 {
 
 	txreq -url /fubar -hdr "Accept-Encoding: gzip"
 	rxresp
-	expect resp.bodylen == 36
+	expect resp.bodylen == 31
 	expect resp.http.Vary == "fubar, Accept-Encoding"
 
 	# /foobar
