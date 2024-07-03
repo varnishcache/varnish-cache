@@ -1,0 +1,46 @@
+varnishtest "Heal-the-BREACH mitigation during delivery"
+
+server s1 {
+	rxreq
+	txresp -gziplen 4001
+} -start
+
+varnish v1 -cliok "param.set feature +gzip_breach"
+varnish v1 -vcl+backend "" -start
+
+varnish v1 -cliok "debug.srandom"
+
+client c1 {
+	txreq -hdr "accept-encoding: gzip"
+	rxresp
+	expect resp.bodylen == 4119
+	gunzip
+	expect resp.bodylen == 4001
+
+	txreq -hdr "accept-encoding: gzip"
+	rxresp
+	expect resp.bodylen == 4243
+	gunzip
+	expect resp.bodylen == 4001
+
+	txreq -hdr "accept-encoding: gzip"
+	rxresp
+	expect resp.bodylen == 4347
+	gunzip
+	expect resp.bodylen == 4001
+
+	txreq -hdr "accept-encoding: gzip"
+	rxresp
+	expect resp.bodylen == 4292
+	gunzip
+	expect resp.bodylen == 4001
+
+	txreq -hdr "accept-encoding: gzip"
+	rxresp
+	expect resp.bodylen == 4139
+	gunzip
+	expect resp.bodylen == 4001
+} -run
+
+varnish v1 -expect cache_miss == 1
+varnish v1 -expect cache_hit == 4
