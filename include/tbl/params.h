@@ -733,6 +733,22 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	panic_buffer,
+	/* type */	bytes_u,
+	/* min */	"4k",
+	/* max */	"10m",
+	/* def */	"64k",
+	/* units */	"bytes",
+	/* descr */
+	"Size of the panic message buffer.\n"
+	"The panic buffer is allocated in the working directory as memory "
+	"shared between the management and worker process, so sufficient "
+	"working directory space should be accounted for if this value is "
+	"adjusted. Panic messages are truncated to the configured size.",
+	/* flags */	MUST_RESTART
+)
+
+PARAM_SIMPLE(
 	/* name */	pcre2_jit_compilation,
 	/* type */	boolean,
 	/* min */	NULL,

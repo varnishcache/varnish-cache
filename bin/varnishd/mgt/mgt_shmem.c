@@ -131,7 +131,7 @@ mgt_SHM_ChildNew(void)
 	AN(heritage.param);
 	*heritage.param = mgt_param;
 
-	heritage.panic_str_len = 64 * 1024;
+	heritage.panic_str_len = mgt_param.panic_buffer;
 	heritage.panic_str = VSMW_Allocf(mgt_vsmw, NULL, "Panic",
 	    heritage.panic_str_len, "");
 	AN(heritage.panic_str);
