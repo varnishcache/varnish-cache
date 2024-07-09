@@ -1261,11 +1261,13 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	tk = tl->t;
 
 	for (cp = vcc_cmps; cp->fmt != VOID; cp++) {
-		if ((*e)->fmt == cp->fmt && tl->t->tok == cp->token) {
-			AN(cp->func);
-			cp->func(tl, e, cp);
-			return;
-		}
+		if (tl->t->tok != cp->token)
+			continue;
+		if ((*e)->fmt != cp->fmt)
+			continue;
+		AN(cp->func);
+		cp->func(tl, e, cp);
+		return;
 	}
 
 	switch (tk->tok) {
