@@ -183,7 +183,12 @@ class vardef(object):
             fo.write('\tsym->rname = "HDR_')
             fo.write(self.nam.split(".")[0].upper())
             fo.write('";\n')
-        elif self.rd and self.typ != "HEADER":
+        elif self.typ == "ERROR":
+            emsg = " ".join(self.wr)
+            self.wr = []
+            fo.write('\tsym->rname = "VRT_c_%s()";\n' % cnam)
+            fh.write("#define VRT_c_%s() \"%s\"\n" % (cnam, emsg))
+        elif self.rd and self.typ != "HEADER" and self.typ != "ERROR":
             fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
             varproto("VCL_" + self.typ + " VRT_r_%s(VRT_CTX)" % cnam)
         fo.write("\tsym->r_methods =\n")
@@ -265,6 +270,11 @@ def parse_var(ln):
         if j[0] == "Unsetable" and j[1] == "from:":
             for i in j[2:]:
                 vu.append(i.strip(",."))
+            continue
+        if j[0] == "Error" and j[1] == "message:":
+            vt = "ERROR"
+            vr = ["all"]
+            vw = j[2:] # stash error message in write permissions
             continue
         if j[0] == "Alias" and j[1] == "of:":
             va = j[2]

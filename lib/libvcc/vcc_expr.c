@@ -288,19 +288,18 @@ vcc_expr_tobool(struct vcc *tl, struct expr **e)
  */
 
 static void
-vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
+vcc_expr_tostring(struct vcc *tl, struct expr **e)
 {
 	const char *p;
 	uint8_t	constant = EXPR_VAR;
 
 	CHECK_OBJ_NOTNULL(*e, EXPR_MAGIC);
-	assert(fmt == STRINGS || fmt->stringform);
-	assert(fmt != (*e)->fmt);
+	assert((*e)->fmt != STRINGS);
 
 	p = (*e)->fmt->tostring;
 	if (p != NULL) {
 		AN(*p);
-		*e = vcc_expr_edit(tl, fmt, p, *e, NULL);
+		*e = vcc_expr_edit(tl, STRINGS, p, *e, NULL);
 		(*e)->constant = constant;
 		(*e)->nstr = 1;
 	} else {
@@ -816,7 +815,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			ERRCHK(tl);
 			/* Unless asked for a HEADER, fold to string here */
 			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
-				vcc_expr_tostring(tl, e, STRINGS);
+				vcc_expr_tostring(tl, e);
 				ERRCHK(tl);
 			}
 			return;
@@ -1071,9 +1070,9 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		} else if (tk->tok == '+' &&
 		    ((*e)->fmt == STRINGS || fmt == STRINGS)) {
 			if ((*e)->fmt != STRINGS)
-				vcc_expr_tostring(tl, e, STRINGS);
+				vcc_expr_tostring(tl, e);
 			if (e2->fmt != STRINGS)
-				vcc_expr_tostring(tl, &e2, STRINGS);
+				vcc_expr_tostring(tl, &e2);
 			if (vcc_islit(*e) && vcc_isconst(e2)) {
 				lit = vcc_islit(e2);
 				*e = vcc_expr_edit(tl, STRINGS,
@@ -1187,6 +1186,10 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	tk = tl->t;
 	vcc_NextToken(tl);
 	vcc_expr_add(tl, &e2, STRINGS);
+	if (e2->fmt != STRINGS && e2->fmt->stringform) {
+		/* NB: no concatenation processed by vcc_expr_add() */
+		vcc_expr_tostring(tl, &e2);
+	}
 	ERRCHK(tl);
 	if (e2->fmt != STRINGS) {
 		VSB_printf(tl->sb,
@@ -1420,7 +1423,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		return;
 
 	if ((*e)->fmt != STRINGS && fmt->stringform)
-		vcc_expr_tostring(tl, e, STRINGS);
+		vcc_expr_tostring(tl, e);
 
 	if ((*e)->fmt->stringform) {
 		VSB_printf(tl->sb, "Cannot convert type %s(%s) to %s(%s)\n",
@@ -1431,7 +1434,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 
 	if (fmt == BODY && !(*e)->fmt->bodyform)
-		vcc_expr_tostring(tl, e, STRINGS);
+		vcc_expr_tostring(tl, e);
 
 	if (fmt == BODY && (*e)->fmt->bodyform) {
 		if ((*e)->fmt == STRINGS)

@@ -1149,6 +1149,15 @@ beresp.filters
 	``beresp.do_*`` switches is a VCL error.
 
 
+beresp.error
+
+	Type: STRING
+
+	Readable from: vcl_backend_error
+
+	TODO: description (change type to ERROR?)
+
+
 .. _beresp.grace:
 
 beresp.grace
@@ -1898,4 +1907,17 @@ storage.<name>.used_space
 
 	Used space in the named stevedore. Only available for the malloc
 	stevedore.
+
+Error messages
+--------------
+
+TODO: general introduction.
+
+error.connection_refused
+
+	Type: ERROR
+
+	Error message: Connection refused by the backend
+
+	TODO: description (maybe mention ECONNREFUSED etc)
 
