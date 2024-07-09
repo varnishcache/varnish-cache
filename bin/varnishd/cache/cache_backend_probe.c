@@ -499,7 +499,7 @@ vbp_task(struct worker *wrk, void *priv)
  */
 
 static void * v_matchproto_(bgthread_t)
-vbp_thread(struct worker *wrk, void *priv)
+vbp_scheduler(struct worker *wrk, void *priv)
 {
 	vtim_real now, nxt;
 	struct vbp_target *vt;
@@ -808,5 +808,5 @@ VBP_Init(void)
 	vbp_heap = VBH_new(NULL, vbp_cmp, vbp_update);
 	AN(vbp_heap);
 	PTOK(pthread_cond_init(&vbp_cond, NULL));
-	WRK_BgThread(&thr, "backend-poller", vbp_thread, NULL);
+	WRK_BgThread(&thr, "backend-probe-scheduler", vbp_scheduler, NULL);
 }
