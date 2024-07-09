@@ -69,6 +69,46 @@ varnish v1 -errvcl {Comparison of different types: STRING '==' INT} {
 	}
 }
 
+varnish v1 -vcl {
+	import debug;
+	backend be none;
+	sub vcl_recv {
+		if ("string" == "string") {
+			return (fail("should compile"));
+		}
+	}
+}
+
+varnish v1 -vcl {
+	import debug;
+	backend be none;
+	sub vcl_recv {
+		if ("string" == debug.return_strands("string")) {
+			return (fail("should compile"));
+		}
+	}
+}
+
+varnish v1 -vcl {
+	import debug;
+	backend be none;
+	sub vcl_recv {
+		if (debug.return_strands("string") == "string") {
+			return (fail("should compile"));
+		}
+	}
+}
+
+varnish v1 -vcl {
+	import debug;
+	backend be none;
+	sub vcl_recv {
+		if (debug.return_strands("string") == debug.return_strands("string")) {
+			return (fail("should compile"));
+		}
+	}
+}
+
 varnish v1 -errvcl {Symbol not found: 'req.http.req.http.foo'} {
 	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
