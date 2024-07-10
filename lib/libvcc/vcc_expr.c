@@ -1046,11 +1046,6 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	vcc_expr_mul(tl, e, fmt);
 	ERRCHK(tl);
 
-	if (tl->t->tok != '+' && (*e)->fmt->stringform) {
-		vcc_expr_tostring(tl, e);
-		ERRCHK(tl);
-	}
-
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
 		tk = tl->t;
 		for (ap = vcc_adds; ap->op != EOI; ap++)
@@ -1100,6 +1095,10 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 	}
+
+	/* No concatenation, finalize string. */
+	if ((*e)->fmt->stringform)
+		vcc_expr_tostring(tl, e);
 }
 
 /*--------------------------------------------------------------------
