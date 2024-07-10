@@ -151,6 +151,28 @@ VDI_GetHdr(struct busyobj *bo)
 	return (i);
 }
 
+/* Get a set of http trailers -------------------------------------*/
+
+int
+VDI_GetTrl(struct busyobj *bo)
+{
+	const struct director *d;
+	struct vrt_ctx ctx[1];
+	int i = 0;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->director_resp, DIRECTOR_MAGIC);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
+
+	d = bo->director_resp;
+	if (d->vdir->methods->gettrls != NULL)
+		i = d->vdir->methods->gettrls(ctx, d);
+	if (i > 0)
+		bo->acct.beresp_hdrbytes += i; // XXX: acct.beresp_trlbytes ?
+	return (i);
+}
+
 /* Get IP number (if any ) -------------------------------------------*/
 
 VCL_IP

@@ -60,6 +60,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	const struct stevedore *stv;
 	ssize_t req_bodybytes = 0;
 	unsigned flush = OBJ_ITER_FLUSH;
+	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -175,6 +176,16 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		http_Unset(req->http, H_Transfer_Encoding);
 		http_PrintfHeader(req->http, "Content-Length: %ju",
 		    (uintmax_t)req_bodybytes);
+	}
+
+	if (req->htc->body_status == BS_TRAILERS) {
+		i = HTTP1_RxTrailers(req, NULL);
+		if (i < 0) {
+			VSLb(req->vsl, SLT_FetchError,
+			    "Invalid trailers on req body");
+			return (-1);
+		}
+		req->acct.req_hdrbytes += i;  // XXX: acct.req_trlbytes ?
 	}
 
 	req->req_body_cached = 1;

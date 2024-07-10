@@ -63,8 +63,8 @@ const int HTTP1_Resp[3] = {
  * Check if we have a complete HTTP request or response yet
  */
 
-enum htc_status_e v_matchproto_(htc_complete_f)
-HTTP1_Complete(struct http_conn *htc)
+static enum htc_status_e
+http1_fields(struct http_conn *htc, unsigned is_hdr)
 {
 	char *p;
 	enum htc_status_e retval;
@@ -73,16 +73,23 @@ HTTP1_Complete(struct http_conn *htc)
 	AN(WS_Reservation(htc->ws));
 	assert(pdiff(htc->rxbuf_b, htc->rxbuf_e) <= WS_ReservationSize(htc->ws));
 
-	/* Skip any leading white space */
-	for (p = htc->rxbuf_b ; p < htc->rxbuf_e && vct_islws(*p); p++)
-		continue;
-	if (p == htc->rxbuf_e)
-		return (HTC_S_EMPTY);
+	if (is_hdr) {
+		/* Skip any leading white space */
+		for (p = htc->rxbuf_b ; p < htc->rxbuf_e && vct_islws(*p); p++)
+			continue;
+		if (p == htc->rxbuf_e)
+			return (HTC_S_EMPTY);
 
-	/* Do not return a partial H2 connection preface */
-	retval = H2_prism_complete(htc);
-	if (retval != HTC_S_JUNK)
-		return (retval);
+		/* Do not return a partial H2 connection preface */
+		retval = H2_prism_complete(htc);
+		if (retval != HTC_S_JUNK)
+			return (retval);
+	} else {
+		/* Tolerate empty trailers */
+		p = htc->rxbuf_b;
+		if (vct_iscrlf(p, htc->rxbuf_e))
+			return (HTC_S_COMPLETE);
+	}
 
 	/*
 	 * Here we just look for NL[CR]NL to see that reception
@@ -102,6 +109,20 @@ HTTP1_Complete(struct http_conn *htc)
 	return (HTC_S_COMPLETE);
 }
 
+enum htc_status_e v_matchproto_(htc_complete_f)
+HTTP1_Headers(struct http_conn *htc)
+{
+
+	return (http1_fields(htc, 1));
+}
+
+enum htc_status_e v_matchproto_(htc_complete_f)
+HTTP1_Trailers(struct http_conn *htc)
+{
+
+	return (http1_fields(htc, 0));
+}
+
 /*--------------------------------------------------------------------
  * Dissect the headers of the HTTP protocol message.
  * Detect conditionals (headers which start with '^[Ii][Ff]-')
@@ -114,9 +135,8 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 	char *q, *r, *s;
 	int i;
 
-	assert(p > htc->rxbuf_b);
+	assert(p >= htc->rxbuf_b);
 	assert(p <= htc->rxbuf_e);
-	hp->nhd = HTTP_HDR_FIRST;
 	r = NULL;		/* For FlexeLint */
 	for (; p < htc->rxbuf_e; p = r) {
 
@@ -194,6 +214,9 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 			return (400);
 		}
 
+		if (htc->body_status == BS_TRAILERS)
+			continue;
+
 		if (hp->nhd < hp->shd) {
 			hp->hdf[hp->nhd] = 0;
 			hp->hd[hp->nhd].b = p;
@@ -206,7 +229,7 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 		}
 	}
 	i = vct_iscrlf(p, htc->rxbuf_e);
-	assert(i > 0);		/* HTTP1_Complete guarantees this */
+	assert(i > 0);		/* HTTP1_Headers guarantees this */
 	p += i;
 	HTC_RxPipeline(htc, p);
 	htc->rxbuf_e = p;
@@ -224,11 +247,16 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 	char *p, *q;
 	int i;
 
-	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	assert(htc->rxbuf_e >= htc->rxbuf_b);
 
+	if (htc->body_status == BS_TRAILERS) {
+		AZ(hf); /* No start-line, go straight to header lines. */
+		return (http1_dissect_hdrs(hp, htc->rxbuf_b, htc, maxhdr));
+	}
+
+	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	AZ(hp->hd[hf[0]].b);
 	AZ(hp->hd[hf[1]].b);
 	AZ(hp->hd[hf[2]].b);
@@ -295,6 +323,7 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 
 	http_Proto(hp);
 
+	hp->nhd = HTTP_HDR_FIRST;
 	return (http1_dissect_hdrs(hp, p, htc, maxhdr));
 }
 
@@ -460,6 +489,124 @@ HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
 	htc->body_status = http1_body_status(hp, htc, 0);
 
 	return (retval);
+}
+
+/*--------------------------------------------------------------------*/
+
+uint16_t
+HTTP1_DissectTrailers(struct http_conn *htc, struct http *hp, unsigned maxlen)
+{
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (http1_splitline(hp, htc, NULL, maxlen)) {
+		VSLb(hp->vsl, SLT_HttpGarbage, "%.*s",
+		    (int)(htc->rxbuf_e - htc->rxbuf_b), htc->rxbuf_b);
+		http_SetStatus(hp, 503, NULL);
+		return (503);
+	}
+
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+enum htc_status_e
+HTTP1_RxFields(struct http_conn *htc, struct http *hp, struct ws *ws,
+    htc_complete_f *func, vtim_dur ti, vtim_dur td, size_t maxlen,
+    const char *remote)
+{
+	enum htc_status_e hs;
+	const char *name, *desc;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	assert(*htc->rfd > 0);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	assert(func == HTTP1_Headers || func == HTTP1_Trailers);
+	assert(maxlen > 0);
+	AN(remote);
+
+	if (HTC_RxInit(htc, ws))
+		hs = HTC_S_OVERFLOW;
+	else
+		hs = HTC_RxStuff(htc, func, NULL, NULL, ti, NAN, td, maxlen);
+
+	switch (hs) {
+	case HTC_S_COMPLETE:
+		break;
+	case HTC_S_JUNK:
+		VSLb(hp->vsl, SLT_FetchError, "Received junk");
+		htc->doclose = SC_RX_JUNK;
+		break;
+	case HTC_S_CLOSE:
+		VSLb(hp->vsl, SLT_FetchError, "%s closed", remote);
+		htc->doclose = SC_RESP_CLOSE;
+		break;
+	case HTC_S_TIMEOUT:
+		VSLb(hp->vsl, SLT_FetchError, "timeout");
+		htc->doclose = SC_RX_TIMEOUT;
+		break;
+	case HTC_S_OVERFLOW:
+		VSLb(hp->vsl, SLT_FetchError, "overflow");
+		htc->doclose = SC_RX_OVERFLOW;
+		break;
+	case HTC_S_IDLE:
+		VSLb(hp->vsl, SLT_FetchError, "first byte timeout");
+		htc->doclose = SC_RX_TIMEOUT;
+		break;
+	default:
+		HTC_Status(hs, &name, &desc);
+		VSLb(hp->vsl, SLT_FetchError, "HTC %s (%s)",
+		     name, desc);
+		htc->doclose = SC_RX_BAD;
+		break;
+	}
+	return (hs);
+}
+
+int
+HTTP1_RxTrailers(struct req *req, struct busyobj *bo)
+{
+	enum htc_status_e hs;
+	struct http_conn *htc;
+	struct http *hp;
+	vtim_dur td;
+	size_t maxlen, maxhdrlen;
+	const char *remote;
+
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+
+	if (req != NULL) {
+		htc = req->htc;
+		hp = req->http;
+		td = cache_param->timeout_idle;
+		maxlen = cache_param->http_req_size;
+		maxhdrlen = cache_param->http_req_hdr_len;
+		remote = "client";
+	} else {
+		AN(bo);
+		htc = bo->htc;
+		hp = bo->beresp;
+		td = cache_param->between_bytes_timeout;
+		maxlen = cache_param->http_resp_size;
+		maxhdrlen = cache_param->http_resp_hdr_len;
+		remote = "backend";
+	}
+
+	hs = HTTP1_RxFields(htc, hp, hp->ws, HTTP1_Trailers, NAN, td, maxlen,
+	    remote);
+	if (hs != HTC_S_COMPLETE) {
+		/* XXX: bump hdrbytes counter? */
+		VSLb(hp->vsl, SLT_FetchError, "Trailers read failed");
+		return (-1);
+	}
+
+	if (HTTP1_DissectTrailers(htc, hp, maxhdrlen))
+		return (-1);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/

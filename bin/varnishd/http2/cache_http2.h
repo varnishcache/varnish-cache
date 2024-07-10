@@ -232,6 +232,7 @@ struct h2h_decode {
 
 	unsigned			has_authority:1;
 	unsigned			has_scheme:1;
+	unsigned			has_pseudo:1;
 	h2_error			error;
 	enum vhd_ret_e			vhd_ret;
 	struct ws			*ws;
@@ -244,9 +245,11 @@ struct h2h_decode {
 };
 
 void h2h_decode_hdr_init(const struct h2_sess *h2);
+void h2h_decode_trl_init(const struct h2_sess *h2);
 h2_error h2h_decode_hdr_fini(const struct h2_sess *h2);
+h2_error h2h_decode_trl_fini(const struct h2_sess *h2, struct h2_req *r2);
 h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
-    size_t len);
+    size_t len, struct req *req);
 
 /* cache_http2_send.c */
 void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);

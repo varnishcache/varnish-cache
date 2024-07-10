@@ -38,6 +38,7 @@
 #include "config.h"
 
 #include <inttypes.h>
+#include <poll.h>
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
@@ -90,21 +91,134 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 
 
 /*--------------------------------------------------------------------
- * Read a chunked HTTP object.
+ * read (CR)?LF at the end of a chunk
+ */
+static enum vfp_status
+v1f_chunk_end(struct vfp_ctx *vc, struct http_conn *htc)
+{
+	char c;
+
+	if (v1f_read(vc, htc, &c, 1) <= 0)
+		return (VFP_Error(vc, "chunked read err"));
+	if (c == '\r' && v1f_read(vc, htc, &c, 1) <= 0)
+		return (VFP_Error(vc, "chunked read err"));
+	if (c != '\n')
+		return (VFP_Error(vc, "chunked tail no NL"));
+	return (VFP_OK);
+}
+
+
+/*--------------------------------------------------------------------
+ * Parse a chunk header and, for VFP_OK, return size in a pointer
  *
  * XXX: Reading one byte at a time is pretty pessimal.
+ */
+
+static enum vfp_status
+v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
+{
+	char buf[20];		/* XXX: 20 is arbitrary */
+	unsigned u;
+	uintmax_t cll;
+	ssize_t cl, lr;
+	char *q;
+
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	AN(szp);
+	assert(*szp == -1);
+
+	/* Skip leading whitespace */
+	do {
+		lr = v1f_read(vc, htc, buf, 1);
+		if (lr <= 0)
+			return (VFP_Error(vc, "chunked read err"));
+	} while (vct_islws(buf[0]));
+
+	if (!vct_ishex(buf[0]))
+		return (VFP_Error(vc, "chunked header non-hex"));
+
+	/* Collect hex digits, skipping leading zeros */
+	for (u = 1; u < sizeof buf; u++) {
+		do {
+			lr = v1f_read(vc, htc, buf + u, 1);
+			if (lr <= 0)
+				return (VFP_Error(vc, "chunked read err"));
+		} while (u == 1 && buf[0] == '0' && buf[u] == '0');
+		if (!vct_ishex(buf[u]))
+			break;
+	}
+
+	if (u >= sizeof buf)
+		return (VFP_Error(vc, "chunked header too long"));
+
+	/* Skip trailing white space */
+	while (vct_islws(buf[u]) && buf[u] != '\n') {
+		lr = v1f_read(vc, htc, buf + u, 1);
+		if (lr <= 0)
+			return (VFP_Error(vc, "chunked read err"));
+	}
+
+	if (buf[u] != '\n')
+		return (VFP_Error(vc, "chunked header no NL"));
+
+	buf[u] = '\0';
+
+	cll = strtoumax(buf, &q, 16);
+	if (q == NULL || *q != '\0')
+		return (VFP_Error(vc, "chunked header number syntax"));
+	cl = (ssize_t)cll;
+	if (cl < 0 || (uintmax_t)cl != cll)
+		return (VFP_Error(vc, "bogusly large chunk size"));
+
+	*szp = cl;
+	return (VFP_OK);
+}
+
+
+/*--------------------------------------------------------------------
+ * Check if data is available
+ */
+
+static int
+v1f_poll(struct http_conn *htc)
+{
+	struct pollfd pfd[1];
+	int r;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+
+	if (htc->pipeline_b)
+		return (1);
+
+	pfd->fd = *htc->rfd;
+	pfd->events = POLLIN;
+
+	r = poll(pfd, 1, 0);
+	if (r < 0) {
+		assert(errno == EINTR);
+		return (0);
+	}
+	if (r == 0)
+		return (0);
+	assert(r == 1);
+	assert(pfd->revents & POLLIN);
+	return (1);
+}
+
+
+/*--------------------------------------------------------------------
+ * Read a chunked HTTP object.
+ *
  */
 
 static enum vfp_status v_matchproto_(vfp_pull_f)
 v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
     ssize_t *lp)
 {
+	static enum vfp_status vfps;
 	struct http_conn *htc;
-	char buf[20];		/* XXX: 20 is arbitrary */
-	char *q;
-	unsigned u;
-	uintmax_t cll;
-	ssize_t cl, l, lr;
+	ssize_t l, lr;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
@@ -115,50 +229,9 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	l = *lp;
 	*lp = 0;
 	if (vfe->priv2 == -1) {
-		/* Skip leading whitespace */
-		do {
-			lr = v1f_read(vc, htc, buf, 1);
-			if (lr <= 0)
-				return (VFP_Error(vc, "chunked read err"));
-		} while (vct_islws(buf[0]));
-
-		if (!vct_ishex(buf[0]))
-			 return (VFP_Error(vc, "chunked header non-hex"));
-
-		/* Collect hex digits, skipping leading zeros */
-		for (u = 1; u < sizeof buf; u++) {
-			do {
-				lr = v1f_read(vc, htc, buf + u, 1);
-				if (lr <= 0)
-					return (VFP_Error(vc, "chunked read err"));
-			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
-			if (!vct_ishex(buf[u]))
-				break;
-		}
-
-		if (u >= sizeof buf)
-			return (VFP_Error(vc, "chunked header too long"));
-
-		/* Skip trailing white space */
-		while (vct_islws(buf[u]) && buf[u] != '\n') {
-			lr = v1f_read(vc, htc, buf + u, 1);
-			if (lr <= 0)
-				return (VFP_Error(vc, "chunked read err"));
-		}
-
-		if (buf[u] != '\n')
-			return (VFP_Error(vc, "chunked header no NL"));
-
-		buf[u] = '\0';
-
-		cll = strtoumax(buf, &q, 16);
-		if (q == NULL || *q != '\0')
-			return (VFP_Error(vc, "chunked header number syntax"));
-		cl = (ssize_t)cll;
-		if (cl < 0 || (uintmax_t)cl != cll)
-			return (VFP_Error(vc, "bogusly large chunk size"));
-
-		vfe->priv2 = cl;
+		vfps = v1f_chunked_hdr(vc, htc, &vfe->priv2);
+		if (vfps != VFP_OK)
+			return (vfps);
 	}
 	if (vfe->priv2 > 0) {
 		if (vfe->priv2 < l)
@@ -168,17 +241,27 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			return (VFP_Error(vc, "chunked insufficient bytes"));
 		*lp = lr;
 		vfe->priv2 -= lr;
-		if (vfe->priv2 == 0)
-			vfe->priv2 = -1;
-		return (VFP_OK);
+		if (vfe->priv2 != 0)
+			return (VFP_OK);
+
+		vfe->priv2 = -1;
+
+		vfps = v1f_chunk_end(vc, htc);
+		if (vfps != VFP_OK)
+			return (vfps);
+
+		/* only if some data of the next chunk header is available, read
+		 * it to check if we can return VFP_END */
+		if (! v1f_poll(htc))
+			return (VFP_OK);
+		vfps = v1f_chunked_hdr(vc, htc, &vfe->priv2);
+		if (vfps != VFP_OK)
+			return (vfps);
+		if (vfe->priv2 != 0)
+			return (VFP_OK);
 	}
+	htc->body_status = BS_TRAILERS;
 	AZ(vfe->priv2);
-	if (v1f_read(vc, htc, buf, 1) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] == '\r' && v1f_read(vc, htc, buf, 1) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] != '\n')
-		return (VFP_Error(vc, "chunked tail no NL"));
 	return (VFP_END);
 }
 

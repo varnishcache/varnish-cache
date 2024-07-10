@@ -179,6 +179,7 @@ void VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **busyobj);
 
 /* cache_director.c */
 int VDI_GetHdr(struct busyobj *);
+int VDI_GetTrl(struct busyobj *);
 VCL_IP VDI_GetIP(struct busyobj *);
 void VDI_Finish(struct busyobj *bo);
 stream_close_t VDI_Http1Pipe(struct req *, struct busyobj *);
@@ -296,10 +297,15 @@ void HTTP_Init(void);
 
 /* cache_http1_proto.c */
 
-htc_complete_f HTTP1_Complete;
+htc_complete_f HTTP1_Headers;
+htc_complete_f HTTP1_Trailers;
 uint16_t HTTP1_DissectRequest(struct http_conn *, struct http *);
 uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
     const struct http *req);
+uint16_t HTTP1_DissectTrailers(struct http_conn *, struct http *, unsigned);
+enum htc_status_e HTTP1_RxFields(struct http_conn *, struct http *,
+    struct ws *, htc_complete_f *, vtim_dur, vtim_dur, size_t, const char *);
+int HTTP1_RxTrailers(struct req *, struct busyobj *);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 /* cache_main.c */
@@ -446,7 +452,7 @@ void SES_Ref(struct sess *sp);
 void SES_Rel(struct sess *sp);
 
 void HTC_Status(enum htc_status_e, const char **, const char **);
-void HTC_RxInit(struct http_conn *htc, struct ws *ws);
+int HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, char *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
     vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, vtim_dur td,
