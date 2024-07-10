@@ -1,12 +1,12 @@
-# This file helps set up a varnishtest execution without a traditional
-# pre-defined list of tests. Test cases are expected to be located in a
-# tests/ directory relative to the Makefile's source directory.
-#
-# When a difference is detected, a refresh is triggered by calling the
-# vtc-refresh-tests target that must be defined in the including Makefile.
-#
-# The current assumption is that all the tests for the Makefile are VTCs
-# and may be revisited if needed.
+## This file helps set up a varnishtest execution without a traditional
+## pre-defined list of tests. Test cases are expected to be located in a
+## tests/ directory relative to the Makefile's source directory.
+##
+## When a difference is detected, a refresh is triggered by calling the
+## vtc-refresh-tests target that must be defined in the including Makefile.
+##
+## The current assumption is that all the tests for the Makefile are VTCs
+## and may be revisited if needed.
 
 VTC_LOG_COMPILER = $(top_builddir)/bin/varnishtest/varnishtest -v -i
 TEST_EXTENSIONS = .vtc
