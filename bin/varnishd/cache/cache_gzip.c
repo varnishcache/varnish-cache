@@ -425,6 +425,10 @@ static const unsigned char breach_hdr[] = {
 	0xff,			/* unknown OS */
 };
 
+static const gz_header breach_gz_header = {
+	.os = 0xff,		/* unknown OS */
+};
+
 static const char *
 breach_comment(struct ws *ws, size_t *plen)
 {
@@ -637,13 +641,15 @@ static enum vfp_status v_matchproto_(vfp_init_f)
 vfp_gzip_init(VRT_CTX, struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vgz *vg;
+	gz_header *hdr;
+	const char *comm;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
 	/*
-	 * G(un)zip makes no sence on partial responses, but since
+	 * G(un)zip makes no sense on partial responses, but since
 	 * it is an pure 1:1 transform, we can just ignore it.
 	 */
 	if (http_GetStatus(vc->resp) == 206)
@@ -654,6 +660,18 @@ vfp_gzip_init(VRT_CTX, struct vfp_ctx *vc, struct vfp_entry *vfe)
 			return (VFP_NULL);
 		vg = VGZ_NewGzip(vc->wrk->vsl, vfe->vfp->priv1);
 		vc->obj_flags |= OF_GZIPED | OF_CHGCE;
+		if (FEATURE(FEATURE_GZIP_BREACH)) {
+			comm = breach_comment(ctx->ws, NULL);
+			hdr = WS_Copy(ctx->ws, &breach_gz_header,
+			    sizeof breach_gz_header);
+			if (comm == NULL || hdr == NULL) {
+				VSLb(vc->wrk->vsl, SLT_FetchError,
+				    "gzip_breach: Out of workspace");
+				return (VFP_ERROR);
+			}
+			hdr->comment = TRUST_ME(comm);
+			assert(deflateSetHeader(&vg->vz, hdr) == Z_OK);
+		}
 	} else {
 		if (!http_HdrIs(vc->resp, H_Content_Encoding, "gzip"))
 			return (VFP_NULL);
