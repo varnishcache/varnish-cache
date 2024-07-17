@@ -597,7 +597,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 		AZ(vfc->failed);
 		l = est;
-		oc = bo->fetch_objcore;
 		if (oc->boc->transit_buffer > 0)
 			l = vmin_t(ssize_t, l, oc->boc->transit_buffer);
 		assert(l >= 0);
