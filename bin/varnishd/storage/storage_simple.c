@@ -473,11 +473,15 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	AN(sz);
 	AN(ptr);
 	if (*sz == 0)
 		*sz = cache_param->fetch_chunksize;
 	assert(*sz > 0);
+	if (oc->boc->transit_buffer > 0)
+		*sz = vmin_t(ssize_t, *sz, oc->boc->transit_buffer);
 
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);

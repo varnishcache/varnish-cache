@@ -597,8 +597,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 		AZ(vfc->failed);
 		l = est;
-		if (oc->boc->transit_buffer > 0)
-			l = vmin_t(ssize_t, l, oc->boc->transit_buffer);
 		assert(l >= 0);
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
 			bo->htc->doclose = SC_RX_BODY;
