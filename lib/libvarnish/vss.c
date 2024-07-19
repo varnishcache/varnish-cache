@@ -261,13 +261,16 @@ VSS_resolver_range(const char *addr, const char *def_port, vss_resolved_f *func,
 		return (VSS_resolver(addr, def_port, func, priv, errp));
 	}
 
+	/* Undo vss_parse() string modifications */
+	memcpy(p, addr, pp - p);
+
 	for (i = lo; i <= hi && !error; i++) {
 		/* pp points to the first character of the range definition.
 		 * The range definition includes the biggest port number, so the
 		 * buffer must be big enough to fit each number individually.
 		 */
 		sprintf(pp, "%lu", i);
-		error = VSS_resolver(hp, pp, func, priv, errp);
+		error = VSS_resolver(p, def_port, func, priv, errp);
 	}
 	free(p);
 	return (error);
