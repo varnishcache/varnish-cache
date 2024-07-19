@@ -87,5 +87,5 @@ varnish v1 -errvcl {Backend path: The empty abstract socket name is not supporte
 	}
 }
 
-shell -err -expect "Error: Got no socket(s) for @" \
+shell -err -expect "Error: Got no socket(s) for @ (The empty abstract socket name is not supported)" \
 	"varnishd -n ${tmpdir}/v0 -a @ -b None"

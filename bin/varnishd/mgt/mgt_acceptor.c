@@ -373,7 +373,9 @@ MAC_Arg(const char *spec)
 	else
 		error = VSS_resolver_range(av[1], "80", mac_tcp, la, &err);
 
-	if (VTAILQ_EMPTY(&la->socks) || error)
+	if (error)
+		ARGV_ERR("Got no socket(s) for %s (%s)\n", av[1], err);
+	else if (VTAILQ_EMPTY(&la->socks))
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
 	VAV_Free(av);
 }
