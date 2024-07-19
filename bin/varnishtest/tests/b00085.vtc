@@ -70,6 +70,16 @@ client c1 {
 	rxresp
 	expect resp.reason == "Range start cannot be 0"
 
+	# No addr
+
+	txreq -hdr "resolve: :80"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80"
+
+	txreq -hdr "resolve: :80-81"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80, 0.0.0.0:81, :::81"
+
 	# No port
 
 	txreq -hdr "resolve: 127.0.0.1"
