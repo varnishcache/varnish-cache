@@ -33,6 +33,7 @@
 
 struct waited;
 struct vbh;
+struct VSC_waiter;
 
 struct waiter {
 	unsigned			magic;
@@ -43,6 +44,7 @@ struct waiter {
 
 	void				*priv;
 	struct vbh			*heap;
+	struct VSC_waiter		*vsc;
 };
 
 typedef void waiter_init_f(struct waiter *);

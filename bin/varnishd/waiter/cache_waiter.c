@@ -42,6 +42,8 @@
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
 
+#include "VSC_waiter.h"
+
 static int v_matchproto_(vbh_cmp_t)
 waited_cmp(void *priv, const void *a, const void *b)
 {
@@ -75,6 +77,22 @@ Wait_Call(const struct waiter *w, struct waited *wp,
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	AN(wp->func);
 	assert(wp->idx == VBH_NOIDX);
+	AN(w->vsc);
+
+	switch (ev) {
+	case WAITER_REMCLOSE:
+		w->vsc->remclose++;
+		break;
+	case WAITER_TIMEOUT:
+		w->vsc->timeout++;
+		break;
+	case WAITER_ACTION:
+		w->vsc->action++;
+		break;
+	default:
+		break;
+	}
+
 	wp->func(wp, ev, now);
 }
 
@@ -86,6 +104,8 @@ Wait_HeapInsert(const struct waiter *w, struct waited *wp)
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->idx == VBH_NOIDX);
+	AN(w->vsc);
+	w->vsc->conns++;
 	VBH_insert(w->heap, wp);
 }
 
@@ -104,6 +124,8 @@ Wait_HeapDelete(const struct waiter *w, const struct waited *wp)
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	if (wp->idx == VBH_NOIDX)
 		return (0);
+	AN(w->vsc);
+	w->vsc->conns--;
 	VBH_delete(w->heap, wp->idx);
 	return (1);
 }
@@ -152,7 +174,7 @@ Waiter_GetName(void)
 }
 
 struct waiter *
-Waiter_New(void)
+Waiter_New(const char *name)
 {
 	struct waiter *w;
 
@@ -169,6 +191,10 @@ Waiter_New(void)
 	w->impl = waiter;
 	VTAILQ_INIT(&w->waithead);
 	w->heap = VBH_new(w, waited_cmp, waited_update);
+
+	AZ(w->vsc);
+	w->vsc = VSC_waiter_New(NULL, NULL, "%s", name);
+	AN(w->vsc);
 
 	waiter->init(w);
 
