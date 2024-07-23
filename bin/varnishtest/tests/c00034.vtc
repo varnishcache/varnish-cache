@@ -273,6 +273,18 @@ varnish v1 -vcl+backend {
 			return (pass);
 		}
 	}
+
+	# skip built-in vcl_beresp_range
+	sub vcl_backend_response {
+		if (bereq.uncacheable) {
+			return (deliver);
+		}
+		call vcl_beresp_stale;
+		call vcl_beresp_cookie;
+		call vcl_beresp_control;
+		call vcl_beresp_vary;
+		return (deliver);
+	}
 }
 
 client c8 {
@@ -325,4 +337,45 @@ client c9 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 256
+} -run
+
+# built-in vcl has vcl_beresp_range to ignore content-range for responses but
+# 206, 416
+#
+server s1 {
+	rxreq
+	expect req.url == "/?unexpected=content-range"
+	expect req.http.range == <undef>
+	txresp -hdr "content-range: bytes 0-49/100" -bodylen 40
+
+	rxreq
+	expect req.url == "/?unexpected=unsatisfied-range"
+	expect req.http.range == <undef>
+	txresp -hdr "content-range: bytes */100" -bodylen 100
+
+	rxreq
+	expect req.url == "/?invalid=content-range"
+	expect req.http.range == <undef>
+	txresp -hdr "content-range: bytes=0-99/100" -bodylen 100
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+}
+
+client c10 {
+	txreq -url "/?unexpected=content-range"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/?unexpected=unsatisfied-range"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/?invalid=content-range"
+	rxresp
+	expect resp.status == 200
 } -run
