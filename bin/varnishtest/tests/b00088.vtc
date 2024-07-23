@@ -1,0 +1,106 @@
+
+varnishtest "waiter & shutdown"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 3
+barrier b4 cond 3
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p thread_pools=1" -vcl+backend {} -start
+varnish v1 -cliok "param.set timeout_linger 0.5"
+
+varnish v1 -expect WAITER.pool0.conns == 0
+varnish v1 -expect WAITER.pool0.remclose == 0
+varnish v1 -expect WAITER.pool0.timeout == 0
+varnish v1 -expect WAITER.pool0.action == 0
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	# Wait so the client has to take a detour to the waiter
+	barrier b1 sync
+	barrier b2 sync
+
+	txreq
+	shutdown -write
+	rxresp
+	expect resp.status == 200
+	expect_close
+} -start
+
+server s1 -wait
+barrier b1 sync
+
+# client c1: conns
+# server s1: remclose
+varnish v1 -expect WAITER.pool0.conns == 1
+varnish v1 -expect WAITER.pool0.remclose == 1
+varnish v1 -expect WAITER.pool0.timeout == 0
+varnish v1 -expect WAITER.pool0.action == 0
+
+barrier b2 sync
+client c1 -wait
+
+# client c1: action
+# server s1: remclose
+varnish v1 -expect WAITER.pool0.conns == 0
+varnish v1 -expect WAITER.pool0.remclose == 1
+varnish v1 -expect WAITER.pool0.timeout == 0
+varnish v1 -expect WAITER.pool0.action == 1
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	# Wait so the client has to take a detour to the waiter
+	barrier b3 sync
+	barrier b4 sync
+
+	shutdown -read
+	expect_close
+} -start
+
+client c3 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	# Wait so the client has to take a detour to the waiter
+	barrier b3 sync
+	barrier b4 sync
+
+	shutdown
+	expect_close
+} -start
+
+barrier b3 sync
+
+# client c1: action
+# client c2: conns
+# client c3: conns
+# server s1: remclose
+varnish v1 -expect WAITER.pool0.conns == 2
+varnish v1 -expect WAITER.pool0.remclose == 1
+varnish v1 -expect WAITER.pool0.timeout == 0
+varnish v1 -expect WAITER.pool0.action == 1
+
+barrier b4 sync
+client c2 -wait
+client c3 -wait
+
+# client c1: action
+# client c2: remclose
+# client c3: remclose
+# server s1: remclose
+varnish v1 -expect WAITER.pool0.conns == 0
+varnish v1 -expect WAITER.pool0.remclose == 3
+varnish v1 -expect WAITER.pool0.timeout == 0
+varnish v1 -expect WAITER.pool0.action == 1
