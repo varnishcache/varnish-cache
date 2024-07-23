@@ -1,0 +1,36 @@
+varnishtest "Shutdown"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	shutdown -read
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	txresp
+	shutdown
+	barrier b1 sync
+} -start
+
+client c1 -connect "${s1_sock}" {
+	txreq
+	shutdown -write
+	rxresp
+	expect resp.status == 200
+} -run
+
+client c2 -connect "${s2_sock}" {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	txreq
+	non_fatal
+	rxresp
+	fatal
+	expect resp.status == <undef>
+	barrier b1 sync
+} -run

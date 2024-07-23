@@ -120,7 +120,8 @@ vwk_thread(void *priv)
 			AN(Wait_HeapDelete(w, wp));
 			Lck_Unlock(&vwk->mtx);
 			vwk->nwaited--;
-			if (kp->flags & EV_EOF)
+			if (kp->flags & EV_EOF &&
+			    recv(wp->fd, &c, 1, MSG_PEEK) == 0)
 				Wait_Call(w, wp, WAITER_REMCLOSE, now);
 			else
 				Wait_Call(w, wp, WAITER_ACTION, now);
