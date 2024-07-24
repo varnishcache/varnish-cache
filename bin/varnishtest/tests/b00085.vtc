@@ -18,65 +18,109 @@ client c1 {
 
 	# Bad ranges
 
-	txreq -hdr "resolve: localhost:-"
+	txreq -hdr "resolve: :-"
 	rxresp
-	expect resp.reason == "Range start missing"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:foo-"
+	txreq -hdr "resolve: :foo-"
 	rxresp
-	expect resp.reason == "Range start invalid"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:foo80-"
+	txreq -hdr "resolve: :foo80-"
 	rxresp
-	expect resp.reason == "Range start invalid"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:80foo-"
+	txreq -hdr "resolve: :80foo-"
 	rxresp
-	expect resp.reason == "Range start invalid"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:80-"
+	txreq -hdr "resolve: :80-"
 	rxresp
-	expect resp.reason == "Range end missing"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:80-foo"
+	txreq -hdr "resolve: :-foo"
 	rxresp
-	expect resp.reason == "Range end invalid"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:80-foo81"
+	txreq -hdr "resolve: :-80"
 	rxresp
-	expect resp.reason == "Range end invalid"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:80-81foo"
+	txreq -hdr "resolve: :80-foo"
 	rxresp
-	expect resp.reason == "Range end invalid"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:65535-65536"
+	txreq -hdr "resolve: :80-foo81"
 	rxresp
-	expect resp.reason == "Range end invalid"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:80--81"
+	txreq -hdr "resolve: :80-81foo"
 	rxresp
-	expect resp.reason == "Only one hyphen allowed"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:80-81-"
+	txreq -hdr "resolve: :80--81"
 	rxresp
-	expect resp.reason == "Only one hyphen allowed"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:81-80"
+	txreq -hdr "resolve: :80- -81"
 	rxresp
-	expect resp.reason == "Range start higher than range end"
+	expect resp.reason ~ "Failed"
 
-	txreq -hdr "resolve: localhost:0-1"
+	txreq -hdr "resolve: :80 -81"
 	rxresp
-	expect resp.reason == "Range start cannot be 0"
+	expect resp.reason ~ "Failed"
 
-	# No addr
+	txreq -hdr "resolve: :80- 81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :-80-81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: : -80-81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :- 80-81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-81-"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-81 -"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :65535-65536"
+	rxresp
+	expect resp.reason == "Failed: Range end higher than 65535"
+
+	txreq -hdr "resolve: :81-80"
+	rxresp
+	expect resp.reason == "Failed: Range start higher than range end"
+
+	txreq -hdr "resolve: :0-1"
+	rxresp
+	expect resp.reason == "Failed: Range start cannot be 0"
+
+	# No address
 
 	txreq -hdr "resolve: :80"
 	rxresp
 	expect resp.reason == "0.0.0.0:80, :::80"
 
+	txreq -hdr "resolve: :http"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80"
+
 	txreq -hdr "resolve: :80-81"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80, 0.0.0.0:81, :::81"
+
+	txreq -hdr "resolve: :80-81" -hdr "def-port: 8001"
 	rxresp
 	expect resp.reason == "0.0.0.0:80, :::80, 0.0.0.0:81, :::81"
 
@@ -154,13 +198,21 @@ client c1 {
 
 	txreq -hdr "resolve: 127.0.0.1" -hdr "def-port: 80" -hdr "fail-port: 80"
 	rxresp
-	expect resp.reason == "vmod-debug: fail_port"
+	expect resp.reason == "Failed: bad port"
 
 	txreq -hdr "resolve: 127.0.0.1:80-81" -hdr "fail-port: 80"
 	rxresp
-	expect resp.reason == "vmod-debug: fail_port"
+	expect resp.reason == "Failed: bad port"
 
 	txreq -hdr "resolve: 127.0.0.1:80-82" -hdr "fail-port: 81"
 	rxresp
-	expect resp.reason == "127.0.0.1:80, vmod-debug: fail_port"
+	expect resp.reason == "127.0.0.1:80, bad port"
+
+	txreq -hdr "resolve: 127.0.0.1:80-82" -hdr "fail-port: 82"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, 127.0.0.1:81, bad port"
+
+	txreq -hdr "resolve: :80-82" -hdr "fail-port: 81"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80, bad port"
 } -run
