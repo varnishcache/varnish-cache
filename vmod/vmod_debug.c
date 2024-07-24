@@ -1478,7 +1478,7 @@ resolve_cb(void *priv, const struct suckaddr *sa)
 	AN(sa);
 	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
 	if (p->fail_port != NULL && !strcmp(p->fail_port, pbuf)) {
-		*(p->errp) = "vmod-debug: fail_port";
+		*(p->errp) = "bad port";
 		return (-1);
 	}
 	VSB_printf(p->vsb, "%s%s:%s", VSB_len(p->vsb) ? ", " : "", abuf, pbuf);
@@ -1501,7 +1501,7 @@ xyzzy_resolve_range(VRT_CTX, struct VARGS(resolve_range) *args)
 	def_port = args->valid_def_port ? args->def_port : NULL;
 	ret = VSS_resolver_range(args->addr, def_port, resolve_cb, &p, p.errp);
 	if (ret)
-		VSB_printf(p.vsb, "%s%s", VSB_len(p.vsb) ? ", " : "",
+		VSB_printf(p.vsb, "%s%s", VSB_len(p.vsb) ? ", " : "Failed: ",
 		    *(p.errp));
 	return (WS_VSB_finish(p.vsb, ctx->ws, NULL));
 }
