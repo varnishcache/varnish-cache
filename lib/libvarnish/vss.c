@@ -106,34 +106,31 @@ vss_parse_range(char *str, char **addr, char **port, unsigned long *lo,
     unsigned long *hi)
 {
 	const char *errp;
-	char *hyphen, *end;
+	char *end;
 	unsigned long l, h;
 
 	errp = vss_parse(str, addr, port);
-	if (*port == NULL)
+	if (errp != NULL)
 		return (errp);
-
-	hyphen = strchr(*port, '-');
-	if (hyphen == NULL)
+	if (*port == NULL || **port == '-')
 		return (NULL);
-	if (**port == '-')
-		return ("Range start missing");
 
 	l = strtoul(*port, &end, 10);
-	if (end != hyphen)
-		return ("Range start invalid");
-	if (strchr(hyphen + 1, '-') != NULL)
-		return ("Only one hyphen allowed");
+	if (end[0] != '-' || end[1] == '\0')
+		return (NULL);
+	if (strchr(end + 1, '-') != NULL)
+		return (NULL);
+	h = strtoul(end + 1, &end, 10);
+	if (end[0] != '\0')
+		return (NULL);
+
+	/* Port range of the form 80-81 */
 	if (l == 0)
 		return ("Range start cannot be 0");
-	if (hyphen[1] == '\0')
-		return ("Range end missing");
-
-	h = strtoul(hyphen + 1, &end, 10);
-	if (*end != '\0' || h > 65535)
-		return ("Range end invalid");
 	if (h < l)
 		return ("Range start higher than range end");
+	if (h > 65535)
+		return ("Range end higher than 65535");
 
 	*lo = l;
 	*hi = h;
