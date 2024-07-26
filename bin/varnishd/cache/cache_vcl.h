@@ -37,7 +37,18 @@ struct vfilter;
 struct vcltemp;
 
 VTAILQ_HEAD(vfilter_head, vfilter);
+VTAILQ_HEAD(vcldir_head, vcldir);
 
+struct vdire {
+	unsigned		magic;
+#define VDIRE_MAGIC		0x51748697
+	unsigned		iterating;
+	struct vcldir_head	directors;
+	struct vcldir_head	resigning;
+	// vcl_mtx for now - to be refactored into separate mtx?
+	struct lock		*mtx;
+	const struct vcltemp	**tempp;
+};
 
 struct vcl {
 	unsigned		magic;
@@ -50,10 +61,10 @@ struct vcl {
 	unsigned		busy;
 	unsigned		discard;
 	const struct vcltemp	*temp;
-	VTAILQ_HEAD(,vcldir)	director_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
-	int			nrefs;
+	struct vdire		*vdire;
 	struct vcl		*label;
+	int			nrefs;
 	int			nlabels;
 	struct vfilter_head	filters;
 };
@@ -92,3 +103,13 @@ extern const struct vcltemp VCL_TEMP_COOLING[1];
 		assert(vcl_active == NULL ||			\
 		    vcl_active->temp->is_warm);			\
 	} while (0)
+
+/* cache_vrt_vcl.c used in cache_vcl.c */
+struct vcldir;
+void vcldir_retire(struct vcldir *vdir, const struct vcltemp *temp);
+
+/* cache_vcl.c */
+void vdire_resign(struct vdire *vdire, struct vcldir *vdir);
+
+void vdire_start_iter(struct vdire *vdire);
+void vdire_end_iter(struct vdire *vdire);
