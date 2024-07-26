@@ -1160,6 +1160,7 @@ class vcc():
         fo.write('#define STRINGIFY3(arg) #arg\n')
         fo.write('#define STRINGIFY2(arg) STRINGIFY3(#arg)\n')
         fo.write('#define STRINGIFY1(arg) STRINGIFY2(arg)\n')
+        fo.write("\nstatic const char package[] __attribute__ ((unused)) = { PACKAGE_STRING };\n")
         fo.write("\nstatic const char Vmod_Json[] = {\n")
         fo.write('\t"VMOD_JSON_SPEC\x02"\n')
 
