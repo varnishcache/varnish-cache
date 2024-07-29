@@ -702,7 +702,7 @@ SES_Rel(struct sess *sp)
 void
 SES_NewPool(struct pool *pp, unsigned pool_no)
 {
-	char nb[8];
+	char nb[4 /* "sess" */ + 10 /* "%u" */ + 1];
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	bprintf(nb, "req%u", pool_no);
