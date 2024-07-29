@@ -96,6 +96,10 @@ FEATURE_BIT(VCL_REQ_RESET,			vcl_req_reset,
     "When this happens MAIN.req_reset is incremented."
 )
 
+FEATURE_BIT(GZIP_BREACH,			gzip_breach,
+    "Heal-the-BREACH mitigation."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

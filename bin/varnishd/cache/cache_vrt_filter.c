@@ -288,6 +288,7 @@ VCL_VRT_Init(void)
 	AZ(vrt_addfilter(NULL, &VFP_esi_gzip, NULL));
 	AZ(vrt_addfilter(NULL, NULL, &VDP_esi));
 	AZ(vrt_addfilter(NULL, NULL, &VDP_gunzip));
+	AZ(vrt_addfilter(NULL, NULL, &VDP_gzip_breach));
 	AZ(vrt_addfilter(NULL, NULL, &VDP_range));
 }
 
@@ -403,9 +404,12 @@ resp_default_filter_list(void *arg, struct vsb *vsb)
 
 	if (cache_param->http_gzip_support &&
 	    req->objcore != NULL &&
-	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-	    !RFC2616_Req_Gzip(req->http))
-		VSB_cat(vsb, " gunzip");
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
+		if (!RFC2616_Req_Gzip(req->http))
+			VSB_cat(vsb, " gunzip");
+		else if (FEATURE(FEATURE_GZIP_BREACH))
+			VSB_cat(vsb, " gzip_breach");
+	}
 
 	if (cache_param->http_range_support &&
 	    http_GetStatus(req->resp) == 200 &&

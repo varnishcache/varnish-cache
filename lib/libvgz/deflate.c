@@ -715,8 +715,6 @@ int ZEXPORT deflateReset(z_streamp strm) {
     return ret;
 }
 
-#ifdef NOVGZ
-
 /* ========================================================================= */
 int ZEXPORT deflateSetHeader(z_streamp strm, gz_headerp head) {
     if (deflateStateCheck(strm) || strm->state->wrap != 2)
@@ -724,6 +722,8 @@ int ZEXPORT deflateSetHeader(z_streamp strm, gz_headerp head) {
     strm->state->gzhead = head;
     return Z_OK;
 }
+
+#ifdef NOVGZ
 
 /* ========================================================================= */
 int ZEXPORT deflatePending(z_streamp strm, unsigned *pending, int *bits) {
@@ -1082,7 +1082,6 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
             }
         }
         else {
-#ifdef NOVGZ
             put_byte(s, (s->gzhead->text ? 1 : 0) +
                      (s->gzhead->hcrc ? 2 : 0) +
                      (s->gzhead->extra == Z_NULL ? 0 : 4) +
@@ -1200,11 +1199,6 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
             return Z_OK;
         }
     }
-#else /* !NOVGZ */
-		abort();
-	}
-    }
-#endif /* NOVGZ */
 #endif
 
     if (strm->start_bit == 0)

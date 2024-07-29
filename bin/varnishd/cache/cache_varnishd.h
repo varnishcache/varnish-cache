@@ -196,6 +196,7 @@ int VDP_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
     void *priv);
 int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
 extern const struct vdp VDP_gunzip;
+extern const struct vdp VDP_gzip_breach;
 extern const struct vdp VDP_esi;
 extern const struct vdp VDP_range;
 
