@@ -327,6 +327,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			    cache_param->http_req_size);
 			assert(!WS_IsReserved(req->htc->ws));
 			if (hs < HTC_S_EMPTY) {
+				if (hs == HTC_S_OVERFLOW && cache_param->http_req_overflow_status != 0) {
+					(void)req->transport->minimal_response(req,
+					    cache_param->http_req_overflow_status);
+				}
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
 				Req_AcctLogCharge(wrk->stats, req);

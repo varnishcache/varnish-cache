@@ -118,6 +118,7 @@ struct params {
 #define ptyp_thread_pool_min	unsigned
 #define ptyp_timeout		vtim_dur
 #define ptyp_uint		unsigned
+#define ptyp_uint_orzero	unsigned
 #define ptyp_vcc_feature	vcc_feature_t
 #define ptyp_vsl_buffer		unsigned
 #define ptyp_vsl_mask		vsl_mask_t

@@ -62,3 +62,20 @@ client c1 {
 	send "1...5: ..0....5....0....5....\r\n\r\n"
 	expect_close
 } -run
+
+varnish v1 -cliok "param.set http_req_overflow_status 414"
+client c1 {
+	# Each line is 32 except last, which is 33. Total: 32 * 7 + 33 == 257
+	send "GET /..... HTTP/1.1\r\nHost: foo\r\n"
+	send "1...5: ..0....5....0....5....0\r\n"
+	send "1...5: ..0....5....0....5....0\r\n"
+	send "1...5: ..0....5....0....5....0\r\n"
+	send "1...5: ..0....5....0....5....0\r\n"
+	send "1...5: ..0....5....0....5....0\r\n"
+	send "1...5: ..0....5....0....5....0\r\n"
+	send "1...5: ..0....5....0....5....\r\n\r\n"
+	rxresp
+	expect resp.status == 414
+} -run
+
+varnish v1 -clierr 106 "param.set http_req_overflow_status 200"
