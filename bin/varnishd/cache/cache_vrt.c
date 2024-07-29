@@ -770,6 +770,8 @@ VRT_REAL_string(VRT_CTX, VCL_REAL num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (isnan(num))
+		return (WS_Printf(ctx->ws, "NAN"));
 	if (!VRT_REAL_is_valid(num))
 		VRT_fail(ctx, "REAL overflow converting to string (%e)", num);
 	return (WS_Printf(ctx->ws, "%.3f", num));

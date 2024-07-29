@@ -246,11 +246,13 @@ req.grace
 
 	Writable from: client
 
+	Unsetable from: client
 
 	Upper limit on the object grace.
 
 	During lookup the minimum of req.grace and the object's stored
-	grace value will be used as the object's grace.
+	grace value will be used as the object's grace. Setting req.grace
+	to 0s prevents hits on stale objects.
 
 
 .. _req.hash:
@@ -510,8 +512,10 @@ req.ttl
 
 	Writable from: client
 
+	Unsetable from: client
 
 	Upper limit on the object age for cache lookups to return hit.
+	Lookups always miss when req.ttl is set to 0s.
 
 
 .. _req.url:

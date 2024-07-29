@@ -891,8 +891,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 		VRT_Assign_Backend(&req->director_hint,
 		    VCL_DefaultDirector(req->vcl));
 
-		req->d_ttl = -1;
-		req->d_grace = -1;
+		req->d_ttl = NAN;
+		req->d_grace = NAN;
 		req->disable_esi = 0;
 		req->hash_always_miss = 0;
 		req->hash_ignore_busy = 0;
