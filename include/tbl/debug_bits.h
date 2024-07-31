@@ -41,7 +41,7 @@ DEBUG_BIT(HASHEDGE,		hashedge,	"Edge cases in Hash")
 DEBUG_BIT(VCLREL,		vclrel,		"Rapid VCL release")
 DEBUG_BIT(LURKER,		lurker,		"VSL Ban lurker")
 DEBUG_BIT(ESI_CHOP,		esi_chop,	"Chop ESI fetch to bits")
-DEBUG_BIT(FLUSH_HEAD,		flush_head,	"Flush after http1 head")
+DEBUG_BIT(FLUSH_HEAD,		flush_head,	"Flush after http1 head") // XXX -> filter
 DEBUG_BIT(VTC_MODE,		vtc_mode,	"Varnishtest Mode")
 DEBUG_BIT(WITNESS,		witness,	"Emit WITNESS lock records")
 DEBUG_BIT(VSM_KEEP,		vsm_keep,	"Keep the VSM file on restart")
@@ -52,7 +52,7 @@ DEBUG_BIT(PROCESSORS,		processors,	"Fetch/Deliver processors")
 DEBUG_BIT(PROTOCOL,		protocol,	"Protocol debugging")
 DEBUG_BIT(VCL_KEEP,		vcl_keep,	"Keep VCL C and so files")
 DEBUG_BIT(LCK,			lck,		"Additional lock statistics")
-DEBUG_BIT(SLOW_BEREQ,		slow_bereq,	"Slow down bereq")
+DEBUG_BIT(SLOW_BEREQ,		slow_bereq,	"Slow down bereq")	// XXX -> filter
 #undef DEBUG_BIT
 
 /*lint -restore */
