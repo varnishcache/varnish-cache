@@ -60,7 +60,7 @@ struct vbp_state {
 	const char			*name;
 };
 
-#define VBP_STATE(n) const struct vbp_state vbp_state_ ## n [1] = {{ .name = #n }}
+#define VBP_STATE(n) static const struct vbp_state vbp_state_ ## n [1] = {{ .name = #n }}
 VBP_STATE(scheduled);
 VBP_STATE(running);
 VBP_STATE(cold);
