@@ -1,0 +1,218 @@
+varnishtest "Test VSS_resolver_range"
+
+varnish v1 -vcl {
+	backend default none;
+
+	import debug;
+
+	sub vcl_recv {
+		return (synth(200, debug.resolve_range(req.http.resolve,
+		    req.http.def-port, req.http.fail-port)));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.reason == "vmod-debug: s was NULL"
+
+	# Bad ranges
+
+	txreq -hdr "resolve: :-"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :foo-"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :foo80-"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80foo-"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :-foo"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :-80"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-foo"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-foo81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-81foo"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80--81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80- -81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80 -81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80- 81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :-80-81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: : -80-81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :- 80-81"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-81-"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :80-81 -"
+	rxresp
+	expect resp.reason ~ "Failed"
+
+	txreq -hdr "resolve: :65535-65536"
+	rxresp
+	expect resp.reason == "Failed: Range end higher than 65535"
+
+	txreq -hdr "resolve: :81-80"
+	rxresp
+	expect resp.reason == "Failed: Range start higher than range end"
+
+	txreq -hdr "resolve: :0-1"
+	rxresp
+	expect resp.reason == "Failed: Range start cannot be 0"
+
+	# No address
+
+	txreq -hdr "resolve: :80"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80"
+
+	txreq -hdr "resolve: :http"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80"
+
+	txreq -hdr "resolve: :80-81"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80, 0.0.0.0:81, :::81"
+
+	txreq -hdr "resolve: :80-81" -hdr "def-port: 8001"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80, 0.0.0.0:81, :::81"
+
+	# No port
+
+	txreq -hdr "resolve: 127.0.0.1"
+	rxresp
+	expect resp.reason == "127.0.0.1:0"
+
+	txreq -hdr "resolve: 127.0.0.1" -hdr "def-port: 8000"
+	rxresp
+	expect resp.reason == "127.0.0.1:8000"
+
+	txreq -hdr "resolve: [::1]" -hdr "def-port: 8000"
+	rxresp
+	expect resp.reason == "::1:8000"
+
+	txreq -hdr "resolve: ::1" -hdr "def-port: 8000"
+	rxresp
+	expect resp.reason == "::1:8000"
+
+	# No range
+
+	txreq -hdr "resolve: 127.0.0.1:0"
+	rxresp
+	expect resp.reason == "127.0.0.1:0"
+
+	txreq -hdr "resolve: 127.0.0.1:http"
+	rxresp
+	expect resp.reason == "127.0.0.1:80"
+
+	txreq -hdr "resolve: 127.0.0.1:8000"
+	rxresp
+	expect resp.reason == "127.0.0.1:8000"
+
+	txreq -hdr "resolve: 127.0.0.1:8000" -hdr "def-port: 8001"
+	rxresp
+	expect resp.reason == "127.0.0.1:8000"
+
+	# Different address formats
+
+	txreq -hdr "resolve: 127.0.0.1:80-81"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, 127.0.0.1:81"
+
+	txreq -hdr "resolve: 127.0.0.1 80-81"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, 127.0.0.1:81"
+
+	txreq -hdr "resolve: [::1]:80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	txreq -hdr "resolve: [::1] 80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	txreq -hdr "resolve: [::]:80-81"
+	rxresp
+	expect resp.reason == ":::80, :::81"
+
+	txreq -hdr "resolve: [::] 80-81"
+	rxresp
+	expect resp.reason == ":::80, :::81"
+
+	txreq -hdr "resolve: [::1]:80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	txreq -hdr "resolve: ::1 80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	# Fail ports
+
+	txreq -hdr "resolve: 127.0.0.1" -hdr "def-port: 80" -hdr "fail-port: 80"
+	rxresp
+	expect resp.reason == "Failed: bad port"
+
+	txreq -hdr "resolve: 127.0.0.1:80-81" -hdr "fail-port: 80"
+	rxresp
+	expect resp.reason == "Failed: bad port"
+
+	txreq -hdr "resolve: 127.0.0.1:80-82" -hdr "fail-port: 81"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, bad port"
+
+	txreq -hdr "resolve: 127.0.0.1:80-82" -hdr "fail-port: 82"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, 127.0.0.1:81, bad port"
+
+	txreq -hdr "resolve: :80-82" -hdr "fail-port: 81"
+	rxresp
+	expect resp.reason == "0.0.0.0:80, :::80, bad port"
+} -run

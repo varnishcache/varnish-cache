@@ -37,6 +37,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "vdef.h"
 
@@ -97,6 +98,42 @@ vss_parse(char *str, char **addr, char **port)
 	}
 	*p++ = '\0';
 	*port = p;
+	return (NULL);
+}
+
+static const char *
+vss_parse_range(char *str, char **addr, char **port, unsigned long *lo,
+    unsigned long *hi)
+{
+	const char *errp;
+	char *end;
+	unsigned long l, h;
+
+	errp = vss_parse(str, addr, port);
+	if (errp != NULL)
+		return (errp);
+	if (*port == NULL || **port == '-')
+		return (NULL);
+
+	l = strtoul(*port, &end, 10);
+	if (end[0] != '-' || end[1] == '\0')
+		return (NULL);
+	if (strchr(end + 1, '-') != NULL)
+		return (NULL);
+	h = strtoul(end + 1, &end, 10);
+	if (end[0] != '\0')
+		return (NULL);
+
+	/* Port range of the form 80-81 */
+	if (l == 0)
+		return ("Range start cannot be 0");
+	if (h < l)
+		return ("Range start higher than range end");
+	if (h > 65535)
+		return ("Range end higher than 65535");
+
+	*lo = l;
+	*hi = h;
 	return (NULL);
 }
 
@@ -193,6 +230,47 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 {
 	return (VSS_resolver_socktype(
 	    addr, def_port, func, priv, errp, SOCK_STREAM));
+}
+
+int
+VSS_resolver_range(const char *addr, const char *def_port, vss_resolved_f *func,
+    void *priv, const char **errp)
+{
+	char *p, *hp, *pp;
+	unsigned long lo = 0, hi = 0, i;
+	int error = 0;
+
+	AN(addr);
+	AN(func);
+	AN(errp);
+
+	p = strdup(addr);
+	AN(p);
+	*errp = vss_parse_range(p, &hp, &pp, &lo, &hi);
+	if (*errp != NULL) {
+		free(p);
+		return (-1);
+	}
+
+	if (lo == 0) {
+		/* No port range (0 not allowed in range) */
+		free(p);
+		return (VSS_resolver(addr, def_port, func, priv, errp));
+	}
+
+	/* Undo vss_parse() string modifications */
+	memcpy(p, addr, pp - p);
+
+	for (i = lo; i <= hi && !error; i++) {
+		/* pp points to the first character of the range definition.
+		 * The range definition includes the biggest port number, so the
+		 * buffer must be big enough to fit each number individually.
+		 */
+		sprintf(pp, "%lu", i);
+		error = VSS_resolver(p, def_port, func, priv, errp);
+	}
+	free(p);
+	return (error);
 }
 
 const struct suckaddr *
