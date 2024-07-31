@@ -602,8 +602,10 @@ vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 		if (vcl->temp == VCL_TEMP_COLD)
 			break;
 		if (vcl->busy == 0 && vcl->temp->is_warm) {
+			Lck_Lock(&vcl_mtx);
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
+			Lck_Unlock(&vcl_mtx);
 			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, msg));
 			AZ(*msg);
@@ -627,7 +629,9 @@ vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 			i = -1;
 		}
 		else {
+			Lck_Lock(&vcl_mtx);
 			vcl->temp = VCL_TEMP_WARM;
+			Lck_Unlock(&vcl_mtx);
 			i = vcl_send_event(vcl, VCL_EVENT_WARM, msg);
 			if (i == 0) {
 				vcl_BackendEvent(vcl, VCL_EVENT_WARM);
