@@ -68,7 +68,7 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 	ssize_t dl;
 	const void *dp;
 	uint8_t *ptr;
-	int i;
+	enum vgzret_e i;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(vef, priv, VEF_MAGIC);
