@@ -103,16 +103,23 @@ static const struct vfp xyzzy_vfp_rot13 = {
 #define ROT13_BUFSZ 8
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_vfp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+xyzzy_vfp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
+    struct objcore *oc, struct req *req,
+    struct http *hd, intmax_t *cl)
 {
-	(void)vdc;
-	(void)oc;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	AN(priv);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(hd, HTTP_MAGIC);
+	AN(cl);
+
 	*priv = malloc(ROT13_BUFSZ);
 	if (*priv == NULL)
 		return (-1);
+
 	return (0);
 }
 
@@ -214,14 +221,20 @@ static const struct vmod_priv_methods priv_pedantic_methods[1] = {{
 
 static int v_matchproto_(vdp_init_f)
 xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
-    struct objcore *oc)
+    struct objcore *oc, struct req *req,
+    struct http *hd, intmax_t *cl)
 {
 	struct vdp_state_s *vdps;
 	struct vmod_priv *p;
 
-	(void)oc;
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	AN(priv);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(hd, HTTP_MAGIC);
+	AN(cl);
+
 	WS_TASK_ALLOC_OBJ(ctx, vdps, VDP_STATE_MAGIC);
 	if (vdps == NULL)
 		return (-1);
@@ -233,7 +246,6 @@ xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdc, void **priv,
 	p->priv = vdps;
 	p->methods = priv_pedantic_methods;
 
-	AN(priv);
 	*priv = vdps;
 
 	vdps->state = VDPS_INIT;

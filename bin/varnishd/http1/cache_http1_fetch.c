@@ -42,25 +42,15 @@
 
 #include "cache_http1.h"
 
-/*--------------------------------------------------------------------
- * Pass the request body to the backend
- */
-
-static int v_matchproto_(objiterate_f)
-vbf_iter_req_body(void *priv, unsigned flush, const void *ptr, ssize_t l)
+static int
+v1f_stackv1l(struct vdp_ctx *vdc, struct busyobj *bo, intmax_t *cl)
 {
-	struct busyobj *bo;
+	struct vrt_ctx ctx[1];
 
-	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
-
-	if (l > 0) {
-		if (DO_DEBUG(DBG_SLOW_BEREQ))
-			VTIM_sleep(1.0);
-		(void)V1L_Write(bo->wrk, ptr, l);
-		if (flush && V1L_Flush(bo->wrk) != SC_NULL)
-			return (-1);
-	}
-	return (0);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
+	return (VDP_Push(ctx, vdc, ctx->ws, VDP_v1l, NULL,
+	    bo->bereq_body, NULL, bo->bereq, cl));
 }
 
 /*--------------------------------------------------------------------
@@ -80,7 +70,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	ssize_t i;
 	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;
-	int do_chunked = 0;
+	struct vdp_ctx vdc[1];
+	intmax_t cl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -93,13 +84,42 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	assert(*htc->rfd > 0);
 	hp = bo->bereq;
 
-	if (bo->req != NULL && !bo->req->req_body_status->length_known) {
-		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
-		do_chunked = 1;
+	if (bo->bereq_body != NULL)
+		cl = ObjGetLen(wrk, bo->bereq_body);
+	else if (bo->req != NULL && !bo->req->req_body_status->length_known)
+		cl = -1;
+	else if (bo->req != NULL) {
+		cl = http_GetContentLength(bo->req->http);
+		if (cl < 0)
+			cl = 0;
 	}
+	else
+		cl = 0;
+
+	VDP_Init(vdc, wrk, bo->vsl);
+	if (bo->vdp_filter_list != NULL &&
+	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo, &cl)) {
+		VSLb(bo->vsl, SLT_FetchError, "Failure to push processors");
+		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
+		htc->doclose = SC_OVERLOAD;
+		return (-1);
+	}
+
+	if (v1f_stackv1l(vdc, bo, &cl)) {
+		VSLb(bo->vsl, SLT_FetchError, "Failure to push V1L");
+		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
+		(void) VDP_Close(vdc, NULL, NULL);
+		htc->doclose = SC_OVERLOAD;
+		return (-1);
+	}
+
+	assert(cl >= -1);
+	if (cl < 0)
+		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 
 	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
 	/* XXX: need a send_timeout for the backend side */
+	// XXX cache_param->http1_iovs ?
 	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, nan(""), 0);
 	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
@@ -108,18 +128,16 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 
 	if (bo->bereq_body != NULL) {
 		AZ(bo->req);
-		AZ(do_chunked);
+		assert(cl >= 0);
 		(void)ObjIterate(bo->wrk, bo->bereq_body,
-		    bo, vbf_iter_req_body, 0);
+		    vdc, VDP_ObjIterate, 0);
 	} else if (bo->req != NULL &&
 	    bo->req->req_body_status != BS_NONE) {
-		if (DO_DEBUG(DBG_FLUSH_HEAD))
-			(void)V1L_Flush(wrk);
-		if (do_chunked)
+		if (cl < 0)
 			V1L_Chunked(wrk);
-		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
+		i = VRB_Iterate(wrk, bo->vsl, bo->req, VDP_ObjIterate, vdc);
 
-		if (!bo->req->req_body_cached)
+		if (bo->req->req_body_status != BS_CACHED)
 			bo->no_retry = "req.body not cached";
 
 		if (bo->req->req_body_status == BS_ERROR) {
@@ -138,7 +156,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			    errno, VAS_errtxt(errno));
 			bo->req->doclose = SC_RX_BODY;
 		}
-		if (do_chunked)
+		if (cl < 0)
 			V1L_EndChunk(wrk);
 	}
 
@@ -146,12 +164,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 
 	/* Bytes accounting */
-	if (bytes < hdrbytes)
-		*ctr_hdrbytes += bytes;
-	else {
-		*ctr_hdrbytes += hdrbytes;
-		*ctr_bodybytes += bytes - hdrbytes;
-	}
+	*ctr_hdrbytes += hdrbytes;
+	*ctr_bodybytes += VDP_Close(vdc, NULL, NULL);
 
 	if (sc == SC_NULL && i < 0)
 		sc = SC_TX_ERROR;

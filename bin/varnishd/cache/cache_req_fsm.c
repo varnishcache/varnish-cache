@@ -460,11 +460,12 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		sendbody = 1;
 	}
 
-	VDP_Init(req->vdc, req->wrk, req->vsl, req);
+	VDP_Init(req->vdc, req->wrk, req->vsl);
 	if (req->vdp_filter_list == NULL)
 		req->vdp_filter_list = resp_Get_Filter_List(req);
 	if (req->vdp_filter_list == NULL ||
-	    VCL_StackVDP(req, req->vcl, req->vdp_filter_list)) {
+	    VCL_StackVDP(req->vdc, req->vcl, req->vdp_filter_list,
+	    req, NULL, &req->resp_len)) {
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 		req->acct.resp_bodybytes +=
@@ -813,7 +814,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 			bo->req = req;
 			bo->wrk = wrk;
 			/* Unless cached, reqbody is not our job */
-			if (!req->req_body_cached)
+			if (req->req_body_status != BS_CACHED)
 				req->req_body_status = BS_NONE;
 			SES_Close(req->sp, VDI_Http1Pipe(req, bo));
 			nxt = REQ_FSM_DONE;
@@ -900,7 +901,6 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->client_identity = NULL;
 		req->storage = NULL;
 		req->trace = FEATURE(FEATURE_TRACE);
-		AZ(req->req_body_cached);
 	}
 
 	req->is_hit = 0;
@@ -908,6 +908,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 	req->is_hitpass = 0;
 	req->err_code = 0;
 	req->err_reason = NULL;
+
+	req->vfp_filter_list = NULL;
 }
 
 /*--------------------------------------------------------------------
