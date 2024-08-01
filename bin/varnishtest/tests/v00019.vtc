@@ -109,6 +109,17 @@ varnish v1 -vcl {
 	}
 }
 
+# regression test #4146
+varnish v1 -vcl {
+	import debug;
+	backend be none;
+	sub vcl_init {
+		if (! debug.is_null_strands(debug.return_strands(debug.return_null_strands()))) {
+			return (fail("should load"));
+		}
+	}
+}
+
 varnish v1 -errvcl {Symbol not found: 'req.http.req.http.foo'} {
 	backend b { .host = "${localhost}"; }
 	sub vcl_recv {

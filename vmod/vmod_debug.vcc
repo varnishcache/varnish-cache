@@ -279,6 +279,10 @@ Test object method with all the fancy stuff.
 
 $Function STRANDS return_strands(STRANDS strand)
 
+$Function STRANDS return_null_strands()
+
+$Function BOOL is_null_strands(STRANDS strand)
+
 $Function VOID vsl_flush()
 
 call VSL_Flush(ctx->cts, 0)

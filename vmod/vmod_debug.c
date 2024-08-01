@@ -984,6 +984,20 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
 	return (strand);
 }
 
+VCL_STRANDS
+xyzzy_return_null_strands(VRT_CTX)
+{
+	(void)ctx;
+	return (vrt_null_strands);
+}
+
+VCL_BOOL
+xyzzy_is_null_strands(VRT_CTX, VCL_STRANDS s)
+{
+	(void)ctx;
+	return (s == vrt_null_strands);
+}
+
 VCL_VOID
 xyzzy_vsl_flush(VRT_CTX)
 {
