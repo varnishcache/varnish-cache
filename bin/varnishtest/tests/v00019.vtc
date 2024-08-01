@@ -77,7 +77,7 @@ varnish v1 -vcl {
 			return (fail("should compile"));
 		}
 	}
-}
+} -start
 
 varnish v1 -vcl {
 	import debug;
