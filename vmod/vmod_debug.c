@@ -977,7 +977,10 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	VSLbs(ctx->vsl, SLT_Debug, strand);
+	if (ctx->vsl)
+		VSLbs(ctx->vsl, SLT_Debug, strand);
+	else
+		VSLs(SLT_Debug, NO_VXID, strand);
 	return (strand);
 }
 
