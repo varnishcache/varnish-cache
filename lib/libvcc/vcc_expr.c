@@ -81,6 +81,13 @@ vcc_utype(vcc_type_t t)
 	return (t->name);
 }
 
+static vcc_type_t
+vcc_stringstype(vcc_type_t t)
+{
+	return (t->stringform ? STRINGS : t);
+}
+
+
 static void vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt);
 static void vcc_expr_cor(struct vcc *tl, struct expr **e, vcc_type_t fmt);
 static void vcc_expr_typecheck(struct vcc *tl, struct expr **e, vcc_type_t fmt,
@@ -152,13 +159,14 @@ static void
 vcc_strands_edit(const struct expr *e1, const struct expr *e2)
 {
 
-	if (e2->nstr == 1) {
+	if (e2->nstr == 0)
+		VSB_printf(e1->vsb, "vrt_null_strands");
+	else if (e2->nstr == 1)
 		VSB_printf(e1->vsb, "TOSTRAND(%s)", VSB_data(e2->vsb));
-		return;
+	else {
+		VSB_printf(e1->vsb, "TOSTRANDS(%d,\v+\n%s\v-)",
+		   e2->nstr, VSB_data(e2->vsb));
 	}
-
-	VSB_printf(e1->vsb, "TOSTRANDS(%d,\v+\n%s\v-)",
-	    e2->nstr, VSB_data(e2->vsb));
 }
 
 static struct expr *
@@ -1095,10 +1103,6 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 	}
-
-	/* No concatenation, finalize string. */
-	if ((*e)->fmt->stringform)
-		vcc_expr_tostring(tl, e);
 }
 
 /*--------------------------------------------------------------------
@@ -1191,7 +1195,7 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	vcc_NextToken(tl);
 	vcc_expr_add(tl, &e2, STRINGS);
 	ERRCHK(tl);
-	if (e2->fmt != STRINGS) {
+	if (vcc_stringstype(e2->fmt) != STRINGS) {
 		VSB_printf(tl->sb,
 		    "Comparison of different types: %s '%.*s' %s\n",
 		    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
@@ -1267,7 +1271,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	for (cp = vcc_cmps; cp->fmt != VOID; cp++) {
 		if (tl->t->tok != cp->token)
 			continue;
-		if ((*e)->fmt != cp->fmt)
+		if (vcc_stringstype((*e)->fmt) != cp->fmt)
 			continue;
 		AN(cp->func);
 		cp->func(tl, e, cp);
