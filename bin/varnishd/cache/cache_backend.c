@@ -139,6 +139,37 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 
 /*--------------------------------------------------------------------*/
 
+int
+VBE_is_ah_auto (const struct backend *bp)
+{
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+	return (bp->director->vdir->admin_health == VDI_AH_AUTO);
+}
+
+void
+VBE_connwait_signal_all(const struct backend *bp)
+{
+	struct connwait *cw;
+	unsigned wait_limit;
+	vtim_dur wait_tmod;
+
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
+
+	FIND_BE_PARAM(backend_wait_limit, wait_limit, bp);
+	FIND_BE_TMO(backend_wait_timeout, wait_tmod, bp);
+
+	if (wait_limit <= 0 || wait_tmod <= 0)
+		return;
+
+	Lck_Lock(bp->director->mtx);
+	VTAILQ_FOREACH(cw, &bp->cw_head, cw_list) {
+		CHECK_OBJ(cw, CONNWAIT_MAGIC);
+		assert(cw->cw_state == CW_QUEUED);
+		PTOK(pthread_cond_signal(&cw->cw_cond));
+	}
+	Lck_Unlock(bp->director->mtx);
+}
+
 static void
 vbe_connwait_signal_locked(const struct backend *bp)
 {
@@ -229,7 +260,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 			    wait_end);
 		} while (err == EINTR);
 		bp->cw_count--;
-		if (err != 0 && BE_BUSY(bp)) {
+		if ((err != 0 && BE_BUSY(bp)) || !VRT_Healthy(ctx, dir, NULL)) {
 			VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
 			VSC_C_main->backend_wait_fail++;
 			cw->cw_state = CW_BE_BUSY;

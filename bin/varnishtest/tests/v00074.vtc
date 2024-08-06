@@ -1,0 +1,227 @@
+varnishtest "Clients in backend wait queue wakeup when backend goes sick"
+
+################### Backend goes sick from CLI ##########################
+barrier b1 cond 4
+barrier b2 cond 4
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	barrier b2 sync
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.max_connections = 1;
+		.wait_timeout = 1h;
+		.wait_limit = 10;
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c2 {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b2 sync
+} -start
+
+client c3 {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b2 sync
+} -start
+
+client c4 {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b2 sync
+} -start
+
+# Going from auto to sick should wakeup reqs in the wait queue
+varnish v1 -cliok "backend.set_health s1 sick"
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
+varnish v1 -expect backend_wait == 3
+varnish v1 -expect backend_wait_fail == 3
+
+#################### Backend goes sick from probe #######################
+
+barrier b3 cond 4
+barrier b4 cond 4
+
+server s2 {
+	# First probe request should succeed
+	rxreq
+	txresp
+	# c5
+	accept
+	rxreq
+	barrier b3 sync
+	barrier b4 sync
+	txresp
+} -start
+
+varnish v1 -stop
+varnish v1 -vcl {
+	backend be {
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
+		.max_connections = 1;
+		.wait_timeout = 1h;
+		.wait_limit = 10;
+	}
+
+	probe default {
+		.interval = 1s;
+		.url = "/probe";
+		.window = 1;
+		.threshold = 1;
+		.initial = 1;
+		.timeout = 0.5s;
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+varnish v1 -cliok "backend.set_health be auto"
+
+client c5 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c6 {
+	barrier b3 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b4 sync
+} -start
+
+client c7 {
+	barrier b3 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b4 sync
+} -start
+
+client c8 {
+	barrier b3 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b4 sync
+} -start
+
+
+client c5 -wait
+client c6 -wait
+client c7 -wait
+client c8 -wait
+varnish v1 -expect backend_wait == 3
+varnish v1 -expect backend_wait_fail == 3
+
+########## Admin Healthy -> auto and probe indicates sick ###############
+
+barrier b5 cond 4
+barrier b6 cond 4
+
+server s3 {
+	# First probe request should fail
+	rxreq
+	txresp -status 500
+	accept
+	rxreq
+	barrier b5 sync
+	barrier b6 sync
+	txresp
+} -start
+
+varnish v1 -stop
+varnish v1 -vcl {
+	backend be {
+		.host = "${s3_addr}";
+		.port = "${s3_port}";
+		.max_connections = 1;
+		.wait_timeout = 1h;
+		.wait_limit = 10;
+	}
+
+	probe default {
+		.interval = 10s;
+		.url = "/probe";
+		.window = 1;
+		.threshold = 1;
+		.timeout = 0.5s;
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+varnish v1 -cliok "backend.set_health be healthy"
+
+client c9 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c10 {
+	barrier b5 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b6 sync
+} -start
+
+client c11 {
+	barrier b5 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b6 sync
+} -start
+
+client c12 {
+	barrier b5 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	barrier b6 sync
+} -start
+
+# Going back to probe (auto) that is sick should
+# wake up reqs in the wait queue
+varnish v1 -cliok "backend.set_health be auto"
+
+client c9 -wait
+client c10 -wait
+client c11 -wait
+client c12 -wait
+varnish v1 -expect backend_wait == 3
+varnish v1 -expect backend_wait_fail == 3
