@@ -210,6 +210,7 @@ sub vcl_backend_response {
 }
 
 sub vcl_builtin_backend_response {
+	call vcl_beresp_range;
 	if (bereq.uncacheable) {
 		return (deliver);
 	}
@@ -242,6 +243,12 @@ sub vcl_beresp_control {
 sub vcl_beresp_vary {
 	if (beresp.http.Vary == "*") {
 		call vcl_beresp_hitmiss;
+	}
+}
+
+sub vcl_beresp_range {
+	if (beresp.status != 206 && beresp.status != 416) {
+		unset beresp.http.Content-Range;
 	}
 }
 
