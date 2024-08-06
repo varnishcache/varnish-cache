@@ -17,8 +17,7 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_recv {
-		set req.http.stored = std.cache_req_body(
-			std.bytes(req.http.cache, 1KB));
+		set req.http.stored = std.cache_req_body(1KB);
 		return (pass);
 	}
 
@@ -74,46 +73,4 @@ client c4 {
 client c5 {
 	txreq -req POST -hdr "Content-Length: 1025"
 	expect_close
-} -run
-
-server s1 {
-        rxreq
-        expect req.body == chunked_body
-        txresp
-} -start
-
-client c6 {
-        txreq -req POST -nolen -hdr "Transfer-Encoding: chunked"
-        chunked chunked
-        chunked _
-        chunked body
-        chunkedlen 0
-        rxresp
-        expect resp.http.stored == true
-} -run
-
-server s1 {
-        rxreq
-        expect req.bodylen == 0
-        txresp
-} -start
-
-client c7 {
-        txreq -req POST -nolen -hdr "Transfer-Encoding: chunked"
-        chunkedlen 0
-        rxresp
-        expect resp.http.stored == true
-} -run
-
-server s1 {
-        rxreq
-        expect req.bodylen == 0
-        txresp
-} -start
-
-client c8 {
-        txreq -req POST -nolen -hdr "cache: 0B" -hdr "Transfer-Encoding: chunked"
-        chunkedlen 0
-        rxresp
-        expect resp.http.stored == false
 } -run
