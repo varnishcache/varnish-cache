@@ -70,7 +70,7 @@ DESIRABLE_WFLAGS = [
 
 UNDESIRABLE_WFLAGS = [
     "-Wno-system-headers", # Outside of our control
-    "-Wno-thread-safety", # Does not understand our mutexs are wrapped
+    "-Wno-thread-safety", # Does not understand our mutexes are wrapped
     "-Wno-sign-compare", # Fixable
 ]
 
