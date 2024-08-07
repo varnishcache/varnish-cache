@@ -3618,7 +3618,7 @@ Varnish Cache 4.1.2-beta1 (2016-02-17)
 
 * Some fixes to minor/trivial issues found with clang AddressSanitizer.
 
-* Arithmetric on REAL data type in VCL is now possible.
+* Arithmetic on REAL data type in VCL is now possible.
 
 * vmodtool.py improvements to allow VMODs for 4.0 and 4.1 to share a source tree.
 
