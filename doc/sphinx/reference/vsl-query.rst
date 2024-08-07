@@ -131,7 +131,7 @@ itself rather than log records belonging to the transaction. ::
 
   vxid <numerical operator> <integer>
 
-A ``vxid`` query allows you to directly target a specific transacion,
+A ``vxid`` query allows you to directly target a specific transaction,
 whose id can be obtained from an ``X-Varnish`` HTTP header, the
 default "guru meditation" error page, or ``Begin`` and ``Link`` log
 records.
