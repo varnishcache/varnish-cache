@@ -958,7 +958,7 @@ process_close(struct process *p)
  *
  *	    process p1 "do --something" -run
  *
- *	However, you may use the the ``process`` variant to conveniently
+ *	However, you may use the ``process`` variant to conveniently
  *	collect the standard input and output without dealing with shell
  *	redirections yourself. The ``shell`` command can also expect an
  *	expression from either output, consider using it if you only need
