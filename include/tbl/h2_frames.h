@@ -94,7 +94,7 @@
 	0,
 	H2_F_CONTINUATION,
 	0x04,				// rfc7540,l,2249,2251
-	2
+	1
   )
   H2_FRAME(ping,		PING,		0x6, 0x01,
 	0,

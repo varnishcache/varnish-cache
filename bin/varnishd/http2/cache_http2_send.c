@@ -209,7 +209,7 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 	s = writev(h2->sess->fd, iov, len == 0 ? 1 : 2);
 	if (s != sizeof hdr + len) {
 		if (errno == EWOULDBLOCK) {
-			H2S_Lock_VSLb(h2, SLT_Debug,
+			H2S_Lock_VSLb(h2, SLT_SessError,
 			     "H2: stream %u: Hit idle_send_timeout", stream);
 		}
 		/*
@@ -286,8 +286,10 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 		}
 
 		if (r2->error == H2SE_BROKE_WINDOW &&
-		    h2->open_streams <= h2->winup_streams)
+		    h2->open_streams <= h2->winup_streams) {
+			VSLb(h2->vsl, SLT_SessError, "H2: window bankrupt");
 			h2->error = r2->error = H2CE_BANKRUPT;
+		    }
 
 		assert(h2->winup_streams > 0);
 		h2->winup_streams--;
