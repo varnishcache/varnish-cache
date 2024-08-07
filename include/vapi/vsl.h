@@ -461,7 +461,7 @@ FILE *VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append,
 
 int VSL_Write(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
-	 * Write the currect record pointed to be c to the FILE* fo
+	 * Write the current record pointed to be c to the FILE* fo
 	 *
 	 * Return values:
 	 *    0: Success
