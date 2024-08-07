@@ -3683,7 +3683,7 @@ Varnish Cache 4.1.1-beta1 (2016-01-15)
 ======================================
 
 - Format of "ban.list" has changed slightly.
-- [varnishncsa] -w is now required when running deamonized.
+- [varnishncsa] -w is now required when running daemonized.
 - [varnishncsa] Log format can now be read from file.
 - Port fields extracted from PROXY1 header now work as expected.
 - New VCL state "busy" introduced (mostly for VMOD writers).
