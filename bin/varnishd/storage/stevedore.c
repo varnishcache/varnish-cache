@@ -89,7 +89,7 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
 	AN(stv->allocobj);
 	if (stv->allocobj(wrk, stv, oc, wsl) == 0) {
 		VSLb(wrk->vsl, SLT_Error,
-		    "Failed to create object object from %s %s",
+		    "Failed to create object from %s %s",
 		    stv->name, stv->ident);
 		return (0);
 	}

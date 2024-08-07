@@ -41,7 +41,7 @@ logexpect l1 -v v1 -g vxid -q "vxid == 1004" {
 	# Ensure the FetchError is in vbf_beresp2obj()
 	# not later in the VFP. Otherwise we have too much free_space
 	fail add  =	Storage
-	expect 0  =	Error      	{^Failed to create object object from .+ Transient}
+	expect 0  =	Error      	{^Failed to create object from .+ Transient}
 	expect 0  =	FetchError      {^Could not get storage}
 	fail clear
 } -start
