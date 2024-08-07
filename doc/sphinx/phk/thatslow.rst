@@ -128,7 +128,7 @@ is not going to boost your line count either.
 But did it work ?
 -----------------
 
-A 10 year project aniversary is a good reason to stop and see
+A 10 year project anniversary is a good reason to stop and see
 if the expected roses are there to be smelled.
 
 We have lots of numbers, commits (10538), bugreports (1864), CVEs
