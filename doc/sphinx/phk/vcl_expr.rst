@@ -25,12 +25,12 @@ time (Expires).
 
 Obviously, you can add a TIME and DURATION, the result is a TIME.
 
-Equally obviously, you can not add TIME to TIME, but you can subtract
+Equally obviously, you cannot add TIME to TIME, but you can subtract
 TIME from TIME, resulting in a DURATION.
 
 VCL do also have "naked" numbers, like INT and REAL, but what you
 can do with them is very limited.  For instance you can multiply a
-duration by a REAL, but you can not multiply a TIME by anything.
+duration by a REAL, but you cannot multiply a TIME by anything.
 
 Given that we have our own types, the next question is what
 precedence operators have.

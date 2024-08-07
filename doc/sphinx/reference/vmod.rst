@@ -9,7 +9,7 @@
 VMOD - Varnish Modules
 %%%%%%%%%%%%%%%%%%%%%%
 
-For all you can do in VCL, there are things you can not do.
+For all you can do in VCL, there are things you cannot do.
 Look an IP number up in a database file for instance.
 VCL provides for inline C code, and there you can do everything,
 but it is not a convenient or even readable way to solve such
@@ -89,7 +89,7 @@ that at length in a moment.
 Notice that the third function returns VOID, that makes it a "procedure"
 in VCL lingo, meaning that it cannot be used in expressions, right side
 of assignments and such.  Instead it can be used as a primary action,
-something functions which return a value can not::
+something functions which return a value cannot::
 
 	sub vcl_recv {
 		std.set_ip_tos(32);
@@ -483,7 +483,7 @@ VCL_SUB
 	references never be called from a different VCL.
 
 	``VRT_call()`` fails the VCL for recursive calls and when the
-	``VCL_SUB`` can not be called from the current context
+	``VCL_SUB`` cannot be called from the current context
 	(e.g. calling a subroutine accessing ``req`` from the backend
 	side).
 

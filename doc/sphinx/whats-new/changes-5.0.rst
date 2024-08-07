@@ -86,7 +86,7 @@ As useful as this feature is, it has caused a lot of headaches to
 varnish administrators along the lines of "why the *beep* doesn't
 Varnish cache this": A hit-for-pass object stayed in cache for however
 long its ttl dictated and prevented caching whenever it got hit ("for
-that url" in most cases). In particular, as a pass object can not be
+that url" in most cases). In particular, as a pass object cannot be
 turned into something cacheable retrospectively
 (``beresp.uncacheable`` can be changed from ``false`` to ``true``, but
 not the other way around), even responses which would have been

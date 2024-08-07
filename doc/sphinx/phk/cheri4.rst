@@ -36,7 +36,7 @@ gives you the "capability" to access the memory, and therefore they
 can be restricted separately from the memory they provide access to.
 
 If you could just create your own "capabilities" out of integers,
-that would be no big improvement, but you can not:  Under CHERI you
+that would be no big improvement, but you cannot:  Under CHERI you
 can only make a new capability from another capability, and the new
 one can never be more potent than the one it is derived from.
 
