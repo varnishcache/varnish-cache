@@ -233,7 +233,7 @@ The Apache Foundation "adopts" smaller projects inside their field
 of interest, and I believe that works OK, but I'm not sure if it
 can easily be transplanted to different topics.
 
-The final way is to simply throw money a the developers, the
+The final way is to simply throw money at the developers, the
 way the FreeBSD and Varnish communities have done with me.
 
 It is a far more flexible solution with respect to level of
