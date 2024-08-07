@@ -99,7 +99,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	A text, curses or HTML based facility to give some instant
 	feedback and stats is necessary.
 
-	If circumstances are not conductive to strucured approach, it should
+	If circumstances are not conductive to structured approach, it should
 	be possible to repeat this process and set up N independent Varnish
 	boxes and get some sort of relief without having to read any further
 	documentation.
