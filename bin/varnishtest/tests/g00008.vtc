@@ -1,6 +1,6 @@
 varnishtest "Test uncommon GZIP header fields"
 
-# With a a handcrafted GZIP file with all optional header fields
+# With a handcrafted GZIP file with all optional header fields
 
 server s1 {
 	rxreq

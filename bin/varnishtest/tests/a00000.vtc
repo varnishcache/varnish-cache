@@ -19,7 +19,7 @@ shell -exit 77 -expect {0 tests failed, 1 tests skipped, 0 tests passed} {
 	varnishtest -k _.vtc
 }
 
-# Test external macro-def with a a two-turtle test
+# Test external macro-def with a two-turtle test
 shell -expect {__=barf} {
 	echo varnishtest foo > _.vtc
 	printf 'shell {echo %c{foobar} > ${tmpdir}/__}' '$'  >> _.vtc
