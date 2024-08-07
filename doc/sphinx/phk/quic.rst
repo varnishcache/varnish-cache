@@ -101,7 +101,7 @@ authoritarian countries outright ban QUIC, and to make that ban
 stick, they may even transition from "allowed if not banned" to
 "banned if not allowed" firewalling.
 
-Of couse QUIC would still be a thing if you are big enough to
+Of course QUIC would still be a thing if you are big enough to
 negotiate with G7-sized governments, and I would not be surprised
 if QUIC ends up being a feasible protocol only for companies which
 can point at the "job creation" their data-centers provide.
