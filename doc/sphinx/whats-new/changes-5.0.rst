@@ -137,7 +137,7 @@ Request Body sent always / "cacheable POST"
 Previously, we would only send a request body for passed requests (and
 for pipe mode, but this is special anyway and should be avoided).
 
-Not so any more, but the default behaviour has not changed:
+Not so anymore, but the default behaviour has not changed:
 
 Whenever a request has a body, it will get sent to the backend for a
 cache miss (and pass, as before). This can be prevented by an

@@ -72,7 +72,7 @@ now also accept suitable numeral or quantitative arguments.
 These type-conversion functions should be fully backwards compatible,
 but the following differences should be noted:
 
-* The *fallback* is not required any more. A conversion failure in the
+* The *fallback* is not required anymore. A conversion failure in the
   absence of a *fallback* argument will now trigger a VCL failure.
 
 * A VCL failure will also be triggered if no or more than one argument

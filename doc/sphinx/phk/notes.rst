@@ -29,7 +29,7 @@ So what's wrong with 1975 programming ?
 ---------------------------------------
 
 The really short answer is that computers do not have two kinds of
-storage any more.
+storage anymore.
 
 It used to be that you had the primary store, and it was anything
 from acoustic delaylines filled with mercury via small magnetic
