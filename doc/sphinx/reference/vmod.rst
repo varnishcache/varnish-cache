@@ -862,7 +862,7 @@ your counters.
 Temporary Files
 ===============
 
-``varnishd`` creates a directroy named ``worker_tmpdir`` under the
+``varnishd`` creates a directory named ``worker_tmpdir`` under the
 varnish working directory (see ``varnishd -n`` argument) for
 read/write access by the worker process.
 
