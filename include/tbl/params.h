@@ -865,7 +865,7 @@ PARAM_SIMPLE(
 	/* descr */
 	"How many parked request we start for each completed request on "
 	"the object.\n"
-	"NB: Even with the implict delay of delivery, this parameter "
+	"NB: Even with the implicit delay of delivery, this parameter "
 	"controls an exponential increase in number of worker threads.",
 	/* flags */	EXPERIMENTAL
 )
