@@ -100,7 +100,7 @@ The synthetic keyword is now a function::
 obj in vcl_error replaced by beresp in vcl_backend_error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To better represent a the context in which it is called, you
+To better represent the context in which it is called, you
 should now use `beresp.*` vcl_backend_error, where you used to
 use `obj.*` in `vcl_error`.
 

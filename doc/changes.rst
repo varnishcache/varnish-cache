@@ -2848,7 +2848,7 @@ Varnish Cache 5.2-RC1 (2017-09-04)
 Usage
 -----
 
-* The default for the the -i argument is now the hostname as returned
+* The default for the -i argument is now the hostname as returned
   by gethostname(3)
 
 * Where possible (on platforms with setproctitle(3)), the -i argument

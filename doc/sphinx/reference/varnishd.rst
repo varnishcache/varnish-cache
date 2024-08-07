@@ -218,7 +218,7 @@ Operations options
 -I clifile
 
   Execute the management commands in the file given as ``clifile``
-  before the the worker process starts, see `CLI Command File`_.
+  before the worker process starts, see `CLI Command File`_.
 
 Tuning options
 --------------
