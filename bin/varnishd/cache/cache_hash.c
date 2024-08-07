@@ -33,7 +33,7 @@
  * happens here.
  *
  * We have two kinds of structures, objecthead and object.  An objecthead
- * corresponds to a given (Host:, URL) tupple, and the objects hung from
+ * corresponds to a given (Host:, URL) tuple, and the objects hung from
  * the objecthead may represent various variations (ie: Vary: header,
  * different TTL etc) instances of that web-entity.
  *
