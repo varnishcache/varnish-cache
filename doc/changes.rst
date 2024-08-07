@@ -881,7 +881,7 @@ Varnish Cache 7.1.0 (2022-03-15)
   ``VCL_STANDS``) from a single string ``s`` or ``x`` strings,
   respectively.
 
-  Note that the macros create a compund literal whose scope is the
+  Note that the macros create a compound literal whose scope is the
   enclosing block. Their value must thus only be used within the same
   block (it can be passed to called functions) and must not be
   returned or referenced for use outside the enclosing block.
