@@ -69,7 +69,7 @@ Varnish Cache NEXT (2024-09-15)
   unless explicitly given.
 
 * ``varnishd`` now creates a ``worker_tmpdir`` which can be used by
-  VMODs for temporary files. The `VMOD deleveloper documentation`_ has
+  VMODs for temporary files. The `VMOD developer documentation`_ has
   details.
 
 * The environment variable ``VARNISH_DEFAULT_N`` now provides the
@@ -77,7 +77,7 @@ Varnish Cache NEXT (2024-09-15)
   ``-n`` argument to ``varnishd`` and ``varnish*`` utilities except
   ``varnishtest``.
 
-.. _VMOD deleveloper documentation: doc/sphinx/reference/vmod.rst
+.. _VMOD developer documentation: doc/sphinx/reference/vmod.rst
 
 ================================
 Varnish Cache 7.5.0 (2024-03-18)
