@@ -614,7 +614,7 @@ VTCP_Check(ssize_t a)
     defined (__NetBSD__) ||				\
     defined (__APPLE__)
 	/*
-	 * Solaris and MacOS returns EINVAL if the other end unexpectedly reset
+	 * Solaris and macOS returns EINVAL if the other end unexpectedly reset
 	 * the connection.
 	 *
 	 * On NetBSD it is documented behaviour.
