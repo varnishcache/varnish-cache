@@ -124,7 +124,7 @@ were perfectly willing to fund several more months.
 Varnish community funding
 =========================
 
-Five years later, having developed Varnish 1.0 for Norways "Verdens
+Five years later, having developed Varnish 1.0 for Norway's "Verdens
 Gang" newspaper, I decided to give community funding a go again.
 
 Wiser from experience, I structured the `Varnish Moral License`_
