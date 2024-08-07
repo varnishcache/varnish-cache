@@ -315,7 +315,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 
 	The simplest storage method mmap(2)'s a disk or file and puts
 	objects into the virtual memory on page aligned boundaries,
-	using a small struct for metadata.  Data is not persistant
+	using a small struct for metadata.  Data is not persistent
 	across reboots.  Object free is incredibly cheap.  Object
 	allocation should reuse recently freed space if at all possible.
 	"First free hole" is probably a good allocation strategy.
