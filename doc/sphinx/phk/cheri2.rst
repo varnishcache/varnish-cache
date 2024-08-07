@@ -72,7 +72,7 @@ back into ``poll(2)``.
 
 This is 100% safe, because nobody else can get to a pipe created
 with ``pipe(2)``, but there is no way CHERI could spot that to
-make an execption, so reading pointers out of a filedescriptor,
+make an exception, so reading pointers out of a filedescriptor,
 cause fully justified core-dumps.
 
 If the poll-waiter was actually relevant, the proper fix would be
