@@ -30,7 +30,7 @@ link_srcdir: graphviz conf.py $(BUILT_SOURCES)
 		done \
 	fi
 
-# work around for make html called within doc/sphinx
+# workaround for make html called within doc/sphinx
 .PHONY: graphviz
 graphviz:
 	cd ../graphviz && $(MAKE) html
