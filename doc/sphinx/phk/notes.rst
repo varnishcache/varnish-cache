@@ -33,7 +33,7 @@ storage anymore.
 
 It used to be that you had the primary store, and it was anything
 from acoustic delaylines filled with mercury via small magnetic
-dougnuts via transistor flip-flops to dynamic RAM.
+doughnuts via transistor flip-flops to dynamic RAM.
 
 And then there were the secondary store, paper tape, magnetic tape,
 disk drives the size of houses, then the size of washing machines
