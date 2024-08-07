@@ -151,7 +151,7 @@ blindly to someone who doesn't have a history of requesting them."*
 - that sounds like praise by faint damnation to me.
 
 Anyway, I will not promise that we will have no major security
-issues until the year 2028, but I'll do my damnest to make it so.
+issues until the year 2028, but I'll do my damndest to make it so.
 
 VDR - Varnish Developers Rock
 -----------------------------
