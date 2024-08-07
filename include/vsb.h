@@ -100,7 +100,7 @@ void		 VSB_destroy(struct vsb **);
 	 */
 #define VSB_QUOTE_CSTR		8
 	/*
-	 * C lanuage source code literal string(s)
+	 * C language source code literal string(s)
 	 * Breaks strings at \n (expecting string concatenation)
 	 */
 #define VSB_QUOTE_UNSAFE	16
