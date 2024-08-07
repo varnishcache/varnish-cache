@@ -87,7 +87,7 @@ _assert_VSB_integrity(const char *fun, const struct vsb *s)
 	KASSERT(s != NULL,
 	    ("%s called with a NULL vsb pointer", fun));
 	KASSERT(s->magic == VSB_MAGIC,
-	    ("%s called wih an bogus vsb pointer", fun));
+	    ("%s called with an bogus vsb pointer", fun));
 	KASSERT(s->s_buf != NULL,
 	    ("%s called with uninitialized or corrupt vsb", fun));
 	KASSERT(s->s_len < s->s_size,
