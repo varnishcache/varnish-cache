@@ -5610,7 +5610,7 @@ varnishd
 -  Various fixes which makes Varnish compile and work on AIX.
 
 -  Turn on TCP\_DEFER\_ACCEPT on Linux. This should make us less
-   suspecible to denial of service attacks as well as give us slightly
+   susceptible to denial of service attacks as well as give us slightly
    better performance.
 
 -  Add an .initial property to the backend probe specification. This is
