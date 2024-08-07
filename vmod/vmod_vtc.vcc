@@ -182,7 +182,7 @@ Call ``VSLs()`` with the given parameters.
 
 The argument order is chosen to match VSL output.
 
-A VCL error is triggered if `tag` can not be resolved at runtime or
+A VCL error is triggered if `tag` cannot be resolved at runtime or
 if vxid is out of bounds.
 
 $Function VOID vsl_replay(STRANDS s)
