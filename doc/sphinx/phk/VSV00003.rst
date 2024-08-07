@@ -68,7 +68,7 @@ Dealing with it
 ---------------
 
 Martin Grydeland from Varnish Software has been the Senior Wrangler
-of this security issue, while I deliberatly have taken a hands-off
+of this security issue, while I deliberately have taken a hands-off
 stance, a decision I have no reason to regret.
 
 Thanks a lot Martin!
