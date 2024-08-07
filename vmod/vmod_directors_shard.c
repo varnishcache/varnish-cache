@@ -65,7 +65,7 @@
  *
  *  Overview of parameter objects (pointers are alternatives)
  *
- *  shard() director        shard_param() object    default praram
+ *  shard() director        shard_param() object    default param
  *
  *               --------------------------------->   vmod static
  *    VCL obj   /                                ->
