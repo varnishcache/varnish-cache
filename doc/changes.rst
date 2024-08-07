@@ -5623,7 +5623,7 @@ varnishd
    headers, for instance.
 
 -  When support for restart in vcl\_error was added, there was no check
-   to prevent infinte recursion. This has now been fixed.
+   to prevent infinite recursion. This has now been fixed.
 
 -  Turn on purge\_dups by default. This should make us consume less
    memory when there are many bans for the same pattern added.
