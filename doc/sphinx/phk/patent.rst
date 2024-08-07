@@ -222,18 +222,18 @@ I took myself out of the game:
 	FreeBSD committer       | BSD since 4.3-tahoe
 	Never attribute to malice what can adequately be explained by incompetence.
 
-Today (20190517) Arturs `Fastly <https://fastly.com>`_, company
+Today (20190517) Artur's `Fastly <https://fastly.com>`_, company
 went public on the New York Stock Exchange, and went up from $16
 to $24 in a matter of hours.  So-called "financial analysts" write
 that as a consequence Fastly is now worth 2+ Billion Dollars.
 
 I can say with 100% certainty and honesty that there is no way
-I could *ever* have done that, that is entirely Arturs doing and
+I could *ever* have done that, that is entirely Artur's doing and
 I know and admire how hard he worked to make it happen.
 
 Congratulations to Artur and the Fastly Crew!
 
-But I will steal some of Arturs thunder, and point to Fastlys IPO
+But I will steal some of Artur's thunder, and point to Fastlys IPO
 as proof that at least once in my career, I had a unique idea worth
 a billion dollars :-)
 
