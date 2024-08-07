@@ -58,7 +58,7 @@ and we are moving the Monday afternoon bugwash from 13:00-14:00 EU
 time to 15:00-15:30 EU time, so they do not have to get out of bed
 so early.
 
-We will also try to make the bugwash more producive, by having PHK
+We will also try to make the bugwash more productive, by having PHK
 publish an "agenda" some hours beforehand, so people can prepare,
 and instead shorten the bugwash to 30 minutes to keep the time
 commitment the same.
