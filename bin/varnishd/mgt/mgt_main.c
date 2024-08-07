@@ -287,7 +287,7 @@ make_secret(const char *dirname)
 
 	VJ_master(JAIL_MASTER_FILE);
 	if (unlink(fn) < 0 && errno != ENOENT) {
-		ARGV_ERR("Cannot remove pre-existing secret-file in %s (%s)\n",
+		ARGV_ERR("Cannot remove preexisting secret-file in %s (%s)\n",
 		    dirname, VAS_errtxt(errno));
 	}
 
