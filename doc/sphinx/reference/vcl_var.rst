@@ -321,7 +321,7 @@ req.hash_ignore_vary
 	This returns the very first match regardless of the object
 	compatibility with the client request. This is useful when
 	variants are irrelevant to certain clients, and differences
-	in the way the resouce is presented don't change how the
+	in the way the resource is presented don't change how the
 	client will interpret it.
 
 	Use with caution.
