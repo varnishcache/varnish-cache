@@ -5104,7 +5104,7 @@ varnishd
 -  Make new-purge not touch busy objects. This fixes a potential crash
    when calling VRT\_purge.
 
--  If there are everal grace-able objects, pick the least expired one.
+-  If there are several grace-able objects, pick the least expired one.
 
 -  Fix an issue with varnishadm -T :6082 shorthand.
 
