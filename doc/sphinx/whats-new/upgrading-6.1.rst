@@ -174,7 +174,7 @@ Other changes
   * If you have set ``.proxy_header=1`` (to use the PROXYv1 protocol)
     for a backend addressed as a Unix domain socket (with a ``.path``
     setting for the socket file), and have also defined a probe for
-    the backend, then then the address family ``UNKNOWN`` is sent in
+    the backend, then the address family ``UNKNOWN`` is sent in
     the proxy header for the probe request. If you have set
     ``.proxy_header=2`` (for PROXYv2) for a UDS backend with a probe,
     then ``PROXY LOCAL`` is sent for the probe request.
