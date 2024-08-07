@@ -1118,7 +1118,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	VCL_TaskLeave(ctx, bo->privs);
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
-	// can not make assumptions about the number of references here #3434
+	// cannot make assumptions about the number of references here #3434
 	if (bo->bereq_body != NULL)
 		(void) HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
 

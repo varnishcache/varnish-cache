@@ -159,7 +159,7 @@ varnish v1 -errvcl "Cannot set both .via and .path" {
 	}
 }
 
-varnish v1 -errvcl "Can not stack .via backends" {
+varnish v1 -errvcl "Cannot stack .via backends" {
 	backend a { .host = "${v2_addr}"; .port = "${v2_port}"; }
 
 	backend b {

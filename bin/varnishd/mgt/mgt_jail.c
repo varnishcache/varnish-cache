@@ -174,7 +174,7 @@ VJ_make_workdir(const char *dname)
 		closefd(&i);
 		AZ(unlink("_.testfile"));
 		ARGV_ERR("Working directory %s (-n argument) "
-		    "can not reside on a file system mounted noexec\n", dname);
+		    "cannot reside on a file system mounted noexec\n", dname);
 	}
 #endif
 
