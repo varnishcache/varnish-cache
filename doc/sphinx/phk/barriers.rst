@@ -71,7 +71,7 @@ That is the major barrier in Varnish:  All management happens in
 one process all actual movement of traffic happens in another, and
 the Manager process does not trust the Child process at all.
 
-The Child process is in a the totally unprotected domain:  Any
+The Child process is in a totally unprotected domain:  Any
 computer on the InterNet "(ANON)" can connect to the Child process
 and ask for some web-object.
 
