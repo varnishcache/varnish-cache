@@ -5315,7 +5315,7 @@ varnishd
 -  Align pointers in allocated objects. This will in theory make Varnish
    a tiny bit faster at the expense of slightly more memory usage.
 
--  Ensure the master process process id is updated in the shared memory
+-  Ensure the master process PID is updated in the shared memory
    log file after we go into the background.
 
 -  HEAD requests would be converted to GET requests too early, which
