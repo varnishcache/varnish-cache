@@ -71,7 +71,7 @@ program-test-framework-cloud-thingies, and they're fine up to a
 point, but they are inadequate tools for me in too many ways.
 
 Jenkins is written in Java, which is not something I want to inflict
-on computers volutarily, in particular not on computers people lend
+on computers voluntarily, in particular not on computers people lend
 us to test varnish on.
 
 Travis is Linux only, which is fine if you run Linux only, but I don't.
