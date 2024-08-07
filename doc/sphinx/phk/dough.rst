@@ -10,7 +10,7 @@ Raking in the dough on Free and Open Source Software
 ====================================================
 
 I'm writing this on the third day after the "Heartbleed" bug in OpenSSL
-devasted internet security, and while I have been very critical of the
+devastated internet security, and while I have been very critical of the
 OpenSSL source code since I first saw it, I have nothing but admiration
 for the OpenSSL crew and their effort.
 
