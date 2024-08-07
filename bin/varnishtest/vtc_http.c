@@ -1584,6 +1584,53 @@ cmd_http_accept(CMD_ARGS)
 	vtc_log(vl, 3, "Accepted socket fd is %d", hp->sess->fd);
 }
 
+/* SECTION: client-server.spec.shutdown
+ *
+ * shutdown
+ *	Initiate shutdown.
+ *
+ *	\-read
+ *		Shutdown the read direction.
+ *	\-write
+ *		Shutdown the write direction
+ *
+ *	The default is both direction.
+ */
+static void
+cmd_http_shutdown(CMD_ARGS)
+{
+	struct http *hp;
+	int how = SHUT_RDWR;
+	const char *str[] = {
+		[SHUT_RD]	= "RD",
+		[SHUT_WR]	= "WR",
+		[SHUT_RDWR]	= "RDWR",
+	};
+
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(strcmp(av[0], "shutdown"));
+	av++;
+
+	if (*av != NULL) {
+		if (!strcmp(*av, "-read")) {
+			how = SHUT_RD;
+			av++;
+		} else if (!strcmp(*av, "-write")) {
+			how = SHUT_WR;
+			av++;
+		}
+	}
+
+	if (*av != NULL)
+		vtc_fatal(hp->vl, "Unknown http shutdown spec: %s\n", *av);
+
+	vtc_log(vl, 4, "Shutting down fd (%s): %d", str[how], hp->sess->fd);
+	if (shutdown(hp->sess->fd, how) < 0)
+		vtc_log(vl, hp->fatal, "Shutdown failed: %s", strerror(errno));
+	vtc_log(vl, 3, "Shutdown socket fd (%d): %d", how, hp->sess->fd);
+}
+
 /* SECTION: client-server.spec.fatal
  *
  * fatal|non_fatal
@@ -1757,6 +1804,7 @@ const struct cmds http_cmds[] = {
 	/* session */
 	CMD_HTTP(accept)
 	CMD_HTTP(close)
+	CMD_HTTP(shutdown)
 	CMD_HTTP(recv)
 	CMD_HTTP(send)
 	CMD_HTTP(send_n)

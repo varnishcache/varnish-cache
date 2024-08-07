@@ -712,7 +712,8 @@ SES_NewPool(struct pool *pp, unsigned pool_no)
 	pp->mpl_sess = MPL_New(nb, &cache_param->pool_sess,
 	    &cache_param->workspace_session);
 
-	pp->waiter = Waiter_New();
+	bprintf(nb, "pool%u", pool_no);
+	pp->waiter = Waiter_New(nb);
 }
 
 void

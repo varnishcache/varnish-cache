@@ -14,7 +14,8 @@ VSC_SRC = \
 	VSC_sma.vsc \
 	VSC_smf.vsc \
 	VSC_smu.vsc \
-	VSC_vbe.vsc
+	VSC_vbe.vsc \
+	VSC_waiter.vsc
 
 noinst_LTLIBRARIES = libvsc.la
 libvsc_la_SOURCES = $(VSC_SRC)

@@ -70,6 +70,6 @@ struct waited {
 
 /* cache_waiter.c */
 int Wait_Enter(const struct waiter *, struct waited *);
-struct waiter *Waiter_New(void);
+struct waiter *Waiter_New(const char *);
 void Waiter_Destroy(struct waiter **);
 const char *Waiter_GetName(void);

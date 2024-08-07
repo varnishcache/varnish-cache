@@ -139,9 +139,13 @@ vwe_thread(void *priv)
 			}
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 			vwe->nwaited--;
-			if (ep->events & EPOLLIN)
-				Wait_Call(w, wp, WAITER_ACTION, now);
-			else if (ep->events & EPOLLERR)
+			if (ep->events & EPOLLIN) {
+				if (ep->events & EPOLLRDHUP &&
+				    recv(wp->fd, &c, 1, MSG_PEEK) == 0)
+					Wait_Call(w, wp, WAITER_REMCLOSE, now);
+				else
+					Wait_Call(w, wp, WAITER_ACTION, now);
+			} else if (ep->events & EPOLLERR)
 				Wait_Call(w, wp, WAITER_REMCLOSE, now);
 			else if (ep->events & EPOLLHUP)
 				Wait_Call(w, wp, WAITER_REMCLOSE, now);
