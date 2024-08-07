@@ -290,7 +290,7 @@ haproxy_cli_recv(struct haproxy_cli *hc)
  * SECTION: haproxy.cli.expect
  * expect OP STRING
  *         Regex match the CLI reception buffer with STRING
- *         if OP is ~ or, on the contraty, if OP is !~ check that there is
+ *         if OP is ~ or, on the contrary, if OP is !~ check that there is
  *         no regex match.
  */
 static void v_matchproto_(cmd_f)
