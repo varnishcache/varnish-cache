@@ -1348,7 +1348,7 @@ vcc_expr_bin_bool(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 	ERRCHK(tl);
 	if ((*e)->fmt != BOOL) {
 		VSB_printf(tl->sb,
-		    "'%s' must be preceeded by BOOL,"
+		    "'%s' must be preceded by BOOL,"
 		    " found %s.\n", tokstr, vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, tk, tl->t);
 		return;
