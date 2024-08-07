@@ -197,7 +197,7 @@ Regular Expressions
 Varnish uses Perl-compatible regular expressions (PCRE). For a
 complete description please see the pcre(3) man page.
 
-To send flags to the PCRE engine, such as to do case insensitive matching, add
+To send flags to the PCRE engine, such as to do case-insensitive matching, add
 the flag within parens following a question mark, like this::
 
     # If host is NOT example dot com..
