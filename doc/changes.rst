@@ -2171,7 +2171,7 @@ C APIs (for vmod and utility authors)
   * from ``func_``\ `class` to `vmodname`\ ``.``\ `class`\ ``.``\
     `method` for methods,
 
-  repsectively. In short, the anchor is now named equal to VCL syntax
+  respectively. In short, the anchor is now named equal to VCL syntax
   for constructors and functions and similarly to VCL syntax for methods.
 
 * VRT API has been updated to 9.0
