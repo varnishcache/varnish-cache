@@ -102,7 +102,7 @@ there is no reason to assume they are bugfree, so Varnish does not
 trust the Operator role, that is a pure one-way relationship.
 
 (Trick:  If the Child process us run under user "nobody", you can
-allow marginally trusted operations personel access to the "nobody"
+allow marginally trusted operations personnel access to the "nobody"
 account (for instance using .ssh/authorized_keys2), and they will
 be able to kill the Child process, prompting the Manager process to
 restart it again with the same parameters and settings.)
