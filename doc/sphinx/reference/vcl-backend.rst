@@ -116,7 +116,7 @@ Limit how many simultaneous connections varnish can open to the backend::
 Attribute ``.wait_limit``
 ------------------------------
 
-Maximum  number  of  transactions that can queue waiting for a backend connection to become avaiable::
+Maximum  number  of  transactions that can queue waiting for a backend connection to become available::
 
     .wait_limit = 1000;
 
