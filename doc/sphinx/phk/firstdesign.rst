@@ -502,7 +502,7 @@ Soon those two inspirations collided::
 
 	Multiple policy configurations can be loaded at the same time
 	but only one is the "active configuration".  Loading, switching and
-	unloading of policy configurations happen via the managment
+	unloading of policy configurations happen via the management
 	process.
 
 	A global config sequence number is incremented on each switch and
