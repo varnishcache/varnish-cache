@@ -3355,7 +3355,7 @@ Varnish Cache 4.1.5-beta2 (2017-02-08)
 Bugs fixed
 ----------
 
-* 1704_ - Reverted the docfix and made the fech_failed counter do
+* 1704_ - Reverted the docfix and made the fetch_failed counter do
   what the documentation says it should do
 * 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error
 * 2167_ - VCC will not parse a literal negative number where INT is
