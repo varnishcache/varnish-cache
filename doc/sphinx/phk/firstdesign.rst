@@ -96,7 +96,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 
 	and you're off running.
 
-	A text, curses or HTML based based facility to give some instant
+	A text, curses or HTML based facility to give some instant
 	feedback and stats is necessary.
 
 	If circumstances are not conductive to strucured approach, it should
