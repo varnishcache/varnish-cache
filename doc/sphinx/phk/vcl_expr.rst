@@ -35,7 +35,7 @@ duration by a REAL, but you cannot multiply a TIME by anything.
 Given that we have our own types, the next question is what
 precedence operators have.
 
-The C programming language is famous for having a couple of gottchas
+The C programming language is famous for having a couple of gotchas
 in its precedence rules and given our limited and narrow type
 repertoire, blindly importing a set of precedence rules may confuse
 a lot more than it may help.
