@@ -1072,7 +1072,7 @@ Varnish Cache 7.0.0 (2021-09-15)
 * New feature checks in ``varnishtest``: ``sanitizer``, ``asan``, ``lsan``,
   ``msan``, ``ubsan`` and ``coverage``.
 
-* New ``--enable-workspace-emulator`` configure flag to swap the worksapce
+* New ``--enable-workspace-emulator`` configure flag to swap the workspace
   implementation with a sparse one ideal for fuzzing (3644_).
 
 * Strict comparison of items from the HTTP grammar (3650_).
@@ -1853,7 +1853,7 @@ Varnish Cache 6.4.0 (2020-03-16)
 * Add vi-stype CTRL-f / CTRL-b for page down/up to interactive
   varnishstat
 
-* Fixed wrong handling of an out-of-workspae condition in the proxy
+* Fixed wrong handling of an out-of-workspace condition in the proxy
   vmod and in the workspace allocator, bug 3131_
 
 * Raised the minimum for the ``vcl_cooldown`` parameter to 1s to fix
