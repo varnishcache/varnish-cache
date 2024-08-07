@@ -233,7 +233,7 @@ I know and admire how hard he worked to make it happen.
 
 Congratulations to Artur and the Fastly Crew!
 
-But I will steal some of Artur's thunder, and point to Fastlys IPO
+But I will steal some of Artur's thunder, and point to Fastly's IPO
 as proof that at least once in my career, I had a unique idea worth
 a billion dollars :-)
 
