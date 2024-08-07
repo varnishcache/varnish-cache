@@ -75,7 +75,7 @@ with ``pipe(2)``, but there is no way CHERI could spot that to
 make an execption, so reading pointers out of a filedescriptor,
 cause fully justified core-dumps.
 
-If the poll-waiter was actaully relevant, the proper fix would be
+If the poll-waiter was actually relevant, the proper fix would be
 to let the sending thread stick things on a locked list and just
 write a nonce-byte into the pipe to the waiter-thread, but that
 goes at the bottom of the TODO list, and for now I just remove the
