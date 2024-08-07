@@ -109,7 +109,7 @@ Varnish release 2.1.2, May 2010 has the link, release 2.1.3 from
 July same year does not.)
 
 And that, my friends, is why the error message of last resort in
-Varnish Cache does not even contain a link any more.
+Varnish Cache does not even contain a link anymore.
 
 */phk*
 

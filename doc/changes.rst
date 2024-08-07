@@ -4176,7 +4176,7 @@ Bugs fixed
 * 1404_ - Don't send Content-Length on 304 Not Modified responses.
 * 1401_ - Varnish would crash when retrying a backend fetch too many times.
 * 1399_ - Memory get freed while in use by another thread/object
-* 1398_ - Fix NULL deref related to a backend we don't know any more.
+* 1398_ - Fix NULL deref related to a backend we don't know anymore.
 * 1397_ - Crash on backend fetch while LRUing.
 * 1395_ - End up in vcl_error also if fetch fails vcl_backend_response.
 * 1391_ - Client abort and retry during a streaming fetch would make Varnish assert.
@@ -5945,7 +5945,7 @@ varnishd
    core dumps. Make sure it's set.
 
 -  Doing purge.hash() with an empty string would cause us to dump core.
-   Fixed so we don't do that any more.
+   Fixed so we don't do that anymore.
 
 -  We ran into a problem with glibc's malloc on Linux where it seemed
    like it failed to ever give memory back to the OS, causing the system
