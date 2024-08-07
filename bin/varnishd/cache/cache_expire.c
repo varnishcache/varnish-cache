@@ -145,7 +145,7 @@ EXP_RefNewObjcore(struct objcore *oc)
 
 
 /*--------------------------------------------------------------------
- * Call EXP's attention to a an oc
+ * Call EXP's attention to an oc
  */
 
 void
