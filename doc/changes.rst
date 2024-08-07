@@ -83,7 +83,7 @@ Varnish Cache NEXT (2024-09-15)
 Varnish Cache 7.5.0 (2024-03-18)
 ================================
 
-* Add ``h2_window_timeout`` paramater to mitigate CVE-2023-43622 (VSV00014_).
+* Add ``h2_window_timeout`` parameter to mitigate CVE-2023-43622 (VSV00014_).
 
 * The parameters ``idle_send_timeout`` and ``timeout_idle`` are now
   limited to a maximum of 1 hour.
