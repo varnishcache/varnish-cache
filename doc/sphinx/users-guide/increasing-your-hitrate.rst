@@ -524,7 +524,7 @@ on.
 
 When a request is passed, this can be recognized in the
 ``vcl_backend_*`` subroutines by the fact that ``bereq.uncacheable``
-and ``beresp.uncachable`` are both true. The backend response will not
+and ``beresp.uncacheable`` are both true. The backend response will not
 be cached, even if it fulfills conditions that otherwise would allow
 it, for example if ``Cache-Control`` sets a positive TTL.
 
