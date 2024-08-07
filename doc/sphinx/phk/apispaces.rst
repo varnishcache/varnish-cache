@@ -50,7 +50,7 @@ our flat namespace and our include files.
 
 Frederick P. Brooks points out in his classic "The Mythical Man-Month",
 that is the difference between a program-product and a programming-product,
-and he makes the case that the effort required tripples, going from
+and he makes the case that the effort required triples, going from
 the former to the latter.
 
 Having spent some weeks on what I thought would be a three day task
