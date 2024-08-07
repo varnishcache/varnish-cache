@@ -836,7 +836,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		/* Wait for the stale object to become fully fetched, so
 		 * that we can catch fetch errors, before we unbusy the
 		 * new object. This serves two purposes. First it helps
-		 * with request coalesching, and stops long chains of
+		 * with request coalescing, and stops long chains of
 		 * IMS-updated short-TTL objects all streaming from a
 		 * single slow body fetch. Second it makes sure that all
 		 * the object attributes are complete when we copy them
