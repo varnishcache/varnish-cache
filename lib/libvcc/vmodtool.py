@@ -1071,7 +1071,7 @@ class vcc():
         fo.close()
 
     def amboilerplate(self):
-        ''' Produce boilplate for autocrap tools '''
+        ''' Produce boilerplate for autocrap tools '''
         vcc = os.path.basename(self.inputfile)
         src = glob.glob("vmod_" + self.modname + "*.[ch]")
         src.sort()
