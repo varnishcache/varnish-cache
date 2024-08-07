@@ -16,7 +16,7 @@ That is not a coincidence.
 
 I have spent many years working on the FreeBSD kernel, and only
 rarely did I venture into userland programming, but when I had
-occation to do so, I invariably found that people programmed like
+occasion to do so, I invariably found that people programmed like
 it was still 1975.
 
 So when I was approached about the Varnish project I wasn't really
