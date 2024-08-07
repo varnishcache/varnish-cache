@@ -52,7 +52,7 @@ I really wish more FOSS projects would pick up this practice.
 How did we find it
 ------------------
 
-This is a bit embarrasing for me.
+This is a bit embarrassing for me.
 
 For ages I have been muttering about wanting to "fuzz"[#f5]_ Varnish,
 to see what would happen, but between all the many other items

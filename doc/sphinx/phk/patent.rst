@@ -13,7 +13,7 @@ When I was in USA, diplomas on the wall was very much a thing.
 I don't think I fully reverse-engineered the protocol for which
 diplomas would get hung and which would be filed away, apart from
 the unbreakable rule that, like it or not, anything your company
-handed out was mandatory on the office-wall, no matter how embarrasing.
+handed out was mandatory on the office-wall, no matter how embarrassing.
 
 Our paediatrician had diplomas for five or six steps of her education.
 
