@@ -56,7 +56,7 @@ varnishlog
 ==========
 
 Object creation failures by the selected storage engine are now logged
-under the ``Error`` tag as ``Failed to create object object from %s
+under the ``Error`` tag as ``Failed to create object from %s
 %s``.
 
 varnishadm
