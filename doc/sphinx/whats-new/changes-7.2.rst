@@ -40,7 +40,7 @@ respectively from ``120.000``, ``10.000`` and ``0.000`` to ``2m``, ``10s``
 and ``0s``.
 
 The platform-dependent ``tcp_keepalive_time`` parameter is supported on
-MacOS.
+macOS.
 
 The new ``vcc_feature`` bits parameter replaces previous ``vcc_*`` boolean
 parameters. The latter still exist as deprecated aliases.

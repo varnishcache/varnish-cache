@@ -125,7 +125,7 @@ anyway. Traditionally, the virtual memory limit is configured with
 for this limit like control groups (Linux) or resource controls
 (Solaris).
 
-.. XXX idk about the BSD and MacOS abstractions -- slink
+.. XXX idk about the BSD and macOS abstractions -- slink
 
 The 'path' parameter specifies either the path to the backing file or
 the path to a directory in which `varnishd` will create the backing file.

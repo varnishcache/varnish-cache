@@ -646,7 +646,7 @@ Varnish Cache 7.2.0 (2022-09-15)
 * Stevedore initialization via the ``.init()`` callback has been moved
   to the worker process.
 
-* The parameter ``tcp_keepalive_time`` is supported on MacOS.
+* The parameter ``tcp_keepalive_time`` is supported on macOS.
 
 * Duration parameters can optionally take a unit, with the same syntax as
   duration units in VCL. Example: ``param.set default_grace 1h``.
@@ -1905,7 +1905,7 @@ Varnish Cache 6.4.0 (2020-03-16)
 * Add more vcl control over timeouts with ``sess.timeout_linger``,
   ``sess.send_timeout`` and ``sess.idle_send_timeout``
 
-* Fix panics due to missing EINVAL handling on MacOS, see 1853_
+* Fix panics due to missing EINVAL handling on macOS, see 1853_
 
 * Added ``VSLs()`` and ``VSLbs()`` functions for logging ``STRANDS`` to
   VSL
@@ -6468,7 +6468,7 @@ Build system
    wider range of platforms.
 
 -  Compatibility shims for clock\_gettime() are now correctly applied
-   where needed, allowing Varnish to build on MacOS X.
+   where needed, allowing Varnish to build on Mac OS X.
 
 -  The autogen.sh script will now correctly detect and warn about
    automake versions which are known not to work correctly.
