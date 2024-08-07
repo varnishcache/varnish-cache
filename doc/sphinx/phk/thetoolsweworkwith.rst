@@ -125,7 +125,7 @@ wall clock time you want to sleep until.
 
 The only problem with that is that UTC wall clock time is not
 continuous when implemented on a computer, and it may not even be
-monotonously increasing, since NTPD or other timesync facilites may
+monotonously increasing, since NTPD or other timesync facilities may
 step the clock backwards, particularly in the first minutes after
 boot.
 
