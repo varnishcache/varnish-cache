@@ -1361,7 +1361,7 @@ beresp.uncacheable
 
 	Setting this variable makes the object uncacheable.
 
-	This may may produce a hit-for-miss object in the cache.
+	This may produce a hit-for-miss object in the cache.
 
 	Clearing the variable has no effect and will log the warning
 	"Ignoring attempt to reset beresp.uncacheable".
