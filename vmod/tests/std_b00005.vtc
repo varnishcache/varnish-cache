@@ -77,7 +77,7 @@ varnish v1 -vcl+backend {
 		set resp.http.port11 = std.port(debug.get_ip());
 		std.timestamp("1.2.3.4 80, p = 443");
 
-		debug.store_ip(std.ip(req.http.non-existent, server.ip));
+		debug.store_ip(std.ip(req.http.nonexistent, server.ip));
 		set resp.http.ip12 = debug.get_ip();
 		set resp.http.port12 = std.port(debug.get_ip());
 		std.timestamp("NULL, server.ip");
