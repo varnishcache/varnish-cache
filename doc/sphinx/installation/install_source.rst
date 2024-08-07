@@ -148,10 +148,10 @@ Optionally, to pull from a repository::
 
 Then continue `Compiling Varnish`_
 
-Build dependencies on MacOS
+Build dependencies on macOS
 ---------------------------
 
-To compile varnish on MacOS, these steps should install the required
+To compile varnish on macOS, these steps should install the required
 dependencies:
 
 * Install ``xcode`` via the App Store
