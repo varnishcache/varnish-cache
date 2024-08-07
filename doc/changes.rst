@@ -938,7 +938,7 @@ Varnish Cache 7.0.1 (2021-11-23)
   combined strings of type VCL_REGEX (3721_).
 
 * An issue has been fixed that would cause the VCL dependency checker to
-  incorrectly flag VCLs as dependants of other VCLs when using labels,
+  incorrectly flag VCLs as dependents of other VCLs when using labels,
   preventing them from being discarded (3734_).
 
 * VCLs loaded through CLI or the use of startup CLI scripts (-I option to
