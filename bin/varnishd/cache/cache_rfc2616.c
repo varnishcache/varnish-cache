@@ -127,7 +127,7 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 		 * parsed value of t_origin, as that will be needed to
 		 * synthesize a correct Age header in delivery. The
 		 * SLT_TTL log tag at the end of this function is
-		 * deliberetaly skipped to avoid confusion when reading
+		 * deliberately skipped to avoid confusion when reading
 		 * the log.*/
 		*ttl = -1;
 		*grace = 0;
