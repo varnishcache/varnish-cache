@@ -74,7 +74,7 @@ vflopenat(int dirfd, const char *path, int flags, va_list ap)
 
 	for (;;) {
 		if ((fd = openat(dirfd, path, flags, mode)) == -1)
-			/* non-existent or no access */
+			/* nonexistent or no access */
 			return (-1);
 		if (flock(fd, operation) == -1) {
 			/* unsupported or interrupted */
