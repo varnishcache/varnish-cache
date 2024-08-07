@@ -658,7 +658,7 @@ ObjSetFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of, int val)
 }
 
 /*====================================================================
- * Object event subscribtion mechanism.
+ * Object event subscription mechanism.
  *
  * XXX: it is extremely unclear what the locking circumstances are here.
  */
