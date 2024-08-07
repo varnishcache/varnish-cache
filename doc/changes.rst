@@ -3321,7 +3321,7 @@ Bugs fixed
 * 2241_ - VSL fails to get hold of SHM
 * 2270_ - Newly loaded auto VCLs don't get their go_cold timer set
 * 2273_ - Master cooling problem
-* 2275_ - If the client workspace is almost, but not quite exhaused, we may
+* 2275_ - If the client workspace is almost, but not quite exhausted, we may
   not be able to get enough iovec's to do Chunked transmission.
 * 2295_ - Spinning loop in VBE_Poll causes master to kill child on
   CLI timeout
