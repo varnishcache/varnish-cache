@@ -771,7 +771,7 @@ cmd_http_gunzip(CMD_ARGS)
 }
 
 /**********************************************************************
- * Handle common arguments of a transmited request or response
+ * Handle common arguments of a transmitted request or response
  */
 
 static char* const *
