@@ -955,7 +955,7 @@ A couple of days later the ideas had gel'ed::
 		else_part:	/* empty */
 				| "else" compound
 
-		functioncal:	"call" function_name
+		functioncall:	"call" function_name
 
 		field:		object
 				field "." variable
