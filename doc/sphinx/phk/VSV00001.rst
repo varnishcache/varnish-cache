@@ -27,7 +27,7 @@ VWV - Vulnerability Workaround in VCL
 
 Rolling a new Varnish release, even with an trivial one-line patch
 is not a fast operation, getting from patch to packages rolled and
-pushed into operating system respositories takes at least several
+pushed into operating system repositories takes at least several
 days, provided you can get everybody's attention.
 
 Being able to offer users a way to mitigate security issues in VCL
