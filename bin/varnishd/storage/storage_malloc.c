@@ -92,7 +92,7 @@ sma_alloc(const struct stevedore *st, size_t size)
 		return (NULL);
 
 	/*
-	 * Do not collaps the sma allocation with sma->s.ptr: it is not
+	 * Do not collapse the sma allocation with sma->s.ptr: it is not
 	 * a good idea.  Not only would it make ->trim impossible,
 	 * performance-wise it would be a catastropy with chunksized
 	 * allocations growing another full page, just to accommodate the sma.
