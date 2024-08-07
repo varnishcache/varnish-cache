@@ -4,7 +4,7 @@ barrier b1 cond 2
 
 # Build a esi request tree that fails on flush before include at two different
 # levels. Synchronize a client close after the response headers have been
-# received by the client. This produces write erros for the body parts in all
+# received by the client. This produces write errors for the body parts in all
 # fragments.
 server s1 {
 	rxreq
