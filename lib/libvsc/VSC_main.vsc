@@ -727,14 +727,14 @@
 	:oneliner:	SHM writes
 
 	Number of individual writes to the shared memory log. A single
-	write may batch multiple records for bufferred tasks.
+	write may batch multiple records for buffered tasks.
 
 
 .. varnish_vsc:: shm_flushes
 	:level:	diag
 	:oneliner:	SHM flushes due to overflow
 
-	Number of writes performed before the end of a bufferred task
+	Number of writes performed before the end of a buffered task
 	because adding a record to a batch would exceed vsl_buffer.
 
 .. varnish_vsc:: shm_cont
