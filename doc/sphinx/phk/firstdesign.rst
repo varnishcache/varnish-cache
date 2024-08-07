@@ -477,7 +477,7 @@ to decide what to cache, how long time to cache it, where to
 cache it and ... it sounded like a lot of very detailed code
 which had to be incredibly configurable.
 
-Soon those two inspiratons collided::
+Soon those two inspirations collided::
 
 
 	Notes on Varnish
