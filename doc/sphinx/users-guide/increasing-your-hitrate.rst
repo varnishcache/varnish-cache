@@ -161,7 +161,7 @@ Lets use the Varnish Software (VS) web as an example here. Very
 simplified the setup VS uses can be described as a Drupal-based
 backend with a Varnish cache in front. VS uses some cookies for
 Google Analytics tracking and similar tools. The cookies are all
-set and used by Javascript. Varnish and Drupal doesn't need to see
+set and used by JavaScript. Varnish and Drupal doesn't need to see
 those cookies and since Varnish will cease caching of pages when
 the client sends cookies Varnish will discard these unnecessary
 cookies in VCL.
