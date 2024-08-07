@@ -105,7 +105,7 @@ seeing cookies being crypto-signed, to prevent forgeries.
 The term "bass ackwards" comes to mind.
 
 Cookies are also one of the main wasters of bandwidth, disabling
-caching by default, sending lots of cookies were they are not
+caching by default, sending lots of cookies where they are not
 needed, which made many sites register separate domains for image
 content, to "save" bandwidth by avoiding cookies.
 
