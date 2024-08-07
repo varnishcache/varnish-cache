@@ -1,4 +1,4 @@
-varnishtest "Effective TTL for for a slow backend"
+varnishtest "Effective TTL for a slow backend"
 
 server s1 {
 	rxreq
