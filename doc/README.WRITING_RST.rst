@@ -38,7 +38,7 @@ cross-references using::
 
 Trouble is that ``rst2man`` and ``rst2pdf`` working on individual
 files cannot parse `ref` roles to anything outside the current rst
-file, so we need to differenciate link targets depending on the kind
+file, so we need to differentiate link targets depending on the kind
 of documentation:
 
 * set link targets on the top of documents ending up in man-pages
