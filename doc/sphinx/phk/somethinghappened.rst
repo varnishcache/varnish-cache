@@ -75,7 +75,7 @@ That would have held some
 `pretty significant new code </docs/5.1/whats-new/changes-5.1.html>`_
 from our users for another half year, for no particular reason.
 
-So yeah, it was pretty embarrasing to have to amend our 5.1 release
+So yeah, it was pretty embarrassing to have to amend our 5.1 release
 twice in two weeks, but it did prove that the "release by calendar"
 strategy is right for our project:  It forced us to get our s**t
 toggether so users can benefit from the work we do in a timely

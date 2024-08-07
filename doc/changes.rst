@@ -5129,7 +5129,7 @@ Changes from 2.1.3 to 2.1.4
 varnishd
 --------
 
--  An embarrasing typo in the new binary heap layout caused inflated
+-  An embarrassing typo in the new binary heap layout caused inflated
    obj/objcore/objhdr counts and could cause odd problems when the LRU
    expunge mechanism was invoked. This has been fixed.
 
