@@ -34,7 +34,7 @@ with the running program and argued that it prolonged the debugging
 process.
 
 Practically all the oral histories from back then are about people
-sneaking in to university or work at night, to get the computer for
+sneaking into university or work at night, to get the computer for
 themselves.
 
 But we could call it "Prototyping" if that sounded better, and now
