@@ -137,7 +137,7 @@ impossible to measure program quality, even though we tend to know
 it when we see it.
 
 There are also uncountable events which should be in the ledger,
-503s [#f9]_, crashes, hair-tearing, head-scrathing, coffee-drinking,
+503s [#f9]_, crashes, hair-tearing, head-scratching, coffee-drinking,
 manual- and source-code thumbing and frustrated cries of help on IRC.
 
 In the other cup there are equally intangible positives, pats on
