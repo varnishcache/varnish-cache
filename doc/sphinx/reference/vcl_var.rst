@@ -1611,7 +1611,7 @@ resp.filters
 
 	After resp.filters is set, changing any of the conditions
 	which otherwise determine the filter selection will have no
-	effiect. Using resp.do_esi is an error once resp.filters is
+	effect. Using resp.do_esi is an error once resp.filters is
 	set.
 
 
