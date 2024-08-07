@@ -78,7 +78,7 @@ rfc2616_time(const char *p)
 		ep++;
 	/* We accept ',' as an end character because we may be parsing a
 	 * multi-element Cache-Control part. We accept '.' to be future
-	 * compatble with fractional seconds. */
+	 * compatible with fractional seconds. */
 	if (*ep == '\0' || *ep == ',' || *ep == '.')
 		return (val);
 	return (0);
