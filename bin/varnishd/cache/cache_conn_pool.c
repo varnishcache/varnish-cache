@@ -40,6 +40,7 @@
 #include "vsa.h"
 #include "vsha256.h"
 #include "vtcp.h"
+#include "vtree.h"
 #include "vus.h"
 #include "vtim.h"
 #include "waiter/waiter.h"
@@ -48,6 +49,7 @@
 #include "cache_pool.h"
 
 struct conn_pool;
+static int vcp_cmp(const struct conn_pool *a, const struct conn_pool *b);
 
 /*--------------------------------------------------------------------
  */
@@ -88,7 +90,7 @@ struct conn_pool {
 	struct vrt_endpoint			*endpoint;
 	char					ident[VSHA256_DIGEST_LENGTH];
 
-	VTAILQ_ENTRY(conn_pool)			list;
+	VRBT_ENTRY(conn_pool)			entry;
 	int					refcnt;
 	struct lock				mtx;
 
@@ -105,9 +107,8 @@ struct conn_pool {
 
 static struct lock conn_pools_mtx;
 
-static VTAILQ_HEAD(, conn_pool)	conn_pools =
-    VTAILQ_HEAD_INITIALIZER(conn_pools);
-
+static VRBT_HEAD(vrb, conn_pool) conn_pools = VRBT_INITIALIZER(&conn_pools);
+VRBT_GENERATE_STATIC(vrb, conn_pool, entry, vcp_cmp);
 
 /*--------------------------------------------------------------------
  */
@@ -142,6 +143,15 @@ PFD_RemoteName(const struct pfd *p, char *abuf, unsigned alen, char *pbuf,
 	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
 	CHECK_OBJ_NOTNULL(p->conn_pool, CONN_POOL_MAGIC);
 	p->conn_pool->methods->remote_name(p, abuf, alen, pbuf, plen);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static inline int
+vcp_cmp(const struct conn_pool *a, const struct conn_pool *b)
+{
+	return (memcmp(a->ident, b->ident, sizeof b->ident));
 }
 
 /*--------------------------------------------------------------------
@@ -222,7 +232,7 @@ VCP_Rel(struct conn_pool **cpp)
 		return;
 	}
 	AZ(cp->n_used);
-	VTAILQ_REMOVE(&conn_pools, cp, list);
+	VRBT_REMOVE(vrb, &conn_pools, cp);
 	Lck_Unlock(&conn_pools_mtx);
 
 	Lck_Lock(&cp->mtx);
@@ -714,13 +724,6 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	}
 	VSHA256_Final(digest, cx);
 
-	/*
-	 * In heavy use of dynamic backends, traversing this list
-	 * can become expensive.  In order to not do so twice we
-	 * pessimistically create the necessary pool, and discard
-	 * it on a hit. (XXX: Consider hash or tree ?)
-	 */
-
 	ALLOC_OBJ(cp, CONN_POOL_MAGIC);
 	AN(cp);
 	cp->refcnt = 1;
@@ -737,16 +740,14 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 	Lck_Lock(&conn_pools_mtx);
-	VTAILQ_FOREACH(cp2, &conn_pools, list) {
-		CHECK_OBJ_NOTNULL(cp2, CONN_POOL_MAGIC);
-		assert(cp2->refcnt > 0);
-		if (!memcmp(digest, cp2->ident, sizeof cp2->ident))
-			break;
-	}
+	cp2 = VRBT_FIND(vrb, &conn_pools, cp);
 	if (cp2 == NULL)
-		VTAILQ_INSERT_HEAD(&conn_pools, cp, list);
-	else
+		AZ(VRBT_INSERT(vrb, &conn_pools, cp));
+	else {
+		CHECK_OBJ(cp2, CONN_POOL_MAGIC);
+		assert(cp2->refcnt > 0);
 		cp2->refcnt++;
+	}
 	Lck_Unlock(&conn_pools_mtx);
 
 	if (cp2 == NULL) {
