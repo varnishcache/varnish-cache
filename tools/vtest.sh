@@ -35,7 +35,7 @@ set -e
 
 export MAKEFLAGS="${MAKEFLAGS:--j2}"
 
-# This tempdirectory must not be used by anything else.
+# This temp directory must not be used by anything else.
 # Do *NOT* set this to /tmp
 export TMPDIR="${TMPDIR:-`pwd`/_vtest_tmp}"
 
