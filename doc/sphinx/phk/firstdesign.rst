@@ -136,7 +136,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	from hitting all the backend with the full force.
 
 	An important aspect of cluster operations is giving a statistically
-	meaninful judgement of the cluster size, in particular answering
+	meaningful judgement of the cluster size, in particular answering
 	the question "would adding another machine help ?" precisely.
 
 	We should have a facility that allows the administrator to type
