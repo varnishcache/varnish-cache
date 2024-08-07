@@ -4888,7 +4888,7 @@ varnishd
   Varnish crashing.
 - If a backend sends a ``Content-Length`` header and we are streaming and
   we are not uncompressing it, send the ``Content-Length`` header on,
-  allowing browsers to diplay a progress bar.
+  allowing browsers to display a progress bar.
 - All storage must be at least 1M large.  This is to prevent
   administrator errors when specifying the size of storage where the
   admin might have forgotten to specify units.
