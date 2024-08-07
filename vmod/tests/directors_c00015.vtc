@@ -160,7 +160,7 @@ varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=LAZY) with oth
     }
 }
 
-varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=NOW) can not be used in vcl_init{}/vcl_fini{}} {
+varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=NOW) cannot be used in vcl_init{}/vcl_fini{}} {
     import directors;
     import blob;
 

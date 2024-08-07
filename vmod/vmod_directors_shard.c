@@ -641,7 +641,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	} else if (resolve == VENUM(NOW)) {
 		if (ctx->method & VCL_MET_TASK_H) {
 			shard_fail(ctx, shardd->name, "%s",
-			    ".backend(resolve=NOW) can not be "
+			    ".backend(resolve=NOW) cannot be "
 			    "used in vcl_init{}/vcl_fini{}");
 			return (NULL);
 		}
