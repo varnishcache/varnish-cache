@@ -92,7 +92,7 @@ fetch.  (I have no idea why/when you would use this...)
 Will make varnish gzip the object during fetch from the backend, provided
 the backend didn't send us a gzip'ed object.
 
-Remember that a lot of content types cannot sensibly be gziped, most
+Remember that a lot of content types cannot sensibly be gzipped, most
 notably compressed image formats like jpeg, png and similar, so a
 typical use would be::
 
@@ -117,7 +117,7 @@ when you enable ESI, if not it is a bug you should report.
 But things are vastly more complicated now.  What happens for
 instance, when the backend sends a gzip'ed object we ESI process
 it and it includes another object which is not gzip'ed, and we want
-to send the result gziped to the client ?
+to send the result gzipped to the client ?
 
 Things can get really hairy here, so let me explain it in stages.
 
@@ -170,5 +170,5 @@ compression efficiency, you should::
 So that the backend sends these objects uncompressed to varnish.
 
 You should also attempt to make sure that all objects which are
-esi:included are gziped, either by making the backend do it or
+esi:included are gzipped, either by making the backend do it or
 by making varnish do it.
