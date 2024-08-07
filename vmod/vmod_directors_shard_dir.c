@@ -270,7 +270,7 @@ init_state(struct shard_state *state,
 	state->idx = UINT32_MAX;
 	state->picklist = picklist;
 
-	/* healhy and changed only defined for valid hostids */
+	/* healthy and changed only defined for valid hostids */
 	state->previous.hostid = UINT_MAX;
 	state->last.hostid = UINT_MAX;
 }
