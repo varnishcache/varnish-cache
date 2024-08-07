@@ -93,7 +93,7 @@ And dDoS'ed the Varnish Cache project server.
 
 ... and the Redpill-Linprox Data Center, where that server lived.
 
-... and the Norvegian ISPs that announced the prefix of that data center.
+... and the Norwegian ISPs that announced the prefix of that data center.
 
 In fact, they effectively dDoS'ed Norway.
 
