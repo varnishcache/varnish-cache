@@ -10,7 +10,7 @@ VEXT - Varnish Extensions
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 A Varnish Extension is a shared library, loaded into the worker
-process during startup, before privilges are dropped for good.  This
+process during startup, before privileges are dropped for good.  This
 allows a VEXT to do pretty much anything it wants to do in the
 worker process.
 
