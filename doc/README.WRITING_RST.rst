@@ -75,7 +75,7 @@ Document Structure
 
 While RST supports a great deal of flexibility for adornments of
 titles and section headers, we should adhere to a consistent style to
-avoid breaking the document structure unintentially.
+avoid breaking the document structure unintentionally.
 
 Within the Varnish-Cache project, we should use these characters:
 
