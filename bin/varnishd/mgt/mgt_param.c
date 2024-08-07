@@ -98,7 +98,7 @@ static const char WIZARD_TEXT[] =
 
 static const char PROTECTED_TEXT[] =
 	"\n\n"
-	"NB: This parameter is protected and can not be changed.";
+	"NB: This parameter is protected and cannot be changed.";
 
 static const char ONLY_ROOT_TEXT[] =
 	"\n\n"

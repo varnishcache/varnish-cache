@@ -56,7 +56,7 @@ varnish v1 -errvcl {Symbol 'asub' can only be used as a SUB expression} {
 	}
 }
 
-varnish v1 -errvcl {Symbol 'acl' type (reserved) can not be used in expression.} {
+varnish v1 -errvcl {Symbol 'acl' type (reserved) cannot be used in expression.} {
 	import std;
 	sub vcl_recv { call acl; }
 }
@@ -442,7 +442,7 @@ varnish v1 -errvcl {'||' must be preceeded by BOOL, found REAL.} {
 	sub vcl_recv { if (std.random(0,1) || 0) { } }
 }
 
-varnish v1 -errvcl {Symbol 'acl' type (reserved) can not be used in expression.} {
+varnish v1 -errvcl {Symbol 'acl' type (reserved) cannot be used in expression.} {
 	import std;
 	sub vcl_recv { if (client.ip ~ acl) {} }
 }
