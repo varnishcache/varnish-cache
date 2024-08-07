@@ -1348,7 +1348,7 @@ PARAM_SIMPLE(
 	"initial SETTINGS frame, the http_req_size parameter is instead.\n\n"
 	"The http_req_size advises HTTP2 clients of the maximum size for "
 	"the header list. Exceeding http_req_size results in a reset stream "
-	"after processing the HPACK block to perserve the connection, but "
+	"after processing the HPACK block to preserve the connection, but "
 	"exceeding h2_max_header_list_size results in the HTTP2 connection "
 	"going away immediately.\n\n"
 	"If h2_max_header_list_size is lower than http_req_size, it has no "
