@@ -9,7 +9,7 @@
 Upgrading to Varnish 6.6
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-In general, this release should not come with relevant incompatibilies
+In general, this release should not come with relevant incompatibilities
 to the previous release 6.5.
 
 VCL should continue to work as before except when rather exotic,
