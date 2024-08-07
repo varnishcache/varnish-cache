@@ -382,7 +382,7 @@ class ProtoType():
             else:
                 t = arg(wl, names, st.vcc.enums, ',')
             if t.vt == 'VOID':
-                err("arguments can not be of type '%s'" % t.vt, warn=False)
+                err("arguments cannot be of type '%s'" % t.vt, warn=False)
             if t.nm is None:
                 t.nm2 = "arg%d" % n
             else:

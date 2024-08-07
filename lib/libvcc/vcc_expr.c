@@ -821,7 +821,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 		VSB_printf(tl->sb,
-		    "Symbol '%.*s' type (%s) can not be used in expression.\n",
+		    "Symbol '%.*s' type (%s) cannot be used in expression.\n",
 		    PF(t), sym->kind->name);
 		vcc_ErrWhere(tl, t);
 		if (sym->def_b != NULL) {

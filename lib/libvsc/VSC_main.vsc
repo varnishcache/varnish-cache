@@ -819,7 +819,7 @@
 	:group: ban_mtx
 	:oneliner:	Number of bans using req.*
 
-	Number of bans which use req.* variables.  These bans can not be
+	Number of bans which use req.* variables.  These bans cannot be
 	washed by the ban-lurker.
 
 .. varnish_vsc:: bans_added
