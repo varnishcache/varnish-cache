@@ -76,7 +76,7 @@ But in all probable worlds, that would only have meant that the
 idea would be dead as a doornail, I would not have made any money
 from it, it would never have helped improve the web, and I would
 have wasted much more of my life in meetings than would be good for
-anybodys health.
+anybody's health.
 
 As if that wasn't enough, the very thought of having to hire somebody
 scared me, but not nearly as much as the realization that if I built
