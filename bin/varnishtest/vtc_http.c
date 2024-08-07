@@ -893,7 +893,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *
  *         The only thing different between a request and a response, apart
  *         from who can send them is that the first line (request line vs
- *         status line), so all the options are prety much the same.
+ *         status line), so all the options are pretty much the same.
  *
  *         \-method STRING (txreq only)
  *                 What method to use (default: "GET").
