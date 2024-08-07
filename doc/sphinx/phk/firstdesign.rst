@@ -61,7 +61,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	The first (layer of) Varnish
 	----------------------------
 
-	Somebodys webserver is struggling and they decide to try Varnish.
+	Somebody's webserver is struggling and they decide to try Varnish.
 
 	Often this will be a skunkworks operation with some random PC
 	purloined from wherever it wasn't being used and the Varnish "HOWTO"
