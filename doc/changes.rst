@@ -4947,7 +4947,7 @@ varnishtest
 
 - add ``-l`` and ``-L`` switches which leave ``/tmp/vtc.*`` behind on
   error and unconditionally respectively.
-- add ``-j`` parameter to run tests in parallell and use this by
+- add ``-j`` parameter to run tests in parallel and use this by
   default.
 
 varnishtop
