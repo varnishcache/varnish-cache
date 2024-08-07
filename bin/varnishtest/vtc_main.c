@@ -660,7 +660,7 @@ ip_magic(void)
 	VSA_free(&sa);
 
 	/*
-	 * We need an IP number which will not repond, ever, and that is a
+	 * We need an IP number which will not respond, ever, and that is a
 	 * lot harder than it sounds.  This IP# is from RFC5737 and a
 	 * C-class broadcast at that.
 	 * If tests involving ${bad_ip} fails and you run linux, you should
