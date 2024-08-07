@@ -197,8 +197,8 @@ Unless specified for *destination*, the ``connect_timeout``,
 ``first_byte_timeout`` and ``between_bytes_timeout`` attributes are
 copied from *proxy* to *destination*.
 
-As of this release, the *proxy* backend used with ``.via`` can not be
-a director, it can not itself use ``.via`` (error: *Can not stack .via
+As of this release, the *proxy* backend used with ``.via`` cannot be
+a director, it cannot itself use ``.via`` (error: *Cannot stack .via
 backends*) and the protocol is fixed to `PROXY2`_.
 
 Implementation detail:

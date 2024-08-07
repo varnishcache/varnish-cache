@@ -58,7 +58,7 @@ To always entice the backend into sending us gzip'ed content.
 
 Varnish will not gzip any content on its own (but see below), we trust
 the backend to know what content can be sensibly gzip'ed (html) and what
-can not (jpeg)
+cannot (jpeg)
 
 If in vcl_backend_response{} we find out that we are trying to deliver a
 gzip'ed object to a client that has not indicated willingness to receive
