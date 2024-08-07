@@ -790,7 +790,7 @@ Varnish Cache 7.1.0 (2022-03-15)
   debugging the vsl client library code.
 
 * The ``vtc.vsl()`` and ``vtc.vsl_replay()`` functions have been added
-  to the vtc vmod to generate arbitraty log lines for testing.
+  to the vtc vmod to generate arbitrary log lines for testing.
 
 * The limit of the ``vsl_reclen`` parameter has been corrected.
 
