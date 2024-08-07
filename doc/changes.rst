@@ -3517,7 +3517,7 @@ Varnish Cache 4.1.3-beta1 (2016-06-15)
 
 * Add support for TCP Fast Open where available. Disabled by default.
 
-* [varnishtest] New syncronization primitive barriers added, improving
+* [varnishtest] New synchronization primitive barriers added, improving
   coordination when test cases call external programs.
 
 .. _1905: https://github.com/varnishcache/varnish-cache/pull/1905
