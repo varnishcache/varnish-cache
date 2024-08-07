@@ -23,7 +23,7 @@ This file are notes taken during a meeting in Oslo on 2nd Feb 2006,
 which in essence consisted of Anders Berg cursing Squid for a couple
 of hours.
 
-(Originally the meeting was scheduled for jan 24th but a SAS pilot
+(Originally the meeting was scheduled for Jan 24th but a SAS pilot
 strike put an end to that.)
 
 To be honest I knew very little about web-traffic, my own homepage
