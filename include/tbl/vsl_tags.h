@@ -481,7 +481,7 @@ SLTM(VCL_Error, 0, "VCL execution error message",
 SLTM(Gzip, 0, "G(un)zip performed on object",
 	"A Gzip record is emitted for each instance of gzip or gunzip"
 	" work performed. Worst case, an ESI transaction stored in"
-	" gzip'ed objects but delivered gunziped, will run into many of"
+	" gzip'ed objects but delivered gunzipped, will run into many of"
 	" these.\n\n"
 	"The format is::\n\n"
 	"\t%c %c %c %d %d %d %d %d\n"
