@@ -180,7 +180,7 @@ int VSL_Name2Tag(const char *name, int l);
 	/*
 	 * Convert string to tag number (= enum VSL_tag_e). Name can be a
 	 * substring from the beginning of a tag when that substring is
-	 * unique. Matching is case insensitive.
+	 * unique. Matching is case-insensitive.
 	 *
 	 * Arguments:
 	 *    name:	A tag name (or substring) to match against
@@ -196,7 +196,7 @@ int VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv);
 	/*
 	 * Convert a string to multiple tag matches. The string can have
 	 * either a prefix or postfix wildcard (*) character. For each
-	 * matching tag func is called. Matching is done case insensitive.
+	 * matching tag func is called. Matching is done case-insensitive.
 	 *
 	 * Arguments:
 	 *   glob: The string to match
