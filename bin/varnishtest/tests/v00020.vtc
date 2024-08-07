@@ -432,12 +432,12 @@ varnish v1 -errvcl {'||' must be followed by BOOL, found REAL.} {
 	sub vcl_recv { if (0 || std.random(0,1)) { } }
 }
 
-varnish v1 -errvcl {'&&' must be preceeded by BOOL, found REAL.} {
+varnish v1 -errvcl {'&&' must be preceded by BOOL, found REAL.} {
 	import std;
 	sub vcl_recv { if (std.random(0,1) && 0) { } }
 }
 
-varnish v1 -errvcl {'||' must be preceeded by BOOL, found REAL.} {
+varnish v1 -errvcl {'||' must be preceded by BOOL, found REAL.} {
 	import std;
 	sub vcl_recv { if (std.random(0,1) || 0) { } }
 }
