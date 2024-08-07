@@ -800,7 +800,7 @@ ved_gzgz_fini(struct vdp_ctx *vdc, void **priv)
 
 	/* XXX
 	 * this works due to the esi layering, a VDP pushing bytes from _fini
-	 * will otherwise have it's own _bytes method called.
+	 * will otherwise have its own _bytes method called.
 	 *
 	 * Could rewrite use VDP_END
 	 */
