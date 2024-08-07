@@ -913,7 +913,7 @@ process_close(struct process *p)
  *		[-run] [-close] [-kill SIGNAL] [-start] [-stop] [-wait]
  *		[-write STRING] [-writeln STRING] [-writehex HEXSTRING]
  *		[-need-bytes [+]NUMBER]
- *		[-screen-dump] [-winsz LINES COLUMNSS] [-ansi-response]
+ *		[-screen-dump] [-winsz LINES COLUMNS] [-ansi-response]
  *		[-expect-cursor LINE COLUMN] [-expect-text LINE COLUMN TEXT]
  *		[-match-text LINE COLUMN REGEXP]
  *
