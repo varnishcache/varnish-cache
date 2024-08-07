@@ -97,7 +97,7 @@ RAM page, fix up the paging tables, and retry the instruction which
 failed.
 
 Squid knows nothing about this, for squid it was just a single
-normal memory acces.
+normal memory access.
 
 So now squid has the object in a page in RAM and written to the
 disk two places: one copy in the operating systems paging space and
