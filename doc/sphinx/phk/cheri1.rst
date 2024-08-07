@@ -35,7 +35,7 @@ it made any real-life difference.
 
 Robert has graciously lent me a shell-account on one of his shiny
 new MORELLO machines, which rock an ARM64 prototype CPU with CHERI
-capabilites.
+capabilities.
 
 In this sequence of rants I will sing the saga of "How Varnish meets
 CHERI" - as it happens.
