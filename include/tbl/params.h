@@ -163,7 +163,7 @@ PARAM_SIMPLE(
 	"When this parameter is set to a non-zero value, the ban lurker "
 	"continues to work the ban list as usual top to bottom, but when it "
 	"reaches the ban_cutoff-th ban, it treats all objects as if they "
-	"matched a ban and expurges them from cache. As actively used objects "
+	"matched a ban and expunges them from cache. As actively used objects "
 	"get tested against the ban list at request time and thus are likely "
 	"to be associated with bans near the top of the ban list, with "
 	"ban_cutoff, least recently accessed objects (the \"long tail\") are "
