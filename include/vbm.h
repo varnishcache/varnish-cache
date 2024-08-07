@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Self-sizeing bitmap operations
+ * Self-sizing bitmap operations
  */
 
 #include <stdlib.h>
