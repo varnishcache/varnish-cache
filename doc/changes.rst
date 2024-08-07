@@ -2240,7 +2240,7 @@ Fixed bugs
 
 * Fix VRT_priv_task for calls from vcl_pipe {} (2820_)
 
-* Fix assinging <bool> == <bool> (2809_)
+* Fix assigning <bool> == <bool> (2809_)
 
 * Fix vmod object constructor documentation in the ``vmodtool.py`` -
   generated RST files
