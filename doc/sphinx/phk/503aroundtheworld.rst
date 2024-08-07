@@ -101,7 +101,7 @@ In fact, they effectively dDoS'ed Norway.
 (Update: I'm now being told by people from Norway that this did not
 dDoS that much.  As I live in Denmark I obviously only have this
 saga on second hand.  (The only effect I experienced myself was that
-the Trac server was unreachable).  Somebody has exagerated the
+the Trac server was unreachable).  Somebody has exaggerated the
 story along the way.
 
 However, this did prompt me to track down the precise timing:
