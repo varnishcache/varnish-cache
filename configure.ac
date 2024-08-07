@@ -490,7 +490,7 @@ AC_ARG_WITH(persistent-storage,
 
 if test "$with_persistent_storage" = yes; then
 	AC_DEFINE([WITH_PERSISTENT_STORAGE], [1],
-		[Define to 1 to build the deprecated peristent storage.])
+		[Define to 1 to build the deprecated persistent storage.])
 fi
 
 AM_CONDITIONAL([WITH_PERSISTENT_STORAGE],
