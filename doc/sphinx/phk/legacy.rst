@@ -34,7 +34,7 @@ modems, when dialing into a BBS or ISP in the 1990ies.
 
 I guess I should say "legacy-modems" ?
 
-Big-endianess, storing the bytes the sensible way for hex-dumps, is
+Big-endianness, storing the bytes the sensible way for hex-dumps, is
 rapidly becoming legacy, as the final old HP and SUN irons are
 finally become eWaste.
 
@@ -44,7 +44,7 @@ time picked equally one or the other, and the consolidation towards
 little-endian is driven more by *"It's actually not that important"*
 than by anything else.
 
-But we still have a bit of code which cares about endianess
+But we still have a bit of code which cares about endianness
 in Varnish, in particular in the imported `zlib` code.
 
 For a while I ran a CI client on a WLAN access point with a

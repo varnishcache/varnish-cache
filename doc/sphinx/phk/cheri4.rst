@@ -126,7 +126,7 @@ C sources, you almost always end up needing a macro like::
 To remove const-ness where it cannot go.
 
 (If you think that is ISO-C's opus magnum, ask yourself why we still
-cannot specify struct packing and endianess explicitly ?  It's hardly
+cannot specify struct packing and endianness explicitly ?  It's hardly
 like anybody ever have to apart data-structures explicitly specified in 
 hardware or protocol documents, is it ?)
 
