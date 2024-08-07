@@ -488,7 +488,7 @@ VCL_SUB
 	side).
 
 	For more than one invocation of ``VRT_call()``, VMODs *must*
-	check if ``VRT_handled()`` returns non-zero inbetween calls:
+	check if ``VRT_handled()`` returns non-zero in between calls:
 	The called SUB may have returned with an action (any
 	``return(x)`` other than plain ``return``) or may have failed
 	the VCL, and in both cases the calling VMOD *must* return
