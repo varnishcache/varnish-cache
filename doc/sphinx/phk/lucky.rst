@@ -144,7 +144,7 @@ many months too late [#f2]_.
 
 Jacob was not a major persona on the Internet, but between doing a
 lot of interesting stuff as a multi-discipline phd. in physics,
-being a really good Ada programmer, a huge Lego enthusiast, an
+being a really good Ada programmer, a huge LEGO enthusiast, an
 incredibly helpful person *and* really *good* at helping, he had a
 lot of friends in many corners of the Internet.
 
