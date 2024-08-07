@@ -1,4 +1,4 @@
-varnishtest "Unformatable VCL_TIME"
+varnishtest "Unformattable VCL_TIME"
 
 feature 64bit
 
