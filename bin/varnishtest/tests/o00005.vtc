@@ -1,6 +1,6 @@
 varnishtest "PROXY v2 TLV overflow"
 
-# this does does not work with IPv6, the workspace overflow test is too brittle
+# this does not work with IPv6, the workspace overflow test is too brittle
 feature ipv4
 
 varnish v1 -arg "-p pool_sess=0,0,0" -proto "PROXY" -vcl {
