@@ -1,4 +1,4 @@
-varnishtest "Ticket #902 http_CollectHdr() failure on consequitive headers"
+varnishtest "Ticket #902 http_CollectHdr() failure on consecutive headers"
 
 server s1 {
 	rxreq
