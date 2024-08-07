@@ -25,7 +25,7 @@ keep a place ready for it in the overall architecture.
 
 Now a credible use-case finally appeared, and we have implemented
 "Varnish Extensions" (VTLA: "VEXT"), which can both be used to load
-ambient VMODs and to implement entirely new functionaly, for instance
+ambient VMODs and to implement entirely new functionally, for instance
 stevedores.
 
 See :ref:`ref-vext` in the reference manual for more information.
