@@ -5662,7 +5662,7 @@ varnishd
 -  If error was called with a null reason, we would crash on Solaris.
    Make sure this no longer happens.
 
--  Varnish used to crash if you asked it to use a non-existent waiter.
+-  Varnish used to crash if you asked it to use a nonexistent waiter.
    This has now been fixed.
 
 -  Add documentation to the default VCL explaining that using
@@ -6015,7 +6015,7 @@ varnishd
    instead of copying the one it got from the backend (see `ticket
    #157 <https://www.varnish-cache.org/trac/ticket/157>`_).
 
--  Comparisons in VCL which involve a non-existent string (usually a
+-  Comparisons in VCL which involve a nonexistent string (usually a
    header which is not present in the request or object being processed)
    would cause a NULL pointer dereference; now the comparison will
    simply fail.
