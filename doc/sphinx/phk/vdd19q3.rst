@@ -82,7 +82,7 @@ another organization will have looked at patches and pull requests
 before me, both to move some of the "no-ing" away from me and also
 to get people to pay more attention to each others work.
 
-For this to work, everybdoy will have to spend a bit more time on
+For this to work, everybody will have to spend a bit more time on
 "project work", but everybody agreed to do that, so we think it can
 fly.
 
