@@ -46,7 +46,7 @@ of documentation:
 
     .. _varnishd(1):
 
-* set link targets for important paramgraphs following the scheme
+* set link targets for important paragraphs following the scheme
   ref-`doc`-`section`, for instance::
 
     .. _ref-varnishd-opt_T:
