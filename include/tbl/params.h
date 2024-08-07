@@ -337,7 +337,7 @@ PARAM_SIMPLE(
 	/* units */	NULL,
 	/* descr */
 	"Maximum number of transactions that can queue waiting for a backend "
-	"connection to become avaiable.  This default of 0 (zero) means that "
+	"connection to become available.  This default of 0 (zero) means that "
 	"there is no transaction queueing. VCL can override this default value "
 	"for each backend.\n\n"
 	"Note that this feature must be used with caution, as it can "
