@@ -3442,7 +3442,7 @@ Bugs fixed
   vsl_buffer is increased
 * 2010_ - varnishadm CLI behaving weirdly
 * 2017_ - varnishncsa docfix: "%r" field is wrong
-* 2107_ - (docfix) HEAD requestes changed to GET
+* 2107_ - (docfix) HEAD requests changed to GET
 
 .. _1830: https://github.com/varnishcache/varnish-cache/issues/1830
 .. _2010: https://github.com/varnishcache/varnish-cache/issues/2010
