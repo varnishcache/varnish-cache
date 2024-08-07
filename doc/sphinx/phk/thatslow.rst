@@ -183,7 +183,7 @@ I'll take that.
    to optimize much harder.  No, I won't tell you which those are.
 
 .. [#f7] Only code where that is a bigger problem is phd-ware:  Software
-   written as proof-of-concept and abandonned in haste when the diploma
+   written as proof-of-concept and abandoned in haste when the diploma
    was in hand.
 
 .. [#f8] Obviously, a high count of CVE's should be a real reason for
