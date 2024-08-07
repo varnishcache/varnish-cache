@@ -59,7 +59,7 @@ Notes for some targets:
 
 - For Windows DLL versions, please see win32/DLL_FAQ.txt
 
-- For 64-bit Irix, deflate.c must be compiled without any optimization. With
+- For 64-bit IRIX, deflate.c must be compiled without any optimization. With
   -O, one libpng test fails. The test works in 32 bit mode (with the -n32
   compiler flag). The compiler bug has been reported to SGI.
 
