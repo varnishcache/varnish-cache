@@ -5890,7 +5890,7 @@ varnishd
    mandates. This makes PUT, DELETE, OPTIONS and TRACE work in addition
    to POST.
 
--  Change how backends are defined, to a constant structural defintion
+-  Change how backends are defined, to a constant structural definition
    style. See https://www.varnish-cache.org/wiki/VclSyntaxChanges
    for the details.
 
