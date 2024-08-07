@@ -172,7 +172,7 @@ static const struct vdp xyzzy_vdp_rot13 = {
 };
 
 /**********************************************************************
- * pendantic tests of the VDP API:
+ * pedantic tests of the VDP API:
  * - assert that we see a VDP_END
  * - assert that _fini gets called before the task ends
  *
