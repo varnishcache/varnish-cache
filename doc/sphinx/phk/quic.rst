@@ -97,7 +97,7 @@ dials privacy up to 11:  Everything but the first byte of a QUIC
 packet is encrypted.
 
 Authorities are not going to like that, and I can easily see more
-autoritarian countries outright ban QUIC, and to make that ban
+authoritarian countries outright ban QUIC, and to make that ban
 stick, they may even transition from "allowed if not banned" to
 "banned if not allowed" firewalling.
 
