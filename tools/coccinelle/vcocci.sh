@@ -44,7 +44,7 @@ usage() {
 	Usage: $SCRIPT <command> [...]
 	       $SCRIPT help
 
-	Operate Coccinnelle semantic patches.
+	Operate Coccinelle semantic patches.
 
 	Available commands:
 
