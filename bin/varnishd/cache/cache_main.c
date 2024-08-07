@@ -237,7 +237,7 @@ cli_debug_shutdown_delay(struct cli *cli, const char * const *av, void *priv)
 }
 
 /*
- * Default to seed=1, this is the only seed value POSIXl guarantees will
+ * Default to seed=1, this is the only seed value POSIX guarantees will
  * result in a reproducible random number sequence.
  */
 static void v_matchproto_(cli_func_t)
