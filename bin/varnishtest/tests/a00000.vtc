@@ -10,7 +10,7 @@ shell {
 	echo 'shell "exit 9"' >> _.vtc
 }
 
-shell -exit 2 -expect {doesn't start with 'vtest' or 'varnishtes} {
+shell -exit 2 -expect {doesn't start with 'vtest' or 'varnishtest} {
 	varnishtest -v _.vtc
 }
 
