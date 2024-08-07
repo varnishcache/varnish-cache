@@ -1,4 +1,4 @@
-varnishtest "Test vmod functions/contructor named arguments and defaults"
+varnishtest "Test vmod functions/constructor named arguments and defaults"
 
 server s1 {
 	rxreq
