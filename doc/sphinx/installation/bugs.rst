@@ -27,7 +27,7 @@ allow us to reproduce.
 To report a bug please follow the suggested procedure described in the "Trouble Tickets"
 section of the documentation (above).
 
-Roughly we categorize bugs in to three kinds of bugs (described below) with Varnish. The information
+Roughly we categorize bugs into three kinds of bugs (described below) with Varnish. The information
 we need to debug them depends on what kind of bug we are facing.
 
 Varnish crashes
