@@ -312,7 +312,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 		}
 		if (threshold > window ) {
 			VSB_cat(tl->sb,
-			    "Threshold can not be greater than window.\n");
+			    "Threshold cannot be greater than window.\n");
 			AN(t_threshold);
 			vcc_ErrWhere(tl, t_threshold);
 			AN(t_window);
@@ -559,7 +559,7 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 			if (via->extra != NULL) {
 				AZ(strcmp(via->extra, "via"));
 				VSB_cat(tl->sb,
-					"Can not stack .via backends at\n");
+					"Cannot stack .via backends at\n");
 				vcc_ErrWhere(tl, tl->t);
 				VSB_destroy(&tl->fb);
 				return;
