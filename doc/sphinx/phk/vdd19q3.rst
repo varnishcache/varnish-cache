@@ -45,7 +45,7 @@ do something about, from probes being near-magical to H1 to
 getting a proper handle on the lifetime of dynamic backends.
 
 Some concrete improvements came up during the hackathon and we will
-be persuing those right away.
+be pursuing those right away.
 
 Fixing probing is probably a V7 thing, and we need to think
 and prototype how we expose probing in VCL.
