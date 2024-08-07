@@ -597,7 +597,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 /*---------------------------------------------------------------------
  * Lex/Parse object for ESI instructions
  *
- * This function is called with the input object piecemal so do not
+ * This function is called with the input object piecemeal so do not
  * assume that we have more than one char available at at time, but
  * optimize for getting huge chunks.
  *
