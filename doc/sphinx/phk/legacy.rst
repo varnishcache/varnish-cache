@@ -9,7 +9,7 @@
 Legacy-.*
 =========
 
-In the middle of an otherwise pleaseant conversation recently, the
+In the middle of an otherwise pleasant conversation recently, the
 other person suddenly burst out that *"Varnish was part of our
 legacy software."*
 
