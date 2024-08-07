@@ -19,7 +19,7 @@ the birth of Varnish 10 years ago.
 The first Varnish Design notes
 ------------------------------
 
-This file are notes taken during a meeting in Oslo on 2nd feb 2006,
+This file are notes taken during a meeting in Oslo on 2nd Feb 2006,
 which in essence consisted of Anders Berg cursing Squid for a couple
 of hours.
 
