@@ -467,7 +467,7 @@ enum vcl_func_call_e {
 enum vcl_func_fail_e {
 	VSUB_E_OK,
 	VSUB_E_RECURSE, // call would recurse
-	VSUB_E_METHOD	// can not be called from this method
+	VSUB_E_METHOD	// cannot be called from this method
 };
 
 typedef void vcl_func_f(VRT_CTX, enum vcl_func_call_e, enum vcl_func_fail_e *);
