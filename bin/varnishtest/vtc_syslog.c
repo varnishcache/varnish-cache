@@ -617,7 +617,7 @@ cmd_syslog(CMD_ARGS)
 		}
 
 		/*
-		 * We do an implict -wait if people muck about with a
+		 * We do an implicit -wait if people muck about with a
 		 * running syslog.
 		 * This only works if the previous ->spec has completed
 		 */
