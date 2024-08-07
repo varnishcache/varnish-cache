@@ -104,7 +104,7 @@ All functions in this VMOD are subject to the following constraints:
   "VCL failed".
 
   If the failure occurs during ``vcl_synth{}``, then ``vcl_synth{}``
-  is aborted, and the the response line "503 VCL failed" is sent.
+  is aborted, and the response line "503 VCL failed" is sent.
 
 * If the current listener is not a Unix domain socket, or if the
   attempt to read credentials fails, then a ``VCL_Error`` message is
