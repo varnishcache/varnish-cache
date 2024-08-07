@@ -248,7 +248,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	/*
 	 * Figure out how the fetch is supposed to happen, before the
-	 * headers are adultered by VCL
+	 * headers are adulterated by VCL
 	 */
 	if (http_method_eq(http_GetMethod(bo->bereq), HEAD)) {
 		/*
