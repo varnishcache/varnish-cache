@@ -1046,7 +1046,7 @@ Varnish Cache 7.0.0 (2021-09-15)
 
 * Added ``VRT_UnsetHdr()`` and removed ``vrt_magic_string_unset``.
 
-* Removed depcreated ``STRING_LIST`` in favor of ``STRANDS``. All functions
+* Removed deprecated ``STRING_LIST`` in favor of ``STRANDS``. All functions
   that previously took a ``STRING_LIST`` had ``const char *, ...`` arguments,
   they now take ``const char *, VCL_STRANDS`` arguments. The magic cookie
   ``vrt_magic_string_end`` is gone and ``VRT_CollectStrands()`` was renamed to
