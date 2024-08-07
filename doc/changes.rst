@@ -1259,7 +1259,7 @@ Varnish Cache 6.6.0 (2021-03-15)
   ``req.is_hitmiss`` on the client side.
 
 * The ``set_ip_tos()`` function from the bundled ``std`` vmod now sets
-  the IPv6 Taffic Class (TCLASS) when used on an IPv6 connection.
+  the IPv6 Traffic Class (TCLASS) when used on an IPv6 connection.
 
 * A bug has been fixed which could lead to varnish failing to start
   after updates due to outdated content of the ``vmod_cache``
