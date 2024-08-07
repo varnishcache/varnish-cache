@@ -332,7 +332,7 @@ void smp_newsilo(struct smp_sc *sc);
 int smp_valid_silo(struct smp_sc *sc);
 
 /*--------------------------------------------------------------------
- * Caculate payload of some stuff
+ * Calculate payload of some stuff
  */
 
 static inline uint64_t
