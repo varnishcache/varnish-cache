@@ -634,7 +634,7 @@ ip_magic(void)
 
 #if defined (__APPLE__)
 	/*
-	 * In MacOS a bound socket that is not listening will timeout
+	 * In macOS a bound socket that is not listening will timeout
 	 * instead of refusing the connection so close it and hope
 	 * for the best.
 	 */

@@ -132,7 +132,7 @@ VUDP_Check(int a)
 		return (1);
 #elif defined (__APPLE__)
 	/*
-	 * MacOS returns EINVAL if the other end unexpectedly reset
+	 * macOS returns EINVAL if the other end unexpectedly reset
 	 * the connection.
 	 */
 	if (errno == EINVAL)
