@@ -344,7 +344,7 @@ CLI_CMD(BACKEND_SET_HEALTH,
 	"  * With ``auto``, the health status is determined by a probe\n"
 	"    or some other dynamic mechanism, if any\n"
 	"  * ``healthy`` sets the backend as usable\n"
-	"  * ``sick`` sets the backend as unsable\n",
+	"  * ``sick`` sets the backend as unusable\n",
 	2, 2
 )
 
