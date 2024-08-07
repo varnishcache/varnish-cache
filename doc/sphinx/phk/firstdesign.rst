@@ -323,7 +323,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	can be used by making a 1-file filesystem on them.
 
 	More complex storage methods are object per file and object
-	in database models.  They are relatively trival and well
+	in database models.  They are relatively trivial and well
 	understood.  May offer persistence.
 
 	Read-Only storage methods may make sense for getting hold
