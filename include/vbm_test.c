@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Test Self-sizeing bitmap operations static initialization with dynamic growth
+ * Test Self-sizing bitmap operations static initialization with dynamic growth
  */
 
 #include <assert.h>
