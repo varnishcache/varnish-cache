@@ -53,6 +53,7 @@ struct vev {
 	unsigned		sig_flags;
 	double			timeout;
 	vev_cb_f		*callback;
+	siginfo_t		siginfo[1];
 	void			*priv;
 
 	/* priv */
