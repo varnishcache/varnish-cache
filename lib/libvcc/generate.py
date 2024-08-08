@@ -262,7 +262,7 @@ def parse_var(ln):
             for i in j[2:]:
                 vw.append(i.strip(",."))
             continue
-        if j[0] == "Unsetable" and j[1] == "from:":
+        if j[0] == "Unsettable" and j[1] == "from:":
             for i in j[2:]:
                 vu.append(i.strip(",."))
             continue

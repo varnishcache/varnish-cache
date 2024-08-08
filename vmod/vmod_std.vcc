@@ -110,7 +110,7 @@ $Function STRING strstr(STRING s1, STRING s2)
 Returns a string beginning at the first occurrence of the string *s2*
 in the string *s1*, or an empty string if *s2* is not found.
 
-Note that the comparison is case sensitive.
+Note that the comparison is case-sensitive.
 
 Example::
 
@@ -292,7 +292,7 @@ A STRING *s* argument can be quantified with a multiplier (``k``
 If the conversion of an *s* argument fails, *fallback* will be
 returned if provided, or a VCL failure will be triggered.
 
-Other conversions may fail if the argument can not be represented,
+Other conversions may fail if the argument cannot be represented,
 because it is negative, too small or too large. Again, *fallback* will
 be returned if provided, or a VCL failure will be triggered.
 
@@ -625,7 +625,7 @@ The format of *STRING* is::
     * ``==``: *<field>* and *<arg>* are equal
     * ``!=``: *<field>* and *<arg>* are unequal
 
-    strings are compared case sensitively
+    strings are compared case-sensitively
 
   * for string fields:
 

@@ -242,7 +242,7 @@ shardcfg_clear(VRT_CTX, struct sharddir *shardd)
 
 /*
  * ============================================================
- * consistent hashing cirle init
+ * consistent hashing circle init
  */
 
 typedef int (*compar)( const void*, const void* );

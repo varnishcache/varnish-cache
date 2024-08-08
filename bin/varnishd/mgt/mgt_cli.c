@@ -484,7 +484,7 @@ mgt_cli_secret(const char *S_arg)
 	VJ_master(JAIL_MASTER_FILE);
 	fd = open(S_arg, O_RDONLY);
 	if (fd < 0) {
-		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
+		fprintf(stderr, "Cannot open secret-file \"%s\"\n", S_arg);
 		exit(2);
 	}
 	VJ_master(JAIL_MASTER_LOW);
@@ -495,7 +495,7 @@ mgt_cli_secret(const char *S_arg)
 		exit(2);
 	}
 	if (i < 0) {
-		fprintf(stderr, "Can not read secret-file \"%s\"\n", S_arg);
+		fprintf(stderr, "Cannot read secret-file \"%s\"\n", S_arg);
 		exit(2);
 	}
 	closefd(&fd);

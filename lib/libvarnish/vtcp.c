@@ -72,7 +72,7 @@ vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
 	if (i) {
 		/*
 		 * XXX this printf is shitty, but we may not have space
-		 * for the gai_strerror in the bufffer :-(
+		 * for the gai_strerror in the buffer :-(
 		 */
 		fprintf(stderr, "getnameinfo = %d %s\n", i, gai_strerror(i));
 		if (i == EAI_SYSTEM)
@@ -614,7 +614,7 @@ VTCP_Check(ssize_t a)
     defined (__NetBSD__) ||				\
     defined (__APPLE__)
 	/*
-	 * Solaris and MacOS returns EINVAL if the other end unexpectedly reset
+	 * Solaris and macOS returns EINVAL if the other end unexpectedly reset
 	 * the connection.
 	 *
 	 * On NetBSD it is documented behaviour.

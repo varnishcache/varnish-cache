@@ -159,7 +159,7 @@ avoids duplicates when a custom implementation relied on ``http_*()`` that
 would also log the headers being set up.
 
 The ``VRT_new_backend*()`` functions take an additional backend argument, the
-optional via backend. It can not be a custom backend implementation, but it
+optional via backend. It cannot be a custom backend implementation, but it
 can be a director resolving a native backend.
 
 There is a new ``authority`` field for via backends in ``struct vrt_backend``.

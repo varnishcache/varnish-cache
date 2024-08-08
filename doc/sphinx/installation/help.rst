@@ -73,7 +73,7 @@ annoy those people.
 Trouble Tickets
 ===============
 
-Our bugtracker lives on Github, but please do not open a trouble
+Our bugtracker lives on GitHub, but please do not open a trouble
 ticket, unless you have spotted an actual bug in Varnish.  Ask on
 IRC first if you are in doubt.
 
@@ -82,7 +82,7 @@ pile of other `issues`, feature suggestions for future releases,
 and double postings of calls for help from people who forgot to
 check back on already opened Tickets.
 
-New ideas may get parked in our Github wiki, until we have time
+New ideas may get parked in our GitHub wiki, until we have time
 for them, or until we have thought out a good design.
 
 

@@ -834,7 +834,7 @@ cmd_logexpect(CMD_ARGS)
 		}
 
 		/*
-		 * We do an implict -wait if people muck about with a
+		 * We do an implicit -wait if people muck about with a
 		 * running logexp.
 		 */
 		if (le->run)

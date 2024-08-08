@@ -293,7 +293,7 @@ cmd_filewrite(CMD_ARGS)
  *
  * The above will set the environment variable $FOO to the value
  * provided. There is also an ``-ifunset`` argument which will only
- * set the value if the the environment variable does not already
+ * set the value if the environment variable does not already
  * exist::
  *
  *        setenv -ifunset FOO quux

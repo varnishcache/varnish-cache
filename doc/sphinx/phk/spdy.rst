@@ -110,7 +110,7 @@ You should be able to do something like::
 
 And doing that is not really *that* hard, I think.  We just need
 to keep track of all the objects we instantiate and make sure they
-disappear and die when nobody is using them any more.
+disappear and die when nobody is using them anymore.
 
 A lot of the assumptions we made back in 2006 are no longer
 valid under such an architecture, but those same assumptions are

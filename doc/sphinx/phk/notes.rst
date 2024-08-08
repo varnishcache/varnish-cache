@@ -16,7 +16,7 @@ That is not a coincidence.
 
 I have spent many years working on the FreeBSD kernel, and only
 rarely did I venture into userland programming, but when I had
-occation to do so, I invariably found that people programmed like
+occasion to do so, I invariably found that people programmed like
 it was still 1975.
 
 So when I was approached about the Varnish project I wasn't really
@@ -29,11 +29,11 @@ So what's wrong with 1975 programming ?
 ---------------------------------------
 
 The really short answer is that computers do not have two kinds of
-storage any more.
+storage anymore.
 
 It used to be that you had the primary store, and it was anything
 from acoustic delaylines filled with mercury via small magnetic
-dougnuts via transistor flip-flops to dynamic RAM.
+doughnuts via transistor flip-flops to dynamic RAM.
 
 And then there were the secondary store, paper tape, magnetic tape,
 disk drives the size of houses, then the size of washing machines
@@ -97,7 +97,7 @@ RAM page, fix up the paging tables, and retry the instruction which
 failed.
 
 Squid knows nothing about this, for squid it was just a single
-normal memory acces.
+normal memory access.
 
 So now squid has the object in a page in RAM and written to the
 disk two places: one copy in the operating systems paging space and

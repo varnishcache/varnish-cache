@@ -95,7 +95,7 @@ smp_metrics(struct smp_sc *sc)
 
 	/*
 	 * The number of segments are limited by the size of the segment
-	 * table(s) and from that follows the minimum size of a segmement.
+	 * table(s) and from that follows the minimum size of a segment.
 	 */
 
 	sc->max_nseg = smp_stuff_len(sc, SMP_SEG1_STUFF) / sc->min_nseg;

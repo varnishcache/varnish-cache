@@ -802,7 +802,7 @@ receive_frame(void *priv)
 			vtc_fatal(s->vl, "Expected CONTINUATION frame for "
 			    "stream %u", expect_cont);
 
-		/* parse the frame according to it type, and fill the metada */
+		/* parse the frame according to it type, and fill the metadata */
 		switch (f->type) {
 			case TYPE_DATA:
 				parse_data(s, f);

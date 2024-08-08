@@ -46,7 +46,7 @@ varnish v1 -vcl+backend {
 # Host: foo.bar\r\n		 15 bytes
 # \r\n				  2 bytes
 # Total:			 70 bytes
-# Reponse:
+# Response:
 # HTTP/1.1\r\n			 10 bytes
 # \r\n				  2 bytes
 # Total:			 12 bytes

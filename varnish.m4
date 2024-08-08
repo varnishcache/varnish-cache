@@ -391,7 +391,7 @@ AC_DEFUN([VARNISH_VMODS], [
 # If that VCC file only needs to be generated once and is distributed, builds
 # from the dist archive will have the VCC file in the source directory.
 #
-# With Varnish's ability to run VMODTOOL in a VPATH build both scnerarios are
+# With Varnish's ability to run VMODTOOL in a VPATH build both scenarios are
 # taken care of. This macro works otherwise exactly like VARNISH_VMODS.
 #
 AC_DEFUN([VARNISH_VMODS_GENERATED], [

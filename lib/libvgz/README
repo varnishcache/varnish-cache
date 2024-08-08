@@ -59,14 +59,14 @@ Notes for some targets:
 
 - For Windows DLL versions, please see win32/DLL_FAQ.txt
 
-- For 64-bit Irix, deflate.c must be compiled without any optimization. With
+- For 64-bit IRIX, deflate.c must be compiled without any optimization. With
   -O, one libpng test fails. The test works in 32 bit mode (with the -n32
   compiler flag). The compiler bug has been reported to SGI.
 
 - zlib doesn't work with gcc 2.6.3 on a DEC 3000/300LX under OSF/1 2.1 it works
   when compiled with cc.
 
-- On Digital Unix 4.0D (formely OSF/1) on AlphaServer, the cc option -std1 is
+- On Digital Unix 4.0D (formerly OSF/1) on AlphaServer, the cc option -std1 is
   necessary to get gzprintf working correctly. This is done by configure.
 
 - zlib doesn't work on HP-UX 9.05 with some versions of /bin/cc. It works with

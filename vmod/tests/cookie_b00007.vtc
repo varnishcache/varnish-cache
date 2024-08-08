@@ -7,7 +7,7 @@ varnish v1 -vcl {
 	sub vcl_synth {
 		cookie.set("cookie1", "cookie1value");
 		set resp.http.does = cookie.isset("cookie1");
-		set resp.http.does-not = cookie.isset("non-existent");
+		set resp.http.does-not = cookie.isset("nonexistent");
 		set resp.http.null = cookie.isset("");
 		set resp.http.null2 = cookie.isset(req.http.probably-null);
 	}

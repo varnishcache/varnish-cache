@@ -58,7 +58,7 @@ a SSL proxy in separate process ?
 No, it will not, because the way varnish would have to do it would
 be to ... start a separate process to do the SSL handling.
 
-There is no other way we can guarantee that secret krypto-bits do
+There is no other way we can guarantee that secret crypto-bits do
 not leak anywhere they should not, than by fencing in the code that
 deals with them in a child process, so the bulk of varnish never
 gets anywhere near the certificates, not even during a core-dump.

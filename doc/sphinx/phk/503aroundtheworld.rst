@@ -93,7 +93,7 @@ And dDoS'ed the Varnish Cache project server.
 
 ... and the Redpill-Linprox Data Center, where that server lived.
 
-... and the Norvegian ISPs that announced the prefix of that data center.
+... and the Norwegian ISPs that announced the prefix of that data center.
 
 In fact, they effectively dDoS'ed Norway.
 
@@ -101,7 +101,7 @@ In fact, they effectively dDoS'ed Norway.
 (Update: I'm now being told by people from Norway that this did not
 dDoS that much.  As I live in Denmark I obviously only have this
 saga on second hand.  (The only effect I experienced myself was that
-the Trac server was unreachable).  Somebody has exagerated the
+the Trac server was unreachable).  Somebody has exaggerated the
 story along the way.
 
 However, this did prompt me to track down the precise timing:
@@ -109,7 +109,7 @@ Varnish release 2.1.2, May 2010 has the link, release 2.1.3 from
 July same year does not.)
 
 And that, my friends, is why the error message of last resort in
-Varnish Cache does not even contain a link any more.
+Varnish Cache does not even contain a link anymore.
 
 */phk*
 

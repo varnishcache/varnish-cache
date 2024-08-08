@@ -189,7 +189,7 @@ vmod_collect(VRT_CTX, VCL_HEADER hdr, VCL_STRING sep)
 	hp = VRT_selecthttp(ctx, hdr->where);
 	if (hp == NULL) {
 		VRT_fail(ctx, "std.collect(): header argument "
-		    "can not be used here");
+		    "cannot be used here");
 		return;
 	}
 	http_CollectHdrSep(hp, hdr->what, sep);

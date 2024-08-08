@@ -229,7 +229,7 @@ vsl_ix_arg(struct VSL_data *vsl, int opt, const char *arg)
 	vsl->flags |= F_SEEN_ixIX;
 
 	i = VSL_List2Tags(arg, -1, opt == 'x' ? vsl_vbm_bitset : vsl_vbm_bitclr,
-	    vsl->vbm_supress);
+	    vsl->vbm_suppress);
 	if (i == -1)
 		return (vsl_diag(vsl, "-%c: \"%s\" matches zero tags",
 		    (char)opt, arg));
@@ -356,10 +356,10 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 	long l;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	/* If first option is 'i', set all bits for supression */
+	/* If first option is 'i', set all bits for suppression */
 	if ((opt == 'i' || opt == 'I') && !(vsl->flags & F_SEEN_ixIX))
 		for (i = 0; i < SLT__MAX; i++)
-			vbit_set(vsl->vbm_supress, i);
+			vbit_set(vsl->vbm_suppress, i);
 
 	switch (opt) {
 	case 'b': vsl->b_opt = 1; return (1);

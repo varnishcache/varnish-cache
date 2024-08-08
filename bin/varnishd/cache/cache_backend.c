@@ -696,7 +696,7 @@ VRT_backend_vsm_need(VRT_CTX)
  * The new_backend via parameter is a VCL_BACKEND, but we need a (struct
  * backend)
  *
- * For now, we resolve it when creating the backend, which imples no redundancy
+ * For now, we resolve it when creating the backend, which implies no redundancy
  * / load balancing across the via director if it is more than a simple backend.
  */
 

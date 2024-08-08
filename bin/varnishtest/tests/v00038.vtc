@@ -49,7 +49,7 @@ varnish v1 -errvcl "Window must be 64 or less" {
 	}
 }
 
-varnish v1 -errvcl "Threshold can not be greater than window" {
+varnish v1 -errvcl "Threshold cannot be greater than window" {
 	backend b1 {
 		.host = "${localhost}";
 		.probe = {

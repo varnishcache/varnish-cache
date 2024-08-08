@@ -174,7 +174,7 @@ VMODs
 ~~~~~~~~~~~~~~~~~~~~
 
 The ``set_ip_tos()`` function from the bundled ``std`` vmod now sets
-the IPv6 Taffic Class (TCLASS) when used on an IPv6 connection.
+the IPv6 Traffic Class (TCLASS) when used on an IPv6 connection.
 
 .. _whatsnew_changes_6.6_ban:
 

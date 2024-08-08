@@ -19,11 +19,11 @@ the birth of Varnish 10 years ago.
 The first Varnish Design notes
 ------------------------------
 
-This file are notes taken during a meeting in Oslo on 2nd feb 2006,
+This file are notes taken during a meeting in Oslo on 2nd Feb 2006,
 which in essence consisted of Anders Berg cursing Squid for a couple
 of hours.
 
-(Originally the meeting was scheduled for jan 24th but a SAS pilot
+(Originally the meeting was scheduled for Jan 24th but a SAS pilot
 strike put an end to that.)
 
 To be honest I knew very little about web-traffic, my own homepage
@@ -61,7 +61,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	The first (layer of) Varnish
 	----------------------------
 
-	Somebodys webserver is struggling and they decide to try Varnish.
+	Somebody's webserver is struggling and they decide to try Varnish.
 
 	Often this will be a skunkworks operation with some random PC
 	purloined from wherever it wasn't being used and the Varnish "HOWTO"
@@ -96,10 +96,10 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 
 	and you're off running.
 
-	A text, curses or HTML based based facility to give some instant
+	A text, curses or HTML based facility to give some instant
 	feedback and stats is necessary.
 
-	If circumstances are not conductive to strucured approach, it should
+	If circumstances are not conductive to structured approach, it should
 	be possible to repeat this process and set up N independent Varnish
 	boxes and get some sort of relief without having to read any further
 	documentation.
@@ -136,7 +136,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	from hitting all the backend with the full force.
 
 	An important aspect of cluster operations is giving a statistically
-	meaninful judgement of the cluster size, in particular answering
+	meaningful judgement of the cluster size, in particular answering
 	the question "would adding another machine help ?" precisely.
 
 	We should have a facility that allows the administrator to type
@@ -315,7 +315,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 
 	The simplest storage method mmap(2)'s a disk or file and puts
 	objects into the virtual memory on page aligned boundaries,
-	using a small struct for metadata.  Data is not persistant
+	using a small struct for metadata.  Data is not persistent
 	across reboots.  Object free is incredibly cheap.  Object
 	allocation should reuse recently freed space if at all possible.
 	"First free hole" is probably a good allocation strategy.
@@ -323,7 +323,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	can be used by making a 1-file filesystem on them.
 
 	More complex storage methods are object per file and object
-	in database models.  They are relatively trival and well
+	in database models.  They are relatively trivial and well
 	understood.  May offer persistence.
 
 	Read-Only storage methods may make sense for getting hold
@@ -477,7 +477,7 @@ to decide what to cache, how long time to cache it, where to
 cache it and ... it sounded like a lot of very detailed code
 which had to be incredibly configurable.
 
-Soon those two inspiratons collided::
+Soon those two inspirations collided::
 
 
 	Notes on Varnish
@@ -502,7 +502,7 @@ Soon those two inspiratons collided::
 
 	Multiple policy configurations can be loaded at the same time
 	but only one is the "active configuration".  Loading, switching and
-	unloading of policy configurations happen via the managment
+	unloading of policy configurations happen via the management
 	process.
 
 	A global config sequence number is incremented on each switch and
@@ -955,7 +955,7 @@ A couple of days later the ideas had gel'ed::
 		else_part:	/* empty */
 				| "else" compound
 
-		functioncal:	"call" function_name
+		functioncall:	"call" function_name
 
 		field:		object
 				field "." variable

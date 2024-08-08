@@ -51,7 +51,7 @@
  * log records.
  *
  * Each logrecord consist of four or more 32 bit words, stored in
- * native endiansess:
+ * native endianness:
  *
  *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *   |     TAG       |  unused   |ver|          length               |

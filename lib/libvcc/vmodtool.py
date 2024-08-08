@@ -382,7 +382,7 @@ class ProtoType():
             else:
                 t = arg(wl, names, st.vcc.enums, ',')
             if t.vt == 'VOID':
-                err("arguments can not be of type '%s'" % t.vt, warn=False)
+                err("arguments cannot be of type '%s'" % t.vt, warn=False)
             if t.nm is None:
                 t.nm2 = "arg%d" % n
             else:
@@ -1071,7 +1071,7 @@ class vcc():
         fo.close()
 
     def amboilerplate(self):
-        ''' Produce boilplate for autocrap tools '''
+        ''' Produce boilerplate for autocrap tools '''
         vcc = os.path.basename(self.inputfile)
         src = glob.glob("vmod_" + self.modname + "*.[ch]")
         src.sort()

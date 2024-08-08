@@ -321,7 +321,7 @@ req.hash_ignore_vary
 	This returns the very first match regardless of the object
 	compatibility with the client request. This is useful when
 	variants are irrelevant to certain clients, and differences
-	in the way the resouce is presented don't change how the
+	in the way the resource is presented don't change how the
 	client will interpret it.
 
 	Use with caution.
@@ -337,7 +337,7 @@ req.http.*
 
 	Writable from: client
 
-	Unsetable from: client
+	Unsettable from: client
 
 
 	The headers of request, things like ``req.http.date``.
@@ -652,7 +652,7 @@ bereq.between_bytes_timeout
 
 	Writable from: backend
 
-	Unsetable from: vcl_pipe, backend
+	Unsettable from: vcl_pipe, backend
 
 	Default: ``.between_bytes_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
@@ -668,7 +668,7 @@ bereq.body
 
 	Type: BODY
 
-	Unsetable from: vcl_backend_fetch
+	Unsettable from: vcl_backend_fetch
 
 	The request body.
 
@@ -684,7 +684,7 @@ bereq.connect_timeout
 
 	Writable from: vcl_pipe, backend
 
-	Unsetable from: vcl_pipe, backend
+	Unsettable from: vcl_pipe, backend
 
 	Default: ``.connect_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
@@ -704,7 +704,7 @@ bereq.first_byte_timeout
 
 	Writable from: backend
 
-	Unsetable from: vcl_pipe, backend
+	Unsettable from: vcl_pipe, backend
 
 	Default: ``.first_byte_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
@@ -735,7 +735,7 @@ bereq.http.*
 
 	Writable from: vcl_pipe, backend
 
-	Unsetable from: vcl_pipe, backend
+	Unsettable from: vcl_pipe, backend
 
 	The headers to be sent to the backend.
 
@@ -856,7 +856,7 @@ bereq.task_deadline
 
 	Writable from: vcl_pipe
 
-	Unsetable from: vcl_pipe
+	Unsettable from: vcl_pipe
 
 	Deadline for pipe sessions, defaults ``0s``, which falls back to the
 	``pipe_task_deadline`` parameter, see :ref:`varnishd(1)`
@@ -1175,7 +1175,7 @@ beresp.http.*
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	Unsetable from: vcl_backend_response, vcl_backend_error
+	Unsettable from: vcl_backend_response, vcl_backend_error
 
 	The HTTP headers returned from the server.
 
@@ -1361,7 +1361,7 @@ beresp.uncacheable
 
 	Setting this variable makes the object uncacheable.
 
-	This may may produce a hit-for-miss object in the cache.
+	This may produce a hit-for-miss object in the cache.
 
 	Clearing the variable has no effect and will log the warning
 	"Ignoring attempt to reset beresp.uncacheable".
@@ -1611,7 +1611,7 @@ resp.filters
 
 	After resp.filters is set, changing any of the conditions
 	which otherwise determine the filter selection will have no
-	effiect. Using resp.do_esi is an error once resp.filters is
+	effect. Using resp.do_esi is an error once resp.filters is
 	set.
 
 
@@ -1625,7 +1625,7 @@ resp.http.*
 
 	Writable from: vcl_deliver, vcl_synth
 
-	Unsetable from: vcl_deliver, vcl_synth
+	Unsettable from: vcl_deliver, vcl_synth
 
 	The HTTP headers that will be returned.
 
@@ -1787,7 +1787,7 @@ sess.idle_send_timeout
 
 	Writable from: client
 
-	Unsetable from: client
+	Unsettable from: client
 
 	Send timeout for individual pieces of data on client
 	connections, defaults to the ``idle_send_timeout`` parameter,
@@ -1804,7 +1804,7 @@ sess.send_timeout
 
 	Writable from: client
 
-	Unsetable from: client
+	Unsettable from: client
 
 	Total timeout for ordinary HTTP1 responses, defaults to the
 	``send_timeout`` parameter, see :ref:`varnishd(1)`
@@ -1820,7 +1820,7 @@ sess.timeout_idle
 
 	Writable from: client
 
-	Unsetable from: client
+	Unsettable from: client
 
 	Idle timeout for this session, defaults to the
 	``timeout_idle`` parameter, see :ref:`varnishd(1)`
@@ -1836,7 +1836,7 @@ sess.timeout_linger
 
 	Writable from: client
 
-	Unsetable from: client
+	Unsettable from: client
 
 	Linger timeout for this session, defaults to the
 	``timeout_linger`` parameter, see :ref:`varnishd(1)`

@@ -45,7 +45,7 @@ do something about, from probes being near-magical to H1 to
 getting a proper handle on the lifetime of dynamic backends.
 
 Some concrete improvements came up during the hackathon and we will
-be persuing those right away.
+be pursuing those right away.
 
 Fixing probing is probably a V7 thing, and we need to think
 and prototype how we expose probing in VCL.
@@ -58,7 +58,7 @@ and we are moving the Monday afternoon bugwash from 13:00-14:00 EU
 time to 15:00-15:30 EU time, so they do not have to get out of bed
 so early.
 
-We will also try to make the bugwash more producive, by having PHK
+We will also try to make the bugwash more productive, by having PHK
 publish an "agenda" some hours beforehand, so people can prepare,
 and instead shorten the bugwash to 30 minutes to keep the time
 commitment the same.
@@ -82,7 +82,7 @@ another organization will have looked at patches and pull requests
 before me, both to move some of the "no-ing" away from me and also
 to get people to pay more attention to each others work.
 
-For this to work, everybdoy will have to spend a bit more time on
+For this to work, everybody will have to spend a bit more time on
 "project work", but everybody agreed to do that, so we think it can
 fly.
 

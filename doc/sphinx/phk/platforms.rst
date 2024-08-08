@@ -69,12 +69,12 @@ Platform specific bug reports without patches will likely live a quiet life.
 
 *Mac OS/X*
 
-*Solaris-decendants* (Oracle Solaris, OmniOS, Joyent SmartOS)
+*Solaris-descendents* (Oracle Solaris, OmniOS, Joyent SmartOS)
 
 Mac OS/X is regarded as a developer platform, not as a production
 platform.
 
-Solaris-decendants are regarded as a production platform.
+Solaris-descendents are regarded as a production platform.
 
 NetBSD, AIX and HP-UX are conceivably candidates for this level, but
 so far I have not heard much, if any, user interest.

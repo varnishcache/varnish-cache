@@ -120,7 +120,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
  *
  * Instead we make sure the sockaddr is sane (for our values of
  * sane) and dump it as our own "struct suckaddr" type, in binary,
- * using the widest integertype, hoping that this will ensure sufficient
+ * using the widest integer type, hoping that this will ensure sufficient
  * alignment.
  */
 

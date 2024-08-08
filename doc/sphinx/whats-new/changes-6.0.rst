@@ -83,7 +83,7 @@ as a result.
 
 VMOD functions can take optional arguments, these are different
 from defaulted arguments in that a separate flag tells if they
-were specified or not in the call.  For reasons of everybodys
+were specified or not in the call.  For reasons of everybody's
 sanity, all the arguments gets wrapped in a function-specific
 structure when this is used.
 

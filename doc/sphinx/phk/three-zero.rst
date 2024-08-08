@@ -9,7 +9,7 @@
 Thoughts on the eve of Varnish 3.0
 ==================================
 
-Five years ago, I was busy transforming my pile of random doddles
+Five years ago, I was busy transforming my pile of random doodles
 on 5mm squared paper into software, according to "git log" working
 on the first stevedores.
 

@@ -21,7 +21,7 @@ his wisdom to choose the better idea.
 
 But it could also be, that The Assistant to The Deputy Viceminister of
 Northern Affairs, edged in sideways, at a carefully chosen time where
-the emperor looked relaxed and friendly, and sort of happend to mention
+the emperor looked relaxed and friendly, and sort of happened to mention
 that 50 villages had been sort of raided by the barbarians, hoping
 for the reply, which would not be a career opportunity
 for The Assistant to The Assistant to The Deputy Viceminister of

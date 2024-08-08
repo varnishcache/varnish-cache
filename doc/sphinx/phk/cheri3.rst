@@ -23,7 +23,7 @@ file with ``MAP_NOCORE``, was the only way to avoid the entire
 object cache being included in core-dumps.
 
 But CHERI will not allow you to put a pointer into a regular file
-``mmmap(2)``'ed ``MAP_SHARED``, because that would allow another
+``mmap(2)``'ed ``MAP_SHARED``, because that would allow another
 process, maybe even on a different computer, to ``mmap(2)`` the
 file ``MAP_SHARED`` later and, by implication, resurrect the pointers.
 

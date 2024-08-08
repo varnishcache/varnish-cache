@@ -821,7 +821,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 		VSB_printf(tl->sb,
-		    "Symbol '%.*s' type (%s) can not be used in expression.\n",
+		    "Symbol '%.*s' type (%s) cannot be used in expression.\n",
 		    PF(t), sym->kind->name);
 		vcc_ErrWhere(tl, t);
 		if (sym->def_b != NULL) {
@@ -1348,7 +1348,7 @@ vcc_expr_bin_bool(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 	ERRCHK(tl);
 	if ((*e)->fmt != BOOL) {
 		VSB_printf(tl->sb,
-		    "'%s' must be preceeded by BOOL,"
+		    "'%s' must be preceded by BOOL,"
 		    " found %s.\n", tokstr, vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, tk, tl->t);
 		return;

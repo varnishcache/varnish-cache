@@ -214,7 +214,7 @@ will be uncompressed and recompressed part-wise during the fetch.
 
 The part-wise compression reduces the opportunities for
 removing redundancy, because back-references in the gzip
-data stream cannot point outside it's own part.
+data stream cannot point outside its own part.
 
 The other case where compression ratio is impacted, is if an
 uncompressed fragment is inserted into a compressed

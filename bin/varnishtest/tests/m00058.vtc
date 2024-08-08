@@ -75,7 +75,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.npurged == 1
 
-	# Wait for the obejct to enter keep
+	# Wait for the object to enter keep
 	delay 1
 
 	# We don't get a grace hit, but the backend gets an IMS header

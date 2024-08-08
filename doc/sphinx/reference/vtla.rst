@@ -54,7 +54,7 @@ VENC
     Varnish ENCoding -- base64 functions
 
 VEND
-    Varnish ENDianess -- functions to marshall data in specified endianess
+    Varnish ENDianess -- functions to marshall data in specified endianness
 
 VEV
     Varnish EVent -- library functions to implement a simple event-dispatcher.

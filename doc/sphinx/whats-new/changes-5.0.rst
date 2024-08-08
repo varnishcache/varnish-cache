@@ -86,7 +86,7 @@ As useful as this feature is, it has caused a lot of headaches to
 varnish administrators along the lines of "why the *beep* doesn't
 Varnish cache this": A hit-for-pass object stayed in cache for however
 long its ttl dictated and prevented caching whenever it got hit ("for
-that url" in most cases). In particular, as a pass object can not be
+that url" in most cases). In particular, as a pass object cannot be
 turned into something cacheable retrospectively
 (``beresp.uncacheable`` can be changed from ``false`` to ``true``, but
 not the other way around), even responses which would have been
@@ -137,7 +137,7 @@ Request Body sent always / "cacheable POST"
 Previously, we would only send a request body for passed requests (and
 for pipe mode, but this is special anyway and should be avoided).
 
-Not so any more, but the default behaviour has not changed:
+Not so anymore, but the default behaviour has not changed:
 
 Whenever a request has a body, it will get sent to the backend for a
 cache miss (and pass, as before). This can be prevented by an

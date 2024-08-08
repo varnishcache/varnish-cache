@@ -9,7 +9,7 @@ Varnish Socket Addresses
 Socket addresses are a bit of a mess, in particular because nobody
 dared shake up all the IPv4 legacy code when IPv6 was introduced.
 
-In varnish we encapsulate all that uglyness in a ``struct suckaddr``,
+In varnish we encapsulate all that ugliness in a ``struct suckaddr``,
 so named because it sucks that we have to spend time and code on this.
 
 In a case like this, it makes sense to make the internals strictly

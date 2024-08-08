@@ -1,4 +1,4 @@
-varnishtest "Backend IMS 304 reponse with Content-Length 0"
+varnishtest "Backend IMS 304 response with Content-Length 0"
 
 # this case tests invalid behaviour, which we should handle gracefully anyway
 

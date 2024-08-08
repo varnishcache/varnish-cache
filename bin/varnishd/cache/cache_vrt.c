@@ -788,7 +788,7 @@ VRT_TIME_string(VRT_CTX, VCL_TIME t)
 	}
 	VTIM_format(t, p);
 	if (*p == '\0') {
-		VRT_fail(ctx, "Unformatable VCL_TIME");
+		VRT_fail(ctx, "Unformattable VCL_TIME");
 		return (NULL);
 	}
 	return (p);

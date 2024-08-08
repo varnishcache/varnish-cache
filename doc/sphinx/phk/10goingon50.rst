@@ -162,7 +162,7 @@ We were hip before it was hip to be hipsters
 
 Moving to github also means moving into a different culture.
 
-Githubs statistics are neat, but whenever you start to measure
+GitHub's statistics are neat, but whenever you start to measure
 something, it becomes a parameter for optimization and competition,
 and there are people out there who compete on github statistics.
 

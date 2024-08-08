@@ -25,17 +25,17 @@ time (Expires).
 
 Obviously, you can add a TIME and DURATION, the result is a TIME.
 
-Equally obviously, you can not add TIME to TIME, but you can subtract
+Equally obviously, you cannot add TIME to TIME, but you can subtract
 TIME from TIME, resulting in a DURATION.
 
 VCL do also have "naked" numbers, like INT and REAL, but what you
 can do with them is very limited.  For instance you can multiply a
-duration by a REAL, but you can not multiply a TIME by anything.
+duration by a REAL, but you cannot multiply a TIME by anything.
 
 Given that we have our own types, the next question is what
 precedence operators have.
 
-The C programming language is famous for having a couple of gottchas
+The C programming language is famous for having a couple of gotchas
 in its precedence rules and given our limited and narrow type
 repertoire, blindly importing a set of precedence rules may confuse
 a lot more than it may help.

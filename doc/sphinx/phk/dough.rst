@@ -10,7 +10,7 @@ Raking in the dough on Free and Open Source Software
 ====================================================
 
 I'm writing this on the third day after the "Heartbleed" bug in OpenSSL
-devasted internet security, and while I have been very critical of the
+devastated internet security, and while I have been very critical of the
 OpenSSL source code since I first saw it, I have nothing but admiration
 for the OpenSSL crew and their effort.
 
@@ -124,7 +124,7 @@ were perfectly willing to fund several more months.
 Varnish community funding
 =========================
 
-Five years later, having developed Varnish 1.0 for Norways "Verdens
+Five years later, having developed Varnish 1.0 for Norway's "Verdens
 Gang" newspaper, I decided to give community funding a go again.
 
 Wiser from experience, I structured the `Varnish Moral License`_
@@ -233,7 +233,7 @@ The Apache Foundation "adopts" smaller projects inside their field
 of interest, and I believe that works OK, but I'm not sure if it
 can easily be transplanted to different topics.
 
-The final way is to simply throw money a the developers, the
+The final way is to simply throw money at the developers, the
 way the FreeBSD and Varnish communities have done with me.
 
 It is a far more flexible solution with respect to level of

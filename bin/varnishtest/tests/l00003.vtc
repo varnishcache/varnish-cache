@@ -38,7 +38,7 @@ varnish v1 -vcl+backend {
 # \r\n					 2 bytes
 # Total:				45 bytes
 
-# Reponse:
+# Response:
 # HTTP/1.1 200 OK\r\n			17 bytes
 # Accept-Ranges: bytes\r\n		22 bytes
 # Transfer-Encoding: chunked\r\n	28 bytes

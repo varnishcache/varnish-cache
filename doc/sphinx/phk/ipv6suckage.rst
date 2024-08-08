@@ -20,7 +20,7 @@ IPv6 by now, is accusing the pope of being religious.
 IPv4 addresses in numeric form, are written as 192.168.0.1 and to
 not confuse IPv6 with IPv4, it was decided in RFC1884 that IPv6
 would use colons and groups of 16 bits, and because 128 bits are a
-lot of bits, the secret '::' trick was introduced, to supress all
+lot of bits, the secret '::' trick was introduced, to suppress all
 the zero bits that we may not ever need anyway: 1080::8:800:200C:417A
 
 Colon was chosen because it was already used in MAC/ethernet addresses

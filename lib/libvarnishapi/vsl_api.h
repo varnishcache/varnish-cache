@@ -78,7 +78,7 @@ struct VSL_data {
 
 	/* Bitmaps of -ix selected tags */
 	struct vbitmap			*vbm_select;
-	struct vbitmap			*vbm_supress;
+	struct vbitmap			*vbm_suppress;
 
 	/* Lists of -IX filters */
 	vslf_list			vslf_select;

@@ -205,7 +205,7 @@ delay .1
 client c2 {
 	# max length with garbage
 	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
-	# annouce 1025 bytes > 1024 implicit limit
+	# announce 1025 bytes > 1024 implicit limit
 	sendhex "20 00 04 01"
 	expect_close
 } -run

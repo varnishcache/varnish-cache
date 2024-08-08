@@ -69,7 +69,7 @@ Varnish Cache NEXT (2024-09-15)
   unless explicitly given.
 
 * ``varnishd`` now creates a ``worker_tmpdir`` which can be used by
-  VMODs for temporary files. The `VMOD deleveloper documentation`_ has
+  VMODs for temporary files. The `VMOD developer documentation`_ has
   details.
 
 * The environment variable ``VARNISH_DEFAULT_N`` now provides the
@@ -77,13 +77,13 @@ Varnish Cache NEXT (2024-09-15)
   ``-n`` argument to ``varnishd`` and ``varnish*`` utilities except
   ``varnishtest``.
 
-.. _VMOD deleveloper documentation: doc/sphinx/reference/vmod.rst
+.. _VMOD developer documentation: doc/sphinx/reference/vmod.rst
 
 ================================
 Varnish Cache 7.5.0 (2024-03-18)
 ================================
 
-* Add ``h2_window_timeout`` paramater to mitigate CVE-2023-43622 (VSV00014_).
+* Add ``h2_window_timeout`` parameter to mitigate CVE-2023-43622 (VSV00014_).
 
 * The parameters ``idle_send_timeout`` and ``timeout_idle`` are now
   limited to a maximum of 1 hour.
@@ -646,7 +646,7 @@ Varnish Cache 7.2.0 (2022-09-15)
 * Stevedore initialization via the ``.init()`` callback has been moved
   to the worker process.
 
-* The parameter ``tcp_keepalive_time`` is supported on MacOS.
+* The parameter ``tcp_keepalive_time`` is supported on macOS.
 
 * Duration parameters can optionally take a unit, with the same syntax as
   duration units in VCL. Example: ``param.set default_grace 1h``.
@@ -790,7 +790,7 @@ Varnish Cache 7.1.0 (2022-03-15)
   debugging the vsl client library code.
 
 * The ``vtc.vsl()`` and ``vtc.vsl_replay()`` functions have been added
-  to the vtc vmod to generate arbitraty log lines for testing.
+  to the vtc vmod to generate arbitrary log lines for testing.
 
 * The limit of the ``vsl_reclen`` parameter has been corrected.
 
@@ -881,7 +881,7 @@ Varnish Cache 7.1.0 (2022-03-15)
   ``VCL_STANDS``) from a single string ``s`` or ``x`` strings,
   respectively.
 
-  Note that the macros create a compund literal whose scope is the
+  Note that the macros create a compound literal whose scope is the
   enclosing block. Their value must thus only be used within the same
   block (it can be passed to called functions) and must not be
   returned or referenced for use outside the enclosing block.
@@ -938,7 +938,7 @@ Varnish Cache 7.0.1 (2021-11-23)
   combined strings of type VCL_REGEX (3721_).
 
 * An issue has been fixed that would cause the VCL dependency checker to
-  incorrectly flag VCLs as dependants of other VCLs when using labels,
+  incorrectly flag VCLs as dependents of other VCLs when using labels,
   preventing them from being discarded (3734_).
 
 * VCLs loaded through CLI or the use of startup CLI scripts (-I option to
@@ -1046,7 +1046,7 @@ Varnish Cache 7.0.0 (2021-09-15)
 
 * Added ``VRT_UnsetHdr()`` and removed ``vrt_magic_string_unset``.
 
-* Removed depcreated ``STRING_LIST`` in favor of ``STRANDS``. All functions
+* Removed deprecated ``STRING_LIST`` in favor of ``STRANDS``. All functions
   that previously took a ``STRING_LIST`` had ``const char *, ...`` arguments,
   they now take ``const char *, VCL_STRANDS`` arguments. The magic cookie
   ``vrt_magic_string_end`` is gone and ``VRT_CollectStrands()`` was renamed to
@@ -1072,7 +1072,7 @@ Varnish Cache 7.0.0 (2021-09-15)
 * New feature checks in ``varnishtest``: ``sanitizer``, ``asan``, ``lsan``,
   ``msan``, ``ubsan`` and ``coverage``.
 
-* New ``--enable-workspace-emulator`` configure flag to swap the worksapce
+* New ``--enable-workspace-emulator`` configure flag to swap the workspace
   implementation with a sparse one ideal for fuzzing (3644_).
 
 * Strict comparison of items from the HTTP grammar (3650_).
@@ -1259,7 +1259,7 @@ Varnish Cache 6.6.0 (2021-03-15)
   ``req.is_hitmiss`` on the client side.
 
 * The ``set_ip_tos()`` function from the bundled ``std`` vmod now sets
-  the IPv6 Taffic Class (TCLASS) when used on an IPv6 connection.
+  the IPv6 Traffic Class (TCLASS) when used on an IPv6 connection.
 
 * A bug has been fixed which could lead to varnish failing to start
   after updates due to outdated content of the ``vmod_cache``
@@ -1853,7 +1853,7 @@ Varnish Cache 6.4.0 (2020-03-16)
 * Add vi-stype CTRL-f / CTRL-b for page down/up to interactive
   varnishstat
 
-* Fixed wrong handling of an out-of-workspae condition in the proxy
+* Fixed wrong handling of an out-of-workspace condition in the proxy
   vmod and in the workspace allocator, bug 3131_
 
 * Raised the minimum for the ``vcl_cooldown`` parameter to 1s to fix
@@ -1905,7 +1905,7 @@ Varnish Cache 6.4.0 (2020-03-16)
 * Add more vcl control over timeouts with ``sess.timeout_linger``,
   ``sess.send_timeout`` and ``sess.idle_send_timeout``
 
-* Fix panics due to missing EINVAL handling on MacOS, see 1853_
+* Fix panics due to missing EINVAL handling on macOS, see 1853_
 
 * Added ``VSLs()`` and ``VSLbs()`` functions for logging ``STRANDS`` to
   VSL
@@ -2171,7 +2171,7 @@ C APIs (for vmod and utility authors)
   * from ``func_``\ `class` to `vmodname`\ ``.``\ `class`\ ``.``\
     `method` for methods,
 
-  repsectively. In short, the anchor is now named equal to VCL syntax
+  respectively. In short, the anchor is now named equal to VCL syntax
   for constructors and functions and similarly to VCL syntax for methods.
 
 * VRT API has been updated to 9.0
@@ -2240,7 +2240,7 @@ Fixed bugs
 
 * Fix VRT_priv_task for calls from vcl_pipe {} (2820_)
 
-* Fix assinging <bool> == <bool> (2809_)
+* Fix assigning <bool> == <bool> (2809_)
 
 * Fix vmod object constructor documentation in the ``vmodtool.py`` -
   generated RST files
@@ -2848,7 +2848,7 @@ Varnish Cache 5.2-RC1 (2017-09-04)
 Usage
 -----
 
-* The default for the the -i argument is now the hostname as returned
+* The default for the -i argument is now the hostname as returned
   by gethostname(3)
 
 * Where possible (on platforms with setproctitle(3)), the -i argument
@@ -3321,7 +3321,7 @@ Bugs fixed
 * 2241_ - VSL fails to get hold of SHM
 * 2270_ - Newly loaded auto VCLs don't get their go_cold timer set
 * 2273_ - Master cooling problem
-* 2275_ - If the client workspace is almost, but not quite exhaused, we may
+* 2275_ - If the client workspace is almost, but not quite exhausted, we may
   not be able to get enough iovec's to do Chunked transmission.
 * 2295_ - Spinning loop in VBE_Poll causes master to kill child on
   CLI timeout
@@ -3355,7 +3355,7 @@ Varnish Cache 4.1.5-beta2 (2017-02-08)
 Bugs fixed
 ----------
 
-* 1704_ - Reverted the docfix and made the fech_failed counter do
+* 1704_ - Reverted the docfix and made the fetch_failed counter do
   what the documentation says it should do
 * 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error
 * 2167_ - VCC will not parse a literal negative number where INT is
@@ -3442,7 +3442,7 @@ Bugs fixed
   vsl_buffer is increased
 * 2010_ - varnishadm CLI behaving weirdly
 * 2017_ - varnishncsa docfix: "%r" field is wrong
-* 2107_ - (docfix) HEAD requestes changed to GET
+* 2107_ - (docfix) HEAD requests changed to GET
 
 .. _1830: https://github.com/varnishcache/varnish-cache/issues/1830
 .. _2010: https://github.com/varnishcache/varnish-cache/issues/2010
@@ -3517,7 +3517,7 @@ Varnish Cache 4.1.3-beta1 (2016-06-15)
 
 * Add support for TCP Fast Open where available. Disabled by default.
 
-* [varnishtest] New syncronization primitive barriers added, improving
+* [varnishtest] New synchronization primitive barriers added, improving
   coordination when test cases call external programs.
 
 .. _1905: https://github.com/varnishcache/varnish-cache/pull/1905
@@ -3618,7 +3618,7 @@ Varnish Cache 4.1.2-beta1 (2016-02-17)
 
 * Some fixes to minor/trivial issues found with clang AddressSanitizer.
 
-* Arithmetric on REAL data type in VCL is now possible.
+* Arithmetic on REAL data type in VCL is now possible.
 
 * vmodtool.py improvements to allow VMODs for 4.0 and 4.1 to share a source tree.
 
@@ -3683,7 +3683,7 @@ Varnish Cache 4.1.1-beta1 (2016-01-15)
 ======================================
 
 - Format of "ban.list" has changed slightly.
-- [varnishncsa] -w is now required when running deamonized.
+- [varnishncsa] -w is now required when running daemonized.
 - [varnishncsa] Log format can now be read from file.
 - Port fields extracted from PROXY1 header now work as expected.
 - New VCL state "busy" introduced (mostly for VMOD writers).
@@ -4176,7 +4176,7 @@ Bugs fixed
 * 1404_ - Don't send Content-Length on 304 Not Modified responses.
 * 1401_ - Varnish would crash when retrying a backend fetch too many times.
 * 1399_ - Memory get freed while in use by another thread/object
-* 1398_ - Fix NULL deref related to a backend we don't know any more.
+* 1398_ - Fix NULL deref related to a backend we don't know anymore.
 * 1397_ - Crash on backend fetch while LRUing.
 * 1395_ - End up in vcl_error also if fetch fails vcl_backend_response.
 * 1391_ - Client abort and retry during a streaming fetch would make Varnish assert.
@@ -4888,7 +4888,7 @@ varnishd
   Varnish crashing.
 - If a backend sends a ``Content-Length`` header and we are streaming and
   we are not uncompressing it, send the ``Content-Length`` header on,
-  allowing browsers to diplay a progress bar.
+  allowing browsers to display a progress bar.
 - All storage must be at least 1M large.  This is to prevent
   administrator errors when specifying the size of storage where the
   admin might have forgotten to specify units.
@@ -4947,7 +4947,7 @@ varnishtest
 
 - add ``-l`` and ``-L`` switches which leave ``/tmp/vtc.*`` behind on
   error and unconditionally respectively.
-- add ``-j`` parameter to run tests in parallell and use this by
+- add ``-j`` parameter to run tests in parallel and use this by
   default.
 
 varnishtop
@@ -5104,7 +5104,7 @@ varnishd
 -  Make new-purge not touch busy objects. This fixes a potential crash
    when calling VRT\_purge.
 
--  If there are everal grace-able objects, pick the least expired one.
+-  If there are several grace-able objects, pick the least expired one.
 
 -  Fix an issue with varnishadm -T :6082 shorthand.
 
@@ -5129,7 +5129,7 @@ Changes from 2.1.3 to 2.1.4
 varnishd
 --------
 
--  An embarrasing typo in the new binary heap layout caused inflated
+-  An embarrassing typo in the new binary heap layout caused inflated
    obj/objcore/objhdr counts and could cause odd problems when the LRU
    expunge mechanism was invoked. This has been fixed.
 
@@ -5315,7 +5315,7 @@ varnishd
 -  Align pointers in allocated objects. This will in theory make Varnish
    a tiny bit faster at the expense of slightly more memory usage.
 
--  Ensure the master process process id is updated in the shared memory
+-  Ensure the master process PID is updated in the shared memory
    log file after we go into the background.
 
 -  HEAD requests would be converted to GET requests too early, which
@@ -5610,7 +5610,7 @@ varnishd
 -  Various fixes which makes Varnish compile and work on AIX.
 
 -  Turn on TCP\_DEFER\_ACCEPT on Linux. This should make us less
-   suspecible to denial of service attacks as well as give us slightly
+   susceptible to denial of service attacks as well as give us slightly
    better performance.
 
 -  Add an .initial property to the backend probe specification. This is
@@ -5623,7 +5623,7 @@ varnishd
    headers, for instance.
 
 -  When support for restart in vcl\_error was added, there was no check
-   to prevent infinte recursion. This has now been fixed.
+   to prevent infinite recursion. This has now been fixed.
 
 -  Turn on purge\_dups by default. This should make us consume less
    memory when there are many bans for the same pattern added.
@@ -5662,7 +5662,7 @@ varnishd
 -  If error was called with a null reason, we would crash on Solaris.
    Make sure this no longer happens.
 
--  Varnish used to crash if you asked it to use a non-existent waiter.
+-  Varnish used to crash if you asked it to use a nonexistent waiter.
    This has now been fixed.
 
 -  Add documentation to the default VCL explaining that using
@@ -5890,7 +5890,7 @@ varnishd
    mandates. This makes PUT, DELETE, OPTIONS and TRACE work in addition
    to POST.
 
--  Change how backends are defined, to a constant structural defintion
+-  Change how backends are defined, to a constant structural definition
    style. See https://www.varnish-cache.org/wiki/VclSyntaxChanges
    for the details.
 
@@ -5945,7 +5945,7 @@ varnishd
    core dumps. Make sure it's set.
 
 -  Doing purge.hash() with an empty string would cause us to dump core.
-   Fixed so we don't do that any more.
+   Fixed so we don't do that anymore.
 
 -  We ran into a problem with glibc's malloc on Linux where it seemed
    like it failed to ever give memory back to the OS, causing the system
@@ -6015,7 +6015,7 @@ varnishd
    instead of copying the one it got from the backend (see `ticket
    #157 <https://www.varnish-cache.org/trac/ticket/157>`_).
 
--  Comparisons in VCL which involve a non-existent string (usually a
+-  Comparisons in VCL which involve a nonexistent string (usually a
    header which is not present in the request or object being processed)
    would cause a NULL pointer dereference; now the comparison will
    simply fail.
@@ -6468,7 +6468,7 @@ Build system
    wider range of platforms.
 
 -  Compatibility shims for clock\_gettime() are now correctly applied
-   where needed, allowing Varnish to build on MacOS X.
+   where needed, allowing Varnish to build on Mac OS X.
 
 -  The autogen.sh script will now correctly detect and warn about
    automake versions which are known not to work correctly.

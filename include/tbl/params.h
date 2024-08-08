@@ -163,7 +163,7 @@ PARAM_SIMPLE(
 	"When this parameter is set to a non-zero value, the ban lurker "
 	"continues to work the ban list as usual top to bottom, but when it "
 	"reaches the ban_cutoff-th ban, it treats all objects as if they "
-	"matched a ban and expurges them from cache. As actively used objects "
+	"matched a ban and expunges them from cache. As actively used objects "
 	"get tested against the ban list at request time and thus are likely "
 	"to be associated with bans near the top of the ban list, with "
 	"ban_cutoff, least recently accessed objects (the \"long tail\") are "
@@ -337,7 +337,7 @@ PARAM_SIMPLE(
 	/* units */	NULL,
 	/* descr */
 	"Maximum number of transactions that can queue waiting for a backend "
-	"connection to become avaiable.  This default of 0 (zero) means that "
+	"connection to become available.  This default of 0 (zero) means that "
 	"there is no transaction queueing. VCL can override this default value "
 	"for each backend.\n\n"
 	"Note that this feature must be used with caution, as it can "
@@ -865,7 +865,7 @@ PARAM_SIMPLE(
 	/* descr */
 	"How many parked request we start for each completed request on "
 	"the object.\n"
-	"NB: Even with the implict delay of delivery, this parameter "
+	"NB: Even with the implicit delay of delivery, this parameter "
 	"controls an exponential increase in number of worker threads.",
 	/* flags */	EXPERIMENTAL
 )
@@ -1348,7 +1348,7 @@ PARAM_SIMPLE(
 	"initial SETTINGS frame, the http_req_size parameter is instead.\n\n"
 	"The http_req_size advises HTTP2 clients of the maximum size for "
 	"the header list. Exceeding http_req_size results in a reset stream "
-	"after processing the HPACK block to perserve the connection, but "
+	"after processing the HPACK block to preserve the connection, but "
 	"exceeding h2_max_header_list_size results in the HTTP2 connection "
 	"going away immediately.\n\n"
 	"If h2_max_header_list_size is lower than http_req_size, it has no "

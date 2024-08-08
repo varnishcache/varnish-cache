@@ -161,7 +161,7 @@ Lets use the Varnish Software (VS) web as an example here. Very
 simplified the setup VS uses can be described as a Drupal-based
 backend with a Varnish cache in front. VS uses some cookies for
 Google Analytics tracking and similar tools. The cookies are all
-set and used by Javascript. Varnish and Drupal doesn't need to see
+set and used by JavaScript. Varnish and Drupal doesn't need to see
 those cookies and since Varnish will cease caching of pages when
 the client sends cookies Varnish will discard these unnecessary
 cookies in VCL.
@@ -524,7 +524,7 @@ on.
 
 When a request is passed, this can be recognized in the
 ``vcl_backend_*`` subroutines by the fact that ``bereq.uncacheable``
-and ``beresp.uncachable`` are both true. The backend response will not
+and ``beresp.uncacheable`` are both true. The backend response will not
 be cached, even if it fulfills conditions that otherwise would allow
 it, for example if ``Cache-Control`` sets a positive TTL.
 

@@ -13,7 +13,7 @@ When I was in USA, diplomas on the wall was very much a thing.
 I don't think I fully reverse-engineered the protocol for which
 diplomas would get hung and which would be filed away, apart from
 the unbreakable rule that, like it or not, anything your company
-handed out was mandatory on the office-wall, no matter how embarrasing.
+handed out was mandatory on the office-wall, no matter how embarrassing.
 
 Our paediatrician had diplomas for five or six steps of her education.
 
@@ -76,7 +76,7 @@ But in all probable worlds, that would only have meant that the
 idea would be dead as a doornail, I would not have made any money
 from it, it would never have helped improve the web, and I would
 have wasted much more of my life in meetings than would be good for
-anybodys health.
+anybody's health.
 
 As if that wasn't enough, the very thought of having to hire somebody
 scared me, but not nearly as much as the realization that if I built
@@ -222,18 +222,18 @@ I took myself out of the game:
 	FreeBSD committer       | BSD since 4.3-tahoe
 	Never attribute to malice what can adequately be explained by incompetence.
 
-Today (20190517) Arturs `Fastly <https://fastly.com>`_, company
+Today (20190517) Artur's `Fastly <https://fastly.com>`_, company
 went public on the New York Stock Exchange, and went up from $16
 to $24 in a matter of hours.  So-called "financial analysts" write
 that as a consequence Fastly is now worth 2+ Billion Dollars.
 
 I can say with 100% certainty and honesty that there is no way
-I could *ever* have done that, that is entirely Arturs doing and
+I could *ever* have done that, that is entirely Artur's doing and
 I know and admire how hard he worked to make it happen.
 
 Congratulations to Artur and the Fastly Crew!
 
-But I will steal some of Arturs thunder, and point to Fastlys IPO
+But I will steal some of Artur's thunder, and point to Fastly's IPO
 as proof that at least once in my career, I had a unique idea worth
 a billion dollars :-)
 

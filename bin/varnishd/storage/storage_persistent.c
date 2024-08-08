@@ -363,7 +363,7 @@ smp_open(struct stevedore *st)
 		AZ(smp_open_segs(sc, &sc->seg2));
 
 	/*
-	 * Grap a reference to the tail of the ban list, until the thread
+	 * Grab a reference to the tail of the ban list, until the thread
 	 * has loaded all objects, so we can be sure that all of our
 	 * proto-bans survive until then.
 	 */

@@ -234,7 +234,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 
 /*----------------------------------------------------------------------
  * VRB_Ignore() is a dedicated function, because we might
- * be able to disuade or terminate its transmission in some protocols.
+ * be able to dissuade or terminate its transmission in some protocols.
  *
  * For HTTP1, we do nothing if we are going to close the connection anyway or
  * just iterate it into oblivion.

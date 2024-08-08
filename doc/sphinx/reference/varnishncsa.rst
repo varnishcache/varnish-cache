@@ -149,7 +149,7 @@ Supported formatters are:
   * ``%{msec_frac}``: millisecond fraction
   * ``%{usec_frac}``: microsecond fraction
 
-  The extensions can not be combined with each other or strftime(3) in
+  The extensions cannot be combined with each other or strftime(3) in
   the same specification. Use multiple ``%{X}t`` specifications instead.
 
 %T

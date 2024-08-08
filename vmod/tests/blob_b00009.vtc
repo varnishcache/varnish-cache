@@ -38,7 +38,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 	    = blob.transcode(decoding=BASE64, encoding=HEX, case=UPPER,
 			     encoded="YmF6");
 
-	# transcode() can replace other specific encoding/deconding
+	# transcode() can replace other specific encoding/decoding
 	# vmods - e.g. vmod_urlcode
 	set req.url = blob.transcode(encoded=req.url, decoding=URL);
 	set req.http.url_urlcoded

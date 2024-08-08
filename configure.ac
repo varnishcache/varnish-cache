@@ -490,7 +490,7 @@ AC_ARG_WITH(persistent-storage,
 
 if test "$with_persistent_storage" = yes; then
 	AC_DEFINE([WITH_PERSISTENT_STORAGE], [1],
-		[Define to 1 to build the deprecated peristent storage.])
+		[Define to 1 to build the deprecated persistent storage.])
 fi
 
 AM_CONDITIONAL([WITH_PERSISTENT_STORAGE],
@@ -747,7 +747,7 @@ AC_ARG_ENABLE(developer-warnings,
 
 if test "x$SUNCC" != "xyes" && test "x$enable_developer_warnings" != "xno"; then
 	# no known way to specifically disabling missing-field-initializers
-	# warnings keeping the rest of Wextra
+	# warnings keeping the rest of -Wextra
 	AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-missing-field-initializers"],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-extra"],

@@ -172,7 +172,7 @@ static const struct vdp xyzzy_vdp_rot13 = {
 };
 
 /**********************************************************************
- * pendantic tests of the VDP API:
+ * pedantic tests of the VDP API:
  * - assert that we see a VDP_END
  * - assert that _fini gets called before the task ends
  *
@@ -898,7 +898,7 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 	hp = VRT_selecthttp(ctx, hdr->where);
 	if (hp == NULL) {
 		VRT_fail(ctx, "debug.sethdr(): header argument "
-		    "can not be used here");
+		    "cannot be used here");
 		return;
 	}
 	AN(hdr->what);

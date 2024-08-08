@@ -149,7 +149,7 @@ changes to ``BASE64``: ``+`` replaced with ``-``, ``/`` replaced with
 ``~`` and ``_`` as the padding character. It is used by a certain CDN
 provider who also inspired the name.
 
-The *case* ENUM MUST be set to ``DEFAULT`` for for all of the
+The *case* ENUM MUST be set to ``DEFAULT`` for all of the
 ``BASE64*`` encodings.
 
 HEX

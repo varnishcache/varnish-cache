@@ -543,7 +543,7 @@ cmd_server(CMD_ARGS)
 		}
 
 		/*
-		 * We do an implict -wait if people muck about with a
+		 * We do an implicit -wait if people muck about with a
 		 * running server.
 		 */
 		if (s->run)

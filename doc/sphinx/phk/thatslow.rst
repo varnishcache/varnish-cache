@@ -128,7 +128,7 @@ is not going to boost your line count either.
 But did it work ?
 -----------------
 
-A 10 year project aniversary is a good reason to stop and see
+A 10 year project anniversary is a good reason to stop and see
 if the expected roses are there to be smelled.
 
 We have lots of numbers, commits (10538), bugreports (1864), CVEs
@@ -137,7 +137,7 @@ impossible to measure program quality, even though we tend to know
 it when we see it.
 
 There are also uncountable events which should be in the ledger,
-503s [#f9]_, crashes, hair-tearing, head-scrathing, coffee-drinking,
+503s [#f9]_, crashes, hair-tearing, head-scratching, coffee-drinking,
 manual- and source-code thumbing and frustrated cries of help on IRC.
 
 In the other cup there are equally intangible positives, pats on
@@ -183,7 +183,7 @@ I'll take that.
    to optimize much harder.  No, I won't tell you which those are.
 
 .. [#f7] Only code where that is a bigger problem is phd-ware:  Software
-   written as proof-of-concept and abandonned in haste when the diploma
+   written as proof-of-concept and abandoned in haste when the diploma
    was in hand.
 
 .. [#f8] Obviously, a high count of CVE's should be a real reason for

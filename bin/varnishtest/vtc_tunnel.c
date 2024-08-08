@@ -99,7 +99,7 @@
  *
  * If one end of the tunnel is closed before the end of the specification
  * the test case will fail. A specification that ends in a paused state will
- * implicitely resume the tunnel.
+ * implicitly resume the tunnel.
  */
 
 enum tunnel_state_e {

@@ -171,7 +171,7 @@ const struct vsm_valid *VSM_StillValid(const struct vsm *, const struct vsm_fant
 	 * good.
 	 *
 	 * Return:
-	 *   VSM_invalid: fantom is not valid any more.
+	 *   VSM_invalid: fantom is not valid anymore.
 	 *   VSM_valid:   fantom is still the same.
 	 */
 

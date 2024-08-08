@@ -5,9 +5,9 @@
 
 .. _phk_trialerror:
 
-=================================================
-Trial&Error - Prototyping - Continous Integration
-=================================================
+==================================================
+Trial&Error - Prototyping - Continuous Integration
+==================================================
 
 The other day I chatted to a friend who wrote his phd thesis with
 `David Wheeler <https://en.wikipedia.org/wiki/David_Wheeler_(British_computer_scientist)>`_ as his advisor, that made me feel young, because Wheeler
@@ -34,12 +34,12 @@ with the running program and argued that it prolonged the debugging
 process.
 
 Practically all the oral histories from back then are about people
-sneaking in to university or work at night, to get the computer for
+sneaking into university or work at night, to get the computer for
 themselves.
 
 But we could call it "Prototyping" if that sounded better, and now
 that the history-deficient dot-com generation has "invented" it,
-we can call it "Continous Integration".
+we can call it "Continuous Integration".
 
 I don't care - it's still Trial&Error to me.
 
@@ -71,7 +71,7 @@ program-test-framework-cloud-thingies, and they're fine up to a
 point, but they are inadequate tools for me in too many ways.
 
 Jenkins is written in Java, which is not something I want to inflict
-on computers volutarily, in particular not on computers people lend
+on computers voluntarily, in particular not on computers people lend
 us to test varnish on.
 
 Travis is Linux only, which is fine if you run Linux only, but I don't.

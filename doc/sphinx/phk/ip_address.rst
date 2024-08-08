@@ -98,7 +98,7 @@ act together, and renovate the `getaddrinfo(3)` API, Varnish will
 automatically pick that up and use it.
 
 Should they, in a flash of enlightenment, also make `getaddrinfo(3)`
-useful for parsing these newfangled CIDR adresses we got in 1993,
+useful for parsing these newfangled CIDR addresses we got in 1993,
 I will be more than happy to ditch `vcc_acl_try_netnotation()` too.
 
 Until next time,

@@ -670,7 +670,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		abort();
 	}
 
-	/* If we already panicing in another thread, do nothing */
+	/* If we already panicking in another thread, do nothing */
 	do {
 		i = pthread_mutex_trylock(&panicstr_mtx);
 		if (i != 0)

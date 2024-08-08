@@ -36,7 +36,7 @@ gives you the "capability" to access the memory, and therefore they
 can be restricted separately from the memory they provide access to.
 
 If you could just create your own "capabilities" out of integers,
-that would be no big improvement, but you can not:  Under CHERI you
+that would be no big improvement, but you cannot:  Under CHERI you
 can only make a new capability from another capability, and the new
 one can never be more potent than the one it is derived from.
 
@@ -126,7 +126,7 @@ C sources, you almost always end up needing a macro like::
 To remove const-ness where it cannot go.
 
 (If you think that is ISO-C's opus magnum, ask yourself why we still
-cannot specify struct packing and endianess explicitly ?  It's hardly
+cannot specify struct packing and endianness explicitly ?  It's hardly
 like anybody ever have to apart data-structures explicitly specified in 
 hardware or protocol documents, is it ?)
 

@@ -322,7 +322,7 @@ delay .5
 
 varnish v1 -expect vmods == 0
 
-varnish v1 -errvcl {Symbol 'std' type (vmod) can not be used in expression.} {
+varnish v1 -errvcl {Symbol 'std' type (vmod) cannot be used in expression.} {
 	import std;
 
 	sub vcl_recv {

@@ -1,4 +1,4 @@
-varnishtest "Duplcate SLT_Begin"
+varnishtest "Duplicate SLT_Begin"
 
 server s1 {
 	rxreq

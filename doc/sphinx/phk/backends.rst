@@ -94,7 +94,7 @@ is a wildcard-ish scheme, where you can write things like::
 The final question is if we use shortcut notation for output from
 :ref:`varnishd(1)`, and the answer is no, because we do not want the
 stats-counters to change name because we load another VCL and suddenly
-need disabiguation.
+need disambiguation.
 
 
 Sharing Health Status

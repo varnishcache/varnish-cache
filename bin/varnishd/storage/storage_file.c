@@ -68,7 +68,7 @@
  *
  * Last bucket is "larger than" so choose number so that the second
  * to last bucket matches the 128k CHUNKSIZE in cache_fetch.c when
- * using the a 4K minimal page size
+ * using a 4K minimal page size
  */
 #define NBUCKET			(128 / 4 + 1)
 

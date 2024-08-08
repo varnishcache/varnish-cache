@@ -95,7 +95,7 @@ VSL_New(void)
 	vsl->L_opt = 1000;
 	vsl->T_opt = 120.;
 	vsl->vbm_select = vbit_new(SLT__MAX);
-	vsl->vbm_supress = vbit_new(SLT__MAX);
+	vsl->vbm_suppress = vbit_new(SLT__MAX);
 	VTAILQ_INIT(&vsl->vslf_select);
 	VTAILQ_INIT(&vsl->vslf_suppress);
 
@@ -127,7 +127,7 @@ VSL_Delete(struct VSL_data *vsl)
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
 	vbit_destroy(vsl->vbm_select);
-	vbit_destroy(vsl->vbm_supress);
+	vbit_destroy(vsl->vbm_suppress);
 	vsl_IX_free(&vsl->vslf_select);
 	vsl_IX_free(&vsl->vslf_suppress);
 	VSL_ResetError(vsl);
@@ -206,7 +206,7 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	else if (!VTAILQ_EMPTY(&vsl->vslf_suppress) &&
 	    vsl_match_IX(vsl, &vsl->vslf_suppress, c))
 		return (0);
-	else if (vbit_test(vsl->vbm_supress, tag))
+	else if (vbit_test(vsl->vbm_suppress, tag))
 		return (0);
 
 	/* Default show */

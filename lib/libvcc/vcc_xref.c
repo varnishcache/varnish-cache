@@ -34,7 +34,7 @@
  * both defined and referenced.  Complaints about referenced but undefined
  * or defined but unreferenced objects will be emitted.
  *
- * The second check recursively decends through subroutine calls to make
+ * The second check recursively descends through subroutine calls to make
  * sure that action actions are correct for the methods through which
  * they are called.
  */

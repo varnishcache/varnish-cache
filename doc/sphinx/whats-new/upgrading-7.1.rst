@@ -60,7 +60,7 @@ The feature flag is off by default, preserving the existing behavior
 to continue ESI processing despite include failures.
 
 Users of persistent storage engines be advised that objects created
-before the introduction of this change can not carry the
+before the introduction of this change cannot carry the
 ``onerror="continue"`` attribute and, consequently, will be handled as
 if it was not present if the ``+esi_include_onerror`` feature flag is
 enabled.

@@ -541,14 +541,14 @@ is _not_ the order given when backends are added.
 
   * ``NOW``: look up a backend and return it.
 
-    Can not be used in ``vcl_init{}``.
+    Cannot be used in ``vcl_init{}``.
 
   * ``LAZY``: return an instance of this director for later backend resolution.
 
     ``LAZY`` mode is required for referencing shard director instances,
     for example as backends for other directors (director layering).
 
-    In ``vcl_init{}`` and on the client side, ``LAZY`` mode can not be
+    In ``vcl_init{}`` and on the client side, ``LAZY`` mode cannot be
     used with any other argument.
 
     On the backend side and in ``vcl_pipe {}``, parameters from
@@ -606,7 +606,7 @@ The per-VCL scope defines defaults for the per backend scope. Any
 changes to a parameter set in backend context and in ``vcl_pipe {}``
 only affect the respective backend request.
 
-Parameter sets can not be used in client context except for
+Parameter sets cannot be used in client context except for
 ``vcl_pipe {}``.
 
 The following example is a typical use case: A parameter set is

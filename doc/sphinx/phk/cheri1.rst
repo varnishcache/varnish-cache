@@ -17,7 +17,7 @@ https://www.cl.cam.ac.uk/research/security/ctsrd/cheri/
 
 The core idea in CHERI is that pointers are not integers, which
 means that you cannot randomly make up or modify pointers to point
-at random things any more, whatever your intentions might be.
+at random things anymore, whatever your intentions might be.
 
 From a security point of view, this circumscribes several large
 classes of commonly used attack-vectors, and Microsoft Research
@@ -35,7 +35,7 @@ it made any real-life difference.
 
 Robert has graciously lent me a shell-account on one of his shiny
 new MORELLO machines, which rock an ARM64 prototype CPU with CHERI
-capabilites.
+capabilities.
 
 In this sequence of rants I will sing the saga of "How Varnish meets
 CHERI" - as it happens.

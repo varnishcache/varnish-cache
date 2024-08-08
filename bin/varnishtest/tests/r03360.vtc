@@ -1,4 +1,4 @@
-varnishtest "Test recusive vcl includes"
+varnishtest "Test recursive vcl includes"
 
 shell {echo include '"_recurse.vcl";' > ${tmpdir}/_recurse.vcl}
 shell {echo include +glob '"${tmpdir}/_recurse[2].vcl";' > ${tmpdir}/_recurse1.vcl}

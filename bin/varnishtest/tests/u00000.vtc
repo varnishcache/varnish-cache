@@ -44,7 +44,7 @@ shell -err -expect {Cannot open -S file} {
 	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f ''
 }
 
-shell -err -expect {Cannot remove pre-existing secret-file in} {
+shell -err -expect {Cannot remove preexisting secret-file in} {
 	mkdir ${tmpdir}/is_a_dir ${tmpdir}/is_a_dir/_.secret
 	varnishd -n ${tmpdir}/is_a_dir -d -a :0
 }
@@ -74,8 +74,8 @@ shell -err -expect {Error: -I file CLI command failed (104)} {
 	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m
 }
 
-shell -err -expect "Can't open non-existent" {
-	varnishd -f '' -I non-existent -n ${tmpdir}/v0 -a :0
+shell -err -expect "Can't open nonexistent" {
+	varnishd -f '' -I nonexistent -n ${tmpdir}/v0 -a :0
 }
 
 

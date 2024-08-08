@@ -46,7 +46,7 @@ ISO-C standardisation working-group 14.
 I won't claim that it is enough to make grown men cry, but it
 certainly was enough to make me angry.
 
-Let me give you an example of their utter sillyness:
+Let me give you an example of their utter silliness:
 
 The book which defined the C langauge had a list af reserved
 identifiers, all of them lower-case words.  The UNIX libraries
@@ -125,7 +125,7 @@ wall clock time you want to sleep until.
 
 The only problem with that is that UTC wall clock time is not
 continuous when implemented on a computer, and it may not even be
-monotonously increasing, since NTPD or other timesync facilites may
+monotonously increasing, since NTPD or other timesync facilities may
 step the clock backwards, particularly in the first minutes after
 boot.
 

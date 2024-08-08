@@ -836,7 +836,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		/* Wait for the stale object to become fully fetched, so
 		 * that we can catch fetch errors, before we unbusy the
 		 * new object. This serves two purposes. First it helps
-		 * with request coalesching, and stops long chains of
+		 * with request coalescing, and stops long chains of
 		 * IMS-updated short-TTL objects all streaming from a
 		 * single slow body fetch. Second it makes sure that all
 		 * the object attributes are complete when we copy them
@@ -1118,7 +1118,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	VCL_TaskLeave(ctx, bo->privs);
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
-	// can not make assumptions about the number of references here #3434
+	// cannot make assumptions about the number of references here #3434
 	if (bo->bereq_body != NULL)
 		(void) HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
 

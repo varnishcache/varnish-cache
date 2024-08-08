@@ -1193,7 +1193,7 @@ http_PutResponse(struct http *to, const char *proto, uint16_t status,
 }
 
 /*--------------------------------------------------------------------
- * check if header is filterd by the dynamic marker or the static
+ * check if header is filtered by the dynamic marker or the static
  * definitions in http_headers.h
  */
 

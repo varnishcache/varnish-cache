@@ -38,7 +38,7 @@ cross-references using::
 
 Trouble is that ``rst2man`` and ``rst2pdf`` working on individual
 files cannot parse `ref` roles to anything outside the current rst
-file, so we need to differenciate link targets depending on the kind
+file, so we need to differentiate link targets depending on the kind
 of documentation:
 
 * set link targets on the top of documents ending up in man-pages
@@ -46,7 +46,7 @@ of documentation:
 
     .. _varnishd(1):
 
-* set link targets for imporant paramgraphs following the scheme
+* set link targets for important paragraphs following the scheme
   ref-`doc`-`section`, for instance::
 
     .. _ref-varnishd-opt_T:
@@ -75,7 +75,7 @@ Document Structure
 
 While RST supports a great deal of flexibility for adornments of
 titles and section headers, we should adhere to a consistent style to
-avoid breaking the document structure unintentially.
+avoid breaking the document structure unintentionally.
 
 Within the Varnish-Cache project, we should use these characters:
 

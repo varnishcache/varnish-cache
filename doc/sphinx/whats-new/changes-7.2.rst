@@ -25,7 +25,7 @@ keep a place ready for it in the overall architecture.
 
 Now a credible use-case finally appeared, and we have implemented
 "Varnish Extensions" (VTLA: "VEXT"), which can both be used to load
-ambient VMODs and to implement entirely new functionaly, for instance
+ambient VMODs and to implement entirely new functionally, for instance
 stevedores.
 
 See :ref:`ref-vext` in the reference manual for more information.
@@ -40,7 +40,7 @@ respectively from ``120.000``, ``10.000`` and ``0.000`` to ``2m``, ``10s``
 and ``0s``.
 
 The platform-dependent ``tcp_keepalive_time`` parameter is supported on
-MacOS.
+macOS.
 
 The new ``vcc_feature`` bits parameter replaces previous ``vcc_*`` boolean
 parameters. The latter still exist as deprecated aliases.

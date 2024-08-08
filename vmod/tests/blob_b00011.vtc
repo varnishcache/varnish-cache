@@ -44,7 +44,7 @@ shell {
 }
 
 # For each type of BLOB codec we may use some of the prepared clients. It is
-# important not to run them concurently to ensure we can predictably peek at
+# important not to run them concurrently to ensure we can predictably peek at
 # logs.
 
 client c-struct {

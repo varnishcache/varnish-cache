@@ -145,7 +145,7 @@ EXP_RefNewObjcore(struct objcore *oc)
 
 
 /*--------------------------------------------------------------------
- * Call EXP's attention to a an oc
+ * Call EXP's attention to an oc
  */
 
 void
@@ -191,7 +191,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	if (!(oc->exp_flags & OC_EF_REFD))
 		return;
 
-	/* One ref held by the caller, and one that wil be owned by
+	/* One ref held by the caller, and one that will be owned by
 	 * expiry. */
 	assert(oc->refcnt >= 2);
 
