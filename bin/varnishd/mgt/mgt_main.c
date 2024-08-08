@@ -177,6 +177,9 @@ usage(void)
 #ifdef HAVE_SETPPRIV
 	printf(FMT, "", "  -j solaris");
 #endif
+#ifdef __linux__
+	printf(FMT, "", "  -j linux");
+#endif
 	printf(FMT, "", "  -j unix");
 	printf(FMT, "", "  -j none");
 

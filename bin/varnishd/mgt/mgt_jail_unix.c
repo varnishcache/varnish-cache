@@ -44,10 +44,6 @@
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 
-#ifdef __linux__
-#include <sys/prctl.h>
-#endif
-
 static gid_t vju_mgt_gid;
 static uid_t vju_uid;
 static gid_t vju_gid;
@@ -229,17 +225,6 @@ vju_subproc(enum jail_subproc_e jse)
 	} else {
 		AZ(setuid(vju_uid));
 	}
-
-#ifdef __linux__
-	/*
-	 * On linux mucking about with uid/gid disables core-dumps,
-	 * reenable them again.
-	 */
-	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
-		MGT_Complain(C_INFO,
-		    "Could not set dumpable bit.  Core dumps turned off");
-	}
-#endif
 }
 
 static int v_matchproto_(jail_make_dir_f)

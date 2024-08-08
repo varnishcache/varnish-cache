@@ -86,6 +86,9 @@ static const struct choice vj_choice[] = {
 #ifdef HAVE_SETPPRIV
 	{ "solaris",	&jail_tech_solaris },
 #endif
+#ifdef __linux__
+	{ "linux",	&jail_tech_linux },
+#endif
 	{ "unix",	&jail_tech_unix },
 	{ "none",	&jail_tech_none },
 	{ NULL,		NULL },

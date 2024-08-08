@@ -445,6 +445,11 @@ specific options. Available jails are:
 
     -j solaris,worker=basic
 
+-j <linux[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
+
+  Default on Linux platforms, it overloads the UNIX jail with
+  Linux-specific mechanisms.
+
 -j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
   Default on all other platforms when `varnishd` is started with an
