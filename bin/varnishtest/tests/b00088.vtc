@@ -1,0 +1,66 @@
+varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Server disconnects client reconnects"
+
+server s1 {
+	recv 5
+	send "bye"
+	accept
+	recv 10
+	send "byebye"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		set req.backend_hint = s1;
+		if (req.method == "CONNECT") {
+			return (connect);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1001 ConnectAcct "65 5 3"
+} -start
+
+client c1 {
+	txreq -req CONNECT -url "somehost:22"
+	rxresp -no_obj
+	expect resp.status == 200
+	send "hello"
+	recv 3
+	expect_close
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect MAIN.s_connect == 1
+varnish v1 -expect MAIN.s_connect_hdrbytes == 65
+varnish v1 -expect MAIN.s_connect_in == 5
+varnish v1 -expect MAIN.s_connect_out == 3
+varnish v1 -expect VBE.vcl1.s1.connect_in == 3
+varnish v1 -expect VBE.vcl1.s1.connect_out == 5
+varnish v1 -expect MAIN.s_pipe == 0
+
+logexpect l1 -v v1 {
+	expect * 1003 ConnectAcct "65 10 6"
+} -start
+
+client c1 {
+	txreq -req CONNECT -url "somehost:22"
+	rxresp -no_obj
+	expect resp.status == 200
+	send "hellohello"
+	recv 3
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect MAIN.backend_conn == 2
+varnish v1 -expect MAIN.s_connect == 2
+varnish v1 -expect MAIN.s_connect_hdrbytes == 130
+varnish v1 -expect MAIN.s_connect_in == 15
+varnish v1 -expect MAIN.s_connect_out == 9
+varnish v1 -expect VBE.vcl1.s1.connect_in == 9
+varnish v1 -expect VBE.vcl1.s1.connect_out == 15
+varnish v1 -expect MAIN.s_pipe == 0

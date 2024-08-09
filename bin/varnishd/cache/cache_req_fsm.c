@@ -66,7 +66,8 @@
   REQ_STEP(deliver,             DELIVER,	static) \
   REQ_STEP(vclfail,             VCLFAIL,	static) \
   REQ_STEP(synth,               SYNTH,		static) \
-  REQ_STEP(transmit,            TRANSMIT,	static)
+  REQ_STEP(transmit,            TRANSMIT,	static) \
+  REQ_STEP(connect,             CONNECT,	static)
 
 #define REQ_STEP(l, U, priv) \
     static req_state_f cnt_##l; \
@@ -837,6 +838,55 @@ cnt_pipe(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
+ * Handle CONNECT method
+ */
+
+static enum req_fsm_nxt
+cnt_connect(struct worker *wrk, struct req *req)
+{
+	struct busyobj *bo;
+	enum req_fsm_nxt nxt;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
+	AZ(req->stale_oc);
+	AN(req->vcl);
+
+	req->res_mode |= RES_CONNECT;
+
+	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
+
+	bo = VBO_GetBusyObj(wrk, req);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	VCL_connect_method(req->vcl, wrk, req, NULL, NULL);
+
+	switch (wrk->vpi->handling) {
+	case VCL_RET_FAIL:
+		req->res_mode = 0;
+		req->req_step = R_STP_VCLFAIL;
+		nxt = REQ_FSM_MORE;
+		break;
+	case VCL_RET_SYNTH:
+		req->res_mode = 0;
+		req->req_step = R_STP_SYNTH;
+		nxt = REQ_FSM_MORE;
+		break;
+	case VCL_RET_CONNECT:
+		bo->wrk = req->wrk;
+		wrk->stats->s_connect++;
+		SES_Close(req->sp, VDI_Http1Pipe(req, bo));
+		nxt = REQ_FSM_DONE;
+		break;
+	default:
+		WRONG("Illegal return from vcl_connect{}");
+	}
+	VBO_ReleaseBusyObj(wrk, &bo);
+	return (nxt);
+}
+
+/*--------------------------------------------------------------------
  * Handle restart events
  */
 
@@ -1022,6 +1072,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	case VCL_RET_HASH:
 		req->req_step = R_STP_LOOKUP;
 		break;
+	case VCL_RET_CONNECT:
 	case VCL_RET_PIPE:
 		if (!IS_TOPREQ(req)) {
 			VSLb(req->vsl, SLT_VCL_Error,
@@ -1033,9 +1084,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 			    "vcl_recv{} returns pipe for HTTP/2 request."
 			    "  Doing pass.");
 			req->req_step = R_STP_PASS;
-		} else {
+		} else if (recv_handling == VCL_RET_CONNECT)
+			req->req_step = R_STP_CONNECT;
+		else
 			req->req_step = R_STP_PIPE;
-		}
 		break;
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;

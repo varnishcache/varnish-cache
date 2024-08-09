@@ -118,7 +118,8 @@ VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 
 	sz = cache_param->vsl_buffer;
 	VSL_Setup(bo->vsl, p, sz);
-	bo->vsl->wid = VXID_Get(wrk, VSL_BACKENDMARKER);
+	if (!(req->res_mode & RES_CONNECT))
+		bo->vsl->wid = VXID_Get(wrk, VSL_BACKENDMARKER);
 	p += sz;
 	p = (void*)PRNDUP(p);
 	assert(p < bo->end);
@@ -163,15 +164,17 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	AZ(bo->htc);
 	AZ(bo->stale_oc);
 
-	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
-	    (uintmax_t)bo->acct.bereq_hdrbytes,
-	    (uintmax_t)bo->acct.bereq_bodybytes,
-	    (uintmax_t)(bo->acct.bereq_hdrbytes + bo->acct.bereq_bodybytes),
-	    (uintmax_t)bo->acct.beresp_hdrbytes,
-	    (uintmax_t)bo->acct.beresp_bodybytes,
-	    (uintmax_t)(bo->acct.beresp_hdrbytes + bo->acct.beresp_bodybytes));
+	if (bo->vsl->wid.vxid != 0) {
+		VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
+		    (uintmax_t)bo->acct.bereq_hdrbytes,
+		    (uintmax_t)bo->acct.bereq_bodybytes,
+		    (uintmax_t)(bo->acct.bereq_hdrbytes + bo->acct.bereq_bodybytes),
+		    (uintmax_t)bo->acct.beresp_hdrbytes,
+		    (uintmax_t)bo->acct.beresp_bodybytes,
+		    (uintmax_t)(bo->acct.beresp_hdrbytes + bo->acct.beresp_bodybytes));
 
-	VSL_End(bo->vsl);
+		VSL_End(bo->vsl);
+	}
 
 	AZ(bo->htc);
 

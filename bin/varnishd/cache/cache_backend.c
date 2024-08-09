@@ -489,6 +489,8 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 	struct v1p_acct v1a;
 	struct pfd *pfd;
 	vtim_real deadline;
+	const char *ts_begin = "Pipe";
+	const char *ts_end = "PipeSess";
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -498,20 +500,30 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 
 	memset(&v1a, 0, sizeof v1a);
 
+	if (ctx->req->res_mode & RES_CONNECT) {
+			ts_begin = "Connect";
+			ts_end = "ConnectSess";
+	}
+
 	/* This is hackish... */
 	v1a.req = ctx->req->acct.req_hdrbytes;
 	ctx->req->acct.req_hdrbytes = 0;
 
-	ctx->req->res_mode = RES_PIPE;
+	ctx->req->res_mode |= RES_PIPE;
 
+	pfd = vbe_dir_getfd(ctx, ctx->req->wrk, d, bp, ctx->req->res_mode & RES_CONNECT);
 	retval = SC_TX_ERROR;
-	pfd = vbe_dir_getfd(ctx, ctx->req->wrk, d, bp, 0);
 
-	if (pfd != NULL) {
+	if (pfd == NULL && ctx->req->res_mode & RES_CONNECT) {
+		VSLb(ctx->req->vsl, SLT_FetchError, "CONNECT failed, returning 503");
+		(void)ctx->req->transport->minimal_response(ctx->req, 503);
+	} else if (pfd != NULL) {
 		CHECK_OBJ_NOTNULL(ctx->bo->htc, HTTP_CONN_MAGIC);
-		i = V1F_SendReq(ctx->req->wrk, ctx->bo,
-		    &v1a.bereq, &v1a.out);
-		VSLb_ts_req(ctx->req, "Pipe", W_TIM_real(ctx->req->wrk));
+		if (ctx->req->res_mode & RES_CONNECT)
+			i = ctx->req->transport->minimal_response(ctx->req, 200);
+		else
+			i = V1F_SendReq(ctx->req->wrk, ctx->bo, &v1a.bereq, &v1a.out);
+		VSLb_ts_req(ctx->req, ts_begin, W_TIM_real(ctx->req->wrk));
 		if (i == 0) {
 			deadline = ctx->bo->task_deadline;
 			if (isnan(deadline))
@@ -521,7 +533,7 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 			retval = V1P_Process(ctx->req, *PFD_Fd(pfd), &v1a,
 			    deadline);
 		}
-		VSLb_ts_req(ctx->req, "PipeSess", W_TIM_real(ctx->req->wrk));
+		VSLb_ts_req(ctx->req, ts_end, W_TIM_real(ctx->req->wrk));
 		ctx->bo->htc->doclose = retval;
 		vbe_dir_finish(ctx, d);
 	}

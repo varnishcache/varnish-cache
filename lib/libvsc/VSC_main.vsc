@@ -463,6 +463,11 @@
 	:oneliner:	Total pipe sessions seen
 
 
+.. varnish_vsc:: s_connect
+	:group: wrk
+	:oneliner:	Total CONNECT sessions seen
+
+
 .. varnish_vsc:: s_pass
 	:group: wrk
 	:oneliner:	Total pass-ed requests seen
@@ -532,6 +537,27 @@
 	:oneliner:	Piped bytes to client
 
 	Total number of bytes forwarded to clients in pipe sessions
+
+.. varnish_vsc:: s_connect_hdrbytes
+	:format:	bytes
+	:group:		wrk
+	:oneliner:	CONNECT request header bytes
+
+	Total request bytes received for CONNECT tunnels
+
+.. varnish_vsc:: s_connect_in
+	:format:	bytes
+	:group:		wrk
+	:oneliner:	CONNECT bytes tunnelled from client
+
+	Total number of bytes forwarded from clients in CONNECT tunnels
+
+.. varnish_vsc:: s_connect_out
+	:format:	bytes
+	:group:		wrk
+	:oneliner:	CONNECT bytes tunnelled to client
+
+	Total number of bytes forwarded to clients in CONNECT tunnels
 
 .. varnish_vsc:: sess_closed
 	:group: wrk

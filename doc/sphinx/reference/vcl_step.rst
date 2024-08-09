@@ -39,6 +39,9 @@ of the following keywords:
   | ``pipe``
   |  see :ref:`pipe` section above
   |
+  | ``connect``
+  |  see :ref:`connect` section above
+  |
   | ``hash``
   |  Continue processing the object as a potential candidate for
   |  caching. Passes the control over to :ref:`vcl_hash`.
@@ -83,6 +86,31 @@ of the following keywords:
   |
   | ``pipe``
   |  Proceed with pipe mode.
+
+.. _vcl_connect:
+
+vcl_connect
+~~~~~~~~~~~
+
+Called upon entering connect mode. This allows the implementation of the
+CONNECT method. Once a connection to the backend has been established, Varnish
+will send the headers of a 200 OK response before sending the request body to
+the backend. After this, any bits sent by the client or backend will be passed
+unadultered, similar to the pipe mode. Basically Varnish will degrade into a
+simple TCP proxy, shuffling bytes back and forth. For a connection in connect
+mode, no other VCL subroutine will ever get called after `vcl_connect`.
+
+The `vcl_connect` subroutine may terminate with calling ``return()`` with one
+of the following keywords:
+
+  | ``fail``
+  |  see   :ref:`fail` section above
+
+  | ``synth(status code, reason)``
+  |  see  :ref:`synth` section above
+
+  | ``connect``
+  |  Proceed with connect mode.
 
 .. _vcl_pass:
 

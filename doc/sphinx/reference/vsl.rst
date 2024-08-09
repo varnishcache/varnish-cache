@@ -98,6 +98,23 @@ The following timestamps change meaning in a pipe transaction:
 Process
 	Processing finished, ready to begin the pipe delivery.
 
+Connect handling timestamps
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following timestamps are client timestamps specific to CONNECT
+transactions:
+
+Connect
+	Opened a connection to the backend and forwarded the request.
+
+ConnectSess
+	The connection was closed.
+
+The following timestamps change meaning in a CONNECT transaction:
+
+Process
+	Processing finished, ready to establish a tunnel.
+
 Backend fetch timestamps
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

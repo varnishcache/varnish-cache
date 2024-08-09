@@ -97,20 +97,38 @@ void
 V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 {
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(a);
 	AN(b);
-	VSLb(req->vsl, SLT_PipeAcct, "%ju %ju %ju %ju",
-	    (uintmax_t)a->req,
-	    (uintmax_t)a->bereq,
-	    (uintmax_t)a->in,
-	    (uintmax_t)a->out);
+	if (req->res_mode & RES_CONNECT) {
+		AZ(a->bereq);
+		VSLb(req->vsl, SLT_ConnectAcct, "%ju %ju %ju",
+		    (uintmax_t)a->req,
+		    (uintmax_t)a->in,
+		    (uintmax_t)a->out);
+	} else {
+		VSLb(req->vsl, SLT_PipeAcct, "%ju %ju %ju %ju",
+		    (uintmax_t)a->req,
+		    (uintmax_t)a->bereq,
+		    (uintmax_t)a->in,
+		    (uintmax_t)a->out);
+	}
 
 	Lck_Lock(&pipestat_mtx);
-	VSC_C_main->s_pipe_hdrbytes += a->req;
-	VSC_C_main->s_pipe_in += a->in;
-	VSC_C_main->s_pipe_out += a->out;
-	b->pipe_hdrbytes += a->bereq;
-	b->pipe_out += a->in;
-	b->pipe_in += a->out;
+	if (req->res_mode & RES_CONNECT) {
+		VSC_C_main->s_connect_hdrbytes += a->req;
+		VSC_C_main->s_connect_in += a->in;
+		VSC_C_main->s_connect_out += a->out;
+		b->connect_out += a->in;
+		b->connect_in += a->out;
+	} else {
+		VSC_C_main->s_pipe_hdrbytes += a->req;
+		VSC_C_main->s_pipe_in += a->in;
+		VSC_C_main->s_pipe_out += a->out;
+		b->pipe_hdrbytes += a->bereq;
+		b->pipe_out += a->in;
+		b->pipe_in += a->out;
+	}
 	Lck_Unlock(&pipestat_mtx);
 }
 
