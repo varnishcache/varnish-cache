@@ -188,16 +188,6 @@ vbe_connwait_signal_locked(const struct backend *bp)
 }
 
 static void
-vbe_connwait_dequeue_locked(struct backend *bp, struct connwait *cw)
-{
-	Lck_AssertHeld(bp->director->mtx);
-	assert(cw->cw_state == CW_QUEUED);
-	VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
-	vbe_connwait_signal_locked(bp);
-	cw->cw_state = CW_DEQUEUED;
-}
-
-static void
 vbe_connwait_fini(struct connwait *cw)
 {
 	CHECK_OBJ_NOTNULL(cw, CONNWAIT_MAGIC);
@@ -260,13 +250,17 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 			err = Lck_CondWaitUntil(&cw->cw_cond, bp->director->mtx,
 			    wait_end);
 		} while (err == EINTR);
+		assert(cw->cw_state == CW_QUEUED);
+		VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
+		cw->cw_state = CW_DEQUEUED;
 		bp->cw_count--;
 		if ((err != 0 && BE_BUSY(bp)) || !VRT_Healthy(ctx, dir, NULL)) {
-			VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
 			VSC_C_main->backend_wait_fail++;
 			cw->cw_state = CW_BE_BUSY;
 		}
 	}
+	if (cw->cw_state != CW_BE_BUSY)
+		bp->n_conn++;
 	Lck_Unlock(bp->director->mtx);
 
 	if (cw->cw_state == CW_BE_BUSY) {
@@ -284,11 +278,10 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	if (bo->htc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "out of workspace");
 		/* XXX: counter ? */
-		if (cw->cw_state == CW_QUEUED) {
-			Lck_Lock(bp->director->mtx);
-			vbe_connwait_dequeue_locked(bp, cw);
-			Lck_Unlock(bp->director->mtx);
-		}
+		Lck_Lock(bp->director->mtx);
+		bp->n_conn--;
+		vbe_connwait_signal_locked(bp);
+		Lck_Unlock(bp->director->mtx);
 		vbe_connwait_fini(cw);
 		return (NULL);
 	}
@@ -300,17 +293,14 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	if (pfd == NULL) {
 		Lck_Lock(bp->director->mtx);
 		VBE_Connect_Error(bp->vsc, err);
+		bp->n_conn--;
+		vbe_connwait_signal_locked(bp);
 		Lck_Unlock(bp->director->mtx);
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
 		     VRT_BACKEND_string(dir), err, VAS_errtxt(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
-		if (cw->cw_state == CW_QUEUED) {
-			Lck_Lock(bp->director->mtx);
-			vbe_connwait_dequeue_locked(bp, cw);
-			Lck_Unlock(bp->director->mtx);
-		}
 		vbe_connwait_fini(cw);
 		return (NULL);
 	}
@@ -321,12 +311,8 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	assert(*fdp >= 0);
 
 	Lck_Lock(bp->director->mtx);
-	bp->n_conn++;
 	bp->vsc->conn++;
 	bp->vsc->req++;
-	if (cw->cw_state == CW_QUEUED)
-		vbe_connwait_dequeue_locked(bp, cw);
-
 	Lck_Unlock(bp->director->mtx);
 
 	CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
