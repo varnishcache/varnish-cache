@@ -278,6 +278,7 @@ static struct vsmw_cluster *
 vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 {
 	struct vsmw_cluster *vc;
+	static int warn = 0;
 	int fd;
 	size_t ps;
 
@@ -307,7 +308,10 @@ vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 
 	closefd(&fd);
 	assert(vc->ptr != MAP_FAILED);
-	(void)mlock(vc->ptr, len);
+	if (mlock(vc->ptr, len) && warn++ == 0)  {
+		fprintf(stderr, "Warning: mlock() of VSM failed: %s (%d)\n",
+		    VAS_errtxt(errno), errno);
+	}
 
 	return (vc);
 }
