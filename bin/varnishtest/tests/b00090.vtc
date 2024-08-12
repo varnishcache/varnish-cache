@@ -1,0 +1,49 @@
+varnishtest "connect: blackhole with queueing"
+
+# XXX: This test case relies on a way for us to never successed in connecting
+# to a backend. We need the connect syscall to hang forever. For TCP this means
+# that the backend must not respond to the three-way handshake initiated by
+# Varnish.
+#
+# One way to achieve this is to use an IP address non-routeable over the
+# Internet, but this is not always a bullet-proof solution across all the
+# platforms we support. Another downside with this solution is that it sends
+# traffic over the local network.
+#
+# The current test case seems to work on a few supported platforms.
+# Comment the line below to enable this test.
+
+feature cmd false
+
+varnish v1 -vcl {
+	backend default {
+		# Non-routeable IPv4 address to simulate connect_timeout
+		# XXX: $\{blackhole_backend}
+		.host = "10.255.255.1 80";
+		.max_connections = 1;
+		.wait_limit = 1;
+		.wait_timeout = 0.2s;
+	}
+} -start
+
+varnish v1 -cli "param.set connect_timeout 2"
+
+client c1 {
+	txreq -url "/blackhole"
+	rxresp
+	expect resp.status == 503
+} -start
+
+client c2 {
+	txreq -url "/bye"
+	rxresp
+	expect resp.status == 503
+} -start
+
+client c1 -wait
+client c2 -wait
+
+varnish v1 -expect MAIN.backend_conn == 0
+varnish v1 -expect MAIN.backend_busy == 1
+varnish v1 -expect MAIN.backend_wait_fail == 1
+varnish v1 -expect MAIN.backend_fail == 1
