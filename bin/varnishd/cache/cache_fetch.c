@@ -499,7 +499,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->htc->doclose = SC_RESP_CLOSE;
 
 	if (VRG_CheckBo(bo) < 0) {
-		VDI_Finish(bo);
+		if (bo->director_state != DIR_S_NULL)
+			VDI_Finish(bo);
 		return (F_STP_ERROR);
 	}
 

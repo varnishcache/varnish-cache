@@ -1,0 +1,26 @@
+varnishtest "pass, rollback, invalid range"
+
+server s1 {
+	rxreq
+	expect req.url == "/baz"
+	txresp -status 400
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_response {
+		std.rollback(bereq);
+		return (retry);
+	}
+} -start
+
+client c1 {
+	txreq -url "/baz" -hdr "range: 42"
+	rxresp
+} -run
+
+server s1 -wait
