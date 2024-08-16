@@ -76,49 +76,20 @@ varnish v1 -vcl {
 		if ("string" != "string") {
 			return (fail("should load"));
 		}
-	}
-} -start
-
-varnish v1 -vcl {
-	import debug;
-	backend be none;
-	sub vcl_init {
 		if ("string" != debug.return_strands("string")) {
 			return (fail("should load"));
 		}
-	}
-}
-
-varnish v1 -vcl {
-	import debug;
-	backend be none;
-	sub vcl_init {
 		if (debug.return_strands("string") != "string") {
 			return (fail("should load"));
 		}
-	}
-}
-
-varnish v1 -vcl {
-	import debug;
-	backend be none;
-	sub vcl_init {
 		if (debug.return_strands("string") != debug.return_strands("string")) {
 			return (fail("should load"));
 		}
-	}
-}
-
-# regression test #4146
-varnish v1 -vcl {
-	import debug;
-	backend be none;
-	sub vcl_init {
 		if (! debug.is_null_strands(debug.return_strands(debug.return_null_strands()))) {
 			return (fail("should load"));
 		}
 	}
-}
+} -start
 
 varnish v1 -errvcl {Symbol not found: 'req.http.req.http.foo'} {
 	backend b { .host = "${localhost}"; }
