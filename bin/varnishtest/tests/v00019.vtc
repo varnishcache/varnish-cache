@@ -72,9 +72,9 @@ varnish v1 -errvcl {Comparison of different types: STRING '==' INT} {
 varnish v1 -vcl {
 	import debug;
 	backend be none;
-	sub vcl_recv {
-		if ("string" == "string") {
-			return (fail("should compile"));
+	sub vcl_init {
+		if ("string" != "string") {
+			return (fail("should load"));
 		}
 	}
 } -start
@@ -82,9 +82,9 @@ varnish v1 -vcl {
 varnish v1 -vcl {
 	import debug;
 	backend be none;
-	sub vcl_recv {
-		if ("string" == debug.return_strands("string")) {
-			return (fail("should compile"));
+	sub vcl_init {
+		if ("string" != debug.return_strands("string")) {
+			return (fail("should load"));
 		}
 	}
 }
@@ -92,9 +92,9 @@ varnish v1 -vcl {
 varnish v1 -vcl {
 	import debug;
 	backend be none;
-	sub vcl_recv {
-		if (debug.return_strands("string") == "string") {
-			return (fail("should compile"));
+	sub vcl_init {
+		if (debug.return_strands("string") != "string") {
+			return (fail("should load"));
 		}
 	}
 }
@@ -102,9 +102,9 @@ varnish v1 -vcl {
 varnish v1 -vcl {
 	import debug;
 	backend be none;
-	sub vcl_recv {
-		if (debug.return_strands("string") == debug.return_strands("string")) {
-			return (fail("should compile"));
+	sub vcl_init {
+		if (debug.return_strands("string") != debug.return_strands("string")) {
+			return (fail("should load"));
 		}
 	}
 }
