@@ -925,7 +925,7 @@ main(int argc, char * const *argv)
 			alp->priv = create_pid_file(&pid, "%s", alp->val);
 	}
 
-	/* Implict -P argument */
+	/* Implicit -P argument */
 	alp = arg_list_add('P', NULL);
 	alp->priv = create_pid_file(&pid, "%s/_.pid", workdir);
 
