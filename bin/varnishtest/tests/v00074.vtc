@@ -1,12 +1,14 @@
 varnishtest "Clients in backend wait queue wakeup when backend goes sick"
 
 ################### Backend goes sick from CLI ##########################
+barrier b0 cond 2 -cyclic
 barrier b1 cond 4
 barrier b2 cond 4
 
 server s1 {
 	rxreq
 	barrier b1 sync
+	barrier b0 sync
 	barrier b2 sync
 	txresp
 } -start
@@ -55,6 +57,8 @@ client c4 {
 	barrier b2 sync
 } -start
 
+barrier b0 sync
+
 # Going from auto to sick should wakeup reqs in the wait queue
 varnish v1 -cliok "backend.set_health s1 sick"
 
@@ -74,6 +78,7 @@ server s2 {
 	# First probe request should succeed
 	rxreq
 	txresp
+	barrier b0 sync
 	# c5
 	accept
 	rxreq
@@ -107,6 +112,7 @@ varnish v1 -vcl {
 } -start
 varnish v1 -cliok "backend.set_health be auto"
 
+barrier b0 sync
 client c5 {
 	txreq
 	rxresp
@@ -157,6 +163,7 @@ server s3 {
 	accept
 	rxreq
 	barrier b5 sync
+	barrier b0 sync
 	barrier b6 sync
 	txresp
 } -start
@@ -217,6 +224,7 @@ client c12 {
 
 # Going back to probe (auto) that is sick should
 # wake up reqs in the wait queue
+barrier b0 sync
 varnish v1 -cliok "backend.set_health be auto"
 
 client c9 -wait
