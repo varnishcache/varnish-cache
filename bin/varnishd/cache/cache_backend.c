@@ -158,7 +158,7 @@ VBE_connwait_signal_all(const struct backend *bp)
 	FIND_BE_PARAM(backend_wait_limit, wait_limit, bp);
 	FIND_BE_TMO(backend_wait_timeout, wait_tmod, bp);
 
-	if (wait_limit <= 0 || wait_tmod <= 0)
+	if (wait_limit == 0 || wait_tmod <= 0)
 		return;
 
 	Lck_Lock(bp->director->mtx);
