@@ -49,7 +49,7 @@
 #include "cache_pool.h"
 
 struct conn_pool;
-static int vcp_cmp(const struct conn_pool *a, const struct conn_pool *b);
+static inline int vcp_cmp(const struct conn_pool *a, const struct conn_pool *b);
 
 /*--------------------------------------------------------------------
  */
