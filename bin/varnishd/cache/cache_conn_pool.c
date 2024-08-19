@@ -108,7 +108,12 @@ struct conn_pool {
 static struct lock conn_pools_mtx;
 
 static VRBT_HEAD(vrb, conn_pool) conn_pools = VRBT_INITIALIZER(&conn_pools);
-VRBT_GENERATE_STATIC(vrb, conn_pool, entry, vcp_cmp);
+VRBT_GENERATE_REMOVE_COLOR(vrb, conn_pool, entry, static)
+VRBT_GENERATE_REMOVE(vrb, conn_pool, entry, static)
+VRBT_GENERATE_FIND(vrb, conn_pool, entry, vcp_cmp, static)
+VRBT_GENERATE_INSERT_COLOR(vrb, conn_pool, entry, static)
+VRBT_GENERATE_INSERT_FINISH(vrb, conn_pool, entry, static)
+VRBT_GENERATE_INSERT(vrb, conn_pool, entry, vcp_cmp, static)
 
 /*--------------------------------------------------------------------
  */
