@@ -31,7 +31,7 @@ about being able to pay the bills come the next month.
 We're not there yet, but it's certainly getting better.
 
 However, implementing TLS and SSL is still insanely complex, and
-thanks to Edward Snowdens whistle-blowing, we have very good reasons
+thanks to Edward Snowden's whistle-blowing, we have very good reasons
 to believe that didn't happen by accident.
 
 The issue of finding a good TLS/SSL implementation is still the
