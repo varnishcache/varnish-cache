@@ -167,7 +167,7 @@ I'll take that.
 
 .. [#f2] Which is to be expected really: We don't program on punched cards.
 
-.. [#f3] And I did.  Migrating an oilcompany from IBM mainframes
+.. [#f3] And I did.  Migrating an oil company from IBM mainframes
    to 16-bit UNIX computers in 198x was an interesting challenge.
 
 .. [#f4] Having half the world adopt your hastily hacked up md5crypt
