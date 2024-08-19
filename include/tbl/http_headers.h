@@ -32,7 +32,7 @@
  * ---------------------------------------
  * a	Http header name
  * b	enum name
- * c	Supress header in filter ops
+ * c	Suppress header in filter ops
  *
  * see [RFC2616 13.5.1 End-to-end and Hop-by-hop Headers]
  *
