@@ -82,8 +82,8 @@ Can be used to specify a full HTTP/1.1 request to be sent::
         "X-Magic: We're fine with this."
         "Connection: close";
 
-Each of the strings will have ``CRNL`` appended and a final HTTP
-header block terminating ``CRNL`` will be appended as well.
+Each of the strings will have ``CRLF`` appended and a final HTTP
+header block terminating ``CRLF`` will be appended as well.
 
 Because connection shutdown is part of the health check,
 ``Connection: close`` is mandatory.
