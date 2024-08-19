@@ -63,6 +63,9 @@ struct pfd {
 	struct conn_pool	*conn_pool;
 
 	pthread_cond_t		*cond;
+
+	vtim_real		created;
+	uint64_t		reused;
 };
 
 /*--------------------------------------------------------------------
@@ -124,6 +127,21 @@ PFD_Fd(struct pfd *p)
 {
 	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
 	return (&(p->fd));
+}
+
+vtim_real
+PFD_Age(const struct pfd *p, vtim_real now)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	assert(now >= p->created);
+	return (now - p->created);
+}
+
+uint64_t
+PFD_Reused(const struct pfd *p)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	return (p->reused);
 }
 
 void
@@ -455,6 +473,7 @@ VCP_Get(struct conn_pool *cp, vtim_dur tmo, struct worker *wrk,
 		VSC_C_main->backend_reuse++;
 		pfd->state = PFD_STATE_STOLEN;
 		pfd->cond = &wrk->cond;
+		pfd->reused++;
 	}
 	cp->n_used++;			// Opening mostly works
 	Lck_Unlock(&cp->mtx);
@@ -473,8 +492,10 @@ VCP_Get(struct conn_pool *cp, vtim_dur tmo, struct worker *wrk,
 		Lck_Lock(&cp->mtx);
 		cp->n_used--;		// Nope, didn't work after all.
 		Lck_Unlock(&cp->mtx);
-	} else
+	} else {
+		pfd->created = VTIM_real();
 		VSC_C_main->backend_conn++;
+	}
 
 	return (pfd);
 }

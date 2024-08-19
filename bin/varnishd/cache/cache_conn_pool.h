@@ -45,6 +45,8 @@ struct pfd;
 
 unsigned PFD_State(const struct pfd *);
 int *PFD_Fd(struct pfd *);
+vtim_real PFD_Age(const struct pfd *, vtim_real);
+uint64_t PFD_Reused(const struct pfd *);
 void PFD_LocalName(const struct pfd *, char *, unsigned, char *, unsigned);
 void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
 
