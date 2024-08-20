@@ -1,0 +1,28 @@
+varnishtest "VSL tags backend age & reuse"
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -v v1 -d 1 -g session {
+	expect * *	Begin		^bereq
+	expect * =	BackendOpen	"connect$"
+	expect * =	BackendClose	"s1 recycle$"
+	expect * *	BackendOpen	"reuse \\d+\\.\\d\\d\\d\\d\\d\\d 1$"
+	expect * =	BackendClose	"s1 recycle$"
+} -run
