@@ -547,7 +547,7 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			darg2 = bt.arg2_double;
 			break;
 		default:
-			WRONG("Wrong BAN_ARG code");
+			WRONGF("Wrong BAN_ARG code %d", bt.arg1);
 		}
 
 		switch (bt.oper) {

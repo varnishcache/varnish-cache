@@ -89,6 +89,14 @@ do {									\
 do {									\
 	VAS_Fail(__func__, __FILE__, __LINE__, expl, VAS_WRONG);	\
 } while (0)
+#define _WRONGF(buf, ...)						\
+do {									\
+	char buf[256];							\
+	snprintf(buf, sizeof buf, __VA_ARGS__);				\
+	WRONG(buf);							\
+} while (0)
+#define WRONGF(...) _WRONGF(VUNIQ_NAME(_wrong), __VA_ARGS__)
+
 
 #define _PTOK(call, var)						\
 do {									\
