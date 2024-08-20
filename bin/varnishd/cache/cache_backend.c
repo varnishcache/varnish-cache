@@ -191,6 +191,7 @@ static void
 vbe_connwait_dequeue_locked(struct backend *bp, struct connwait *cw)
 {
 	Lck_AssertHeld(bp->director->mtx);
+	assert(cw->cw_state == CW_QUEUED);
 	VTAILQ_REMOVE(&bp->cw_head, cw, cw_list);
 	vbe_connwait_signal_locked(bp);
 	cw->cw_state = CW_DEQUEUED;
