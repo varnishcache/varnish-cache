@@ -582,7 +582,7 @@ tunnel_delete(struct tunnel *t)
 static void
 tunnel_listen(struct tunnel *t)
 {
-	char buf[vsa_suckaddr_len];
+	v_vla_(char, buf, vsa_suckaddr_len);
 	const struct suckaddr *sua;
 	const char *err;
 

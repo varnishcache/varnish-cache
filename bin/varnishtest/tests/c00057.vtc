@@ -29,7 +29,10 @@ static void (*accessor)(volatile char *p) = _accessor;
 	sub vcl_recv { C{
 	    const int stkkb = 128;
 	    int i;
+	    _Pragma("GCC diagnostic push")
+	    _Pragma("GCC diagnostic ignored \"-Wvla\"")
 	    volatile char overflow[stkkb * 1024];
+	    _Pragma("GCC diagnostic pop")
 
 	    /* for downwards stack, take care to hit a single guard page */
 	    for (i = (stkkb - 1) * 1024; i >= 0; i -= 1024)

@@ -295,7 +295,7 @@ void
 VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list ap)
 {
 	unsigned n, mlen = cache_param->vsl_reclen;
-	char buf[mlen];
+	v_vla_(char, buf, mlen);
 
 	AN(fmt);
 	if (vsl_tag_is_masked(tag))
@@ -316,7 +316,7 @@ void
 VSLs(enum VSL_tag_e tag, vxid_t vxid, const struct strands *s)
 {
 	unsigned n, mlen = cache_param->vsl_reclen;
-	char buf[mlen];
+	v_vla_(char, buf, mlen);
 
 	if (vsl_tag_is_masked(tag))
 		return;

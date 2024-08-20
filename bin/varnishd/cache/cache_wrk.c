@@ -129,9 +129,9 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	// child_signal_handler stack overflow check uses struct worker addr
 	struct worker *w, ww;
 	struct VSC_main_wrk ds;
-	unsigned char ws[thread_workspace];
+	v_vla_(unsigned char, ws, thread_workspace);
 	struct worker_priv wpriv[1];
-	unsigned char vpi[vpi_wrk_len];
+	v_vla_(unsigned char, vpi, vpi_wrk_len);
 
 	AN(qp);
 	AN(stacksize);

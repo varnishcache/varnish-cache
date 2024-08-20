@@ -421,7 +421,7 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd, uint32_t key, VCL_INT alt,
 	}
 
 	picklist_sz = VBITMAP_SZ(shardd->n_backend);
-	char picklist_spc[picklist_sz];
+	v_vla_(char, picklist_spc, picklist_sz);
 
 	memset(state, 0, sizeof(state));
 	init_state(state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));

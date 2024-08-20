@@ -525,7 +525,7 @@ haproxy_create_mcli(struct haproxy *h)
 	int sock;
 	const char *err;
 	char buf[128], addr[128], port[128];
-	char vsabuf[vsa_suckaddr_len];
+	v_vla_(char, vsabuf, vsa_suckaddr_len);
 	const struct suckaddr *sua;
 
 	sock = VTCP_listen_on(default_listen_addr, NULL, 100, &err);
@@ -572,7 +572,7 @@ haproxy_new(const char *name)
 	char addr[128], port[128];
 	const char *err;
 	const char *env_args;
-	char vsabuf[vsa_suckaddr_len];
+	v_vla_(char, vsabuf, vsa_suckaddr_len);
 	const struct suckaddr *sua;
 
 	ALLOC_OBJ(h, HAPROXY_MAGIC);
@@ -862,7 +862,7 @@ haproxy_build_backends(struct haproxy *h, const char *vsb_data)
 		int sock;
 		char buf[128], addr[128], port[128];
 		const char *err;
-		char vsabuf[vsa_suckaddr_len];
+		v_vla_(char, vsabuf, vsa_suckaddr_len);
 		const struct suckaddr *sua;
 
 		p = strstr(p, HAPROXY_BE_FD_STR);

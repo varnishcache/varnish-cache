@@ -87,7 +87,7 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 	const char *p, *src = NULL;
 	const int lim = 40;
 	const char *abbstr = "[...]";
-	char buf[lim + sizeof(abbstr)];
+	v_vla_(char, buf, lim + sizeof(abbstr));
 	int w = 0;
 
 	AN(vsb);
