@@ -1,15 +1,13 @@
 varnishtest "Clients in backend wait queue wakeup when backend goes sick"
 
 ################### Backend goes sick from CLI ##########################
-barrier b0 cond 2 -cyclic
-barrier b1 cond 4
+barrier b1 cond 4 -cyclic
 barrier b2 cond 4
 
 server s1 {
 	rxreq
 	barrier b1 sync
-	barrier b0 sync
-	barrier b2 sync
+	barrier b1 sync
 	txresp
 } -start
 
@@ -36,28 +34,35 @@ client c1 {
 client c2 {
 	barrier b1 sync
 	txreq
+	delay 1
+	barrier b2 sync
 	rxresp
 	expect resp.status == 503
-	barrier b2 sync
+	barrier b1 sync
 } -start
 
 client c3 {
 	barrier b1 sync
 	txreq
+	delay 1
+	barrier b2 sync
 	rxresp
 	expect resp.status == 503
-	barrier b2 sync
+	barrier b1 sync
 } -start
 
 client c4 {
 	barrier b1 sync
 	txreq
+	delay 1
+	barrier b2 sync
 	rxresp
 	expect resp.status == 503
-	barrier b2 sync
+	barrier b1 sync
 } -start
 
-barrier b0 sync
+# make sure c2-4 are already in the queue
+barrier b2 sync
 
 # Going from auto to sick should wakeup reqs in the wait queue
 varnish v1 -cliok "backend.set_health s1 sick"
@@ -71,39 +76,42 @@ varnish v1 -expect backend_wait_fail == 3
 
 #################### Backend goes sick from probe #######################
 
-barrier b3 cond 4
-barrier b4 cond 4
+barrier b3 sock 4
+barrier b4 sock 4 -cyclic
 
-server s2 {
-	# First probe request should succeed
-	rxreq
-	txresp
-	barrier b0 sync
-	# c5
-	accept
-	rxreq
-	barrier b3 sync
-	barrier b4 sync
-	txresp
+varnish v0 -vcl {
+	import vtc;
+
+	backend be none;
+
+	sub vcl_recv {
+		if (req.url == "/probe") {
+			vtc.barrier_sync("${b3_sock}");
+			return (synth(503));
+		}
+		vtc.barrier_sync("${b4_sock}");
+		vtc.barrier_sync("${b4_sock}");
+		return (synth(200));
+	}
 } -start
 
 varnish v1 -stop
 varnish v1 -vcl {
 	backend be {
-		.host = "${s2_addr}";
-		.port = "${s2_port}";
+		.host = "${v0_addr}";
+		.port = "${v0_port}";
 		.max_connections = 1;
 		.wait_timeout = 1h;
 		.wait_limit = 10;
 	}
 
 	probe default {
-		.interval = 1s;
+		.interval = 100s;
 		.url = "/probe";
 		.window = 1;
 		.threshold = 1;
 		.initial = 1;
-		.timeout = 0.5s;
+		.timeout = 100s;
 	}
 
 	sub vcl_recv {
@@ -112,7 +120,6 @@ varnish v1 -vcl {
 } -start
 varnish v1 -cliok "backend.set_health be auto"
 
-barrier b0 sync
 client c5 {
 	txreq
 	rxresp
@@ -120,24 +127,30 @@ client c5 {
 } -start
 
 client c6 {
-	barrier b3 sync
+	barrier b4 sync
 	txreq
+	delay 1
+	barrier b3 sync
 	rxresp
 	expect resp.status == 503
 	barrier b4 sync
 } -start
 
 client c7 {
-	barrier b3 sync
+	barrier b4 sync
 	txreq
+	delay 1
+	barrier b3 sync
 	rxresp
 	expect resp.status == 503
 	barrier b4 sync
 } -start
 
 client c8 {
-	barrier b3 sync
+	barrier b4 sync
 	txreq
+	delay 1
+	barrier b3 sync
 	rxresp
 	expect resp.status == 503
 	barrier b4 sync
@@ -152,27 +165,30 @@ varnish v1 -expect backend_wait == 3
 varnish v1 -expect backend_wait_fail == 3
 
 ########## Admin Healthy -> auto and probe indicates sick ###############
+barrier b5 sock 4 -cyclic
+barrier b6 sock 4
 
-barrier b5 cond 4
-barrier b6 cond 4
+varnish v0 -vcl {
+	import vtc;
+	import std;
 
-server s3 {
-	# First probe request should fail
-	rxreq
-	txresp -status 500
-	accept
-	rxreq
-	barrier b5 sync
-	barrier b0 sync
-	barrier b6 sync
-	txresp
-} -start
+	backend be none;
+
+	sub vcl_recv {
+		if (req.url == "/probe") {
+			return (synth(503));
+		}
+		vtc.barrier_sync("${b5_sock}");
+		vtc.barrier_sync("${b5_sock}");
+		return (synth(200));
+	}
+}
 
 varnish v1 -stop
 varnish v1 -vcl {
 	backend be {
-		.host = "${s3_addr}";
-		.port = "${s3_port}";
+		.host = "${v0_addr}";
+		.port = "${v0_port}";
 		.max_connections = 1;
 		.wait_timeout = 1h;
 		.wait_limit = 10;
@@ -183,7 +199,6 @@ varnish v1 -vcl {
 		.url = "/probe";
 		.window = 1;
 		.threshold = 1;
-		.timeout = 0.5s;
 	}
 
 	sub vcl_recv {
@@ -201,30 +216,37 @@ client c9 {
 client c10 {
 	barrier b5 sync
 	txreq
+	delay 1
+	barrier b6 sync
 	rxresp
 	expect resp.status == 503
-	barrier b6 sync
+	barrier b5 sync
 } -start
 
 client c11 {
 	barrier b5 sync
 	txreq
+	delay 1
+	barrier b6 sync
 	rxresp
 	expect resp.status == 503
-	barrier b6 sync
+	barrier b5 sync
 } -start
 
 client c12 {
 	barrier b5 sync
 	txreq
+	delay 1
+	barrier b6 sync
 	rxresp
 	expect resp.status == 503
-	barrier b6 sync
+	barrier b5 sync
 } -start
 
+# make sure c10-12 are already in the queue
+barrier b6 sync
 # Going back to probe (auto) that is sick should
 # wake up reqs in the wait queue
-barrier b0 sync
 varnish v1 -cliok "backend.set_health be auto"
 
 client c9 -wait
