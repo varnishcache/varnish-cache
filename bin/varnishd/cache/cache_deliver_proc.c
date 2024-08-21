@@ -155,7 +155,6 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 	AN(ws);
 	AN(vdp);
 	AN(vdp->name);
-	AN(vdp->bytes);
 
 	if (vdc->retval)
 		return (vdc->retval);
@@ -176,17 +175,18 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
 	AZ(vdc->retval);
-	if (vdpe->vdp->init == NULL)
-		return (vdc->retval);
-
-	vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv,
-	    vdpe == vdc->nxt ? vdc->req->objcore : NULL);
+	if (vdpe->vdp->init != NULL) {
+		vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv,
+		    vdpe == vdc->nxt ? vdc->req->objcore : NULL);
+	}
 
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 		vdc->retval = 0;
 	}
+	else if (vdc->retval == 0)
+		AN(vdp->bytes);
 	return (vdc->retval);
 }
 
