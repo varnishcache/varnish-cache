@@ -174,6 +174,38 @@ static const struct vdp xyzzy_vdp_rot13 = {
 };
 
 /**********************************************************************
+ * vdp debug_chunked: force http1 chunked encoding by removing the
+ * Content-Length header
+ *
+ * this happens in a VDP because cnt_transmit() runs after VCL and
+ * restores it
+ */
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_vdp_chunked_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+{
+	struct http *hp;
+
+	(void)vdc;
+	(void)oc;
+	(void)priv;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->req, REQ_MAGIC);
+	hp = vdc->req->resp;
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	http_Unset(hp, H_Content_Length);
+
+	return (1);
+}
+
+static const struct vdp xyzzy_vdp_chunked = {
+	.name  = "debug.chunked",
+	.init  = xyzzy_vdp_chunked_init,
+};
+
+/**********************************************************************
  * pedantic tests of the VDP API:
  * - assert that we see a VDP_END
  * - assert that _fini gets called before the task ends
@@ -555,6 +587,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic));
+	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chunked));
 	return (0);
 }
 
@@ -718,6 +751,7 @@ event_discard(VRT_CTX, void *priv)
 
 	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_pedantic);
+	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chunked);
 
 	if (--loads)
 		return (0);
