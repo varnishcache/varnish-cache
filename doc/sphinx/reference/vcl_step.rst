@@ -92,6 +92,9 @@ of the following keywords:
 vcl_connect
 ~~~~~~~~~~~
 
+To use `vcl_connect` you need to enable it with the
+``vcc_feature +allow_connect`` parameter
+
 Called upon entering connect mode. This allows the implementation of the
 CONNECT method. Once a connection to the backend has been established, Varnish
 will send the headers of a 200 OK response before sending the request body to

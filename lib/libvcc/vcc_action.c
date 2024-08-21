@@ -376,6 +376,12 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
 	}
+	if (!tl->allow_connect && strcmp(tl->t->src->name, "<builtin>")
+	    && !strcmp(h, "CONNECT")) {
+		VSB_printf(tl->sb, "vcl_connect not allowed");
+		vcc_ErrWhere(tl, tl->t);
+		ERRCHK(tl);
+	}
 	assert(hand < VCL_RET_MAX);
 	AN(mask);
 

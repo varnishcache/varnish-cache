@@ -6,7 +6,7 @@ server s1 {
 	expect_close
 } -start
 
-varnish v1 -proto PROXY -vcl {
+varnish v1 -proto PROXY -cliok "param.set vcc_feature +allow_connect" -vcl {
 
 	backend b1 {
 		.host = "${s1_addr}";

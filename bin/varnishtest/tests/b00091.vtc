@@ -1,6 +1,6 @@
 varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Bad backend"
 
-varnish v1 -vcl {
+varnish v1 -cliok "param.set vcc_feature +allow_connect" -vcl {
 
 	backend bad { .host = "${bad_backend}"; }
 

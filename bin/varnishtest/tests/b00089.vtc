@@ -4,7 +4,7 @@ varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Error and synth from vcl_connect"
 
 server s1 {} -start
 
-varnish v1 -vcl+backend {
+varnish v1 -cliok "param.set vcc_feature +allow_connect" -vcl+backend {
 	#import debug;
 	import std;
 
@@ -37,7 +37,7 @@ varnish v1 -expect MAIN.s_pipe == 0
 
 # Synth from connect
 
-varnish v1 -vcl+backend {
+varnish v1 -cliok "param.set vcc_feature +allow_connect" -vcl+backend {
 	sub vcl_recv {
 		return (connect);
 	}

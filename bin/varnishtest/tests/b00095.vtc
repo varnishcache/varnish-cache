@@ -1,0 +1,10 @@
+varnishtest "HTTP CONNECT (RFC 9110, 9.3.6) - Disabled by default"
+
+varnish v1 -errvcl {vcl_connect not allowed} {
+
+	backend default none;
+
+	sub vcl_recv {
+		return (connect);
+	}
+}

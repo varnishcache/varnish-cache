@@ -45,6 +45,11 @@ VCC_FEATURE_BIT(UNSAFE_PATH,		unsafe_path,
     "Allow '/' in vmod & include paths. Allow 'import ... from ...'."
 )
 
+VCC_FEATURE_BIT(ALLOW_CONNECT,		allow_connect,
+    "Allow the implementation of CONNECT requests in VCL with the"
+    " vcl_connect subroutine"
+)
+
 #undef VCC_FEATURE_BIT
 
 /*lint -restore */

@@ -8,7 +8,7 @@ server s1 {
 	send "byebye"
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -cliok "param.set vcc_feature +allow_connect" -vcl+backend {
 	import std;
 
 	sub vcl_recv {
