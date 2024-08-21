@@ -105,7 +105,7 @@ static const struct vfp xyzzy_vfp_rot13 = {
 #define ROT13_BUFSZ 8
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_vfp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+xyzzy_vdp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	(void)vdc;
 	(void)oc;
@@ -119,7 +119,7 @@ xyzzy_vfp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *
 }
 
 static int v_matchproto_(vdp_bytes_f)
-xyzzy_vfp_rot13_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+xyzzy_vdp_rot13_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	char *q;
@@ -157,7 +157,7 @@ xyzzy_vfp_rot13_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 }
 
 static int v_matchproto_(vdp_fini_f)
-xyzzy_vfp_rot13_fini(struct vdp_ctx *vdc, void **priv)
+xyzzy_vdp_rot13_fini(struct vdp_ctx *vdc, void **priv)
 {
 	(void)vdc;
 	AN(priv);
@@ -168,9 +168,9 @@ xyzzy_vfp_rot13_fini(struct vdp_ctx *vdc, void **priv)
 
 static const struct vdp xyzzy_vdp_rot13 = {
 	.name  = "rot13",
-	.init  = xyzzy_vfp_rot13_init,
-	.bytes = xyzzy_vfp_rot13_bytes,
-	.fini  = xyzzy_vfp_rot13_fini,
+	.init  = xyzzy_vdp_rot13_init,
+	.bytes = xyzzy_vdp_rot13_bytes,
+	.fini  = xyzzy_vdp_rot13_fini,
 };
 
 /**********************************************************************
