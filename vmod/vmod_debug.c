@@ -196,6 +196,7 @@ xyzzy_vdp_chunked_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore
 	hp = vdc->req->resp;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	http_Unset(hp, H_Content_Length);
+	vdc->req->resp_len = -1;
 
 	return (1);
 }
