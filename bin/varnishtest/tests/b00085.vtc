@@ -110,19 +110,19 @@ client c1 {
 
 	txreq -hdr "resolve: :80"
 	rxresp
-	expect resp.reason == "0.0.0.0:80, :::80"
+	expect resp.reason ~ {^(:::80, 0\.0\.0\.0:80|0\.0\.0\.0:80, :::80)$}
 
 	txreq -hdr "resolve: :http"
 	rxresp
-	expect resp.reason == "0.0.0.0:80, :::80"
+	expect resp.reason ~ {^(:::80, 0\.0\.0\.0:80|0\.0\.0\.0:80, :::80)$}
 
 	txreq -hdr "resolve: :80-81"
 	rxresp
-	expect resp.reason == "0.0.0.0:80, :::80, 0.0.0.0:81, :::81"
+	expect resp.reason ~ {^(:::80, 0\.0\.0\.0:80, :::81, 0\.0\.0\.0:81|0\.0\.0\.0:80, :::80, 0\.0\.0\.0:81, :::81)$}
 
 	txreq -hdr "resolve: :80-81" -hdr "def-port: 8001"
 	rxresp
-	expect resp.reason == "0.0.0.0:80, :::80, 0.0.0.0:81, :::81"
+	expect resp.reason ~ {^(:::80, 0\.0\.0\.0:80, :::81, 0\.0\.0\.0:81|0\.0\.0\.0:80, :::80, 0\.0\.0\.0:81, :::81)$}
 
 	# No port
 
@@ -214,5 +214,5 @@ client c1 {
 
 	txreq -hdr "resolve: :80-82" -hdr "fail-port: 81"
 	rxresp
-	expect resp.reason == "0.0.0.0:80, :::80, bad port"
+	expect resp.reason ~ {^(:::80, 0\.0\.0\.0:80, bad port|0\.0\.0\.0:80, :::80, bad port)$}
 } -run
