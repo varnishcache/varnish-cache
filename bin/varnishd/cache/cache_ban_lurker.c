@@ -229,7 +229,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 }
 
 static void
-ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
+ban_lurker_test_ban(struct worker *wrk, struct ban *bt,
     struct banhead_s *obans, struct ban *bd, int kill)
 {
 	struct ban *bl, *bln;
@@ -258,7 +258,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 			ban_batch = 0;
 		}
-		oc = ban_lurker_getfirst(vsl, bt);
+		oc = ban_lurker_getfirst(wrk->vsl, bt);
 		if (oc == NULL) {
 			if (tested == 0 && lokc == 0) {
 				AZ(tested_tests);
@@ -299,12 +299,12 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			}
 			if (i) {
 				if (kill) {
-					VSLb(vsl, SLT_ExpBan,
+					VSLb(wrk->vsl, SLT_ExpBan,
 					    "%ju killed for lurker cutoff",
 					    VXID(ObjGetXID(wrk, oc)));
 					lokc++;
 				} else {
-					VSLb(vsl, SLT_ExpBan,
+					VSLb(wrk->vsl, SLT_ExpBan,
 					    "%ju banned by lurker",
 					    VXID(ObjGetXID(wrk, oc)));
 					lok++;
@@ -347,7 +347,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
  */
 
 static vtim_dur
-ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
+ban_lurker_work(struct worker *wrk)
 {
 	struct ban *b, *bd;
 	struct banhead_s obans;
@@ -373,7 +373,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	VTAILQ_INIT(&obans);
 	for (; b != NULL; b = VTAILQ_NEXT(b, list), count++) {
 		if (bd != NULL)
-			ban_lurker_test_ban(wrk, vsl, b, &obans, bd,
+			ban_lurker_test_ban(wrk, b, &obans, bd,
 			    count > cutoff ? 1 : 0);
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
@@ -424,7 +424,7 @@ ban_lurker(struct worker *wrk, void *priv)
 	wrk->vsl = &vsl;
 
 	while (!ban_shutdown) {
-		dt = ban_lurker_work(wrk, &vsl);
+		dt = ban_lurker_work(wrk);
 		if (DO_DEBUG(DBG_LURKER))
 			VSLb(&vsl, SLT_Debug, "lurker: sleep = %lf", dt);
 		Lck_Lock(&ban_mtx);
