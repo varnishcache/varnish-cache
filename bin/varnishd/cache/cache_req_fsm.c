@@ -136,6 +136,7 @@ Resp_Setup_Deliver(struct req *req)
 {
 	struct http *h;
 	struct objcore *oc;
+	const void *hdrs;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	oc = req->objcore;
@@ -145,7 +146,8 @@ Resp_Setup_Deliver(struct req *req)
 
 	HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
 
-	if (HTTP_Decode(h, ObjGetAttr(req->wrk, oc, OA_HEADERS, NULL)))
+	hdrs = ObjGetAttr(req->wrk, oc, OA_HEADERS, NULL);
+	if (hdrs == NULL || HTTP_Decode(h, hdrs))
 		return (-1);
 
 	http_ForceField(h, HTTP_HDR_PROTO, "HTTP/1.1");
