@@ -420,6 +420,8 @@ ban_lurker(struct worker *wrk, void *priv)
 	AZ(priv);
 
 	VSL_Setup(&vsl, NULL, 0);
+	AZ(wrk->vsl);
+	wrk->vsl = &vsl;
 
 	while (!ban_shutdown) {
 		dt = ban_lurker_work(wrk, &vsl);
@@ -435,6 +437,7 @@ ban_lurker(struct worker *wrk, void *priv)
 		gen = ban_generation;
 		Lck_Unlock(&ban_mtx);
 	}
+	wrk->vsl = NULL;
 	pthread_exit(0);
 	NEEDLESS(return (NULL));
 }
