@@ -114,6 +114,15 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 	    : http_Status2Reason(ctx->req->err_code % 1000, NULL);
 }
 
+VCL_VOID
+VRT_retry_fetch(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+	ctx->bo->retried_stale = 1;
+}
+
 /*--------------------------------------------------------------------*/
 
 void
