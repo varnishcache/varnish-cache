@@ -256,7 +256,7 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 	}
 	Lck_Unlock(&oc->boc->mtx);
 
-	assert(oc->boc == NULL || oc->boc->state < BOS_FINISHED);
+	assert(oc->boc->state < BOS_FINISHED);
 	if (final && om->objtrimstore != NULL)
 		om->objtrimstore(wrk, oc);
 }
