@@ -1,5 +1,8 @@
 varnishtest "waiter counters"
 
+# XXX: Waiter implementation for poll & ports do not signal WAITER_REMCLOSE
+feature cmd {test $(uname) != SunOS}
+
 barrier b1 cond 2
 barrier b2 cond 2
 barrier b3 cond 2
