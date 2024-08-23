@@ -89,7 +89,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	if (sendbody) {
 		if (!http_GetHdr(req->resp, H_Content_Length, NULL)) {
-			if (req->http->protover == 11) {
+			if (req->http->protover == 11 && !req->connect_synth) {
 				chunked = 1;
 				http_SetHeader(req->resp,
 				    "Transfer-Encoding: chunked");

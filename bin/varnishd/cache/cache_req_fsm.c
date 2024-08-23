@@ -373,8 +373,10 @@ cnt_synth(struct worker *wrk, struct req *req)
 	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	http_Unset(req->resp, H_Content_Length);
-	http_PrintfHeader(req->resp, "Content-Length: %zd",
-	    VSB_len(synth_body));
+	if (!req->connect_synth)
+		http_PrintfHeader(req->resp, "Content-Length: %zd", VSB_len(synth_body));
+	else
+		http_Unset(req->resp, H_Transfer_Encoding);
 
 	if (req->doclose == SC_NULL &&
 	    http_HdrIs(req->resp, H_Connection, "close"))
@@ -492,9 +494,10 @@ cnt_transmit(struct worker *wrk, struct req *req)
 			 */
 		} else {
 			http_Unset(req->resp, H_Content_Length);
-			if (req->resp_len >= 0)
+			if (req->resp_len >= 0 && !req->connect_synth) {
 				http_PrintfHeader(req->resp,
 				    "Content-Length: %jd", req->resp_len);
+			}
 		}
 		if (req->resp_len == 0)
 			sendbody = 0;
@@ -871,6 +874,7 @@ cnt_connect(struct worker *wrk, struct req *req)
 		nxt = REQ_FSM_MORE;
 		break;
 	case VCL_RET_SYNTH:
+		req->connect_synth = 1;
 		req->res_mode = 0;
 		req->req_step = R_STP_SYNTH;
 		nxt = REQ_FSM_MORE;
