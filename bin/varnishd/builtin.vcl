@@ -204,13 +204,42 @@ sub vcl_builtin_backend_fetch {
 	}
 }
 
+sub vcl_backend_refresh {
+	call vcl_builtin_backend_refresh;
+	return (merge);
+}
+
+sub vcl_builtin_backend_refresh {
+	call vcl_refresh_valid;
+	call vcl_refresh_conditions;
+	call vcl_refresh_status;
+}
+
+# Check that the stale object was not invalidated under our feet
+sub vcl_refresh_valid {
+	if (!obj_stale.is_valid) {
+		return (error(503, "Invalid object for refresh"));
+	}
+}
+
+# Only allow revalidation if we asked for it
+sub vcl_refresh_conditions {
+	if (!bereq.http.if-modified-since &&
+	    !bereq.http.if-none-match) {
+		return (error(503, "Unexpected 304"));
+	}
+}
+
+# We currently only revalidate 200 responses
+sub vcl_refresh_status {
+	if (obj_stale.status != 200) {
+		return (error(503, "Invalid object for refresh"));
+	}
+}
+
 sub vcl_backend_response {
 	call vcl_builtin_backend_response;
 	return (deliver);
-}
-
-sub vcl_backend_refresh {
-	return (merge);
 }
 
 sub vcl_builtin_backend_response {

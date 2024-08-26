@@ -1,0 +1,78 @@
+varnishtest "Test obj_stale vcl variables"
+
+server s1 {
+	rxreq
+	txresp -hdr "Etag: abcd" -hdr "from-bo: true" -bodylen 10
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.http.vbresp = "true";
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+	sub vcl_refresh_status {
+		if (obj_stale.status == 200) {
+			set beresp.http.vbref = "true";
+
+			set beresp.http.http = obj_stale.http.from-bo;
+			set beresp.http.age = obj_stale.age;
+			set beresp.http.can_esi = obj_stale.can_esi;
+			set beresp.http.grace = obj_stale.grace;
+			set beresp.http.hits = obj_stale.hits;
+			set beresp.http.keep = obj_stale.keep;
+			set beresp.http.proto = obj_stale.proto;
+			set beresp.http.reason = obj_stale.reason;
+			set beresp.http.status = obj_stale.status;
+			set beresp.http.storage = obj_stale.storage;
+			set beresp.http.time = obj_stale.time;
+			set beresp.http.ttl = obj_stale.ttl;
+			set beresp.http.uncacheable = obj_stale.uncacheable;
+		}
+		return (merge);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	expect resp.http.was-304 == false
+	expect resp.http.vbref == <undef>
+	expect resp.http.vbresp == true
+	expect resp.http.from-bo == true
+} -run
+
+delay 0.01
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.was-304 == true
+	expect resp.http.vbresp == true
+	expect resp.http.vbref == true
+	expect resp.http.from-bo == true
+
+	expect resp.http.http == true
+	expect resp.http.age == 0
+	expect resp.http.can_esi == false
+	expect resp.http.grace == 0.000
+	expect resp.http.hits == 0
+	expect resp.http.keep == 600.000
+	expect resp.http.proto == HTTP/1.1
+	expect resp.http.reason == OK
+	expect resp.http.status == 200
+	expect resp.http.storage == storage.s0
+	expect resp.http.time != <undef>
+	expect resp.http.ttl != <undef>
+	expect resp.http.uncacheable == false
+} -run
