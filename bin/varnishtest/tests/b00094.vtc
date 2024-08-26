@@ -1,0 +1,91 @@
+varnishtest "Test vcl_backend_refresh"
+
+server s1 {
+	rxreq
+	txresp -hdr "Etag: abcd" -hdr "from-be: true" -body "abcdefghij"
+
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304 -hdr "be304-1: true"
+
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304 -hdr "be304-2: true"
+
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304 -hdr "be304-3: true"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+	sub vcl_backend_refresh {
+		if (bereq.http.stale) {
+			return (obj_stale);
+		} else if (bereq.http.beresp) {
+			return (beresp);
+		}
+	}
+
+} -start
+
+# insert object in cache
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.was-304 == false
+	expect resp.http.from-be == true
+	expect resp.bodylen == 10
+	expect resp.body == "abcdefghij"
+} -run
+
+# let the object die
+delay 0.01
+
+# should get the stale obj headers only
+client c2 {
+	txreq -hdr "stale: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.be304-1 == <undef>
+	expect resp.http.from-be == true
+	expect resp.bodylen == 10
+	expect resp.body == "abcdefghij"
+} -run
+
+# let the object die
+delay 0.01
+
+# get the beresp headers only
+client c3 {
+	txreq -hdr "beresp: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.from-bo == <undef>
+	expect resp.http.be304-2 == true
+	expect resp.bodylen == 10
+	expect resp.body == "abcdefghij"
+} -run
+
+# let the object die
+delay 0.01
+
+# default, get a merge of stale_oc and beresp headers
+client c4 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.from-bo == <undef>
+	expect resp.http.be304-2 == true
+	expect resp.http.be304-3 == true
+	expect resp.bodylen == 10
+	expect resp.body == "abcdefghij"
+} -run
