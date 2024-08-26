@@ -1,0 +1,123 @@
+varnishtest "Test vcl_backend_refresh"
+
+server s1 {
+	rxreq
+	txresp -hdr "Etag: abcd" -hdr "from-bo: true" -bodylen 10
+
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304 -hdr "be304-1: true"
+
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304 -hdr "be304-2: true"
+
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304 -hdr "be304-3: true"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.http.vbresp = "true";
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+	sub vcl_backend_refresh {
+		set beresp.http.vbref = "true";
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.was-304 == false
+	expect resp.http.vbref == <undef>
+	expect resp.http.vbresp == true
+	expect resp.http.from-bo == true
+} -run
+
+delay 0.01
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.was-304 == true
+	expect resp.http.be304-1 == true
+	expect resp.http.vbref == true
+	expect resp.http.vbresp == true
+	expect resp.http.from-bo == true
+} -run
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.http.vbresp = "true";
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+
+	sub vcl_refresh_status {
+		set beresp.http.vbref = "true";
+		if (obj_stale.status == 200) {
+			return (obj_stale);
+		}
+	}
+}
+
+delay 0.01
+
+client c3 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.was-304 == true
+	expect resp.http.be304-1 == true
+	expect resp.http.be304-2 == <undef>
+	expect resp.http.vbref == true
+	expect resp.http.vbresp == true
+	expect resp.http.from-bo == true
+} -run
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.http.vbresp = "true";
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+	sub vcl_refresh_status {
+		set beresp.http.vbref = "true";
+		if (obj_stale.status == 200) {
+			return (beresp);
+		}
+	}
+}
+
+delay 0.01
+
+client c4 {
+	txreq
+	rxresp
+	expect resp.status == 304
+	expect resp.http.was-304 == true
+	expect resp.http.be304-1 == <undef>
+	expect resp.http.be304-2 == <undef>
+	expect resp.http.be304-3 == true
+	expect resp.http.vbref == true
+	expect resp.http.vbresp == true
+	expect resp.http.from-bo == <undef>
+} -run
