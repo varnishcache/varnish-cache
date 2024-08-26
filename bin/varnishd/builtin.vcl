@@ -204,13 +204,39 @@ sub vcl_builtin_backend_fetch {
 	}
 }
 
+sub vcl_backend_refresh {
+	call vcl_builtin_backend_refresh;
+	return (merge);
+}
+
+sub vcl_builtin_backend_refresh {
+	call vcl_refresh_valid;
+	call vcl_refresh_conditions;
+	call vcl_refresh_status;
+}
+
+sub vcl_refresh_valid {
+	if (!obj_stale.is_valid) {
+		return (error(503, "Invalid object for refresh"));
+	}
+}
+
+sub vcl_refresh_conditions {
+	if (!bereq.http.if-modified-since &&
+	    !bereq.http.if-none-match) {
+		return (error(503, "Unexpected 304"));
+	}
+}
+
+sub vcl_refresh_status {
+	if (obj_stale.status != 200) {
+		return (error(503, "Invalid object for refresh"));
+	}
+}
+
 sub vcl_backend_response {
 	call vcl_builtin_backend_response;
 	return (deliver);
-}
-
-sub vcl_backend_refresh {
-	return (merge);
 }
 
 sub vcl_builtin_backend_response {
