@@ -17,6 +17,12 @@ varnish v1 -vcl+backend {
 		set beresp.grace = 0s;
 		set beresp.keep = 10s;
 	}
+
+	sub vcl_refresh_status {
+		if (obj_stale.status != 200) {
+			return (error);
+		}
+	}
 } -start
 
 client c1 {
