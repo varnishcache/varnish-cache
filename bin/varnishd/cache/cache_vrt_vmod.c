@@ -65,6 +65,8 @@ struct vmod {
 	const char		*abi;
 	unsigned		vrt_major;
 	unsigned		vrt_minor;
+	const char		*vcs;
+	const char		*version;
 };
 
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
@@ -148,6 +150,8 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 		v->abi = d->abi;
 		v->vrt_major = d->vrt_major;
 		v->vrt_minor = d->vrt_minor;
+		v->vcs = d->vcs;
+		v->version = d->version;
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
@@ -201,9 +205,19 @@ VMOD_Panic(struct vsb *vsb)
 
 	VSB_cat(vsb, "vmods = {\n");
 	VSB_indent(vsb, 2);
-	VTAILQ_FOREACH(v, &vmods, list)
-		VSB_printf(vsb, "%s = {%p, %s, %u.%u},\n",
-		    v->nm, v, v->abi, v->vrt_major, v->vrt_minor);
+	VTAILQ_FOREACH(v, &vmods, list) {
+		VSB_printf(vsb, "%s = {", v->nm);
+		VSB_indent(vsb, 2);
+		VSB_printf(vsb, "p=%p, abi=\"%s\", vrt=%u.%u,\n",
+			   v, v->abi, v->vrt_major, v->vrt_minor);
+		VSB_bcat(vsb, "vcs=", 4);
+		VSB_quote(vsb, v->vcs, -1, VSB_QUOTE_CSTR);
+		VSB_bcat(vsb, ", version=", 10);
+		VSB_quote(vsb, v->version, -1, VSB_QUOTE_CSTR);
+		VSB_indent(vsb, -2);
+		VSB_bcat(vsb, "},\n", 3);
+	}
+
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }
@@ -218,8 +232,11 @@ ccf_debug_vmod(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	ASSERT_CLI();
-	VTAILQ_FOREACH(v, &vmods, list)
-		VCLI_Out(cli, "%5d %s (%s)\n", v->ref, v->nm, v->path);
+	VTAILQ_FOREACH(v, &vmods, list) {
+		VCLI_Out(cli, "%5d %s (path=\"%s\", version=\"%s\","
+		    " vcs=\"%s\")\n", v->ref, v->nm, v->path, v->version,
+		    v->vcs);
+	}
 }
 
 static struct cli_proto vcl_cmds[] = {

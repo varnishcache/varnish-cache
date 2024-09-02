@@ -41,6 +41,42 @@ Varnish Cache NEXT (2024-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* Two fields have been added to the VMOD data registered with varnish-cache:
+
+  - ``vcs`` for Version Control System is intended as an identifier from the
+    source code management system, e.g. the git revision, to identify the exact
+    source code which was used to build a VMOD binary.
+
+  - ``version`` is intended as a more user friendly identifier as to which
+    version of a vmod a binary represents.
+
+  Panics and the ``debug.vmod`` CLI command output now contain these
+  identifiers.
+
+  Where supported by the compiler and linker, the ``vcs`` identifier is also
+  reachable via the ``.vmod_vcs`` section of the vmod shared object ELF file and
+  can be extracted, for example, using ``readelf -p.vmod_vcs <file>``
+
+* ``vmodtool.py`` now creates a file ``vmod_vcs_version.txt`` in the current
+  working directory when called from a git tree. This file is intended to
+  transport version control system information to builds from distribution
+  bundles.
+
+  vmod authors should add it to the distribution and otherwise ignore it for
+  SCM.
+
+  Where git and automake are used, this can be accomplished by adding
+  ``vmod_vcs_version.txt`` to the ``.gitignore`` file and to the ``EXTRA_DIST``
+  and ``DISTCLEANFILES`` variables in ``Makefile.am``.
+
+  If neither git is used nor ``vmod_vcs_version.txt`` present, ``vmodtool.py``
+  will add ``NOGIT`` to the vmod as the vcs identifier.
+
+* ``vmodtool.py`` now accepts a ``$Version`` stanza in vmod vcc files to set the
+  vmod version as registered with Varnish-Cache. If ``$Version`` is not present,
+  an attempt is made to extract ``PACKAGE_STRING`` from an automake
+  ``Makefile``, otherwise ``NOVERSION`` is used as the version identifier.
+
 * Backend tasks can now queue if the backend has reached its max_connections.
   This allows the task to wait for a connection to become available rather
   than immediately failing. This feature must be enabled with the new
