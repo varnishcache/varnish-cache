@@ -282,7 +282,7 @@ VCL_StackVDP(struct vdp_ctx *vdc, const struct vcl *vcl, const char *fl,
 		if (vp == NULL)
 			return (0);
 		if (vp == vfilter_error) {
-			VSLb(req->vsl, SLT_Error,
+			VSLb(ctx->vsl, SLT_Error,
 			    "Filter '...%s' not found", fl);
 			return (-1);
 		}

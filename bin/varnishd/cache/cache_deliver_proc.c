@@ -71,14 +71,12 @@ VDP_Fini(const struct vdp_ctx *vdc)
 
 void
 VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
-    struct req *req, struct busyobj *bo, intmax_t *clen)
+    const struct req *req, const struct busyobj *bo, intmax_t *clen)
 {
 	AN(vdc);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vsl);
 
-	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	AN(clen);
 
 	assert((req ? 1 : 0) ^ (bo ? 1 : 0));
@@ -93,10 +91,12 @@ VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
 	vdc->clen = clen;
 
 	if (req != NULL) {
+		CHECK_OBJ(req, REQ_MAGIC);
 		vdc->oc = req->objcore;
 		vdc->hp = req->resp;
 	}
 	else {
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		vdc->oc = bo->bereq_body;
 		vdc->hp = bo->bereq;
 	}

@@ -193,7 +193,7 @@ void VDI_Init(void);
 /* cache_deliver_proc.c */
 void VDP_Fini(const struct vdp_ctx *vdc);
 void VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
-    struct req *req, struct busyobj *bo, intmax_t *cl);
+    const struct req *req, const struct busyobj *bo, intmax_t *cl);
 uint64_t VDP_Close(struct vdp_ctx *, struct objcore *, struct boc *);
 void VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc);
 int VDP_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
