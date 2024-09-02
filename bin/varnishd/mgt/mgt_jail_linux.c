@@ -96,7 +96,7 @@ static int vjl_make_workdir(const char *dname, const char *what, struct vsb *vsb
 }
 
 static void vjl_fixfd(int fd, enum jail_fixfd_e what) {
-	return jail_tech_unix.fixfd(fd, what);
+	jail_tech_unix.fixfd(fd, what);
 }
 
 const struct jail_tech jail_tech_linux = {
