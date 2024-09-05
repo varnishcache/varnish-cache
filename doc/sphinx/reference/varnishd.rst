@@ -63,19 +63,26 @@ OPTIONS
 Basic options
 -------------
 
--a <[name=][listen_address[,PROTO]]>
+-a <[name=][listen_address[,PROTO|,option=value,...]]>
 
-  Accept for client requests on the specified listen_address (see below).
+  Generic syntax to accept client requests on a listen_address. See below for
+  details.
 
-  Name is referenced in logs. If name is not specified, "a0", "a1",
-  etc. is used.
+  Name is referenced in logs and available to vcl as ``local.socket``. If name
+  is not specified, ``a`` with a numerical sequence ("a0", "a1", etc.) is used.
+
+  Any arguments after the listen_address separated by comma are taken as either
+  an acceptor ``option=value`` pair if containing a ``=``, or as a PROTO(col)
+  selection otherwise.
+
+  Valid options depend on the acceptor type, see below.
 
   PROTO can be "HTTP" (the default) or "PROXY".  Both version 1
   and 2 of the proxy protocol can be used.
 
   Multiple -a arguments are allowed.
 
-  If no -a argument is given, the default `-a :80` will listen to
+  If no -a argument is given, the default `-a :80` will listen on
   all IPv4 and IPv6 interfaces.
 
 -a <[name=][ip_address][:port][,PROTO]>
