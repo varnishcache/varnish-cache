@@ -97,7 +97,7 @@ usage(void)
 {
 	char *p;
 
-#define FMT_NONL "  %-28s # %s"
+#define FMT_NONL "  %-35s # %s"
 #define FMT FMT_NONL "\n"
 
 	printf( "Usage: varnishd [options]\n");
