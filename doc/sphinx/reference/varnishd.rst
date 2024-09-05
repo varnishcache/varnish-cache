@@ -21,7 +21,7 @@ SYNOPSIS
 ========
 
 varnishd
-    [-a [name=][listen_address[,PROTO|,option=value,...]]
+    [-a [name=][%kind,][listen_address[,PROTO|,option=value,...]]
     [-b [host[:port]|path]]
     [-C]
     [-d]
@@ -63,13 +63,15 @@ OPTIONS
 Basic options
 -------------
 
--a <[name=][listen_address[,PROTO|,option=value,...]]>
+-a <[name=][%kind,][listen_address[,PROTO|,option=value,...]]>
 
   Generic syntax to accept client requests on a listen_address. See below for
   details.
 
   Name is referenced in logs and available to vcl as ``local.socket``. If name
   is not specified, ``a`` with a numerical sequence ("a0", "a1", etc.) is used.
+
+  ``%kind`` selects the acceptor implementation *kind*.
 
   Any arguments after the listen_address separated by comma are taken as either
   an acceptor ``option=value`` pair if containing a ``=``, or as a PROTO(col)
@@ -85,7 +87,7 @@ Basic options
   If no -a argument is given, the default `-a :80` will listen on
   all IPv4 and IPv6 interfaces.
 
--a <[name=][ip_address][:port][,PROTO]>
+-a <[name=][%kind,][ip_address][:port][,PROTO]>
 
   The ip_address can be a host name ("localhost"), an IPv4 dotted-quad
   ("127.0.0.1") or an IPv6 address enclosed in square brackets
@@ -97,7 +99,7 @@ Basic options
 
   At least one of ip_address or port is required.
 
--a <[name=][path][,PROTO][,user=name][,group=name][,mode=octal]>
+-a <[name=][%kind,][path][,PROTO][,user=name][,group=name][,mode=octal]>
 
   (VCL4.1 and higher)
 

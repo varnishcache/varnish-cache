@@ -109,12 +109,13 @@ usage(void)
 
 	printf("\nBasic options:\n");
 
-	printf(FMT, "[-a [name=][listen_address",
+	printf(FMT, "[-a [name=][%kind,][listen_address",
 	    "HTTP listen address, protocol, options.");
 	printf(FMT, "     [,PROTO|,option=value,...]]",
 	    "Can be specified multiple times.");
 	printf(FMT, "",
 	    "  default: \":80,HTTP\"");
+	printf(FMT, "  %kind", "Selects an acceptor implementation");
 	printf(FMT, "  options:",
 	    "Proto can be \"PROXY\" or \"HTTP\" (default)");
 	printf(FMT, "    [,user=<u>][,group=<g>]",

@@ -21,8 +21,8 @@ you will find the startup options here:
 * FreeBSD: `/etc/rc.conf` (See also: /usr/local/etc/rc.d/varnishd)
 
 
-'-a' *<[name=][listen_address[,PROTO|,option=value,...]]>*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+'-a' *<[name=][%kind,][listen_address[,PROTO|,option=value,...]]>*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each '-a' argument defines one endpoint which Varnish should service HTTP
 requests on.
