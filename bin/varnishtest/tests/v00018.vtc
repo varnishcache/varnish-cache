@@ -155,3 +155,13 @@ varnish v1 -errvcl {Expected '.' got ';'} {
 		rr;
 	}
 }
+
+varnish v1 -vcl {
+	backend default none;
+
+	import debug;
+
+	sub vcl_recv {
+		return (fail(debug.author()));
+	}
+}

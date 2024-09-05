@@ -269,7 +269,7 @@ static void
 vcc_act_return_fail(struct vcc *tl)
 {
 	SkipToken(tl, '(');
-	Fb(tl, 1, "VRT_fail(ctx,\n");
+	Fb(tl, 1, "VRT_fail(ctx, \"%%s\",\n");
 	tl->indent += INDENT;
 	vcc_Expr(tl, STRING);
 	tl->indent -= INDENT;
