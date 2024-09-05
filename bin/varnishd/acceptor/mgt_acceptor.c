@@ -149,10 +149,14 @@ VCA_Arg(const char *spec)
 	AN(vca);
 	error = vca->open(av + 2, la, &err);
 
-	if (error)
-		ARGV_ERR("Got no socket(s) for %s (%s)\n", av[1], err);
-	else if (VTAILQ_EMPTY(&la->socks))
-		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
+	if (error) {
+		ARGV_ERR("Got no socket(s) for %s=%s (%s)\n",
+		    la->name, la->endpoint, err);
+	}
+	else if (VTAILQ_EMPTY(&la->socks)) {
+		ARGV_ERR("Got no socket(s) for %s=%s\n",
+		    la->name, la->endpoint);
+	}
 	VAV_Free(av);
 }
 
