@@ -21,7 +21,7 @@ SYNOPSIS
 ========
 
 varnishd
-    [-a [name=][listen_address[,PROTO]]
+    [-a [name=][listen_address[,PROTO|,option=value,...]]
     [-b [host[:port]|path]]
     [-C]
     [-d]

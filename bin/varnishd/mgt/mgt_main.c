@@ -104,14 +104,18 @@ usage(void)
 
 	printf("\nBasic options:\n");
 
-	printf(FMT, "-a [<name>=]address[:port][,proto]",
-	    "HTTP listen address and port");
-	printf(FMT, "   [,user=<u>][,group=<g>]",
+	printf(FMT, "[-a [name=][listen_address",
+	    "HTTP listen address, protocol, options.");
+	printf(FMT, "     [,PROTO|,option=value,...]]",
 	    "Can be specified multiple times.");
-	printf(FMT, "   [,mode=<m>]", "  default: \":80,HTTP\"");
-	printf(FMT, "", "Proto can be \"PROXY\" or \"HTTP\" (default)");
-	printf(FMT, "", "user, group and mode set permissions for");
-	printf(FMT, "", "  a Unix domain socket.");
+	printf(FMT, "",
+	    "  default: \":80,HTTP\"");
+	printf(FMT, "  options:",
+	    "Proto can be \"PROXY\" or \"HTTP\" (default)");
+	printf(FMT, "    [,user=<u>][,group=<g>]",
+	    "user, group and mode set permissions for");
+	printf(FMT, "    [,mode=<m>]",
+	    "  a Unix domain socket.");
 	printf(FMT, "-b none", "No backend");
 	printf(FMT, "-b [addr[:port]|path]", "Backend address and port");
 	printf(FMT, "", "  or socket file path");
