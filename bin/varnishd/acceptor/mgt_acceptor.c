@@ -147,7 +147,7 @@ VCA_Arg(const char *spec)
 		vca = VCA_Find("tcp");
 
 	AN(vca);
-	error = vca->open(av, la, &err);
+	error = vca->open(av + 2, la, &err);
 
 	if (error)
 		ARGV_ERR("Got no socket(s) for %s (%s)\n", av[1], err);

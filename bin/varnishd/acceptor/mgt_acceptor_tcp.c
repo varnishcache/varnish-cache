@@ -176,7 +176,7 @@ vca_tcp_open(char **av, struct listen_arg *la, const char **err)
 		ARGV_ERR("Unix domain socket addresses must be"
 		    " absolute paths in -a (%s)\n", la->endpoint);
 
-	for (int i = 2; av[i] != NULL; i++) {
+	for (int i = 0; av[i] != NULL; i++) {
 		if (strchr(av[i], '=') == NULL) {
 			if (xp != NULL)
 				ARGV_ERR("Too many protocol sub-args"
@@ -196,7 +196,7 @@ vca_tcp_open(char **av, struct listen_arg *la, const char **err)
 	AN(xp);
 	la->transport = xp;
 
-	return (VSS_resolver_range(av[1], "80", vca_tcp_open_cb, la, err));
+	return (VSS_resolver_range(la->endpoint, "80", vca_tcp_open_cb, la, err));
 }
 
 int

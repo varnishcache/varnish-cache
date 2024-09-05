@@ -181,7 +181,7 @@ vca_uds_open(char **av, struct listen_arg *la, const char **err)
 
 	heritage.min_vcl_version = vmax(heritage.min_vcl_version, 41U);
 
-	for (int i = 2; av[i] != NULL; i++) {
+	for (int i = 0; av[i] != NULL; i++) {
 		char *eq, *val;
 		int len;
 
