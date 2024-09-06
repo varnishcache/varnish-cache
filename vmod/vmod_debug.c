@@ -322,6 +322,46 @@ static const struct vdp xyzzy_vdp_pedantic = {
 	.fini  = xyzzy_pedantic_fini,
 };
 
+/**********************************************************************
+ *
+ * this trivial copy/paste/edit filter (of rot13) was specifically made for
+ * someone who added a DBG_SLOW_BEREQ debug flag. It should actually be turned
+ * in a proper "bandwidth control" filter, but that exceeds an evening's work,
+ * so it's kept for later
+ */
+
+static enum vfp_status v_matchproto_(vfp_pull_f)
+xyzzy_vfp_slow_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
+{
+
+	(void)vfe;
+	VTIM_sleep(1.0);
+	return (VFP_Suck(vc, p, lp));
+}
+
+static const struct vfp xyzzy_vfp_slow = {
+	.name = "debug.slow",
+	.pull = xyzzy_vfp_slow_pull,
+};
+
+/**********************************************************************/
+
+static int v_matchproto_(vdp_bytes_f)
+xyzzy_vdp_slow_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+
+	(void)priv;
+	VTIM_sleep(1.0);
+	return (VDP_bytes(vdc, act, ptr, len));
+}
+
+static const struct vdp xyzzy_vdp_slow = {
+	.name  = "debug.slow",
+	.bytes = xyzzy_vdp_slow_bytes
+};
+
 /**********************************************************************/
 
 VCL_STRING v_matchproto_(td_debug_author)
@@ -593,6 +633,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chunked));
+	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_slow, &xyzzy_vdp_slow));
 	return (0);
 }
 
@@ -754,6 +795,7 @@ event_discard(VRT_CTX, void *priv)
 
 	AZ(ctx->msg);
 
+	VRT_RemoveFilter(ctx, &xyzzy_vfp_slow, &xyzzy_vdp_slow);
 	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_pedantic);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chunked);
