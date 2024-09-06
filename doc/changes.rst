@@ -1,6 +1,6 @@
 ..
-	Copyright (c) 2011-2023 Varnish Software AS
-	Copyright 2016-2023 UPLEX - Nils Goroll Systemoptimierung
+	Copyright (c) 2011-2024 Varnish Software AS
+	Copyright 2016-2024 UPLEX - Nils Goroll Systemoptimierung
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
@@ -41,22 +41,138 @@ Varnish Cache NEXT (2024-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
-* Backend tasks can now queue if the backend has reached its max_connections.
-  This allows the task to wait for a connection to become available rather
-  than immediately failing. This feature must be enabled with the new
-  parameters added.
+* The Varnish Delivery Processor (VDP) filter API has been generalized to also
+  accommodate future use for backend request bodies:
 
-  New parameters:
-  ``backend_wait_timeout`` sets the amount of time a task will wait.
-  ``backend_wait_limit`` sets the maximum number of tasks that can wait.
+  - ``VDP_Init()`` gained a ``struct busyobj *`` argument for use of VDPs on the
+    backend side, which is mutually exclusive with the existing ``struct req *``
+    argument (one of the two needs to be ``NULL``). ``VDP_Init()`` also gained
+    an ``intmax_t *`` pointer, which needs to point to the known content length
+    of the body data or ``-1`` for "unknown length". Filters can change this
+    value.
 
-  These parameters can also be set in the backend with ``wait_timeout``
-  and ``wait_limit``.
+  - ``struct vdp_ctx`` lost the ``req`` member, but gained ``struct objcore
+    *oc``, ``struct http *hp`` and ``intmax_t *clen`` members. The rationale
+    here is that a VDP should be concerned mainly with transforming body data
+    (for which ``clen`` is relevant) and optionally changing (from the
+    ``vdp_init_f``) the headers sent before the body data, for which ``hp`` is
+    intended. Some VDPs also work directly on a ``struct objcore *``, so ``oc``
+    is provided to the first VDP in the chain only.
 
-  New counters:
-  ``backend_wait`` count of tasks that waited in queue for a connection.
-  ``backend_wait_fail`` count of tasks that waited in queue but did not get
-  a connection within the ``wait_timeout``.
+    Generic VDPs should specifically not access the request or be concerned with
+    the object.
+
+    Yet special purpose VDPs still can take from ``VRT_CTX`` whatever references
+    they need in the ``vdp_init_f`` and store them in their private data.
+
+  - Consequent to what as been explained above, ``vdp_init_f`` lost its ``struct
+    objcore *`` argument.
+
+* VDPs with no ``vdp_bytes_f`` function are now supported if the ``vdp_init_f``
+  returns a value greater than zero to signify that the filter is not to be
+  added to the chain. This is useful to support VDPs which only need to work on
+  headers.
+
+* The ``epoll`` and ``kqueue`` waiters have been improved to correctly report
+  ``WAITER_REMCLOSE``, which increases the ``WAITER.*.remclose`` counter.
+
+* ``varnishtest`` now supports the ``shutdown`` command corresponding to the
+  ``shutdown(2)`` standard C library call.
+
+* VSC counters for waiters have been added:
+
+  * ``conns`` to count waits on idle connections
+  * ``remclose`` to count idle connections closed by the peer
+  * ``timeout`` to count idle connections which timed out in the waiter
+  * ``action`` to count idle connections which resulted in a read
+
+  These can be found under ``WAITER.<poolname>.``.
+
+* The port of a *listen_endpoint* given with the ``-a`` argument to ``varnishd``
+  can now also be a numerical port range like ``80-89``, besides the existing
+  options of port number (e.g. ``80``) and service name (e.g. ``http``). With a
+  port range, Varnish will accept connections on all ports within the range.
+
+* To implement the aforementioned feature, ``VSS_resolver_range()`` as been
+  added to ``libvarnish``.
+
+* The ``Warning: mlock() of VSM failed`` message is now emitted when locking of
+  shared memory segments (via ``mlock(2)``) fails. As Varnish performance may
+  severely be impacted if shared memory segments are not resident in RAM, users
+  seeing this message are urged to review the ``RLIMIT_MEMLOCK`` resource
+  control as set via ``ulimit -l`` or ``LimitMEMLOCK`` with ``systemd(1)``.
+
+* A bug has been fixed where string comparisons in VCL could fail with the
+  nonsensical error message ``Comparison of different types: STRING '=='
+  STRING``.
+
+.. _RFC9110: https://www.rfc-editor.org/rfc/rfc9110.html#section-14.4
+
+* An issue has been addressed in the ``builtin.vcl`` where backend responses
+  would fail if they contained a ``Content-Range`` header when no range was
+  requested. According to `RFC9110`_, this header should just be ignored, yet
+  some Varnish-Users might prefer stricter checks. Thus, we decided to change
+  the ``builtin.vcl`` only and users hitting this issue are advised to call
+  ``vcl_beresp_range`` in custom VCL.
+
+* Additional ``SessError`` VSL events are now generated for various HTTP/2
+  protocol errors. Some HTTP/2 log events have been changed from ``Debug`` and
+  ``Error`` to ``SessError``.
+
+* A new ``linux`` jail has been added which is now the default on Linux. For
+  now, it is almost identical to the ``unix`` jail with one addition:
+
+* When the new ``linux`` jail is used, the ``Working directory not mounted on
+  tmpfs partition`` warning is now emitted if the working directory is found to
+  reside on a file system other than ``tmpfs``. While other file systems are
+  supported (and might be the right choice where administrators understand how
+  to avoid blocking disk IO while ``varnishd`` is writing to shared memory),
+  ``tmpfs`` is the failsafe option to avoid performance issues.
+
+* A race condition with VCL temperature transitions has been addressed, which
+  likely caused issues with dynamic directors.
+
+* The implementation of the ``transit_buffer`` has now been made the
+  responsibility of storage engines.
+
+.. _4108: https://github.com/varnishcache/varnish-cache/issues/4108
+
+* Internal management of probes has been reworked to address race conditions
+  which could cause panics with VCL temperature changes and discards (`4108`_).
+
+* Backend tasks can now be instructed to queue if the backend has reached its
+  ``max_connections``. This allows tasks to wait for a connection to become
+  available rather than immediately failing. This feature must be enabled
+  through new global parameters or individual backend properties:
+
+  * ``backend_wait_timeout`` sets the amount of time a task will wait.
+  * ``backend_wait_limit`` sets the maximum number of tasks that can wait.
+
+  These parameters can also be set for individual backends using the
+  ``wait_timeout`` and ``wait_limit`` properties.
+
+  Tasks waiting on a backend going sick (either explicitly via the
+  ``backend.set_health`` command or implicitly through the probe) fail
+  immediately.
+
+  Global VSC counters have been added under ``MAIN``:
+
+  * ``backend_wait`` counts tasks which waited in queue for a connection.
+  * ``backend_wait_fail`` counts tasks which waited in queue but failed because
+    ``wait_timeout`` was reached or the backend went sick.
+
+* The size of the buffer to hold panic messages is now tunable through the new
+  ``panic_buffer`` parameter.
+
+* The Varnish Shared Memory (VSM) and Varnish Shared Counters (VSC) consumer
+  implementation in ``libvarnishapi`` have been improved for stability and
+  performance.
+
+.. _4088: https://github.com/varnishcache/varnish-cache/issues/4088
+
+* An issue has been fixed where Varnish Shared Log (VSL) queries (for example
+  using ``varnishlog -q``) with numerical values would fail in unexpected ways
+  due to truncation. (`4088`_)
 
 * The ObjWaitExtend() Object API function gained a ``statep`` argument
   to optionally return the busy object state consistent with the
@@ -78,6 +194,11 @@ Varnish Cache NEXT (2024-09-15)
   ``varnishtest``.
 
 .. _VMOD developer documentation: doc/sphinx/reference/vmod.rst
+
+* An glitch with ttl comparisons has been fixed which could, for example, lead
+  to unexpected behavior with ``purge.soft()``.
+
+.. TODO 0e75d46357fc26ab59b9f660460d7c748f2c8be4 hpack ?
 
 ================================
 Varnish Cache 7.5.0 (2024-03-18)
