@@ -921,6 +921,9 @@ main(int argc, char * const *argv)
 	if (C_flag)
 		AZ(atexit(mgt_Cflag_atexit));
 
+	vext_copyin(vident);
+	vext_load();
+
 	/* If no -s argument specified, process default -s argument */
 	if (!arg_list_count("s"))
 		STV_Config(s_arg);
@@ -929,8 +932,6 @@ main(int argc, char * const *argv)
 	STV_Config_Final();
 
 	mgt_vcl_init();
-
-	vext_copyin(vident);
 
 	u = 0;
 	VTAILQ_FOREACH(alp, &arglist, list) {
