@@ -109,7 +109,6 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 	if (v == NULL) {
 		ALLOC_OBJ(v, VMOD_MAGIC);
 		AN(v);
-		REPLACE(v->backup, backup);
 
 		v->hdl = dlhdl;
 
@@ -151,6 +150,7 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
+		REPLACE(v->backup, backup);
 
 		VSC_C_main->vmods++;
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
