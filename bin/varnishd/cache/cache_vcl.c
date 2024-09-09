@@ -136,9 +136,8 @@ VCL_Get_CliCtx(int msg)
 	if (msg) {
 		ctx_cli.msg = VSB_new_auto();
 		AN(ctx_cli.msg);
-	} else {
-		ctx_cli.vsl = &vsl_cli;
 	}
+	ctx_cli.vsl = &vsl_cli;
 	ctx_cli.ws = &ws_cli;
 	WS_Assert(ctx_cli.ws);
 	return (&ctx_cli);
