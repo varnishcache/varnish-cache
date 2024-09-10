@@ -48,7 +48,7 @@ certainly was enough to make me angry.
 
 Let me give you an example of their utter silliness:
 
-The book which defined the C langauge had a list af reserved
+The book which defined the C language had a list of reserved
 identifiers, all of them lower-case words.  The UNIX libraries
 defined a lot of functions, all of them lower-case words.
 
@@ -113,7 +113,7 @@ that, or without wasting a lot of time debugging silly mistakes.
 
 If you look in the Varnish source code, which uses pthreads, you
 will see that I have wrapped pthread mutexes in my own little
-datastructure, to be able to do those asserts, and to get some
+data structure, to be able to do those asserts, and to get some
 usable statistics on lock-contention.
 
 Another example where C1X did not improve on pthreads at all, was
@@ -152,7 +152,7 @@ Because it's not like the call is actually guaranteed to return at
 16:00Z if you ask it to, you are only promised it will not return
 later than that, so you have to wrap the call in a loop.
 
-Whoever defined the select(2) and poll(2) systemcalls knew better
+Whoever defined the select(2) and poll(2) system calls knew better
 than the POSIX and ISO-C group-think:  They specified a maximum
 duration for the call, because then it doesn't matter what time
 it is, only how long time has transpired.

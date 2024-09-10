@@ -591,8 +591,7 @@ Varnish Cache 7.4.0 (2023-09-15)
   amount of free workspace for backend connections.
 
 * Object creation failures by the selected storage engine are now
-  logged under the ``Error`` tag as ``Failed to create object object
-  from %s %s``.
+  logged under the ``Error`` tag as ``Failed to create object from %s %s``.
 
 * The limit on the size of ``varnishtest`` macros has been raised to
   2KB.
