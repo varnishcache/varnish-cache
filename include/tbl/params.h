@@ -80,6 +80,29 @@ PARAM_SIMPLE(
 )
 #undef PLATFORM_FLAGS
 
+#if defined(HAVE_REUSEPORT) || defined(HAVE_REUSEPORT_LB)
+#  define PLATFORM_FLAGS MUST_RESTART
+#else
+#  define PLATFORM_FLAGS NOT_IMPLEMENTED
+#endif
+PARAM_SIMPLE(
+	/* name */	reuseport,
+	/* type */	boolean,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"off",
+	/* units */	"bool",
+	/* descr */
+	"Accept clients on multiple sockets with the same address. "
+	"Using a listen group helps load balance incoming clients between "
+	"the pools more efficient. This require SO_REUSEPORT or "
+	"SO_REUSEPORT_LB support from the kernel. If both are available "
+	"SO_REUSEPORT_LB is used to create the listen group.\n\n"
+	"NB: MUST BE SET ON THE COMMAND LINE.",
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS,
+)
+#undef PLATFORM_FLAGS
+
 PARAM_SIMPLE(
 	/* name */	acceptor_sleep_decay,
 	/* type */	double,

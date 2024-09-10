@@ -94,7 +94,10 @@ mac_opensocket(struct listen_sock *ls)
 		closefd(&ls->sock);
 	}
 	if (!ls->uds)
-		ls->sock = VTCP_bind(ls->addr, NULL);
+		if (mgt_param.reuseport)
+			ls->sock = VTCP_bind_reuseport(ls->addr, NULL);
+		else
+			ls->sock = VTCP_bind(ls->addr, NULL);
 	else
 		ls->sock = VUS_resolver(ls->endpoint, mac_vus_bind, NULL, &err);
 	fail = errno;
@@ -181,6 +184,8 @@ mac_tcp(void *priv, const struct suckaddr *sa)
 	struct listen_sock *ls;
 	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 	char nbuf[VTCP_ADDRBUFSIZE+VTCP_PORTBUFSIZE+2];
+	int max_socks;
+	int i;
 
 	CAST_OBJ_NOTNULL(la, priv, LISTEN_ARG_MAGIC);
 
@@ -189,28 +194,38 @@ mac_tcp(void *priv, const struct suckaddr *sa)
 			ARGV_ERR("-a arguments %s and %s have same address\n",
 			    ls->endpoint, la->endpoint);
 	}
-	ls = mk_listen_sock(la, sa);
-	if (ls == NULL)
-		return (0);
-	AZ(ls->uds);
-	if (VSA_Port(ls->addr) == 0) {
-		/*
-		 * If the argv port number is zero, we adopt whatever
-		 * port number this VTCP_bind() found us, as if
-		 * it was specified by the argv.
-		 */
-		VSA_free(&ls->addr);
-		ls->addr = VTCP_my_suckaddr(ls->sock);
-		VTCP_myname(ls->sock, abuf, sizeof abuf,
-		    pbuf, sizeof pbuf);
-		if (VSA_Get_Proto(sa) == AF_INET6)
-			bprintf(nbuf, "[%s]:%s", abuf, pbuf);
-		else
-			bprintf(nbuf, "%s:%s", abuf, pbuf);
-		REPLACE(ls->endpoint, nbuf);
+
+	max_socks = 1;
+
+	if (mgt_param.reuseport)
+		max_socks = mgt_param.wthread_pools;
+
+	for (i = 0; i < max_socks; i++) {
+		ls = mk_listen_sock(la, sa);
+		if (ls == NULL)
+			return (0);
+		AZ(ls->uds);
+		ls->pool_no = i;
+		if (VSA_Port(ls->addr) == 0) {
+			/*
+			 * If the argv port number is zero, we adopt whatever
+			 * port number this VTCP_bind() found us, as if
+			 * it was specified by the argv.
+			 */
+			VSA_free(&ls->addr);
+			ls->addr = VTCP_my_suckaddr(ls->sock);
+			VTCP_myname(ls->sock, abuf, sizeof abuf,
+			    pbuf, sizeof pbuf);
+			if (VSA_Get_Proto(sa) == AF_INET6)
+				bprintf(nbuf, "[%s]:%s", abuf, pbuf);
+			else
+				bprintf(nbuf, "%s:%s", abuf, pbuf);
+			REPLACE(ls->endpoint, nbuf);
+		}
+		VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
+		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 	}
-	VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
-	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
+
 	return (0);
 }
 

@@ -46,6 +46,7 @@ struct listen_sock {
 	VTAILQ_ENTRY(listen_sock)	arglist;
 	int				sock;
 	int				uds;
+	unsigned			pool_no;
 	char				*endpoint;
 	const char			*name;
 	const struct suckaddr		*addr;
