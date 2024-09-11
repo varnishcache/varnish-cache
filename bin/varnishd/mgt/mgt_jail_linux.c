@@ -49,10 +49,61 @@
 #include "common/heritage.h"
 
 static int
+vjl_set_thp(const char *arg)
+{
+	int val;
+
+	if (!strcmp(arg, "ignore"))
+		return (0);
+	if (!strcmp(arg, "enable"))
+		val = 0;
+	else if (!strcmp(arg, "disable"))
+		val = 1;
+	else {
+		ARGV_ERR(
+		    "linux jail: unknown value '%s' for argument transparent_hugepage.\n",
+		    arg);
+	}
+	if (prctl(PR_SET_THP_DISABLE, val, 0, 0, 0) != 0) {
+		MGT_Complain(C_ERR,
+		    "Could not %s Transparent Hugepage: %s (%d)",
+		    arg, VAS_errtxt(errno), errno);
+	}
+	return (0);
+}
+
+static int
 vjl_init(char **args)
 {
+	char **unix_args;
+	int ret = 0;
+	size_t i;
 
-	return jail_tech_unix.init(args);
+	if (args == NULL) {
+		/* Autoconfig */
+		if (vjl_set_thp("disable") != 0)
+			return (1);
+		return (jail_tech_unix.init(NULL));
+	}
+
+	for (i = 0; args[i] != NULL; i++);
+	unix_args = calloc(i + 1, sizeof *unix_args);
+	AN(unix_args);
+
+	for (i = 0; *args != NULL && ret == 0; args++) {
+		if (!strncmp(*args, "transparent_hugepage=",
+		    sizeof("transparent_hugepage=") - 1)) {
+			ret = vjl_set_thp((*args) + (sizeof("transparent_hugepage=") - 1));
+		} else {
+			unix_args[i] = *args;
+			i++;
+		}
+	}
+
+	if (ret == 0)
+		ret = jail_tech_unix.init(unix_args);
+	free(unix_args);
+	return (ret);
 }
 
 static void
@@ -94,17 +145,24 @@ vjl_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 
 	vjl_master(JAIL_MASTER_FILE);
 	if (statfs(dname, &info) != 0) {
-		if (vsb)
-			VSB_printf(vsb, "Could not stat working directory '%s': %s (%d)\n", dname, VAS_errtxt(errno), errno);
-		else
-			MGT_Complain(C_ERR, "Could not stat working directory '%s': %s (%d)", dname, VAS_errtxt(errno), errno);
+		if (vsb) {
+			VSB_printf(vsb,
+			    "Could not stat working directory '%s': %s (%d)\n",
+			    dname, VAS_errtxt(errno), errno);
+		} else {
+			MGT_Complain(C_ERR,
+			    "Could not stat working directory '%s': %s (%d)",
+			    dname, VAS_errtxt(errno), errno);
+		}
 		return (1);
 	}
 	if (info.f_type != TMPFS_MAGIC) {
 		if (vsb != NULL)
-			VSB_printf(vsb, "Working directory not mounted on tmpfs partition\n");
+			VSB_printf(vsb,
+			    "Working directory not mounted on tmpfs partition\n");
 		else
-			MGT_Complain(C_INFO, "Working directory not mounted on tmpfs partition");
+			MGT_Complain(C_INFO,
+			    "Working directory not mounted on tmpfs partition");
 	}
 	vjl_master(JAIL_MASTER_LOW);
 	return (0);
