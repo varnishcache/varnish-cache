@@ -34,7 +34,7 @@ Unless the request is a `pass`, Varnish sets `bereq.http.Accept-Encoding`
 to "gzip" before `vcl_backend_fetch` runs, so the header can be changed
 in VCL.
 
-If the server responds with gzip'ed content it will be stored in memory
+If the server responds with gzipped content it will be stored in memory
 in its compressed form and `Accept-Encoding` will be added to the
 `Vary` header.
 

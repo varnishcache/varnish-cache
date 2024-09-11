@@ -228,7 +228,7 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 }
 
 /*--------------------------------------------------------------------
- * Find out if the request can receive a gzip'ed response
+ * Find out if the request can receive a gzipped response
  */
 
 unsigned

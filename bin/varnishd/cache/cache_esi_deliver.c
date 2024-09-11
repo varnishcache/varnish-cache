@@ -504,11 +504,11 @@ ved_bytes(struct ecx *ecx, enum vdp_action act,
 }
 
 /*---------------------------------------------------------------------
- * If a gzip'ed ESI object includes a ungzip'ed object, we need to make
- * it looked like a gzip'ed data stream.  The official way to do so would
+ * If a gzipped ESI object includes a ungzipped object, we need to make
+ * it looked like a gzipped data stream.  The official way to do so would
  * be to fire up libvgz and gzip it, but we don't, we fake it.
  *
- * First, we cannot know if it is ungzip'ed on purpose, the admin may
+ * First, we cannot know if it is ungzipped on purpose, the admin may
  * know something we don't.
  *
  * What do you mean "BS ?"
@@ -589,7 +589,7 @@ static const struct vdp ved_pretend_gz = {
 };
 
 /*---------------------------------------------------------------------
- * Include a gzip'ed object in a gzip'ed ESI object delivery
+ * Include a gzipped object in a gzipped ESI object delivery
  *
  * This is the interesting case: Deliver all the deflate blocks, stripping
  * the "LAST" bit of the last one and padding it, as necessary, to a byte
@@ -910,7 +910,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	VCL_Req2Ctx(ctx, req);
 
 	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
-		/* A gzip'ed include which is not ESI processed */
+		/* A gzipped include which is not ESI processed */
 
 		/* OA_GZIPBITS are not valid until BOS_FINISHED */
 		if (boc != NULL)
@@ -930,7 +930,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		foo->objcore = req->objcore;
 		i = VDP_Push(ctx, req->vdc, req->ws, &ved_gzgz, foo);
 	} else if (ecx->isgzip && !i) {
-		/* Non-Gzip'ed include in gzip'ed parent */
+		/* Non-Gzip'ed include in gzipped parent */
 		i = VDP_Push(ctx, req->vdc, req->ws, &ved_pretend_gz, ecx);
 	} else {
 		/* Anything else goes straight through */

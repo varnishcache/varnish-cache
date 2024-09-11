@@ -603,7 +603,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 }
 
 /**********************************************************************
- * Incoming HEADERS, this is where the parties at...
+ * Incoming HEADERS, this is where the party's at...
  */
 
 void v_matchproto_(task_func_t)

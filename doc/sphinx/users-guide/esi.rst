@@ -209,7 +209,7 @@ Varnish does this compressing all parts of ESI responses
 separately, and stitching them together on the fly during
 delivery, which has a negative impact on compression ratio.
 
-When you ``set beresp.do_esi = True;`` on a gzip'ed response, it
+When you ``set beresp.do_esi = True;`` on a gzipped response, it
 will be uncompressed and recompressed part-wise during the fetch.
 
 The part-wise compression reduces the opportunities for

@@ -347,8 +347,8 @@ vbf_default_filter_list(void *arg, struct vsb *vsb)
 	 * The backend Content-Encoding header tells us what we are going
 	 * to receive, which we classify in the following three classes:
 	 *
-	 *	"Content-Encoding: gzip"	--> object is gzip'ed.
-	 *	no Content-Encoding		--> object is not gzip'ed.
+	 *	"Content-Encoding: gzip"	--> object is gzipped.
+	 *	no Content-Encoding		--> object is not gzipped.
 	 *	anything else			--> do nothing wrt gzip
 	 */
 
@@ -364,11 +364,11 @@ vbf_default_filter_list(void *arg, struct vsb *vsb)
 	else
 		is_gunzip = 1;
 
-	/* We won't gunzip unless it is gzip'ed */
+	/* We won't gunzip unless it is gzipped */
 	if (do_gunzip && !is_gzip)
 		do_gunzip = 0;
 
-	/* We wont gzip unless if it already is gzip'ed */
+	/* We wont gzip unless if it already is gzipped */
 	if (do_gzip && !is_gunzip)
 		do_gzip = 0;
 

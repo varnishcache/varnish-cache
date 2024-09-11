@@ -1,4 +1,4 @@
-varnishtest "Corrupt gzip'ed ESI objects"
+varnishtest "Corrupt gzipped ESI objects"
 
 # First, check that our data is actually good
 

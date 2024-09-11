@@ -5,7 +5,7 @@ varnishtest "ESI requests, gzip and custom VDPs"
 
 # To select the embedding vdps (gzgz / pretendgz), ESI currently only
 # looks at the cache object's ESI status. So for VDP-processing an
-# include of a gzip'ed ESI object, we need to restore the encoding
+# include of a gzipped ESI object, we need to restore the encoding
 # after filtering. Thus, we would currently need a gzip VDP to be able
 # to use `set resp.filters += " gunzip rot13 gzip"`
 #

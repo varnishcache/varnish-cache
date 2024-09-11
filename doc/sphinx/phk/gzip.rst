@@ -25,7 +25,7 @@ will not experience any difference, this processing only affects
 cache hit/miss requests.
 
 Unless vcl_recv{} results in "pipe" or "pass", we determine if the
-client is capable of receiving gzip'ed content.  The test amounts to:
+client is capable of receiving gzipped content.  The test amounts to:
 
 	Is there a Accept-Encoding header that mentions gzip, and if
 	is has a q=# number, is it larger than zero.
@@ -54,14 +54,14 @@ always set to:
 
 Even if this particular client does not support
 
-To always entice the backend into sending us gzip'ed content.
+To always entice the backend into sending us gzipped content.
 
 Varnish will not gzip any content on its own (but see below), we trust
-the backend to know what content can be sensibly gzip'ed (html) and what
+the backend to know what content can be sensibly gzipped (html) and what
 cannot (jpeg)
 
 If in vcl_backend_response{} we find out that we are trying to deliver a
-gzip'ed object to a client that has not indicated willingness to receive
+gzipped object to a client that has not indicated willingness to receive
 gzip, we will ungzip the object during deliver.
 
 Tuning, tweaking and frobbing
@@ -84,13 +84,13 @@ gzip-ness of objects during fetch:
 
 	set beresp.do_gunzip = true;
 
-Will make varnish gunzip an already gzip'ed object from the backend during
+Will make varnish gunzip an already gzipped object from the backend during
 fetch.  (I have no idea why/when you would use this...)
 
 	set beresp.do_gzip = true;
 
 Will make varnish gzip the object during fetch from the backend, provided
-the backend didn't send us a gzip'ed object.
+the backend didn't send us a gzipped object.
 
 Remember that a lot of content types cannot sensibly be gzipped, most
 notably compressed image formats like jpeg, png and similar, so a
@@ -115,8 +115,8 @@ In theory, and hopefully in practice, all you read above should apply also
 when you enable ESI, if not it is a bug you should report.
 
 But things are vastly more complicated now.  What happens for
-instance, when the backend sends a gzip'ed object we ESI process
-it and it includes another object which is not gzip'ed, and we want
+instance, when the backend sends a gzipped object we ESI process
+it and it includes another object which is not gzipped, and we want
 to send the result gzipped to the client ?
 
 Things can get really hairy here, so let me explain it in stages.
@@ -139,15 +139,15 @@ the new URL and possibly Host: header, and call vcl_recv{} etc.  You
 can tell that you are in an ESI include by examining the 'req.esi_level'
 variable in VCL.
 
-The ESI-parsed object is stored gzip'ed under the same conditions as
-above:  If the backend sends gzip'ed and VCL did not ask for do_gunzip,
-or if the backend sends ungzip'ed and VCL asked for do_gzip.
+The ESI-parsed object is stored gzipped under the same conditions as
+above:  If the backend sends gzipped and VCL did not ask for do_gunzip,
+or if the backend sends ungzipped and VCL asked for do_gzip.
 
 Please note that since we need to insert flush and reset points in
 the gzip file, it will be slightly larger than a normal gzip file of
 the same object.
 
-When we encounter gzip'ed include objects which should not be, we
+When we encounter gzipped include objects which should not be, we
 gunzip them, but when we encounter gunzip'ed objects which should
 be, we gzip them, but only at compression level zero.
 
