@@ -938,7 +938,7 @@ beresp
 
 	Type: HTTP
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The entire backend response HTTP data structure, useful as
 	argument to VMOD functions.
@@ -949,7 +949,7 @@ beresp.age
 
 	Type: DURATION
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: Age header, or zero.
 
@@ -962,7 +962,7 @@ beresp.backend
 
 	Type: BACKEND
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	This is the backend we fetched from.  If bereq.backend
 	was set to a director, this will be the backend selected
@@ -985,7 +985,7 @@ beresp.backend.name
 
 	Type: STRING
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Name of the backend this response was fetched from.
 	Same as beresp.backend.
@@ -1008,9 +1008,9 @@ beresp.do_esi
 
 	Type: BOOL
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: ``false``.
 
@@ -1029,9 +1029,9 @@ beresp.do_gunzip
 
 	Type: BOOL
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: ``false``.
 
@@ -1050,9 +1050,9 @@ beresp.do_gzip
 
 	Type: BOOL
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: ``false``.
 
@@ -1070,9 +1070,9 @@ beresp.do_stream
 
 	Type: BOOL
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: ``true``.
 
@@ -1155,9 +1155,9 @@ beresp.grace
 
 	Type: DURATION
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: Cache-Control ``stale-while-revalidate`` directive,
 	or ``default_grace`` parameter.
@@ -1171,11 +1171,11 @@ beresp.http.*
 
 	Type: HEADER
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Unsettable from: vcl_backend_response, vcl_backend_error
+	Unsettable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The HTTP headers returned from the server.
 
@@ -1186,7 +1186,7 @@ beresp.http.content-length
 
 	Type: HEADER
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The content-length header field is protected, see protected_headers_.
 
@@ -1195,7 +1195,7 @@ beresp.http.transfer-encoding
 
 	Type: HEADER
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The transfer-encoding header field is protected, see protected_headers_.
 
@@ -1206,9 +1206,9 @@ beresp.keep
 
 	Type: DURATION
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: ``default_keep`` parameter.
 
@@ -1225,9 +1225,9 @@ beresp.proto	``VCL <= 4.0``
 
 	Type: STRING
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The HTTP protocol version the backend replied with.
 
@@ -1238,7 +1238,7 @@ beresp.proto	``VCL >= 4.1``
 
 	Type: STRING
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The HTTP protocol version the backend replied with.
 
@@ -1249,9 +1249,9 @@ beresp.reason
 
 	Type: STRING
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The HTTP status message returned by the server.
 
@@ -1262,9 +1262,9 @@ beresp.status
 
 	Type: INT
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	The HTTP status code returned by the server.
 
@@ -1277,9 +1277,9 @@ beresp.storage
 
 	Type: STEVEDORE
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 
 	The storage backend to use to save this object.
@@ -1288,9 +1288,9 @@ beresp.storage_hint	``VCL <= 4.0``
 
 	Type: STRING
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 
 	Deprecated since varnish 5.1 and discontinued since VCL
@@ -1306,7 +1306,7 @@ beresp.time
 
 	Type: TIME
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	When the backend headers were fully received just before
 	``vcl_backend_response {}`` was entered, or when
@@ -1336,9 +1336,9 @@ beresp.ttl
 
 	Type: DURATION
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Default: Cache-Control ``s-maxage`` or ``max-age`` directives,
 	or a value computed from the Expires header's deadline, or the
@@ -1353,9 +1353,9 @@ beresp.uncacheable
 
 	Type: BOOL
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
-	Writable from: vcl_backend_response, vcl_backend_error
+	Writable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 	Inherited from bereq.uncacheable, see there.
 
@@ -1373,13 +1373,193 @@ beresp.was_304
 
 	Type: BOOL
 
-	Readable from: vcl_backend_response, vcl_backend_error
+	Readable from: vcl_backend_response, vcl_backend_error, vcl_backend_refresh
 
 
 	When ``true`` this indicates that we got a 304 response
 	to our conditional fetch from the backend and turned
 	that into ``beresp.status = 200``
 
+obj_stale
+---------
+
+This is the stale object we had in cache. It cannot be modified.
+
+.. _obj_stale.age:
+
+obj_stale.age
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The age of the stale object.
+
+
+.. _obj_stale.can_esi:
+
+obj_stale.can_esi
+
+	Type: BOOL
+
+	Readable from: vcl_backend_refresh
+
+	If the stale object can be ESI processed, that is if setting
+	``resp.do_esi`` or adding ``esi`` to ``resp.filters`` in
+	``vcl_deliver {}`` would cause the response body to be ESI
+	processed.
+
+
+.. _obj_stale.grace:
+
+obj_stale.grace
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The stale object's grace period in seconds.
+
+
+.. _obj_stale.hits:
+
+obj_stale.hits
+
+	Type: INT
+
+	Readable from: vcl_backend_refresh
+
+	The count of cache-hits on this stale object.
+
+	In `vcl_deliver` a value of 0 indicates a cache miss.
+
+
+.. _obj_stale.http:
+
+obj_stale.http.*
+
+	Type: HEADER
+
+	Readable from: vcl_backend_refresh
+
+	The HTTP headers stored in the stale object.
+
+	See req.http_ for general notes.
+
+
+.. _obj_stale.keep:
+
+obj_stale.keep
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The stale object's keep period in seconds.
+
+
+.. _obj_stale.proto:
+
+obj_stale.proto
+
+	Type: STRING
+
+	Readable from: vcl_backend_refresh
+
+	The HTTP protocol version stored in the stale object.
+
+
+.. _obj_stale.reason:
+
+obj_stale.reason
+
+	Type: STRING
+
+	Readable from: vcl_backend_refresh
+
+
+	The HTTP reason phrase stored in the stale object.
+
+
+.. _obj_stale.status:
+
+obj_stale.status
+
+	Type: INT
+
+	Readable from: vcl_backend_refresh
+
+
+	The HTTP status code stored in the stale object.
+
+	More information in the `HTTP response status`_ section.
+
+
+.. _obj_stale.storage:
+
+obj_stale.storage
+
+	Type: STEVEDORE
+
+	Readable from: vcl_backend_refresh
+
+	The storage backend where this stale object is stored.
+
+
+.. _obj_stale.time:
+
+obj_stale.time
+
+	Type: TIME
+
+	Readable from: vcl_backend_refresh
+
+	The time the stale object was created from the perspective of the
+	server which generated it. This will roughly be equivalent to
+	``now`` - ``obj.age``.
+
+
+.. _obj_stale.ttl:
+
+obj_stale.ttl
+
+	Type: DURATION
+
+	Readable from: vcl_backend_refresh
+
+	The stale object's time to live, in seconds.
+
+
+.. _obj_stale.uncacheable:
+
+obj_stale.uncacheable
+
+	Type: BOOL
+
+	Readable from: vcl_backend_refresh
+
+	Whether the stale object is uncacheable (pass, hit-for-pass or
+	hit-for-miss).
+
+.. _obj_stale.is_valid:
+
+obj_stale.is_valid
+
+	Type: BOOL
+
+	Readable from: vcl_backend_refresh
+
+	Whether the stale object is still valid.
+
+.. _obj_stale.retried:
+
+obj_stale.retried
+
+	Type: BOOL
+
+	Readable from: vcl_backend_refresh
+
+	Whether a fetch of this stale object was already retried.
 
 obj
 ---
