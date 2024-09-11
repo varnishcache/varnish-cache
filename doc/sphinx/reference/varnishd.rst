@@ -454,13 +454,26 @@ specific options. Available jails are:
 
     -j solaris,worker=basic
 
--j <linux[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
+-j <linux[,transparent_hugepage=`thp_setting`][,`unix jail option`...]>
 
   Default on Linux platforms, it extends the UNIX jail with
   Linux-specific mechanisms:
 
   - It warns when *workdir* is not on a ``tmpfs``.
   - It tries to keep the process dumpable after dropping privileges.
+  - It adds control over the transparent hugepage (THP) setting.
+
+  `thp_setting` can take these values:
+
+  - ``ignore``: Do nothing
+  - ``enable``: Enable THP (see Note below)
+  - ``disable``: Disable THP
+  - ``try-disable`` (default): Try to disable, ignore failure (but emit a
+    warning)
+
+  Note: Technically, ``enable`` is "disable the disable", so it does not
+  necessarily enable THP. The setting names have been chosen to avoid a
+  confusing double negation.
 
 -j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 

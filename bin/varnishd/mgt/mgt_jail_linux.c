@@ -44,12 +44,84 @@
 #include <sys/vfs.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
+
+static int
+vjl_set_thp(const char *arg, struct vsb *vsb)
+{
+	int r, val, must;
+
+	if (!strcmp(arg, "ignore"))
+		return (0);
+	must = 1;
+	if (!strcmp(arg, "enable"))
+		val = 0;
+	else if (!strcmp(arg, "disable"))
+		val = 1;
+	else if (!strcmp(arg, "try-disable")) {
+		arg = "disable";
+		val = 1;
+		must = 0;
+	}
+	else {
+		VSB_printf(vsb, "linux jail: unknown value '%s' for argument"
+		    " transparent_hugepage.", arg);
+		return (1);
+	}
+	r = prctl(PR_SET_THP_DISABLE, val, 0, 0, 0);
+	if (r) {
+		VSB_printf(vsb, "linux jail: Could not %s "
+		    "Transparent Hugepage: %s (%d)",
+		    arg, VAS_errtxt(errno), errno);
+	}
+	return (r && must);
+}
 
 static int
 vjl_init(char **args)
 {
+	struct vsb *vsb;
+	char **unix_args;
+	const char *val;
+	int seen = 0, ret = 0;
+	size_t i;
 
-	return jail_tech_unix.init(args);
+	vsb = VSB_new_auto();
+	AN(vsb);
+
+	if (args == NULL) {
+		/* Autoconfig */
+		AZ(vjl_set_thp("try-disable", vsb));
+		MGT_ComplainVSB(C_INFO, vsb);
+		VSB_destroy(&vsb);
+		return (jail_tech_unix.init(NULL));
+	}
+
+	for (i = 0; args[i] != NULL; i++);
+	unix_args = calloc(i + 1, sizeof *unix_args);
+	AN(unix_args);
+
+	for (i = 0; *args != NULL && ret == 0; args++) {
+		val = keyval(*args, "transparent_hugepage=");
+		if (val == NULL) {
+			unix_args[i++] = *args;
+			continue;
+		}
+
+		ret |= vjl_set_thp(val, vsb);
+		seen++;
+	}
+
+	if (seen == 0)
+		AZ(vjl_set_thp("try-disable", vsb));
+
+	MGT_ComplainVSB(ret ? C_ERR : C_INFO, vsb);
+	VSB_destroy(&vsb);
+
+	if (ret == 0)
+		ret = jail_tech_unix.init(unix_args);
+	free(unix_args);
+	return (ret);
 }
 
 static void
