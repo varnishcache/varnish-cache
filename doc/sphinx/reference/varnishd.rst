@@ -456,8 +456,11 @@ specific options. Available jails are:
 
 -j <linux[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
-  Default on Linux platforms, it overloads the UNIX jail with
-  Linux-specific mechanisms.
+  Default on Linux platforms, it extends the UNIX jail with
+  Linux-specific mechanisms:
+
+  - warn when *workdir* is not in a ``tmpfs``
+  - try keeping the process dumpable after dropping privileges
 
 -j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
