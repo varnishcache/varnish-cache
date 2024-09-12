@@ -196,5 +196,5 @@ VRND_SeedAll(void)
 	AZ(VRND_RandomCrypto(&seed, sizeof seed));
 	VRND_SeedTestable(seed);
 	AZ(VRND_RandomCrypto(&seed, sizeof seed));
-	srand48(seed);
+	srand48((long)seed);
 }
