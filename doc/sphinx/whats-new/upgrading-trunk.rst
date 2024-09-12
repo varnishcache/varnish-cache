@@ -8,26 +8,58 @@ released versions of Varnish, see:** :ref:`whats-new-index`
 Upgrading to Varnish **$NEXT_RELEASE**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-**XXX: how to upgrade from previous deployments to this
-version. Limited to work that has to be done for an upgrade, new
-features are listed in "Changes". Explicitly mention what does *not*
-have to be changed, especially in VCL. May include, but is not limited
-to:**
+In general, upgrading from Varnish 7.5 to **$NEXT_RELEASE** should not require any changes
+besides the actual upgrade.
 
-* Elements of VCL that have been removed or are deprecated, or whose
-  semantics have changed.
+The changes mentioned below are considered noteworthy nevertheless:
 
-* -p parameters that have been removed or are deprecated, or whose
-  semantics have changed.
+Noteworthy changes when upgrading varnishd
+==========================================
 
-* Changes in the CLI.
+Warning about failed memory locking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Changes in the output or interpretation of stats or the log, including
-  changes affecting varnishncsa/-hist/-top.
+The ``Warning: mlock() of VSM failed`` message is now emitted when locking of
+shared memory segments (via ``mlock(2)``) fails. As Varnish performance may be
+severely impacted if shared memory segments are not resident in RAM, users
+seeing this message are urged to review the ``RLIMIT_MEMLOCK`` resource control
+as set via ``ulimit -l`` or ``LimitMEMLOCK`` with ``systemd(1)``. This is not
+new at all, just now the warning has been added to make administrators more
+aware.
 
-* Changes that may be necessary in VTCs or in the use of varnishtest.
+.. _whatsnew_upgrading_CURRENT_linux_jail:
 
-* Changes in public APIs that may require changes in VMODs or VAPI/VUT
-  clients.
+Warning if tmpfs is not used
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On Linux (when the new ``linux`` jail is used), the ``Working directory not
+mounted on tmpfs partition`` warning is now emitted if the working directory is
+found to reside on a file system other than ``tmpfs``. While other file systems
+are supported (and might be the right choice where administrators understand how
+to avoid blocking disk IO while ``varnishd`` is writing to shared memory),
+``tmpfs`` is the failsafe option to avoid performance issues.
+
+Upgrading VCL
+=============
+
+.. _RFC9110: https://www.rfc-editor.org/rfc/rfc9110.html#section-14.4
+
+An issue has been addressed in the ``builtin.vcl`` where backend responses
+would fail if they contained a ``Content-Range`` header when no range was
+requested. According to `RFC9110`_, this header should just be ignored, yet
+some Varnish users might prefer stricter checks. Thus, we decided to change
+the ``builtin.vcl`` only and users hitting this issue are advised to call
+``vcl_beresp_range`` from custom VCL.
+
+Changes for developers and VMOD authors
+=======================================
+
+The VDP filter API has changed. See :ref:`whatsnew_changes_CURRENT_VDP` for details.
+
+The signature of ``ObjWaitExtend()`` has changed. See
+:ref:`whatsnew_changes_CURRENT_Obj` for details.
+
+``varnishd`` now creates a ``worker_tmpdir`` which can be used by VMODs for
+temporary files. See :ref:`ref-vmod-event-functions` for details.
 
 *eof*

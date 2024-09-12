@@ -859,6 +859,8 @@ You should call ``VSC_*_New()`` when your VMOD is loaded and
 ``VSC_*.h`` file for the full details about the structure that contains
 your counters.
 
+.. _ref-vmod-tmpdir:
+
 Temporary Files
 ===============
 
