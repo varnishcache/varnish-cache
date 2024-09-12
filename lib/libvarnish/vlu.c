@@ -123,14 +123,18 @@ LineUpProcess(struct vlu *l)
 int
 VLU_Fd(struct vlu *l, int fd)
 {
-	int i;
+	ssize_t i;
+	size_t sz;
 
 	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
-	i = read(fd, l->buf + l->bufp, l->bufl - l->bufp);
+	assert(l->bufl >= l->bufp);
+	sz = l->bufl - l->bufp;
+	i = read(fd, l->buf + l->bufp, sz);
 	if (i == 0)
 		return (-2);
 	if (i < 0)
 		return (-1);
+	assert(i <= sz);
 	l->bufp += i;
 	return (LineUpProcess(l));
 }
