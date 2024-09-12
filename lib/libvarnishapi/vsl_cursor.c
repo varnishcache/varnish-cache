@@ -335,18 +335,20 @@ vslc_file_delete(const struct VSL_cursor *cursor)
 
 /* Read n bytes from fd into buf */
 static ssize_t
-vslc_file_readn(int fd, void *buf, ssize_t n)
+vslc_file_readn(int fd, void *bufa, ssize_t n)
 {
-	ssize_t t = 0;
+	char *buf = bufa;
 	ssize_t l;
 
-	while (t < n) {
-		l = read(fd, (char *)buf + t, n - t);
+	while (n > 0) {
+		l = read(fd, buf, n);
 		if (l <= 0)
 			return (l);
-		t += l;
+		assert(l <= n);
+		buf += l;
+		n -= l;
 	}
-	return (t);
+	return ((ssize_t)pdiff(bufa, buf));
 }
 
 static enum vsl_status v_matchproto_(vslc_next_f)
