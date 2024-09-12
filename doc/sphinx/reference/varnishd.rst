@@ -459,8 +459,8 @@ specific options. Available jails are:
   Default on Linux platforms, it extends the UNIX jail with
   Linux-specific mechanisms:
 
-  - warn when *workdir* is not in a ``tmpfs``
-  - try keeping the process dumpable after dropping privileges
+  - It warns when *workdir* is not on a ``tmpfs``.
+  - It tries to keep the process dumpable after dropping privileges.
 
 -j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
