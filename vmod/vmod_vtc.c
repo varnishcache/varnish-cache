@@ -248,7 +248,8 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
     VCL_BYTES off, VCL_BYTES len)
 {
 	struct ws *ws;
-	VCL_BYTES l, maxlen = 1024;
+	unsigned l;
+	const unsigned maxlen = 1024;
 	unsigned char buf[maxlen];
 	const char *p, *err;
 
@@ -267,6 +268,7 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 	}
 
 	l = WS_Dump(ws, *where, off, buf, len);
+	assert(l <= maxlen);
 
 	if (l == 0) {
 		switch (errno) {
@@ -279,8 +281,7 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 		return (NULL);
 	}
 
-	assert(l < maxlen);
-	p = WS_Copy(ctx->ws, buf, l);
+	p = WS_Copy(ctx->ws, buf, (int)l);
 	if (p == NULL) {
 		VRT_fail(ctx, "workspace_dump: copy failed");
 		return (NULL);
