@@ -553,7 +553,6 @@ shardcfg_apply_change(struct vsl_log *vsl, struct sharddir *shardd,
 			re.hint++;
 			break;
 		case REMOVE_BE:
-			re.hint--;
 			break;
 		default:
 			INCOMPL();
