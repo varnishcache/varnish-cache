@@ -520,7 +520,6 @@ vbp_scheduler(struct worker *wrk, void *priv)
 			(void)Lck_CondWaitUntil(&vbp_cond, &vbp_mtx, nxt);
 		} else if (vt->due > now) {
 			nxt = vt->due;
-			vt = NULL;
 			(void)Lck_CondWaitUntil(&vbp_cond, &vbp_mtx, nxt);
 		} else {
 			assert(vt->state == vbp_state_scheduled);
