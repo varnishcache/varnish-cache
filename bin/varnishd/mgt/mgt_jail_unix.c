@@ -215,6 +215,7 @@ vju_subproc(enum jail_subproc_e jse)
 		/* Add the optional extra group for the C-compiler access */
 		i = getgroups(NGID, gid_list);
 		assert(i >= 0);
+		assert(i < NGID - 1);
 		gid_list[i++] = vju_cc_gid;
 		AZ(setgroups(i, gid_list));
 	}
