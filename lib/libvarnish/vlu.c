@@ -134,7 +134,7 @@ VLU_Fd(struct vlu *l, int fd)
 		return (-2);
 	if (i < 0)
 		return (-1);
-	assert(i <= sz);
+	assert((size_t)i <= sz);
 	l->bufp += i;
 	return (LineUpProcess(l));
 }
