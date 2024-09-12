@@ -49,7 +49,7 @@ static struct lock pipestat_mtx;
 static int
 rdf(int fd0, int fd1, uint64_t *pcnt)
 {
-	int i, j;
+	ssize_t i, j;
 	char buf[BUFSIZ], *p;
 
 	i = read(fd0, buf, sizeof buf);
