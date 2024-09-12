@@ -105,6 +105,7 @@ vwe_thread(void *priv)
 			}
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
+			AN(vwe->nwaited);
 			vwe->nwaited--;
 			AN(Wait_HeapDelete(w, wp));
 			Lck_Unlock(&vwe->mtx);
@@ -138,6 +139,7 @@ vwe_thread(void *priv)
 				continue;
 			}
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
+			AN(vwe->nwaited);
 			vwe->nwaited--;
 			if (ep->events & EPOLLIN) {
 				if (ep->events & EPOLLRDHUP &&
