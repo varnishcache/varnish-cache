@@ -81,9 +81,9 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 			    TOSTRAND(VAS_errtxt(errno)));
 			return (i);
 		}
+		assert(i <= len);
 		if (i == 0)
 			htc->doclose = SC_RESP_CLOSE;
-
 	}
 	return (i + l);
 }
