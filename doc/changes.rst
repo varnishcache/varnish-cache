@@ -97,8 +97,8 @@ Varnish Cache NEXT (2024-09-15)
   added to ``libvarnish``.
 
 * The ``Warning: mlock() of VSM failed`` message is now emitted when locking of
-  shared memory segments (via ``mlock(2)``) fails. As Varnish performance may
-  severely be impacted if shared memory segments are not resident in RAM, users
+  shared memory segments (via ``mlock(2)``) fails. As Varnish performance may be
+  severely impacted if shared memory segments are not resident in RAM, users
   seeing this message are urged to review the ``RLIMIT_MEMLOCK`` resource
   control as set via ``ulimit -l`` or ``LimitMEMLOCK`` with ``systemd(1)``.
 
@@ -111,9 +111,9 @@ Varnish Cache NEXT (2024-09-15)
 * An issue has been addressed in the ``builtin.vcl`` where backend responses
   would fail if they contained a ``Content-Range`` header when no range was
   requested. According to `RFC9110`_, this header should just be ignored, yet
-  some Varnish-Users might prefer stricter checks. Thus, we decided to change
+  some Varnish users might prefer stricter checks. Thus, we decided to change
   the ``builtin.vcl`` only and users hitting this issue are advised to call
-  ``vcl_beresp_range`` in custom VCL.
+  ``vcl_beresp_range`` from custom VCL.
 
 * Additional ``SessError`` VSL events are now generated for various HTTP/2
   protocol errors. Some HTTP/2 log events have been changed from ``Debug`` and
@@ -142,14 +142,14 @@ Varnish Cache NEXT (2024-09-15)
 
 * Backend tasks can now be instructed to queue if the backend has reached its
   ``max_connections``. This allows tasks to wait for a connection to become
-  available rather than immediately failing. This feature must be enabled
-  through new global parameters or individual backend properties:
+  available rather than immediately fail. This feature must be enabled through
+  new global parameters or individual backend attributes:
 
   * ``backend_wait_timeout`` sets the amount of time a task will wait.
   * ``backend_wait_limit`` sets the maximum number of tasks that can wait.
 
   These parameters can also be set for individual backends using the
-  ``wait_timeout`` and ``wait_limit`` properties.
+  ``wait_timeout`` and ``wait_limit`` attributes.
 
   Tasks waiting on a backend going sick (either explicitly via the
   ``backend.set_health`` command or implicitly through the probe) fail
@@ -174,12 +174,11 @@ Varnish Cache NEXT (2024-09-15)
   using ``varnishlog -q``) with numerical values would fail in unexpected ways
   due to truncation. (`4088`_)
 
-* The ObjWaitExtend() Object API function gained a ``statep`` argument
-  to optionally return the busy object state consistent with the
-  current extension. A ``NULL`` value may be passed if the caller does
-  not require it.
+* The ``ObjWaitExtend()`` Object API function gained a ``statep`` argument to
+  optionally return the busy object state consistent with the current extension.
+  A ``NULL`` value may be passed if the caller does not require it.
 
-* for backends using the ``.via`` attribute to connect through a
+* For backends using the ``.via`` attribute to connect through a
   *proxy*, the ``connect_timeout``, ``first_byte_timeout`` and
   ``between_bytes_timeout`` attributes are now inherited from *proxy*
   unless explicitly given.
