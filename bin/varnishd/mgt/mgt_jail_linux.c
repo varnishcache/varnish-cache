@@ -48,15 +48,24 @@
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 
-static int vjl_init(char **args) {
+static int
+vjl_init(char **args)
+{
+
 	return jail_tech_unix.init(args);
 }
 
-static void vjl_master(enum jail_master_e jme) {
+static void
+vjl_master(enum jail_master_e jme)
+{
+
 	jail_tech_unix.master(jme);
 }
 
-static void vjl_subproc(enum jail_subproc_e jse) {
+static void
+vjl_subproc(enum jail_subproc_e jse)
+{
+
 	jail_tech_unix.subproc(jse);
 	/*
 	 * On linux mucking about with uid/gid disables core-dumps,
@@ -68,15 +77,21 @@ static void vjl_subproc(enum jail_subproc_e jse) {
 	}
 }
 
-static int vjl_make_subdir(const char *dname, const char *what, struct vsb *vsb) {
+static int
+vjl_make_subdir(const char *dname, const char *what, struct vsb *vsb)
+{
+
 	return jail_tech_unix.make_subdir(dname, what, vsb);
 }
 
-static int vjl_make_workdir(const char *dname, const char *what, struct vsb *vsb) {
+static int
+vjl_make_workdir(const char *dname, const char *what, struct vsb *vsb)
+{
 	struct statfs info;
 
 	if (jail_tech_unix.make_workdir(dname, what, vsb) != 0)
 		return (1);
+
 	vjl_master(JAIL_MASTER_FILE);
 	if (statfs(dname, &info) != 0) {
 		if (vsb)
@@ -95,7 +110,10 @@ static int vjl_make_workdir(const char *dname, const char *what, struct vsb *vsb
 	return (0);
 }
 
-static void vjl_fixfd(int fd, enum jail_fixfd_e what) {
+static void
+vjl_fixfd(int fd, enum jail_fixfd_e what)
+{
+
 	jail_tech_unix.fixfd(fd, what);
 }
 
