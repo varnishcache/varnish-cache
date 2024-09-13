@@ -46,9 +46,9 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
-#define VRT_MAJOR_VERSION	19U
+#define VRT_MAJOR_VERSION	20U
 
-#define VRT_MINOR_VERSION	1U
+#define VRT_MINOR_VERSION	0U
 
 /***********************************************************************
  * Major and minor VRT API versions.
@@ -57,7 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * NEXT (2024-09-15)
+ * 20.0 (2024-09-13)
  *	struct vrt_backend.backend_wait_timeout added
  *	struct vrt_backend.backend_wait_limit  added
  * 19.1 (2024-05-27)

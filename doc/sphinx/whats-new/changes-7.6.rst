@@ -1,11 +1,11 @@
-.. _whatsnew_changes_CURRENT:
+.. _whatsnew_changes_7.6:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **${NEXT_RELEASE}**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish 7.6
+%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_7.6`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been
@@ -25,14 +25,14 @@ varnishd
 
 A new ``linux`` jail has been added (configured via the ``-j`` argument) which is
 now the default on Linux. For now, it is almost identical to the ``unix`` jail
-with one :ref:`whatsnew_upgrading_CURRENT_linux_jail` added.
+with one :ref:`whatsnew_upgrading_7.6_linux_jail` added.
 
 The port of a *listen_endpoint* given with the ``-a`` argument to ``varnishd``
 can now also be a numerical port range like ``80-89``, besides the existing
 options of port number (e.g. ``80``) and service name (e.g. ``http``). With a
 port range, Varnish will accept connections on all ports within the range.
 
-.. _whatsnew_changes_CURRENT_connq:
+.. _whatsnew_changes_7.6_connq:
 
 Backend connection queuing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,7 +62,7 @@ Parameters
 ~~~~~~~~~~
 
 The ``backend_wait_timeout`` and ``backend_wait_limit`` parameters have been
-added, see :ref:`whatsnew_changes_CURRENT_connq` above for details.
+added, see :ref:`whatsnew_changes_7.6_connq` above for details.
 
 The size of the buffer to hold panic messages is now tunable through the new
 ``panic_buffer`` parameter.
@@ -71,7 +71,7 @@ Changes to VCL
 ==============
 
 The ``wait_timeout`` and ``wait_limit`` backend properties have been added, see
-:ref:`whatsnew_changes_CURRENT_connq` above for details.
+:ref:`whatsnew_changes_7.6_connq` above for details.
 
 For backends using the ``.via`` attribute to connect through a *proxy*, the
 ``connect_timeout``, ``first_byte_timeout`` and ``between_bytes_timeout``
@@ -97,7 +97,7 @@ VSC counters for waiters have been added:
 These can be found under ``WAITER.<poolname>.``.
 
 The ``MAIN.backend_wait`` and ``MAIN.backend_wait_fail`` counters have been
-added, see :ref:`whatsnew_changes_CURRENT_connq` above for details.
+added, see :ref:`whatsnew_changes_7.6_connq` above for details.
 
 varnishtest
 ===========
@@ -108,7 +108,7 @@ varnishtest
 Changes for developers and VMOD authors
 =======================================
 
-.. _whatsnew_changes_CURRENT_VDP:
+.. _whatsnew_changes_7.6_VDP:
 
 VDP filter API changes
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -143,7 +143,7 @@ VDPs with no ``vdp_bytes_f`` function are now supported if the ``vdp_init_f``
 returns a value greater than zero to signify that the filter is not to be added
 to the chain. This is useful to support VDPs which only need to work on headers.
 
-.. _whatsnew_changes_CURRENT_Obj:
+.. _whatsnew_changes_7.6_Obj:
 
 Object API changes
 ~~~~~~~~~~~~~~~~~~

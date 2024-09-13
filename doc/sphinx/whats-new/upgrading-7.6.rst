@@ -1,14 +1,10 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_upgrading_7.6:
 
-.. _whatsnew_upgrading_CURRENT:
+%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish 7.6
+%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-In general, upgrading from Varnish 7.5 to **$NEXT_RELEASE** should not require any changes
+In general, upgrading from Varnish 7.5 to 7.6 should not require any changes
 besides the actual upgrade.
 
 The changes mentioned below are considered noteworthy nevertheless:
@@ -27,7 +23,7 @@ as set via ``ulimit -l`` or ``LimitMEMLOCK`` with ``systemd(1)``. This is not
 new at all, just now the warning has been added to make administrators more
 aware.
 
-.. _whatsnew_upgrading_CURRENT_linux_jail:
+.. _whatsnew_upgrading_7.6_linux_jail:
 
 Warning if tmpfs is not used
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,10 +50,10 @@ the ``builtin.vcl`` only and users hitting this issue are advised to call
 Changes for developers and VMOD authors
 =======================================
 
-The VDP filter API has changed. See :ref:`whatsnew_changes_CURRENT_VDP` for details.
+The VDP filter API has changed. See :ref:`whatsnew_changes_7.6_VDP` for details.
 
 The signature of ``ObjWaitExtend()`` has changed. See
-:ref:`whatsnew_changes_CURRENT_Obj` for details.
+:ref:`whatsnew_changes_7.6_Obj` for details.
 
 ``varnishd`` now creates a ``worker_tmpdir`` which can be used by VMODs for
 temporary files. See :ref:`ref-vmod-event-functions` for details.
