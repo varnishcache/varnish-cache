@@ -1592,7 +1592,7 @@ cmd_http_accept(CMD_ARGS)
  *	\-read
  *		Shutdown the read direction.
  *	\-write
- *		Shutdown the write direction
+ *		Shutdown the write direction.
  *
  *	The default is both direction.
  */
@@ -1804,12 +1804,12 @@ const struct cmds http_cmds[] = {
 	/* session */
 	CMD_HTTP(accept)
 	CMD_HTTP(close)
-	CMD_HTTP(shutdown)
 	CMD_HTTP(recv)
 	CMD_HTTP(send)
 	CMD_HTTP(send_n)
 	CMD_HTTP(send_urgent)
 	CMD_HTTP(sendhex)
+	CMD_HTTP(shutdown)
 	CMD_HTTP(timeout)
 
 	/* spec */
