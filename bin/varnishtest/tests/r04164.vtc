@@ -1,5 +1,8 @@
 varnishtest "pass, rollback, invalid range"
 
+# ws_emu triggers #3550
+feature !workspace_emulator
+
 server s1 {
 	rxreq
 	expect req.url == "/baz"
