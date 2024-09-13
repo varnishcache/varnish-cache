@@ -342,11 +342,11 @@ class ProtoType():
             self.retval = CType(['VOID'], st.vcc.enums)
 
         self.bname = wl.pop(0)
-        if not re.match("^[a-zA-Z.][a-zA-Z0-9_]*$", self.bname):
+        if not re.match(r'^[a-zA-Z.][a-zA-Z0-9_]*$', self.bname):
             err("%s(): Illegal name\n" % self.bname, warn=False)
 
         self.name = prefix + self.bname
-        if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', self.cname()):
+        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', self.cname()):
             err("%s(): Illegal C-name\n" % self.cname(), warn=False)
 
         if len(wl) == 2 and wl[0] == '(' and wl[1] == ')':
@@ -899,10 +899,10 @@ class AliasStanza(Stanza):
     def parse(self):
         if len(self.toks) != 3:
             err("Syntax error, expected: $Alias <alias> <symbol>\n", warn=False)
-        if not re.match('^\.?[a-zA-Z_][a-zA-Z0-9_]*$', self.toks[1]):
+        if not re.match(r'^\.?[a-zA-Z_][a-zA-Z0-9_]*$', self.toks[1]):
             err("%s(): Illegal C-name\n" % self.toks[1], warn=False)
         if self.toks[1][0] == '.':
-            if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*$',
+            if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*$',
                     self.toks[2]):
                 err("Syntax error, expected: $Alias <.alias> <obj.method>\n",
                         warn=False)
