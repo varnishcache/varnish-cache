@@ -34,9 +34,9 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-===============================
-Varnish Cache NEXT (2024-09-15)
-===============================
+================================
+Varnish Cache 7.6.0 (2024-09-13)
+================================
 
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
