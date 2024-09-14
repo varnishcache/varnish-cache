@@ -53,6 +53,7 @@ varnishd_SOURCES = \
 	cache/cache_vrt_var.c \
 	cache/cache_vrt_vcl.c \
 	cache/cache_vrt_vmod.c \
+	cache/cache_vsync.c \
 	cache/cache_wrk.c \
 	cache/cache_ws_common.c \
 	common/common_vsc.c \

@@ -402,6 +402,7 @@ child_main(int sigmagic, size_t altstksz)
 	VSM_Init();	/* First, LCK needs it. */
 
 	LCK_Init();	/* Second, locking */
+	SYNC_Init();
 
 	Lck_New(&vxid_lock, lck_vxid);
 
