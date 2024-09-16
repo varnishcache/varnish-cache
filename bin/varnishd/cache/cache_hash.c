@@ -831,7 +831,7 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	if ((oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)) == 0)
+	if ((oc->flags & OC_F_TRANSIENT) == 0)
 		return;
 
 	/*

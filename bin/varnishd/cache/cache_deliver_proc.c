@@ -277,7 +277,7 @@ VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 	AZ(vdc->oc);
 	vdc->hp = NULL;
 	vdc->clen = NULL;
-	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
+	final = oc->flags & OC_F_TRANSIENT ? 1 : 0;
 	r = ObjIterate(vdc->wrk, oc, vdc, vdp_objiterate, final);
 	if (r < 0)
 		return (r);

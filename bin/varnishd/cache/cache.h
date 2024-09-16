@@ -326,6 +326,8 @@ enum oc_flags {
 #include "tbl/oc_flags.h"
 };
 
+#define OC_F_TRANSIENT (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)
+
 enum oc_exp_flags {
 #define OC_EXP_FLAG(U, l, v)	OC_EF_##U = v,
 #include "tbl/oc_exp_flags.h"
