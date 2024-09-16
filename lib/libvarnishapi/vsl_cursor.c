@@ -340,6 +340,8 @@ vslc_file_readn(int fd, void *buf, ssize_t n)
 	ssize_t t = 0;
 	ssize_t l;
 
+	assert(n > 0);
+
 	while (t < n) {
 		l = read(fd, (char *)buf + t, n - t);
 		if (l <= 0)
