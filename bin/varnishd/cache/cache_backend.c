@@ -140,8 +140,9 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 /*--------------------------------------------------------------------*/
 
 int
-VBE_is_ah_auto (const struct backend *bp)
+VBE_is_ah_auto(const struct backend *bp)
 {
+
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	return (bp->director->vdir->admin_health == VDI_AH_AUTO);
 }
@@ -150,16 +151,8 @@ void
 VBE_connwait_signal_all(const struct backend *bp)
 {
 	struct connwait *cw;
-	unsigned wait_limit;
-	vtim_dur wait_tmod;
 
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-
-	FIND_BE_PARAM(backend_wait_limit, wait_limit, bp);
-	FIND_BE_TMO(backend_wait_timeout, wait_tmod, bp);
-
-	if (wait_limit == 0 || wait_tmod <= 0)
-		return;
 
 	Lck_Lock(bp->director->mtx);
 	VTAILQ_FOREACH(cw, &bp->cw_head, cw_list) {
