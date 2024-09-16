@@ -679,6 +679,10 @@ vbe_healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *t)
 	if (t != NULL)
 		*t = bp->changed;
 
+	if (d->vdir->admin_health == VDI_AH_SICK ||
+	    (d->vdir->admin_health == VDI_AH_AUTO && bp->sick))
+		VBE_connwait_signal_all(bp);
+
 	return (!bp->sick);
 }
 

@@ -488,12 +488,12 @@ do_set_health(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->admin_health != sh->ah) {
 		d->vdir->health_changed = VTIM_real();
 		d->vdir->admin_health = sh->ah;
+		/*
+		 * notify the director about its health change
+		 * through its healthy callback
+		 */
 		ctx = VCL_Get_CliCtx(0);
-		if (sh->ah == VDI_AH_SICK || (sh->ah == VDI_AH_AUTO &&
-		    d->vdir->methods->healthy != NULL &&
-		    !d->vdir->methods->healthy(ctx, d, NULL))) {
-			VBE_connwait_signal_all(d->priv);
-		    }
+		VRT_Healthy(ctx, d, NULL);
 	}
 	return (0);
 }
