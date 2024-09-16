@@ -190,8 +190,6 @@ varnish v1 -vcl {
 		.host = "${v0_addr}";
 		.port = "${v0_port}";
 		.max_connections = 1;
-		.wait_timeout = 1h;
-		.wait_limit = 10;
 	}
 
 	probe default {
@@ -205,7 +203,10 @@ varnish v1 -vcl {
 		return(pass);
 	}
 } -start
+
 varnish v1 -cliok "backend.set_health be healthy"
+varnish v1 -cliok "param.set backend_wait_timeout 1h"
+varnish v1 -cliok "param.set backend_wait_limit 10"
 
 client c9 {
 	txreq
@@ -245,8 +246,13 @@ client c12 {
 
 # make sure c10-12 are already in the queue
 barrier b6 sync
+
+varnish v1 -cliok "param.reset backend_wait_timeout"
+varnish v1 -cliok "param.reset backend_wait_limit"
+
 # Going back to probe (auto) that is sick should
-# wake up reqs in the wait queue
+# wake up reqs in the wait queue, even if queuing
+# is currently disabled.
 varnish v1 -cliok "backend.set_health be auto"
 
 client c9 -wait
