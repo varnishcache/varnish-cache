@@ -225,7 +225,7 @@ obj_extend_condwait(const struct objcore *oc)
 	if (oc->boc->transit_buffer == 0)
 		return;
 
-	assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+	assert(oc->flags & OC_F_TRANSIENT);
 	/* NB: strictly signaling progress both ways would be prone to
 	 * deadlocks, so instead we wait for signals from the client side
 	 * when delivered_so_far so far is updated, but in case the fetch
@@ -279,7 +279,7 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
 		rv = oc->boc->fetched_so_far;
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
 		if (oc->boc->transit_buffer > 0) {
-			assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+			assert(oc->flags & OC_F_TRANSIENT);
 			/* Signal the new client position */
 			oc->boc->delivered_so_far = l;
 			PTOK(pthread_cond_signal(&oc->boc->cond));
