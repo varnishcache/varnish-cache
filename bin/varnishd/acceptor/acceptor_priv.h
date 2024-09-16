@@ -51,6 +51,7 @@ struct poolsock {
 	struct listen_sock		*lsock;
 	struct pool_task		task[1];
 	struct pool			*pool;
+	void				*vca_priv;
 };
 
 struct conn_heritage {

@@ -61,6 +61,7 @@ struct acceptor {
 	VTAILQ_ENTRY(acceptor)		list;
 	VTAILQ_HEAD(,listen_sock)	socks;
 	const char			*name;
+	void				*vca_priv;
 
 	acceptor_config_f		*config;
 	acceptor_init_f			*init;
