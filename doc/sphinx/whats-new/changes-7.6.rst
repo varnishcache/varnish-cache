@@ -20,6 +20,12 @@ The environment variable ``VARNISH_DEFAULT_N`` now provides the default "varnish
 name" / "workdir" as otherwise specified by he ``-n`` argument to ``varnishd``
 and ``varnish*`` utilities except ``varnishtest``.
 
+Programs attaching to ``varnishd``'s shared memory are now performing more
+precise status checks of the ``varnishd`` process. They should in particular
+better detect restarts of the process. This comes with signal-based liveness
+checks that can be disabled when ``VSM_NOPID`` is exported to the environment
+of utilities like ``varnishlog``, ``varnishstat`` or ``varnishncsa``.
+
 varnishd
 ========
 
