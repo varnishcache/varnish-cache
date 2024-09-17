@@ -493,7 +493,6 @@ static int v_matchproto_(vcl_be_func)
 do_set_health(struct cli *cli, struct director *d, void *priv)
 {
 	struct set_health *sh;
-	struct vrt_ctx *ctx;
 
 	(void)cli;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -504,12 +503,7 @@ do_set_health(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->admin_health != sh->ah) {
 		d->vdir->health_changed = VTIM_real();
 		d->vdir->admin_health = sh->ah;
-		ctx = VCL_Get_CliCtx(0);
-		if (sh->ah == VDI_AH_SICK || (sh->ah == VDI_AH_AUTO &&
-		    d->vdir->methods->healthy != NULL &&
-		    !d->vdir->methods->healthy(ctx, d, NULL))) {
-			VBE_connwait_signal_all(d->priv);
-		    }
+		VRT_Notify(d);
 	}
 	return (0);
 }
