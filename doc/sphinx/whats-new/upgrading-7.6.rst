@@ -9,6 +9,14 @@ besides the actual upgrade.
 
 The changes mentioned below are considered noteworthy nevertheless:
 
+Noteworthy changes for container workloads
+==========================================
+
+When ``varnishd`` runs in a different PID namespace on Linux, typically in a
+container deployment, ``VSM_NOPID`` must be added to the environment of other
+containers attaching themselves to ``varnishd``'s environment variable. This
+will otherwise fail liveness checks performed by VSM consumers.
+
 Noteworthy changes when upgrading varnishd
 ==========================================
 
