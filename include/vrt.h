@@ -46,7 +46,7 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
-#define VRT_MAJOR_VERSION	20U
+#define VRT_MAJOR_VERSION	21U
 
 #define VRT_MINOR_VERSION	0U
 
@@ -58,6 +58,9 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2024-03-15)
+ * 21.0
+ *	notify callback added to struct vdi_methods
+ *	VRT_Notify() added
  * 20.0 (2024-09-13)
  *	struct vrt_backend.backend_wait_timeout added
  *	struct vrt_backend.backend_wait_limit  added
@@ -737,6 +740,7 @@ typedef void vdi_release_f(VCL_BACKEND);
 typedef void vdi_destroy_f(VCL_BACKEND);
 typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);
 typedef void vdi_list_f(VRT_CTX, VCL_BACKEND, struct vsb *, int, int);
+typedef void vdi_notify_f(VCL_BACKEND);
 
 struct vdi_methods {
 	unsigned			magic;
@@ -755,6 +759,9 @@ struct vdi_methods {
 	vdi_destroy_f			*destroy;
 	vdi_panic_f			*panic;
 	vdi_list_f			*list;
+	// when something changes outside the backend's control
+	// (for now, admin health)
+	vdi_notify_f			*notify;
 };
 
 struct director {
@@ -767,6 +774,7 @@ struct director {
 };
 
 VCL_BOOL VRT_Healthy(VRT_CTX, VCL_BACKEND, VCL_TIME *);
+VCL_VOID VRT_Notify(VCL_BACKEND);
 VCL_VOID VRT_SetChanged(VCL_BACKEND, VCL_TIME);
 VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
     void *, const char *, ...) v_printflike_(4, 5);

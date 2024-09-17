@@ -661,6 +661,21 @@ vbe_healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *t)
 	return (!bp->sick);
 }
 
+static VCL_VOID v_matchproto_(vdi_notify_f)
+vbe_notify(VCL_BACKEND d)
+{
+	const struct vdi_ahealth *ah;
+	struct backend *bp;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(d->vdir, VCLDIR_MAGIC);
+	ah = d->vdir->admin_health;
+
+	// sick == 0 for _noprobe
+	if (ah == VDI_AH_SICK || (ah == VDI_AH_AUTO && bp->sick))
+		VBE_connwait_signal_all(bp);
+}
 
 /*--------------------------------------------------------------------
  */
@@ -676,7 +691,8 @@ static const struct vdi_methods vbe_methods[1] = {{
 	.destroy =		vbe_destroy,
 	.panic =		vbe_panic,
 	.list =			vbe_list,
-	.healthy =		vbe_healthy
+	.healthy =		vbe_healthy,
+	.notify =		vbe_notify
 }};
 
 static const struct vdi_methods vbe_methods_noprobe[1] = {{
@@ -689,7 +705,8 @@ static const struct vdi_methods vbe_methods_noprobe[1] = {{
 	.event =		vbe_dir_event,
 	.destroy =		vbe_destroy,
 	.panic =		vbe_panic,
-	.list =			vbe_list
+	.list =			vbe_list,
+	.notify =		vbe_notify
 }};
 
 /*--------------------------------------------------------------------

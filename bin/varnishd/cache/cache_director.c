@@ -265,6 +265,22 @@ VRT_SetChanged(VCL_BACKEND d, VCL_TIME changed)
 		d->vdir->health_changed = changed;
 }
 
+/*--------------------------------------------------------------------
+ * Notify of change (admin_health for now) outside backend
+ */
+
+VCL_VOID
+VRT_Notify(VCL_BACKEND d)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(d->vdir, VCLDIR_MAGIC);
+	CHECK_OBJ_NOTNULL(d->vdir->methods, VDI_METHODS_MAGIC);
+	if (d->vdir->methods->notify == NULL)
+		return;
+	d->vdir->methods->notify(d);
+}
+
 /* Send Event ----------------------------------------------------------
  */
 
