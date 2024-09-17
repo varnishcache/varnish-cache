@@ -57,6 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * NEXT (2024-03-15)
  * 20.0 (2024-09-13)
  *	struct vrt_backend.backend_wait_timeout added
  *	struct vrt_backend.backend_wait_limit  added

@@ -34,12 +34,16 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-================================
-Varnish Cache 7.6.0 (2024-09-13)
-================================
+===============================
+Varnish Cache NEXT (2025-03-15)
+===============================
 
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
+
+================================
+Varnish Cache 7.6.0 (2024-09-13)
+================================
 
 * The Varnish Delivery Processor (VDP) filter API has been generalized to also
   accommodate future use for backend request bodies:
