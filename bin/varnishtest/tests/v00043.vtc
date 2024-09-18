@@ -72,7 +72,7 @@ varnish v1 -errvcl "Not available in subroutine 'vcl_init'" {
 }
 
 # give enough stack to 32bit systems
-varnish v1 -cliok "param.set thread_pool_stack 80k"
+varnish v1 -cliok "param.set thread_pool_stack 128k"
 varnish v1 -cliok "param.set debug +syncvsl"
 
 varnish v1 -vcl+backend {
