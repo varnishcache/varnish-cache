@@ -4,7 +4,7 @@ import re
 import sys
 
 #HPH(0x30, 0x00000000,  5)
-regex = re.compile("^HPH\((.{4}), (.{10}), +(.{1,3})\)")
+regex = re.compile(r"^HPH\((.{4}), (.{10}), +(.{1,3})\)")
 
 if len(sys.argv) != 2:
     print("{} takes one and only one argument".format(sys.argv[0]))
