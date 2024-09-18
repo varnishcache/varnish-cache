@@ -363,7 +363,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 		vcc_ErrWhere2(tl, t0, tl->t);
 		return (NULL);
 	}
-	if (kind != SYM_NONE && kind != sym->kind) {
+	if (kind != SYM_NONE && kind != sym->kind && sym->type != DEFAULT) {
 		VSB_cat(tl->sb, "Symbol '");
 		vcc_PrintTokens(tl, t0, tl->t);
 		VSB_printf(tl->sb, "' has wrong type (%s), expected %s:",
@@ -576,6 +576,11 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt)
 	vcc_kind_t kind;
 	struct token *t;
 	const char *p;
+
+	if (vcc_IdIs(tl->t, "default") && fmt->default_sym != NULL) {
+		vcc_NextToken(tl);
+		return (fmt->default_sym);
+	}
 
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);

@@ -1606,14 +1606,13 @@ vcc_Eval_Default(struct vcc *tl, struct expr **e, struct token *t,
 	(void)sym;
 	(void)t;
 
-	if (fmt == PROBE)
-		*e = vcc_mk_expr(PROBE, "%s", vcc_default_probe(tl));
-	else if (fmt == BACKEND)
-		*e = vcc_mk_expr(BACKEND, "*(VCL_conf.default_director)");
-	else {
+	if (fmt->default_sym == NULL) {
 		VSB_cat(tl->sb, "Symbol 'default' is a reserved word.\n");
 		vcc_ErrWhere(tl, t);
+		return;
 	}
+
+	*e = vcc_mk_expr(fmt, "%s", fmt->default_sym->rname);
 }
 
 /*--------------------------------------------------------------------
@@ -1650,6 +1649,6 @@ vcc_Expr_Init(struct vcc *tl)
 
 	sym = VCC_MkSym(tl, "default", SYM_MAIN, SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
-	sym->type = BACKEND;	// ... can also (sometimes) deliver PROBE
+	sym->type = DEFAULT;
 	sym->eval = vcc_Eval_Default;
 }

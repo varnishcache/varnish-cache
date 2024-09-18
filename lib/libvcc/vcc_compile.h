@@ -118,6 +118,8 @@ struct type {
 	const char		*global_pfx;
 	const char		*tostring;
 	vcc_type_t		multype;
+	struct symbol		*default_sym;
+
 	int			stringform;
 	int			bodyform;
 	int			noindent;
@@ -125,6 +127,8 @@ struct type {
 
 #define VCC_TYPE(UC, lc)	extern const struct type UC[1];
 #include "vcc_types.h"
+
+extern const struct type DEFAULT[1]; /* type for pseudo-symbol "default" */
 
 /*---------------------------------------------------------------------*/
 
@@ -317,7 +321,6 @@ void vcc_Action_Init(struct vcc *);
 /* vcc_backend.c */
 struct fld_spec;
 
-const char *vcc_default_probe(struct vcc *);
 void vcc_Backend_Init(struct vcc *tl);
 void vcc_ParseProbe(struct vcc *tl);
 void vcc_ParseBackend(struct vcc *tl);
