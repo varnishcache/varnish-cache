@@ -15,7 +15,7 @@ server s1 {
 } -start
 
 # give enough stack to 32bit systems
-varnish v1 -cliok "param.set thread_pool_stack 80k"
+varnish v1 -cliok "param.set thread_pool_stack 128k"
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
