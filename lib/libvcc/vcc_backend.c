@@ -40,19 +40,6 @@
 #include "vcc_compile.h"
 #include "vus.h"
 
-const char *
-vcc_default_probe(struct vcc *tl)
-{
-
-	if (tl->default_probe != NULL)
-		return (tl->default_probe);
-	VSB_cat(tl->sb, "No default probe defined\n");
-	vcc_ErrToken(tl, tl->t);
-	VSB_cat(tl->sb, " at\n");
-	vcc_ErrWhere(tl, tl->t);
-	return ("");
-}
-
 /*--------------------------------------------------------------------
  * Struct sockaddr is not really designed to be a compile time
  * initialized data structure, so we encode it as a byte-string
@@ -346,16 +333,16 @@ vcc_ParseProbe(struct vcc *tl)
 
 	vcc_ExpectVid(tl, "backend probe");	/* ID: name */
 	ERRCHK(tl);
-	if (vcc_IdIs(tl->t, "default")) {
-		vcc_NextToken(tl);
-		vcc_ParseProbeSpec(tl, NULL, &p);
+
+	sym = VCC_HandleSymbol(tl, PROBE);
+	ERRCHK(tl);
+	AN(sym);
+	vcc_ParseProbeSpec(tl, sym, &p);
+
+	if (sym->type == DEFAULT)
 		tl->default_probe = p;
-	} else {
-		sym = VCC_HandleSymbol(tl, PROBE);
-		ERRCHK(tl);
-		AN(sym);
-		vcc_ParseProbeSpec(tl, sym, NULL);
-	}
+	else
+		free(p);
 }
 
 /*--------------------------------------------------------------------
@@ -370,6 +357,7 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 {
 	const struct token *t_field;
 	const struct token *t_val;
+	const struct token *t_probe;
 	const struct token *t_host = NULL;
 	const struct token *t_port = NULL;
 	const struct token *t_path = NULL;
@@ -526,16 +514,23 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 			free(p);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
-			if (vcc_IdIs(tl->t, "default")) {
-				vcc_NextToken(tl);
-				(void)vcc_default_probe(tl);
-			} else {
-				pb = VCC_SymbolGet(tl, SYM_MAIN, SYM_PROBE,
-				    SYMTAB_EXISTING, XREF_REF);
-				ERRCHK(tl);
-				AN(pb);
-				Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
+			t_probe = tl->t;
+			pb = VCC_SymbolGet(tl, SYM_MAIN, SYM_PROBE,
+			    SYMTAB_EXISTING, XREF_REF);
+			ERRCHK(tl);
+			AN(pb);
+			if (pb->type == DEFAULT) {
+				if (tl->default_probe == NULL) {
+					VSB_cat(tl->sb,
+					    "No default probe defined\n");
+					vcc_ErrToken(tl, t_probe);
+					VSB_cat(tl->sb, " at\n");
+					vcc_ErrWhere(tl, t_probe);
+				}
+				pb = PROBE->default_sym;
 			}
+			ERRCHK(tl);
+			Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
 			VSB_cat(tl->sb, "Expected '{' or name of probe, got ");
@@ -720,7 +715,12 @@ vcc_ParseBackend(struct vcc *tl)
 	ERRCHK(tl);
 
 	t_be = tl->t;
-	if (vcc_IdIs(tl->t, "default")) {
+
+	sym = VCC_HandleSymbol(tl, BACKEND);
+	ERRCHK(tl);
+	AN(sym);
+
+	if (sym->type == DEFAULT) {
 		if (tl->first_director != NULL) {
 			tl->first_director->noref = 0;
 			tl->first_director = NULL;
@@ -732,13 +732,9 @@ vcc_ParseBackend(struct vcc *tl)
 			vcc_ErrWhere(tl, t_first);
 			return;
 		}
-		vcc_NextToken(tl);
 		dn = "vgc_backend_default";
 		tl->default_director = dn;
 	} else {
-		sym = VCC_HandleSymbol(tl, BACKEND);
-		ERRCHK(tl);
-		AN(sym);
 		dn = sym->rname;
 		if (tl->default_director == NULL) {
 			tl->first_director = sym;
@@ -746,6 +742,7 @@ vcc_ParseBackend(struct vcc *tl)
 			sym->noref = 1;
 		}
 	}
+
 	Fh(tl, 0, "\nstatic VCL_BACKEND %s;\n", dn);
 	vcc_ParseHostDef(tl, sym, t_be, dn);
 	if (tl->err) {

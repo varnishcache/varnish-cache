@@ -176,3 +176,9 @@ varnish v1 -errvcl "Cannot stack .via backends" {
 		set bereq.backend = c;
 	}
 }
+
+# issue #4177: backend named default with .via property
+varnish v1 -vcl {
+	backend via { .host = "${localhost}"; }
+	backend default { .via = via; .host = "${localhost}"; }
+}

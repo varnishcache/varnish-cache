@@ -67,12 +67,23 @@ static const struct vcc_method backend_methods[] = {
 	{ VCC_METHOD_MAGIC, NULL },
 };
 
+static struct symbol default_backend[1] = {{
+	.magic =		SYMBOL_MAGIC,
+	.name =			"default",
+	.lorev =		0,
+	.hirev =		99,
+	.kind =			SYM_BACKEND,
+	.type =			DEFAULT,
+	.rname =		"*(VCL_conf.default_director)",
+}};
+
 const struct type BACKEND[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BACKEND",
 	.methods =		backend_methods,
 	.global_pfx =		"vgc_backend",
 	.tostring =		"VRT_BACKEND_string(\v1)",
+	.default_sym =		default_backend,
 }};
 
 const struct type BLOB[1] = {{
@@ -99,6 +110,11 @@ const struct type BYTES[1] = {{
 	.name =			"BYTES",
 	.tostring =		"VRT_INT_string(ctx, \v1)",
 	.multype =		REAL,	// XXX: wrong
+}};
+
+const struct type DEFAULT[1] = {{
+	.magic =		TYPE_MAGIC,
+	.name =			"DEFAULT",
 }};
 
 const struct type DURATION[1] = {{
@@ -144,10 +160,21 @@ const struct type IP[1] = {{
 	.tostring =		"VRT_IP_string(ctx, \v1)",
 }};
 
+static struct symbol default_probe[1] = {{
+	.magic =		SYMBOL_MAGIC,
+	.name =			"default",
+	.lorev =		0,
+	.hirev =		99,
+	.kind =			SYM_PROBE,
+	.type =			DEFAULT,
+	.rname =		"vgc_probe_default",
+}};
+
 const struct type PROBE[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"PROBE",
 	.global_pfx =		"vgc_probe",
+	.default_sym =		default_probe,
 }};
 
 const struct type REAL[1] = {{
