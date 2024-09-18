@@ -109,13 +109,6 @@ vtc_logclose(void *arg)
 	FREE_OBJ(vl);
 }
 
-#ifdef __COVERITY__
-static void v_noreturn_
-vtc_logfail(void)
-{
-	__coverity_panic__();
-}
-#else
 static void v_noreturn_
 vtc_logfail(void)
 {
@@ -125,8 +118,9 @@ vtc_logfail(void)
 		pthread_exit(NULL);
 	else
 		exit(fail_out());
+
+	WRONG("unreachable"); /* Help Coverity Scan see noreturn. */
 }
-#endif
 
 static const char * const lead[] = {
 	"----",
