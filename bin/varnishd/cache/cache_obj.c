@@ -226,12 +226,6 @@ obj_extend_condwait(const struct objcore *oc)
 		return;
 
 	assert(oc->flags & OC_F_TRANSIENT);
-	/* NB: strictly signaling progress both ways would be prone to
-	 * deadlocks, so instead we wait for signals from the client side
-	 * when delivered_so_far so far is updated, but in case the fetch
-	 * thread was not waiting at the time of the signal, we will see
-	 * updates to delivered_so_far after timing out.
-	 */
 	while (!(oc->flags & OC_F_CANCEL) && oc->boc->fetched_so_far >
 	    oc->boc->delivered_so_far + oc->boc->transit_buffer)
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
