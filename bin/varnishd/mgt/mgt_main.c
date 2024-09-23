@@ -637,7 +637,6 @@ main(int argc, char * const *argv)
 	pid_t pid;
 	struct arg_list *alp;
 	int first_arg = 1;
-	struct rlimit rlim;
 
 	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
 		printf("%s\n", opt_spec);
@@ -877,6 +876,7 @@ main(int argc, char * const *argv)
 	VJ_master(JAIL_MASTER_SYSTEM);
 #ifdef RLIMIT_MEMLOCK
 	/* try to raise to max (ignore error), then set _cur to whatever we got */
+	struct rlimit rlim;
 	rlim.rlim_cur = 0;
 	rlim.rlim_max = RLIM_INFINITY;
 	(void)setrlimit(RLIMIT_MEMLOCK, &rlim);
