@@ -48,6 +48,8 @@ typedef unsigned long  ulg;
 #    define Z_U8 unsigned long
 #  elif (ULLONG_MAX == 0xffffffffffffffff)
 #    define Z_U8 unsigned long long
+#  elif (ULONG_LONG_MAX == 0xffffffffffffffff)
+#    define Z_U8 unsigned long long
 #  elif (UINT_MAX == 0xffffffffffffffff)
 #    define Z_U8 unsigned
 #  endif
