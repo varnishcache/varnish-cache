@@ -146,7 +146,7 @@ Containers and Memory Locking
 Container runtime environments might require outside configuration to raise
 ``RLIMIT_MEMLOCK``.
 
-For _Docker_, a common option is to use the ``--ulimit=memlock=-1`` command line
+For `Docker`, a common option is to use the ``--ulimit=memlock=-1`` command line
 argument.
 
 .. _Kubernetes: https://github.com/kubernetes/kubernetes/issues/3595
