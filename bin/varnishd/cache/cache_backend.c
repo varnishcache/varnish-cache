@@ -139,16 +139,8 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 
 /*--------------------------------------------------------------------*/
 
-int
-VBE_is_ah_auto(const struct backend *bp)
-{
-
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-	return (bp->director->vdir->admin_health == VDI_AH_AUTO);
-}
-
-void
-VBE_connwait_signal_all(const struct backend *bp)
+static void
+vbe_connwait_signal_all(const struct backend *bp)
 {
 	struct connwait *cw;
 
@@ -565,7 +557,7 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 		const struct vdi_ahealth *ah = d->vdir->admin_health;
 
 		if (ah == VDI_AH_SICK || (ah == VDI_AH_AUTO && bp->sick))
-			VBE_connwait_signal_all(bp);
+			vbe_connwait_signal_all(bp);
 	}
 }
 
