@@ -42,6 +42,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 
@@ -636,6 +637,7 @@ main(int argc, char * const *argv)
 	pid_t pid;
 	struct arg_list *alp;
 	int first_arg = 1;
+	struct rlimit rlim;
 
 	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
 		printf("%s\n", opt_spec);
@@ -873,6 +875,14 @@ main(int argc, char * const *argv)
 		    workdir, VAS_errtxt(errno));
 
 	VJ_master(JAIL_MASTER_SYSTEM);
+	/* try to raise to max (ignore error), then set _cur to whatever we got */
+	rlim.rlim_cur = 0;
+	rlim.rlim_max = RLIM_INFINITY;
+	(void)setrlimit(RLIMIT_MEMLOCK, &rlim);
+	AZ(getrlimit(RLIMIT_MEMLOCK, &rlim));
+	rlim.rlim_cur = rlim.rlim_max;
+	AZ(setrlimit(RLIMIT_MEMLOCK, &rlim));
+
 	AZ(system("rm -rf vmod_cache vext_cache worker_tmpdir"));
 	VJ_master(JAIL_MASTER_LOW);
 
