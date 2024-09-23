@@ -161,11 +161,7 @@ void VCA_Init(void);
 void VCA_Shutdown(void);
 
 /* cache_backend.c */
-struct backend;
-
 void VBE_InitCfg(void);
-void VBE_connwait_signal_all(const struct backend *bp);
-int VBE_is_ah_auto(const struct backend *bp);
 
 /* cache_ban.c */
 

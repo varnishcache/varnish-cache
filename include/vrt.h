@@ -495,7 +495,9 @@ struct vmod_data {
 };
 
 /***********************************************************************
- * VCL events sent to VMODs and directors
+ * Events sent to VMODs and directors:
+ * - VCL: VCL temperature events
+ * - VDI: director events
  */
 
 enum vcl_event_e {
@@ -503,7 +505,7 @@ enum vcl_event_e {
 	VCL_EVENT_WARM,
 	VCL_EVENT_COLD,
 	VCL_EVENT_DISCARD,
-	// Only for directors
+
 	VDI_EVENT_SICK,
 };
 
