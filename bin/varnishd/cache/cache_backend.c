@@ -561,6 +561,11 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 		VRT_VSC_Hide(bp->vsc_seg);
 	} else if (ev == VCL_EVENT_DISCARD) {
 		VRT_DelDirector(&bp->director);
+	} else if (ev == VDI_EVENT_SICK) {
+		const struct vdi_ahealth *ah = d->vdir->admin_health;
+
+		if (ah == VDI_AH_SICK || (ah == VDI_AH_AUTO && bp->sick))
+			VBE_connwait_signal_all(bp);
 	}
 }
 
@@ -676,7 +681,6 @@ vbe_healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *t)
 
 	return (!bp->sick);
 }
-
 
 /*--------------------------------------------------------------------
  */

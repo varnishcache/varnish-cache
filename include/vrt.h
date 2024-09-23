@@ -48,7 +48,7 @@
 
 #define VRT_MAJOR_VERSION	20U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 /***********************************************************************
  * Major and minor VRT API versions.
@@ -58,6 +58,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2024-03-15)
+ * 20.1
+ *	VDI_EVENT_SICK added to enum vcl_event_e
  * 20.0 (2024-09-13)
  *	struct vrt_backend.backend_wait_timeout added
  *	struct vrt_backend.backend_wait_limit  added
@@ -494,7 +496,7 @@ struct vmod_data {
 };
 
 /***********************************************************************
- * VCL events sent to VMODs
+ * VCL events sent to VMODs and directors
  */
 
 enum vcl_event_e {
@@ -502,6 +504,8 @@ enum vcl_event_e {
 	VCL_EVENT_WARM,
 	VCL_EVENT_COLD,
 	VCL_EVENT_DISCARD,
+	// Only for directors
+	VDI_EVENT_SICK,
 };
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
