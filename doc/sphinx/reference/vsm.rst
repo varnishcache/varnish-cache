@@ -138,7 +138,7 @@ the following is logged to standard error or syslog::
 Where the system configuration ensures that virtual memory is never paged, this
 warning can be ignored, but in general it is recommended to set
 ``RLIMIT_MEMLOCK`` to ``unlimited``. See the ``ulimit`` shell builtin and
-``getrlimit(2)``) for details.
+``getrlimit(2)`` for details.
 
 Containers and Memory Locking
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
