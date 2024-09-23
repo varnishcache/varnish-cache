@@ -121,3 +121,45 @@ varnishd are no longer relevant across namespaces.
 
 To disable liveness checks based on PIDs, the variable ``VSM_NOPID`` needs to
 be present in the environment of VSM readers.
+
+Warning: mlock() of VSM failed
+------------------------------
+
+It is vital for performance of the Varnish Shared Memory model that all VSM be
+resident in RAM at all times. At startup, varnish tries to lift the respective
+limits and an attempt is made to lock all VSM in memory, but if
+``RLIMIT_MEMLOCK`` is configured too low, this fails and a warning similar to
+the following is logged to standard error or syslog::
+
+ Info: Child (814693) said Warning: mlock() of VSM failed: Cannot allocate memory (12)
+ Info: Child (814693) said Info: max locked memory (soft): 1048576 bytes
+ Info: Child (814693) said Info: max locked memory (hard): 1048576 bytes
+
+Where the system configuration ensures that virtual memory is never paged, this
+warning can be ignored, but in general it is recommended to set
+``RLIMIT_MEMLOCK`` to ``unlimited``. See the ``ulimit`` shell builtin and
+``getrlimit(2)``) for details.
+
+Containers and Memory Locking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Container runtime environments might require outside configuration to raise
+``RLIMIT_MEMLOCK``.
+
+For _Docker_, a common option is to use the ``--ulimit=memlock=-1`` command line
+argument.
+
+.. _Kubernetes: https://github.com/kubernetes/kubernetes/issues/3595
+
+`Kubernetes`_ infamously does not support setting resource controls, so where
+the ``mlock()`` warning is seen, one option is to add ``CAP_IPC_LOCK`` to the
+container's ``securityContext``::
+
+      securityContext:
+        capabilities:
+          add:
+            - IPC_LOCK
+
+Note that this added capability should, with the usual disclaimer that bugs
+could exist, not impose any additional risks, in particular not if the system at
+hand would not page memory anyway because no swap space is configured.
