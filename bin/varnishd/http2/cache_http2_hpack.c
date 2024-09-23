@@ -74,7 +74,7 @@ h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 
 	l = vmin_t(int, Tlen(nm) + 2 + Tlen(val), 20);
 	state = FLD_NAME_FIRST;
-	for (p = nm.b; p < nm.e; p++) {
+	Tforeach(p, nm) {
 		switch(state) {
 		case FLD_NAME_FIRST:
 			state = FLD_NAME;
@@ -101,7 +101,7 @@ h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 	}
 
 	state = FLD_VALUE_FIRST;
-	for (p = val.b; p < val.e; p++) {
+	Tforeach(p, val) {
 		switch(state) {
 		case FLD_VALUE_FIRST:
 			if (vct_issp(*p)) {
@@ -174,7 +174,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 		disallow_empty = 1;
 
 		/* Check HTTP token */
-		for (p = hdr.b; p < hdr.e; p++) {
+		Tforeach(p, hdr) {
 			if (!vct_istchar(*p))
 				return (H2SE_PROTOCOL_ERROR);
 		}
@@ -192,7 +192,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 		}
 
 		/* Path cannot contain LWS or CTL */
-		for (p = hdr.b; p < hdr.e; p++) {
+		Tforeach(p, hdr) {
 			if (vct_islws(*p) || vct_isctl(*p))
 				return (H2SE_PROTOCOL_ERROR);
 		}
@@ -206,7 +206,7 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 		disallow_empty = 1;
 
 		/* Check HTTP token */
-		for (p = val.b; p < val.e; p++) {
+		Tforeach(p, val) {
 			if (!vct_istchar(*p))
 				return (H2SE_PROTOCOL_ERROR);
 		}
