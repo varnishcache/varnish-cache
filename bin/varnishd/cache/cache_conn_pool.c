@@ -106,14 +106,20 @@ struct conn_pool {
 };
 
 static struct lock conn_pools_mtx;
+static struct lock dead_pools_mtx;
 
-static VRBT_HEAD(vrb, conn_pool) conn_pools = VRBT_INITIALIZER(&conn_pools);
+VRBT_HEAD(vrb, conn_pool);
 VRBT_GENERATE_REMOVE_COLOR(vrb, conn_pool, entry, static)
 VRBT_GENERATE_REMOVE(vrb, conn_pool, entry, static)
 VRBT_GENERATE_FIND(vrb, conn_pool, entry, vcp_cmp, static)
 VRBT_GENERATE_INSERT_COLOR(vrb, conn_pool, entry, static)
 VRBT_GENERATE_INSERT_FINISH(vrb, conn_pool, entry, static)
 VRBT_GENERATE_INSERT(vrb, conn_pool, entry, vcp_cmp, static)
+VRBT_GENERATE_NEXT(vrb, conn_pool, entry, static);
+VRBT_GENERATE_MINMAX(vrb, conn_pool, entry, static);
+
+static struct vrb conn_pools = VRBT_INITIALIZER(&conn_pools);
+static struct vrb dead_pools = VRBT_INITIALIZER(&dying_cps);
 
 /*--------------------------------------------------------------------
  */
@@ -219,6 +225,22 @@ VCP_AddRef(struct conn_pool *cp)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vcp_destroy(struct conn_pool **cpp)
+{
+	struct conn_pool *cp;
+
+	TAKE_OBJ_NOTNULL(cp, cpp, CONN_POOL_MAGIC);
+	AZ(cp->n_conn);
+	AZ(cp->n_kill);
+	Lck_Delete(&cp->mtx);
+	free(cp->endpoint);
+	FREE_OBJ(cp);
+}
+
+/*--------------------------------------------------------------------
  * Release Conn pool, destroy if last reference.
  */
 
@@ -249,17 +271,33 @@ VCP_Rel(struct conn_pool **cpp)
 		(void)shutdown(pfd->fd, SHUT_RDWR);
 		cp->n_kill++;
 	}
-	while (cp->n_kill) {
-		Lck_Unlock(&cp->mtx);
-		(void)usleep(20000);
-		Lck_Lock(&cp->mtx);
-	}
 	Lck_Unlock(&cp->mtx);
-	Lck_Delete(&cp->mtx);
-	AZ(cp->n_conn);
-	AZ(cp->n_kill);
-	free(cp->endpoint);
-	FREE_OBJ(cp);
+	if (cp->n_kill == 0) {
+		vcp_destroy(&cp);
+		return;
+	}
+	Lck_Lock(&dead_pools_mtx);
+	VRBT_INSERT(vrb, &dead_pools, cp);
+	Lck_Unlock(&dead_pools_mtx);
+}
+
+void
+VCP_RelPoll(void)
+{
+	struct conn_pool *cp, *cp2;
+
+	ASSERT_CLI();
+	Lck_Lock(&dead_pools_mtx);
+	VRBT_FOREACH_SAFE(cp, vrb, &dead_pools, cp2) {
+		CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+		if (cp->n_kill > 0)
+			continue;
+		VRBT_REMOVE(vrb, &dead_pools, cp);
+		Lck_Unlock(&dead_pools_mtx);
+		vcp_destroy(&cp);
+		Lck_Lock(&dead_pools_mtx);
+	}
+	Lck_Unlock(&dead_pools_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -583,6 +621,7 @@ void
 VCP_Init(void)
 {
 	Lck_New(&conn_pools_mtx, lck_conn_pool);
+	Lck_New(&dead_pools_mtx, lck_dead_pool);
 }
 
 /**********************************************************************/
