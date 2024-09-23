@@ -191,7 +191,7 @@ VBP_Update_Backend(struct vbp_target *vt)
 	i = (vt->good < vt->threshold);
 	chg = (i != vt->backend->sick);
 	vt->backend->sick = i;
-	if (i && chg)
+	if (i && chg && vt->backend->director != NULL)
 		VRT_Notify(vt->backend->director);
 
 	AN(vt->backend->vcl_name);
