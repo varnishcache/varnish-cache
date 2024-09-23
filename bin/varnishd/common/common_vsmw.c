@@ -42,6 +42,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 
 #include "vdef.h"
@@ -274,10 +275,22 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+printlim(const char *name, rlim_t lim)
+{
+
+	fprintf(stderr, "Info: %s: ", name);
+	if (lim == RLIM_INFINITY)
+		fprintf(stderr, "unlimited\n");
+	else
+		fprintf(stderr, "%ju bytes\n", (uintmax_t)lim);
+}
+
 static struct vsmw_cluster *
 vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 {
 	struct vsmw_cluster *vc;
+	struct rlimit rlim;
 	static int warn = 0;
 	int fd;
 	size_t ps;
@@ -311,6 +324,9 @@ vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	if (mlock(vc->ptr, len) && warn++ == 0)  {
 		fprintf(stderr, "Warning: mlock() of VSM failed: %s (%d)\n",
 		    VAS_errtxt(errno), errno);
+		AZ(getrlimit(RLIMIT_MEMLOCK, &rlim));
+		printlim("max locked memory (soft)", rlim.rlim_cur);
+		printlim("max locked memory (hard)", rlim.rlim_max);
 	}
 
 	return (vc);
