@@ -132,22 +132,28 @@ vju_init(char **args)
 			ARGV_ERR("Unix Jail: Must be root.\n");
 
 		for (;*args != NULL; args++) {
-			if (!strncmp(*args, "user=", 5)) {
-				if (vju_getuid((*args) + 5))
+			const char * const a_user = "user=";
+			const size_t l_user = strlen(a_user);
+			if (!strncmp(*args, a_user, l_user)) {
+				if (vju_getuid((*args) + l_user))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
 					    (*args) + 5);
 				continue;
 			}
-			if (!strncmp(*args, "workuser=", 9)) {
-				if (vju_getwrkuid((*args) + 9))
+			const char * const a_workuser = "workuser=";
+			const size_t l_workuser = strlen(a_workuser);
+			if (!strncmp(*args, a_workuser, l_workuser)) {
+				if (vju_getwrkuid((*args) + l_workuser))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
 					    (*args) + 9);
 				continue;
 			}
-			if (!strncmp(*args, "ccgroup=", 8)) {
-				if (vju_getccgid((*args) + 8))
+			const char * const a_ccgroup = "ccgroup=";
+			const size_t l_ccgroup = strlen(a_ccgroup);
+			if (!strncmp(*args, "ccgroup=", l_ccgroup)) {
+				if (vju_getccgid((*args) + l_ccgroup))
 					ARGV_ERR(
 					    "Unix jail: %s group not found.\n",
 					    (*args) + 8);
