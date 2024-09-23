@@ -875,6 +875,7 @@ main(int argc, char * const *argv)
 		    workdir, VAS_errtxt(errno));
 
 	VJ_master(JAIL_MASTER_SYSTEM);
+#ifdef RLIMIT_MEMLOCK
 	/* try to raise to max (ignore error), then set _cur to whatever we got */
 	rlim.rlim_cur = 0;
 	rlim.rlim_max = RLIM_INFINITY;
@@ -882,6 +883,7 @@ main(int argc, char * const *argv)
 	AZ(getrlimit(RLIMIT_MEMLOCK, &rlim));
 	rlim.rlim_cur = rlim.rlim_max;
 	AZ(setrlimit(RLIMIT_MEMLOCK, &rlim));
+#endif
 
 	AZ(system("rm -rf vmod_cache vext_cache worker_tmpdir"));
 	VJ_master(JAIL_MASTER_LOW);
