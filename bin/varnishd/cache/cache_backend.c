@@ -140,7 +140,7 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 /*--------------------------------------------------------------------*/
 
 static void
-vbe_connwait_signal_all(const struct backend *bp)
+vbe_connwait_broadcast(const struct backend *bp)
 {
 	struct connwait *cw;
 
@@ -557,7 +557,7 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 		const struct vdi_ahealth *ah = d->vdir->admin_health;
 
 		if (ah == VDI_AH_SICK || (ah == VDI_AH_AUTO && bp->sick))
-			vbe_connwait_signal_all(bp);
+			vbe_connwait_broadcast(bp);
 	}
 }
 
