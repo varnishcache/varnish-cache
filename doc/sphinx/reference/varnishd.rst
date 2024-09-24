@@ -454,13 +454,18 @@ specific options. Available jails are:
 
     -j solaris,worker=basic
 
--j <linux[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
+-j <linux[,transparent_hugepage=`action`][,<unix jail option>...]>
 
   Default on Linux platforms, it extends the UNIX jail with
   Linux-specific mechanisms:
 
   - It warns when *workdir* is not on a ``tmpfs``.
   - It tries to keep the process dumpable after dropping privileges.
+  - It tries to disable Transparent Hugepage in ``varnishd`` by default.
+
+The optional transparent_hugepage argument takes one action among enable,
+disable (default) and ignore. Failure to configure Transparent Hugepage is
+not a fatal error.
 
 -j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
