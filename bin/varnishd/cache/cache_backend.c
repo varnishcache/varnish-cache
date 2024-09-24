@@ -624,12 +624,17 @@ static void v_matchproto_(vdi_list_f)
 vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int pflag,
     int jflag)
 {
+	char buf[VTCP_ADDRBUFSIZE];
 	struct backend *bp;
+	struct vrt_endpoint *vep;
 
 	(void)ctx;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(bp->endpoint, VRT_ENDPOINT_MAGIC);
+
+	vep = bp->endpoint;
 
 	if (bp->probe != NULL)
 		VBP_Status(vsb, bp, pflag, jflag);
@@ -641,6 +646,17 @@ vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int pflag,
 		return;
 	else
 		VSB_cat(vsb, "0/0\thealthy");
+
+	if (jflag && pflag) {
+		if (vep->ipv4 != NULL) {
+			VTCP_name(vep->ipv4, buf, sizeof buf, NULL, 0);
+			VSB_printf(vsb, "\"ipv4\": \"%s\",\n", buf);
+		}
+		if (vep->ipv6 != NULL) {
+			VTCP_name(vep->ipv6, buf, sizeof buf, NULL, 0);
+			VSB_printf(vsb, "\"ipv6\": \"%s\",\n", buf);
+		}
+	}
 }
 
 /*--------------------------------------------------------------------
