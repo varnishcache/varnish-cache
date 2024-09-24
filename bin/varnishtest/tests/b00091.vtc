@@ -1,0 +1,41 @@
+varnishtest "IPs/port in varnishadm backend.list -j"
+
+feature cmd "jq -V"
+
+server s0 {
+} -start
+
+
+varnish v1 -vcl+backend {
+	backend s1 {
+		.host = "127.0.0.1";
+		.port = "2222";
+		.probe = { .url = "/"; }
+	}
+	backend s2 {
+		.host = "::1:2:3:4";
+		.port = "3333";
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = s0;
+		set req.backend_hint = s1;
+		set req.backend_hint = s2;
+	}
+} -start
+
+shell {
+	set -e
+
+varnishadm -n ${v1_name} backend.list -j
+	varnishadm -n ${v1_name} backend.list -jp > result.json
+	jq '
+		.[3]["vcl1.s0"].ipv4 == "${s0_addr}" or error("wrong s0 ipv4"),
+		.[3]["vcl1.s1"].ipv4 == "127.0.0.1" or error("wrong s2 ipv4"),
+		.[3]["vcl1.s2"].ipv4 == null or error("s3 ipv4 exists"),
+
+		.[3]["vcl1.s0"].ipv6 == null or error("s0 ipv6 exists"),
+		.[3]["vcl1.s1"].ipv6 == null or error("s2 ipv6 exists"),
+		.[3]["vcl1.s2"].ipv6 == "::1:2:3:4" or error("wrong s3 ipv6")
+	' result.json
+}
