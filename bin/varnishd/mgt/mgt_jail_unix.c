@@ -132,21 +132,21 @@ vju_init(char **args)
 			ARGV_ERR("Unix Jail: Must be root.\n");
 
 		for (;*args != NULL; args++) {
-			if (!strncmp(*args, "user=", 5)) {
+			if (MATCH_JAIL_ARG(*args, "user=")) {
 				if (vju_getuid((*args) + 5))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
 					    (*args) + 5);
 				continue;
 			}
-			if (!strncmp(*args, "workuser=", 9)) {
+			if (MATCH_JAIL_ARG(*args, "workuser=")) {
 				if (vju_getwrkuid((*args) + 9))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
 					    (*args) + 9);
 				continue;
 			}
-			if (!strncmp(*args, "ccgroup=", 8)) {
+			if (MATCH_JAIL_ARG(*args, "ccgroup=")) {
 				if (vju_getccgid((*args) + 8))
 					ARGV_ERR(
 					    "Unix jail: %s group not found.\n",

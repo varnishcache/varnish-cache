@@ -91,8 +91,7 @@ vjl_init(char **args)
 	AN(unix_args);
 
 	for (i = 0; *args != NULL && ret == 0; args++) {
-		if (!strncmp(*args, "transparent_hugepage=",
-		    sizeof("transparent_hugepage=") - 1)) {
+		if (MATCH_JAIL_ARG(*args, "transparent_hugepage=")) {
 			ret = vjl_set_thp((*args) + (sizeof("transparent_hugepage=") - 1));
 		} else {
 			unix_args[i] = *args;

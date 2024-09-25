@@ -328,7 +328,7 @@ vjs_init(char **args)
 
 	if (args != NULL && *args != NULL) {
 		for (;*args != NULL; args++) {
-			if (!strncmp(*args, "worker=", 7)) {
+			if (MATCH_JAIL_ARG(*args, "worker=")) {
 				user = priv_str_to_set((*args) + 7, ",", &e);
 				if (user == NULL)
 					ARGV_ERR(
