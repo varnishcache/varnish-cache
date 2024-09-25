@@ -171,6 +171,8 @@ extern const struct jail_tech jail_tech_unix;
 extern const struct jail_tech jail_tech_solaris;
 extern const struct jail_tech jail_tech_linux;
 
+#define MATCH_JAIL_ARG(arg, option) (!strncmp(arg, option, sizeof(option) - 1))
+
 /* mgt_main.c */
 extern struct vsb *vident;
 extern struct VSC_mgt	*VSC_C_mgt;
