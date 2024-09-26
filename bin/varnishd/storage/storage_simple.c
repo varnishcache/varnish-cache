@@ -395,15 +395,14 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			assert(nl > 0);
 			sl += st->len;
 			st = VTAILQ_PREV(st, storagehead, list);
-			if (VTAILQ_PREV(st, storagehead, list) != NULL) {
-				if (final && checkpoint != NULL) {
-					VTAILQ_REMOVE(&obj->list,
-					    checkpoint, list);
-					sml_stv_free(stv, checkpoint);
-				}
-				checkpoint = st;
-				checkpoint_len = sl;
+			if (final && checkpoint != NULL) {
+				VTAILQ_REMOVE(&obj->list, checkpoint, list);
+				if (checkpoint == boc->stevedore_priv)
+					boc->stevedore_priv = trim_once;
+				sml_stv_free(stv, checkpoint);
 			}
+			checkpoint = st;
+			checkpoint_len = sl;
 		}
 		CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
