@@ -117,9 +117,14 @@ vju_getccgid(const char *arg)
 /**********************************************************************
  */
 
+#define ARG_MATCH(arg, name)	\
+	(strncmp((arg), #name "=", sizeof #name) ? NULL : (arg) + sizeof #name)
+
 static int v_matchproto_(jail_init_f)
 vju_init(char **args)
 {
+	const char *val;
+
 	if (args == NULL) {
 		/* Autoconfig */
 		if (geteuid() != 0)
@@ -132,31 +137,25 @@ vju_init(char **args)
 			ARGV_ERR("Unix Jail: Must be root.\n");
 
 		for (;*args != NULL; args++) {
-			const char * const a_user = "user=";
-			const size_t l_user = strlen(a_user);
-			if (!strncmp(*args, a_user, l_user)) {
-				if (vju_getuid((*args) + l_user))
+			if ((val = ARG_MATCH(*args, user)) != NULL) {
+				if (vju_getuid(val))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
-					    (*args) + 5);
+					    val);
 				continue;
 			}
-			const char * const a_workuser = "workuser=";
-			const size_t l_workuser = strlen(a_workuser);
-			if (!strncmp(*args, a_workuser, l_workuser)) {
-				if (vju_getwrkuid((*args) + l_workuser))
+			if ((val = ARG_MATCH(*args, workuser)) != NULL) {
+				if (vju_getwrkuid(val))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
-					    (*args) + 9);
+					    val);
 				continue;
 			}
-			const char * const a_ccgroup = "ccgroup=";
-			const size_t l_ccgroup = strlen(a_ccgroup);
-			if (!strncmp(*args, "ccgroup=", l_ccgroup)) {
-				if (vju_getccgid((*args) + l_ccgroup))
+			if ((val = ARG_MATCH(*args, ccgroup)) != NULL) {
+				if (vju_getccgid(val))
 					ARGV_ERR(
 					    "Unix jail: %s group not found.\n",
-					    (*args) + 8);
+					    val);
 				continue;
 			}
 			ARGV_ERR("Unix jail: unknown sub-argument '%s'\n",
