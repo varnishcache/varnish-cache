@@ -560,7 +560,8 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 		Lck_Lock(&oc->boc->mtx);
 		VTAILQ_REMOVE(&o->list, st, list);
 		Lck_Unlock(&oc->boc->mtx);
-		sml_stv_free(stv, st);
+		/* sml_bocdone frees this */
+		oc->boc->stevedore_priv = st;
 		return;
 	}
 
