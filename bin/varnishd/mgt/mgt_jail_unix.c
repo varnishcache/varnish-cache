@@ -117,8 +117,10 @@ vju_getccgid(const char *arg)
 /**********************************************************************
  */
 
-#define ARG_MATCH(arg, name)	\
-	(strncmp((arg), #name "=", sizeof #name) ? NULL : (arg) + sizeof #name)
+#define _MATCH_ARG(arg, name)	\
+	(strncmp((arg), name "=", sizeof name) ? NULL : (arg) + sizeof name)
+
+#define MATCH_ARG(var, arg, name) if (((var) = _MATCH_ARG(arg, #name)) != NULL)
 
 static int v_matchproto_(jail_init_f)
 vju_init(char **args)
@@ -137,21 +139,21 @@ vju_init(char **args)
 			ARGV_ERR("Unix Jail: Must be root.\n");
 
 		for (;*args != NULL; args++) {
-			if ((val = ARG_MATCH(*args, user)) != NULL) {
+			MATCH_ARG(val, *args, user) {
 				if (vju_getuid(val))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
 					    val);
 				continue;
 			}
-			if ((val = ARG_MATCH(*args, workuser)) != NULL) {
+			MATCH_ARG(val, *args, workuser) {
 				if (vju_getwrkuid(val))
 					ARGV_ERR(
 					    "Unix jail: %s user not found.\n",
 					    val);
 				continue;
 			}
-			if ((val = ARG_MATCH(*args, ccgroup)) != NULL) {
+			MATCH_ARG(val, *args, ccgroup) {
 				if (vju_getccgid(val))
 					ARGV_ERR(
 					    "Unix jail: %s group not found.\n",
