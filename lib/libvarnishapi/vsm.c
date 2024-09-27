@@ -494,7 +494,6 @@ vsm_running(struct vsm_set *vs, pid_t pid)
 
 	if (pid == 0)
 		return (0);
-	assert(pid > 1);
 
 	if (kill(pid, 0) == 0) {
 		vs->couldkill = 1;
