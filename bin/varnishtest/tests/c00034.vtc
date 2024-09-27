@@ -274,16 +274,8 @@ varnish v1 -vcl+backend {
 		}
 	}
 
-	# skip built-in vcl_beresp_range
-	sub vcl_backend_response {
-		if (bereq.uncacheable) {
-			return (deliver);
-		}
-		call vcl_beresp_stale;
-		call vcl_beresp_cookie;
-		call vcl_beresp_control;
-		call vcl_beresp_vary;
-		return (deliver);
+	sub vcl_beresp_range {
+		return;
 	}
 }
 
