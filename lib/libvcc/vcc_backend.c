@@ -704,7 +704,7 @@ void
 vcc_ParseBackend(struct vcc *tl)
 {
 	struct token *t_first, *t_be;
-	struct symbol *sym = NULL;
+	struct symbol *sym;
 	const char *dn;
 
 	tl->ndirector++;
