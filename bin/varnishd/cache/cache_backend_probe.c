@@ -46,7 +46,6 @@
 #include "cache_varnishd.h"
 
 #include "vbh.h"
-#include "vcli_serve.h"
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"

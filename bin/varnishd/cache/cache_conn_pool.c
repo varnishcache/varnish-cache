@@ -40,7 +40,6 @@
 #include "vsa.h"
 #include "vsha256.h"
 #include "vtcp.h"
-#include "vtree.h"
 #include "vus.h"
 #include "vtim.h"
 #include "waiter/waiter.h"

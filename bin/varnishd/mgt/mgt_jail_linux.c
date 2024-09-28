@@ -42,7 +42,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/prctl.h>
-#include <sys/stat.h>
 #include <sys/vfs.h>
 
 #include "mgt/mgt.h"
