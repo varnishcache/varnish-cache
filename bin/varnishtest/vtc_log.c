@@ -119,7 +119,7 @@ vtc_logfail(void)
 	else
 		exit(fail_out());
 
-	WRONG("unreachable"); /* Help Coverity Scan see noreturn. */
+	WRONG("unreachable"); /*lint !e527 Help Coverity Scan see noreturn. */
 }
 
 static const char * const lead[] = {
