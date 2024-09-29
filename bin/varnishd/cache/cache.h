@@ -42,6 +42,7 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 
 #include "vdef.h"
 #include "vrt.h"
@@ -783,6 +784,21 @@ int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
 
 typedef void *vai_hdl;
 typedef void vai_notify_cb(vai_hdl, void *priv);
+
+struct viov {
+	unsigned	magic;
+#define VIOV_MAGIC	0x7a107a10
+	unsigned	flags;
+#define VIOV_F_END	1	// last VIOV
+	uint64_t	lease;
+	struct iovec	iov;
+};
+
+vai_hdl ObjVAIinit(struct worker *, struct objcore *, struct ws *,
+    vai_notify_cb *, void *);
+int ObjVAIlease(struct worker *, vai_hdl, struct viov *, int);
+void ObjVAIreturn(struct worker *, vai_hdl, uint64_t *, int);
+void ObjVAIfini(struct worker *, vai_hdl *);
 
 /* cache_req_body.c */
 ssize_t VRB_Iterate(struct worker *, struct vsl_log *, struct req *,
