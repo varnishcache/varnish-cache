@@ -258,6 +258,17 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 /*====================================================================
  */
 
+static inline void
+objSignalFetchLocked(const struct objcore *oc, uint64_t l)
+{
+	if (oc->boc->transit_buffer > 0) {
+		assert(oc->flags & OC_F_TRANSIENT);
+		/* Signal the new client position */
+		oc->boc->delivered_so_far = l;
+		PTOK(pthread_cond_signal(&oc->boc->cond));
+	}
+}
+
 uint64_t
 ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
     enum boc_state_e *statep)
@@ -272,13 +283,8 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
 	while (1) {
 		rv = oc->boc->fetched_so_far;
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
-		if (oc->boc->transit_buffer > 0) {
-			assert(oc->flags & OC_F_TRANSIENT);
-			/* Signal the new client position */
-			oc->boc->delivered_so_far = l;
-			PTOK(pthread_cond_signal(&oc->boc->cond));
-		}
 		state = oc->boc->state;
+		objSignalFetchLocked(oc, l);
 		if (rv > l || state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
