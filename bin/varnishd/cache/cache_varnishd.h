@@ -348,6 +348,10 @@ void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
 int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
     enum obj_attr attr);
 void ObjBocDone(struct worker *, struct objcore *, struct boc **);
+// VAI
+uint64_t ObjVAIGetExtend(struct worker *, const struct objcore *, uint64_t,
+    enum boc_state_e *, struct vai_qe *);
+void ObjVAICancel(struct worker *, struct boc *, struct vai_qe *);
 
 int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
 int ObjSetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t);
