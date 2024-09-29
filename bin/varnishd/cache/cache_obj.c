@@ -231,6 +231,29 @@ obj_extend_condwait(const struct objcore *oc)
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
 }
 
+// notify of an extension of the boc or state change
+//lint -sem(obj_boc_notify_Unlock, thread_unlock)
+
+static void
+obj_boc_notify_Unlock(struct boc *boc)
+{
+	struct vai_qe *qe, *next;
+
+	PTOK(pthread_cond_broadcast(&boc->cond));
+	qe = VSLIST_FIRST(&boc->vai_q_head);
+	VSLIST_FIRST(&boc->vai_q_head) = NULL;
+	while (qe != NULL) {
+		CHECK_OBJ(qe, VAI_Q_MAGIC);
+		AN(qe->flags & VAI_QF_INQUEUE);
+		qe->flags &= ~VAI_QF_INQUEUE;
+		next = VSLIST_NEXT(qe, list);
+		VSLIST_NEXT(qe, list) = NULL;
+		qe->cb(qe->hdl, qe->priv);
+		qe = next;
+	}
+	Lck_Unlock(&boc->mtx);
+}
+
 void
 ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 {
@@ -241,14 +264,13 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 	AN(om->objextend);
 	assert(l >= 0);
 
-	Lck_Lock(&oc->boc->mtx);
 	if (l > 0) {
+		Lck_Lock(&oc->boc->mtx);
 		obj_extend_condwait(oc);
 		om->objextend(wrk, oc, l);
 		oc->boc->fetched_so_far += l;
-		PTOK(pthread_cond_broadcast(&oc->boc->cond));
+		obj_boc_notify_Unlock(oc->boc);
 	}
-	Lck_Unlock(&oc->boc->mtx);
 
 	assert(oc->boc->state < BOS_FINISHED);
 	if (final && om->objtrimstore != NULL)
@@ -294,6 +316,51 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
 		*statep = state;
 	return (rv);
 }
+
+// get a new extension _or_ register a notification
+uint64_t
+ObjVAIGetExtend(struct worker *wrk, const struct objcore *oc, uint64_t l,
+    enum boc_state_e *statep, struct vai_qe *qe)
+{
+	enum boc_state_e state;
+	uint64_t rv;
+
+	(void) wrk;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(qe, VAI_Q_MAGIC);
+	Lck_Lock(&oc->boc->mtx);
+	rv = oc->boc->fetched_so_far;
+	assert(l <= rv || oc->boc->state == BOS_FAILED);
+	state = oc->boc->state;
+	objSignalFetchLocked(oc, l);
+	if (l == rv && state < BOS_FINISHED &&
+	    (qe->flags & VAI_QF_INQUEUE) == 0) {
+		qe->flags |= VAI_QF_INQUEUE;
+		VSLIST_INSERT_HEAD(&oc->boc->vai_q_head, qe, list);
+	}
+	Lck_Unlock(&oc->boc->mtx);
+	if (statep != NULL)
+		*statep = state;
+	return (rv);
+}
+
+void
+ObjVAICancel(struct worker *wrk, struct boc *boc, struct vai_qe *qe)
+{
+
+	(void) wrk;
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(qe, VAI_Q_MAGIC);
+
+	Lck_Lock(&boc->mtx);
+	// inefficient, but should be rare
+	if ((qe->flags & VAI_QF_INQUEUE) != 0)
+		VSLIST_REMOVE(&boc->vai_q_head, qe, vai_qe, list);
+	qe->flags = 0;
+	Lck_Unlock(&boc->mtx);
+}
+
 /*====================================================================
  */
 
@@ -319,8 +386,7 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
-	PTOK(pthread_cond_broadcast(&oc->boc->cond));
-	Lck_Unlock(&oc->boc->mtx);
+	obj_boc_notify_Unlock(oc->boc);
 }
 
 /*====================================================================

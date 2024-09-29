@@ -50,6 +50,26 @@ typedef void *objsetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t len, const void *ptr);
 typedef void objtouch_f(struct worker *, struct objcore *, vtim_real now);
 
+/* called by Obj/storage to notify that the lease function (vai_lease_f) can be
+ * called again after a -EAGAIN / -ENOBUFS return value
+ * NOTE:
+ * - the callback gets executed by an arbitrary thread
+ * - WITH the boc mtx held
+ * so it should never block and be efficient
+ */
+
+/* notify entry added to struct boc::vai_q_head */
+struct vai_qe {
+	unsigned		magic;
+#define VAI_Q_MAGIC		0x573e27eb
+	unsigned		flags;
+#define VAI_QF_INQUEUE		(1U<<0)
+	VSLIST_ENTRY(vai_qe)	list;
+	vai_notify_cb		*cb;
+	vai_hdl			hdl;
+	void			*priv;
+};
+
 struct obj_methods {
 	/* required */
 	objfree_f	*objfree;

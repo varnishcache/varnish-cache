@@ -282,6 +282,10 @@ enum boc_state_e {
 #include "tbl/boc_state.h"
 };
 
+// cache_obj.h vai notify
+struct vai_qe;
+VSLIST_HEAD(vai_q_head, vai_qe);
+
 struct boc {
 	unsigned		magic;
 #define BOC_MAGIC		0x70c98476
@@ -294,6 +298,7 @@ struct boc {
 	uint64_t		fetched_so_far;
 	uint64_t		delivered_so_far;
 	uint64_t		transit_buffer;
+	struct vai_q_head	vai_q_head;
 };
 
 /* Object core structure ---------------------------------------------
@@ -760,6 +765,15 @@ uint64_t ObjGetLen(struct worker *, struct objcore *);
 int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
 int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
+
+/*====================================================================
+ * ObjVAI...(): Asynchronous Iteration
+ *
+ * see comments in cache_obj.c for usage
+ */
+
+typedef void *vai_hdl;
+typedef void vai_notify_cb(vai_hdl, void *priv);
 
 /* cache_req_body.c */
 ssize_t VRB_Iterate(struct worker *, struct vsl_log *, struct req *,
