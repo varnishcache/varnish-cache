@@ -184,6 +184,100 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
 }
 
 /*====================================================================
+ * ObjVAI...(): Asynchronous Iteration
+ *
+ *
+ * ObjVAIinit() returns an opaque handle, or NULL if not supported
+ *
+ *	A VAI handle must not be used concurrently
+ *
+ *	the vai_notify_cb(priv) will be called asynchronously by the storage
+ *	engine when a -EAGAIN / -ENOBUFS condition is over and ObjVAIlease()
+ *	can be called again.
+ *
+ *	Note:
+ *	- the callback gets executed by an arbitrary thread
+ *	- WITH the boc mtx held
+ *	so it should never block and only do minimal work
+ *
+ * ObjVAIlease() fills the vaiov array passed in with leases. returns:
+ *
+ *	-EAGAIN:  nothing available at the moment, storage will notify, no use to
+ *		  call again until notification
+ *	-ENOBUFS: caller needs to return leases, storage will notify
+ *	-EPIPE:	  BOS_FAILED for busy object
+ *	-(errno): other problem, fatal
+ *	0:	  EOF
+ *	n:	  number of vaiovs filled
+ *
+ *	struct vaiov:
+ *
+ *	the returned leases can be used by the caller until returned with
+ *	ObjVAIreturn(). The storage guarantees that the lease member is a
+ *	multiple of 8 (that is, the lower three bits are zero). These can be
+ *	used by the caller between lease and return, but must be returned to
+ *	zero before returning.
+ *
+ * ObjVAIreturn() returns leases
+ *
+ *	it must be called with an array of lease values from vaiovs
+ *	received when the caller can guarantee that they are no longer accessed
+ *
+ * ObjVAIfini() finalized iteration
+ *
+ *	it must be called when iteration is done, irrespective of error status
+ */
+
+vai_hdl
+ObjVAIinit(struct worker *wrk, struct objcore *oc, struct ws *ws,
+    vai_notify_cb *cb, void *cb_priv)
+{
+	const struct obj_methods *om = obj_getmethods(oc);
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	if (om->vai_init == NULL)
+		return (NULL);
+	return (om->vai_init(wrk, oc, ws, cb, cb_priv));
+}
+
+int
+ObjVAIlease(struct worker *wrk, vai_hdl vhdl, struct vaiov *vaiov, int n)
+{
+	struct vai_hdl_preamble *vaip = vhdl;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	AN(vaip->vai_lease);
+	return (vaip->vai_lease(wrk, vhdl, vaiov, n));
+}
+
+void
+ObjVAIreturn(struct worker *wrk, vai_hdl vhdl, uint64_t *leases, int n)
+{
+	struct vai_hdl_preamble *vaip = vhdl;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	/* vai_return is optional */
+	if (vaip->vai_return == NULL)
+		return;
+	vaip->vai_return(wrk, vhdl, leases, n);
+}
+
+void
+ObjVAIfini(struct worker *wrk, vai_hdl *vhdlp)
+{
+	AN(vhdlp);
+	struct vai_hdl_preamble *vaip = *vhdlp;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	AN(vaip->vai_lease);
+	return (vaip->vai_fini(wrk, vhdlp));
+}
+
+/*====================================================================
  * ObjGetSpace()
  *
  * This function returns a pointer and length of free space.  If there
