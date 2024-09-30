@@ -893,6 +893,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		m = vbe_methods;
 	} else {
 		be->sick = 0;
+		be->vsc->happy = UINT64_MAX;
 		m = vbe_methods_noprobe;
 	}
 
