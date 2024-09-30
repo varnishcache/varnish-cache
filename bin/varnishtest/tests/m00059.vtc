@@ -1,0 +1,81 @@
+varnishtest "VMOD debug.chksha256"
+
+server s1 {
+	rxreq
+	expect req.url == "/ok"
+	txresp \
+	    -hdr "sha256: 9cbca99698fee7cefd93bc6db1c53226fdecae730197fd793a54e170a30af045" \
+	    -hdr "crc32: 3177021206" \
+	    -hdr "Transfer-Encoding: chunked" -nolen
+	    chunked "Ponto Facto, "
+	    delay 1
+	    chunked "Caesar Transit!"
+	    chunkedlen 0
+
+	rxreq
+	expect req.url == "/wrong"
+	txresp \
+	    -hdr "sha256: 9cbca99698fee7cefd93bc6db1c53226fdecae730197fd793a54e170a30af045" \
+	    -hdr "crc32: 3177021206" \
+	    -body ""
+} -start
+
+varnish v1 \
+    -arg "-p feature=+no_coredump" \
+    -vcl+backend {
+	import debug;
+	import blob;
+	import std;
+
+	sub vcl_deliver {
+		if (req.http.panic) {
+			debug.chksha256(blob.decode(HEX,
+			    encoded=resp.http.sha256), panic);
+			debug.chkcrc32(std.integer(resp.http.crc32), panic);
+		} else {
+			debug.chksha256(blob.decode(HEX,
+			    encoded=resp.http.sha256), log);
+			debug.chkcrc32(std.integer(resp.http.crc32), log);
+		}
+		set resp.filters += " debug.chksha256 debug.chkcrc32";
+	}
+} -start
+
+logexpect l1 -v v1 -g vxid -q "vxid == 1001" {
+	fail add *	Debug "checksum mismatch"
+	expect * 1001	Begin
+	expect * =	End
+	fail clear
+} -start
+
+logexpect l2 -v v1 -g vxid -q "vxid == 1003" {
+	fail add *	End
+	expect * 1003	Begin
+	expect * =	Debug	"^sha256 checksum mismatch"
+	expect 0 =	Debug	"^got: 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	expect 0 =	Debug	"^exp: 0x9cbca99698fee7cefd93bc6db1c53226fdecae730197fd793a54e170a30af045"
+	fail clear
+} -start
+
+client c1 {
+	txreq -url "/ok"
+	rxresp
+	txreq -url "/wrong"
+	rxresp
+} -run
+
+varnish v1 -vsl_catchup
+
+logexpect l1 -wait
+logexpect l2 -wait
+
+client c1 {
+	txreq -url "/wrong" -hdr "panic: yes"
+	rxresp
+} -run
+
+delay 3
+
+varnish v1 -cliexpect "body checksum" "panic.show"
+varnish v1 -cliok "panic.clear"
+varnish v1 -expectexit 0x40

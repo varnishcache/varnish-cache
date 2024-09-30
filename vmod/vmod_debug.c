@@ -40,6 +40,8 @@
 #include "cache/cache_filter.h"
 
 #include "vsa.h"
+#include "vgz.h"
+#include "vsha256.h"
 #include "vss.h"
 #include "vtcp.h"
 #include "vtim.h"
@@ -362,6 +364,292 @@ static const struct vdp xyzzy_vdp_slow = {
 	.bytes = xyzzy_vdp_slow_bytes
 };
 
+/*
+ * checksum VDP:
+ * test that the stream of bytes has a certain checksum and either log
+ * or panic
+ *
+ * The sha256 and crc32 variants are basically identical, but the amount of
+ * code does not justify generalizing. (slink)
+ */
+
+enum vdp_chk_mode_e {
+	VDP_CHK_INVAL = 0,
+	VDP_CHK_LOG,
+	VDP_CHK_PANIC,
+	VDP_CHK_PANIC_UNLESS_ERROR
+};
+
+struct vdp_chksha256_cfg_s {
+	unsigned			magic;
+#define VDP_CHKSHA256_CFG_MAGIC		0x624f5b32
+	enum vdp_chk_mode_e		mode;
+	unsigned char			expected[VSHA256_DIGEST_LENGTH];
+};
+
+struct vdp_chkcrc32_cfg_s {
+	unsigned			magic;
+#define VDP_CHKCRC32_CFG_MAGIC		0x5a7a835c
+	enum vdp_chk_mode_e		mode;
+	uint32_t			expected;
+};
+
+struct vdp_chksha256_s {
+	unsigned			magic;
+#define VDP_CHKSHA256_MAGIC		0x6856e913
+	unsigned			called;
+	size_t				bytes;
+	struct VSHA256Context		cx[1];
+	struct vdp_chksha256_cfg_s	*cfg;
+};
+
+struct vdp_chkcrc32_s {
+	unsigned			magic;
+#define VDP_CHKCRC32_MAGIC		0x15c03d3c
+	unsigned			called;
+	size_t				bytes;
+	uint32_t			crc;
+	struct vdp_chkcrc32_cfg_s	*cfg;
+};
+
+;
+
+const void * const chksha256_priv_id = &chksha256_priv_id;
+const void * const chkcrc32_priv_id = &chkcrc32_priv_id;
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_chksha256_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
+{
+	struct vdp_chksha256_s *vdps;
+	struct vmod_priv *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+	AN(priv);
+
+	WS_TASK_ALLOC_OBJ(ctx, vdps, VDP_CHKSHA256_MAGIC);
+	if (vdps == NULL)
+		return (-1);
+	VSHA256_Init(vdps->cx);
+
+	p = VRT_priv_task_get(ctx, chksha256_priv_id);
+	if (p == NULL)
+		return (-1);
+
+	assert(p->len == sizeof(struct vdp_chksha256_cfg_s));
+	CAST_OBJ_NOTNULL(vdps->cfg, p->priv, VDP_CHKSHA256_CFG_MAGIC);
+	*priv = vdps;
+
+	return (0);
+}
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_chkcrc32_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
+{
+	struct vdp_chkcrc32_s *vdps;
+	struct vmod_priv *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+	AN(priv);
+
+	WS_TASK_ALLOC_OBJ(ctx, vdps, VDP_CHKCRC32_MAGIC);
+	if (vdps == NULL)
+		return (-1);
+	vdps->crc = crc32(0L, Z_NULL, 0);
+
+	p = VRT_priv_task_get(ctx, chkcrc32_priv_id);
+	if (p == NULL)
+		return (-1);
+
+	assert(p->len == sizeof(struct vdp_chkcrc32_cfg_s));
+	CAST_OBJ_NOTNULL(vdps->cfg, p->priv, VDP_CHKCRC32_CFG_MAGIC);
+	*priv = vdps;
+
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
+xyzzy_chksha256_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	struct vdp_chksha256_s *vdps;
+
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_CHKSHA256_MAGIC);
+	VSHA256_Update(vdps->cx, ptr, len);
+	vdps->called++;
+	vdps->bytes += len;
+	return (VDP_bytes(vdc, act, ptr, len));
+}
+
+static int v_matchproto_(vdp_bytes_f)
+xyzzy_chkcrc32_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	struct vdp_chkcrc32_s *vdps;
+
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_CHKCRC32_MAGIC);
+	if (len > 0)
+		vdps->crc = crc32(vdps->crc, ptr, len);
+	vdps->called++;
+	vdps->bytes += len;
+	return (VDP_bytes(vdc, act, ptr, len));
+}
+
+static int v_matchproto_(vdp_fini_f)
+xyzzy_chksha256_fini(struct vdp_ctx *vdc, void **priv)
+{
+	unsigned char digest[VSHA256_DIGEST_LENGTH];
+	enum vdp_chk_mode_e mode;
+	struct vdp_chksha256_s *vdps;
+	struct vsb *vsb;
+	int r;
+
+	(void) vdc;
+	AN(priv);
+	if (*priv == NULL)
+		return (0);
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_CHKSHA256_MAGIC);
+	*priv = NULL;
+
+	VSHA256_Final(digest, vdps->cx);
+	r = memcmp(digest, vdps->cfg->expected, sizeof digest);
+	if (r == 0)
+		return (0);
+
+	mode = vdps->cfg->mode;
+	if (mode == VDP_CHK_PANIC_UNLESS_ERROR)
+		mode = (vdps->called == 0 || vdc->retval != 0) ? VDP_CHK_LOG : VDP_CHK_PANIC;
+
+	if (mode == VDP_CHK_LOG) {
+		VSLb(vdc->vsl, SLT_Debug, "sha256 checksum mismatch");
+
+		vsb = VSB_new_auto();
+		VSB_quote(vsb, digest, sizeof digest, VSB_QUOTE_HEX);
+		AZ(VSB_finish(vsb));
+		VSLb(vdc->vsl, SLT_Debug, "got: %s", VSB_data(vsb));
+
+		VSB_clear(vsb);
+		VSB_quote(vsb, vdps->cfg->expected, sizeof digest, VSB_QUOTE_HEX);
+		AZ(VSB_finish(vsb));
+		VSLb(vdc->vsl, SLT_Debug, "exp: %s", VSB_data(vsb));
+		VSB_destroy(&vsb);
+	}
+	else if (mode == VDP_CHK_PANIC)
+		WRONG("body checksum");
+	else
+		WRONG("mode");
+
+	return (0);
+}
+
+static int v_matchproto_(vdp_fini_f)
+xyzzy_chkcrc32_fini(struct vdp_ctx *vdc, void **priv)
+{
+	enum vdp_chk_mode_e mode;
+	struct vdp_chkcrc32_s *vdps;
+
+	(void) vdc;
+	AN(priv);
+	if (*priv == NULL)
+		return (0);
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_CHKCRC32_MAGIC);
+	*priv = NULL;
+
+	if (vdps->crc == vdps->cfg->expected)
+		return (0);
+
+	mode = vdps->cfg->mode;
+	if (mode == VDP_CHK_PANIC_UNLESS_ERROR)
+		mode = (vdps->called == 0 || vdc->retval != 0) ? VDP_CHK_LOG : VDP_CHK_PANIC;
+
+	if (mode == VDP_CHK_LOG) {
+		VSLb(vdc->vsl, SLT_Debug, "crc32 checksum mismatch");
+		VSLb(vdc->vsl, SLT_Debug, "got: %08x", vdps->crc);
+		VSLb(vdc->vsl, SLT_Debug, "exp: %08x", vdps->cfg->expected);
+	}
+	else if (mode == VDP_CHK_PANIC)
+		WRONG("body checksum");
+	else
+		WRONG("mode");
+
+	return (0);
+}
+
+static const struct vdp xyzzy_vdp_chksha256 = {
+	.name  = "debug.chksha256",
+	.init  = xyzzy_chksha256_init,
+	.bytes = xyzzy_chksha256_bytes,
+	.fini  = xyzzy_chksha256_fini,
+};
+
+static const struct vdp xyzzy_vdp_chkcrc32 = {
+	.name  = "debug.chkcrc32",
+	.init  = xyzzy_chkcrc32_init,
+	.bytes = xyzzy_chkcrc32_bytes,
+	.fini  = xyzzy_chkcrc32_fini,
+};
+
+#define chkcfg(ws, cfg, magic, id, mode_e) do {							\
+	struct vmod_priv *p = VRT_priv_task(ctx, id);						\
+												\
+	XXXAN(p);										\
+	if (p->priv == NULL) {									\
+		p->priv = WS_Alloc(ws, sizeof *cfg);						\
+		p->len = sizeof *cfg;								\
+	}											\
+	cfg = p->priv;										\
+	INIT_OBJ(cfg, magic);									\
+	if (mode_e == VENUM(log))								\
+		cfg->mode = VDP_CHK_LOG;							\
+	else if (mode_e == VENUM(panic))							\
+		cfg->mode = VDP_CHK_PANIC;							\
+	else if (mode_e == VENUM(panic_unless_error))						\
+		cfg->mode = VDP_CHK_PANIC_UNLESS_ERROR;						\
+	else											\
+		WRONG("mode_e");								\
+} while(0)
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_chksha256)
+xyzzy_chksha256(VRT_CTX, VCL_BLOB blob, VCL_ENUM mode_e)
+{
+	struct vdp_chksha256_cfg_s *cfg;
+	size_t l;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(blob);
+	XXXAN(blob->blob);
+	XXXAN(blob->len);
+
+	chkcfg(ctx->ws, cfg, VDP_CHKSHA256_CFG_MAGIC, chksha256_priv_id, mode_e);
+
+	l = blob->len;
+	if (l > sizeof cfg->expected)
+		l = sizeof cfg->expected;
+	memcpy(cfg->expected, blob->blob, l);
+
+}
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_chkcrc32)
+xyzzy_chkcrc32(VRT_CTX, VCL_INT expected, VCL_ENUM mode_e)
+{
+	struct vdp_chkcrc32_cfg_s *cfg;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	chkcfg(ctx->ws, cfg, VDP_CHKCRC32_CFG_MAGIC, chkcrc32_priv_id, mode_e);
+
+	if (expected < 0)
+		expected = 0;
+	cfg->expected = (uintmax_t)expected % UINT32_MAX;
+}
+
 /**********************************************************************/
 
 VCL_STRING v_matchproto_(td_debug_author)
@@ -634,6 +922,8 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chunked));
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_slow, &xyzzy_vdp_slow));
+	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chksha256));
+	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chkcrc32));
 	return (0);
 }
 
@@ -799,6 +1089,8 @@ event_discard(VRT_CTX, void *priv)
 	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_pedantic);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chunked);
+	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chksha256);
+	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chkcrc32);
 
 	if (--loads)
 		return (0);

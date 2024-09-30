@@ -410,6 +410,36 @@ resolved sockets are retuned in a comma delimited string. If fail_port is
 specified, the resolution callback will fail for that port, and the reason will
 be appended to the return value.
 
+$Function VOID chksha256(BLOB expected, ENUM {log, panic, panic_unless_error} mode)
+
+Configure the expected sha256 checksum and failure mode for the debug.chksha256
+VDP. This function does not push the VDP.
+
+The *expected* blob should be 32 bytes in length. If not, it will either be
+truncated or padded with zeros.
+
+With *mode* ``log``, the VDP emits ``Debug`` VSL like the following for a
+checksum mismatch::
+
+	Debug           c checksum mismatch
+	Debug           c got: 0xe3b0c44298fc1c149afbf4c8996fb924...
+	Debug           c exp: 0x9cbca99698fee7cefd93bc6db1c53226...
+
+With *mode* ``panic``, the VDP triggers a ``WRONG("body checksum")`` for a
+mismatch. The ``panic_unless_error`` *mode* does so only if the filter chain was
+otherwise closed without error. This is useful, for example, to not trigger a
+panic when the client closes the connection.
+
+$Function VOID chkcrc32(INT expected, ENUM {log, panic, panic_unless_error} mode)
+
+Configure the expected crc32 checksum and failure mode for the debug.chkcrc32
+VDP. This function does not push the VDP.
+
+*expected* needs to be in the range ``0 .. UINT32_MAX``. A negative value will
+be hanged to zero. Any larger value will be taken modulo UINT32_MAX.
+
+The *mode* argument behaves as for `debug.chksha256()`_.
+
 DEPRECATED
 ==========
 

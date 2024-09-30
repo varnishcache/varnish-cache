@@ -45,6 +45,7 @@ include $(srcdir)/automake_boilerplate_vtc.am
 VSC_SRC = VSC_debug.vsc
 
 libvmod_debug_la_SOURCES += $(VSC_SRC)
+libvmod_debug_la_CFLAGS += -I$(top_srcdir)/lib/libvgz
 
 BUILT_SOURCES = $(VSC_GEN)
 
