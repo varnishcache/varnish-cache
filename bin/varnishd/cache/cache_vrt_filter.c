@@ -459,6 +459,8 @@ req_filter_can(struct req *req) {
 
 /*--------------------------------------------------------------------*/
 
+//lint -emacro(506, FILTER_VAR) constant value boolean
+//lint -emacro(774, FILTER_VAR) if always evaluates to false
 #define FILTER_VAR(vcl, in, func, cond, fld)				\
 	VCL_STRING							\
 	VRT_r_##vcl##_filters(VRT_CTX)					\
