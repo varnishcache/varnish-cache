@@ -132,6 +132,10 @@ vwe_thread(void *priv)
 			CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
 			Lck_Lock(&vwe->mtx);
 			active = Wait_HeapDelete(w, wp);
+			if (active != 0) {
+				AN(vwe->nwaited);
+				vwe->nwaited--;
+			}
 			Lck_Unlock(&vwe->mtx);
 			if (active == 0) {
 				VSL(SLT_Debug, NO_VXID,
@@ -139,8 +143,6 @@ vwe_thread(void *priv)
 				continue;
 			}
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
-			AN(vwe->nwaited);
-			vwe->nwaited--;
 			if (ep->events & EPOLLIN) {
 				if (ep->events & EPOLLRDHUP &&
 				    recv(wp->fd, &c, 1, MSG_PEEK) == 0)
