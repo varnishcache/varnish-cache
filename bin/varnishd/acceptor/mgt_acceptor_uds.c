@@ -52,10 +52,7 @@
 #include "acceptor/acceptor_uds.h"
 #include "acceptor/mgt_acceptor.h"
 
-#include "vav.h"
-#include "vcli_serve.h"
 #include "vsa.h"
-#include "vss.h"
 #include "vus.h"
 
 int

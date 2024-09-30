@@ -48,10 +48,6 @@
 #include "common/heritage.h"
 
 #include "vav.h"
-#include "vcli_serve.h"
-#include "vsa.h"
-#include "vss.h"
-#include "vtcp.h"
 #include "vus.h"
 
 static VTAILQ_HEAD(,listen_arg) listen_args =

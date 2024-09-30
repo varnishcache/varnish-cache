@@ -51,31 +51,13 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-extern vtim_dur vca_pace;
-extern struct lock pace_mtx;
-extern unsigned pool_accepting;
-
 /*--------------------------------------------------------------------
  * TCP options we want to control
  */
 
-union sock_arg {
-	struct linger	lg;
-	struct timeval	tv;
-	int		i;
-};
-
-static struct sock_opt {
-	int		level;
-	int		optname;
-	const char	*strname;
-	unsigned	mod;
-	socklen_t	sz;
-	union sock_arg	arg[1];
-} sock_opts[] = {
+static struct sock_opt sock_opts[] = {
 	/* Note: Setting the mod counter to something not-zero is needed
 	 * to force the setsockopt() calls on startup */
-#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, 1, sizeof(typ) },
 
 	SOCK_OPT(SOL_SOCKET, SO_LINGER, struct linger)
 	SOCK_OPT(SOL_SOCKET, SO_KEEPALIVE, int)
@@ -332,6 +314,7 @@ vca_tcp_event(struct cli *cli, struct listen_sock *ls, enum vca_event event)
 {
 	char h[VTCP_ADDRBUFSIZE], p[VTCP_PORTBUFSIZE];
 
+	(void) ls; // XXX const?
 	switch (event) {
 	case VCA_EVENT_LADDR:
 		VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);

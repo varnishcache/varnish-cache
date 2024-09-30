@@ -51,10 +51,6 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-extern vtim_dur vca_pace;
-extern struct lock pace_mtx;
-extern unsigned pool_accepting;
-
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
  * as absolutely possible, so we set them LINGER disabled, so that even if
@@ -75,23 +71,9 @@ static const unsigned enable_so_keepalive = 1;
  * UDS options we want to control
  */
 
-union sock_arg {
-	struct linger	lg;
-	struct timeval	tv;
-	int		i;
-};
-
-static struct sock_opt {
-	int		level;
-	int		optname;
-	const char	*strname;
-	unsigned	mod;
-	socklen_t	sz;
-	union sock_arg	arg[1];
-} sock_opts[] = {
+static struct sock_opt sock_opts[] = {
 	/* Note: Setting the mod counter to something not-zero is needed
 	 * to force the setsockopt() calls on startup */
-#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, 1, sizeof(typ) },
 
 	SOCK_OPT(SOL_SOCKET, SO_LINGER, struct linger)
 	SOCK_OPT(SOL_SOCKET, SO_KEEPALIVE, int)
@@ -299,6 +281,7 @@ static void
 vca_uds_event(struct cli *cli, struct listen_sock *ls, enum vca_event event)
 {
 
+	(void) ls; // XXX const?
 	switch (event) {
 	case VCA_EVENT_LADDR:
 		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);

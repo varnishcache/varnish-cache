@@ -49,8 +49,6 @@
 #include "acceptor/acceptor_tcp.h"
 #include "acceptor/mgt_acceptor.h"
 
-#include "vav.h"
-#include "vcli_serve.h"
 #include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"

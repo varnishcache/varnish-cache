@@ -48,14 +48,13 @@
 #include "common/heritage.h"
 
 #include "vcli_serve.h"
-#include "vsa.h"
-#include "vtcp.h"
 #include "vtim.h"
 
-static pthread_t	VCA_thread;
-vtim_dur vca_pace = 0.0;
-struct lock pace_mtx;
 unsigned pool_accepting;
+
+static pthread_t	VCA_thread;
+static vtim_dur vca_pace = 0.0;
+static struct lock pace_mtx;
 static pthread_mutex_t shut_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 /*--------------------------------------------------------------------

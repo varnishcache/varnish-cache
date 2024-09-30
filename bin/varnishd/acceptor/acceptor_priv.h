@@ -61,3 +61,24 @@ struct conn_heritage {
 void vca_pace_check(void);
 void vca_pace_bad(void);
 void vca_pace_good(void);
+
+
+union sock_arg {
+	struct linger	lg;
+	struct timeval	tv;
+	int		i;
+};
+
+struct sock_opt {
+	int		level;
+	int		optname;
+	const char	*strname;
+	unsigned	mod;
+	socklen_t	sz;
+	union sock_arg	arg[1];
+};
+
+#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, 1, sizeof(typ) },
+
+// move to individual pools?
+extern unsigned pool_accepting;	// cache_acceptor.c
