@@ -436,7 +436,8 @@ VCL_IterDirector(struct cli *cli, const char *pat,
 }
 
 static void
-vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
+vcl_BackendEvent(const struct vcl *vcl, struct director_head *head,
+    enum vcl_event_e e)
 {
 	struct vcldir *vdir;
 
@@ -444,8 +445,9 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 
+	// XXX should we go unlocked? #4199 #4142
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_FOREACH(vdir, &vcl->director_list, list)
+	VTAILQ_FOREACH(vdir, head, list)
 		VDI_Event(vdir->dir, e);
 	Lck_Unlock(&vcl_mtx);
 }
@@ -585,6 +587,7 @@ vcl_print_refs(const struct vcl *vcl)
 static int
 vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 {
+	struct director_head colddirs, warmdirs;
 	struct vsb *nomsg = NULL;
 	int i = 0;
 
@@ -606,7 +609,7 @@ vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
 			Lck_Unlock(&vcl_mtx);
-			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
+			vcl_BackendEvent(vcl, &vcl->director_list, VCL_EVENT_COLD);
 			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, msg));
 			AZ(*msg);
 		}
@@ -629,17 +632,44 @@ vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 			i = -1;
 		}
 		else {
+			/* only send the WARM event to directors created before
+			 * the WARM event. This assumes no deletes, see #4142
+			 */
+
+			VTAILQ_INIT(&colddirs);
+			VTAILQ_INIT(&warmdirs);
+
 			Lck_Lock(&vcl_mtx);
+			VTAILQ_SWAP(&vcl->director_list, &colddirs, vcldir, list);
 			vcl->temp = VCL_TEMP_WARM;
 			Lck_Unlock(&vcl_mtx);
+
 			i = vcl_send_event(vcl, VCL_EVENT_WARM, msg);
 			if (i == 0) {
-				vcl_BackendEvent(vcl, VCL_EVENT_WARM);
+				vcl_BackendEvent(vcl, &colddirs, VCL_EVENT_WARM);
+				Lck_Lock(&vcl_mtx);
+				VTAILQ_CONCAT(&vcl->director_list, &colddirs, list);
+				Lck_Unlock(&vcl_mtx);
+				assert(VTAILQ_EMPTY(&colddirs));
 				break;
 			}
 			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, &nomsg));
 			AZ(nomsg);
+
+			Lck_Lock(&vcl_mtx);
+			VTAILQ_SWAP(&vcl->director_list, &warmdirs, vcldir, list);
+			assert(VTAILQ_EMPTY(&vcl->director_list));
+			VTAILQ_SWAP(&vcl->director_list, &colddirs, vcldir, list);
 			vcl->temp = VCL_TEMP_COLD;
+			Lck_Unlock(&vcl_mtx);
+
+			vcl_BackendEvent(vcl, &warmdirs, VCL_EVENT_COLD);
+			Lck_Lock(&vcl_mtx);
+			VTAILQ_CONCAT(&vcl->director_list, &warmdirs, list);
+			Lck_Unlock(&vcl_mtx);
+
+			assert(VTAILQ_EMPTY(&colddirs));
+			assert(VTAILQ_EMPTY(&warmdirs));
 		}
 		break;
 	default:
