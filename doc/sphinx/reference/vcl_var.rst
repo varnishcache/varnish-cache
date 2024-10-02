@@ -407,7 +407,7 @@ req.is_hitmiss
 
 	Type: BOOL
 
-	Readable from: client
+	Readable from: vcl_miss, vcl_deliver, vcl_pass, vcl_synth
 
 	If this request resulted in a hitmiss
 
