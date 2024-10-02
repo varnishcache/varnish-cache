@@ -392,7 +392,7 @@ req.is_hitpass
 
 	Type: BOOL
 
-	Readable from: client
+	Readable from: vcl_pass, vcl_deliver, vcl_synth
 
 	If this request resulted in a hitpass
 
