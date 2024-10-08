@@ -224,8 +224,7 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 void
 VRY_Prep(struct req *req)
 {
-	if (req->hash_objhead == NULL) {
-		/* Not a waiting list return */
+	if (req->waitinglist_gen == 0) {
 		AZ(req->vary_b);
 		AZ(req->vary_e);
 		(void)WS_ReserveAll(req->ws);
