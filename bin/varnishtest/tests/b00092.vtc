@@ -1,0 +1,28 @@
+varnishtest "HTTP response to RX_OVERFLOW"
+
+# server s1 {} -start
+
+varnish v1 -cliok "param.set http_req_size 500b" -vcl {
+	backend default none;
+} -start
+
+client c1 {
+	txreq -url "/world?hello=world${string,repeat,100,&hello=world}"
+	expect_close
+} -run
+
+varnish v1 -cliok "param.set feature +overflow_http_resp"
+
+client c1 {
+	txreq -url "/world?hello=world${string,repeat,100,&hello=world}"
+	rxresp
+	expect resp.status == 413
+} -run
+
+varnish v1 -cliok "param.set req_overflow_status 414"
+
+client c1 {
+	txreq -url "/world?hello=world${string,repeat,100,_hello-world}"
+	rxresp
+	expect resp.status == 414
+} -run
