@@ -39,7 +39,6 @@ struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
 
-
 	VTAILQ_ENTRY(storage)	list;
 	void			*priv;
 
