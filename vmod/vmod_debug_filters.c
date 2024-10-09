@@ -513,6 +513,7 @@ xyzzy_chksha256_fini(struct vdp_ctx *vdc, void **priv)
 		VSLb(vdc->vsl, SLT_Debug, "sha256 checksum mismatch");
 
 		vsb = VSB_new_auto();
+		AN(vsb);
 		VSB_quote(vsb, digest, sizeof digest, VSB_QUOTE_HEX);
 		AZ(VSB_finish(vsb));
 		VSLb(vdc->vsl, SLT_Debug, "got: %s", VSB_data(vsb));
