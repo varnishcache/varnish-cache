@@ -1,0 +1,100 @@
+varnishtest "req.ttl = 0s forces cache MISS with request coalescing"
+
+barrier b1 cond 3 -cyclic
+barrier b2 sock 2 -cyclic
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 3" -hdr "version: 1"
+	barrier b1 sync
+	send "foo"
+
+	rxreq
+	txresp -nolen -hdr "Content-Length: 3" -hdr "version: 2"
+	barrier b1 sync
+	send "bar"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		if (req.http.ttl) {
+			set req.ttl = std.duration(req.http.ttl, 0s);
+		}
+
+		// Make sure both client tasks are started before the fetch is
+		// initiated to guarantee that one ends up on the waitinglist.
+		if (req.http.sync) {
+			vtc.barrier_sync("${b2_sock}");
+		}
+	}
+} -start
+
+# c1 and c2 send a request and sync on the barrier only after having received
+# headers. This ensures that the two requests are coalesced.
+
+client c1 {
+	txreq -hdr "sync: yes" -hdr "ttl: 0s"
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.version == "1"
+	barrier b1 sync
+	rxrespbody
+	expect resp.body == "foo"
+} -start
+
+client c2 {
+	txreq -hdr "sync: yes" -hdr "ttl: 0s"
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.version == "1"
+	barrier b1 sync
+	rxrespbody
+	expect resp.body == "foo"
+} -start
+
+client c1 -wait
+client c2 -wait
+
+# c3 checks that a positive or unset req.ttl gets the cached object.
+
+client c3 {
+	txreq -hdr "ttl: 10s"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.version == "1"
+	expect resp.body == "foo"
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.version == "1"
+	expect resp.body == "foo"
+} -run
+
+# c4 and c5 force a cache MISS, where the two requests are again coalesced.
+
+client c4 {
+	txreq -hdr "sync: yes" -hdr "ttl: 0s"
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.version == "2"
+	barrier b1 sync
+	rxrespbody
+	expect resp.body == "bar"
+} -start
+
+client c5 {
+	txreq -hdr "sync: yes" -hdr "ttl: 0s"
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.version == "2"
+	barrier b1 sync
+	rxrespbody
+	expect resp.body == "bar"
+} -start
+
+client c4 -wait
+client c5 -wait

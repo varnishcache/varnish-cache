@@ -73,8 +73,10 @@ EXP_Ttl(const struct req *req, const struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	r = oc->ttl;
-	if (req != NULL && req->d_ttl > 0. && req->d_ttl < r)
+	if (req != NULL && !isnan(req->d_ttl) && req->d_ttl < r) {
+		assert(req->d_ttl >= 0.);
 		r = req->d_ttl;
+	}
 	return (oc->t_origin + r);
 }
 
@@ -91,8 +93,10 @@ EXP_Ttl_grace(const struct req *req, const struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	g = oc->grace;
-	if (req != NULL && req->d_grace >= 0. && req->d_grace < g)
+	if (req != NULL && !isnan(req->d_grace) && req->d_grace < g) {
+		assert(req->d_grace >= 0.);
 		g = req->d_grace;
+	}
 	return (EXP_Ttl(req, oc) + g);
 }
 
