@@ -368,8 +368,121 @@ VCL_Update(struct vcl **vcc, struct vcl *vcl)
 	assert((*vcc)->temp->is_warm);
 }
 
+/*--------------------------------------------------------------------
+ * vdire: Vcl DIrector REsignation Management (born out of a dire situation)
+ * iterators over the director list need to register.
+ * while iterating, directors can not retire immediately,
+ * they get put on a list of resigning directors. The
+ * last iterator executes the retirement.
+ */
+
+static struct vdire *
+vdire_new(struct lock *mtx, const struct vcltemp **tempp)
+{
+	struct vdire *vdire;
+
+	ALLOC_OBJ(vdire, VDIRE_MAGIC);
+	AN(vdire);
+	AN(mtx);
+	VTAILQ_INIT(&vdire->directors);
+	VTAILQ_INIT(&vdire->resigning);
+	vdire->mtx = mtx;
+	vdire->tempp = tempp;
+	return (vdire);
+}
+
+/* starting an interation prevents removals from the directors list */
+void
+vdire_start_iter(struct vdire *vdire)
+{
+
+	CHECK_OBJ_NOTNULL(vdire, VDIRE_MAGIC);
+
+	Lck_Lock(vdire->mtx);
+	vdire->iterating++;
+	Lck_Unlock(vdire->mtx);
+}
+
+void
+vdire_end_iter(struct vdire *vdire)
+{
+	struct vcldir_head resigning = VTAILQ_HEAD_INITIALIZER(resigning);
+	const struct vcltemp *temp = NULL;
+	struct vcldir *vdir;
+	unsigned n;
+
+	CHECK_OBJ_NOTNULL(vdire, VDIRE_MAGIC);
+
+	Lck_Lock(vdire->mtx);
+	AN(vdire->iterating);
+	n = --vdire->iterating;
+
+	if (n == 0) {
+		VTAILQ_SWAP(&vdire->resigning, &resigning, vcldir, resigning_list);
+		VTAILQ_FOREACH(vdir, &resigning, resigning_list)
+			VTAILQ_REMOVE(&vdire->directors, vdir, directors_list);
+		temp = *vdire->tempp;
+	}
+	Lck_Unlock(vdire->mtx);
+
+	VTAILQ_FOREACH(vdir, &resigning, resigning_list)
+		vcldir_retire(vdir, temp);
+}
+
+// if there are no iterators, remove from directors and retire
+// otherwise but on resigning list to work when iterators end
+void
+vdire_resign(struct vdire *vdire, struct vcldir *vdir)
+{
+	const struct vcltemp *temp = NULL;
+
+	CHECK_OBJ_NOTNULL(vdire, VDIRE_MAGIC);
+	AN(vdir);
+
+	Lck_Lock(vdire->mtx);
+	if (vdire->iterating != 0) {
+		VTAILQ_INSERT_TAIL(&vdire->resigning, vdir, resigning_list);
+		vdir = NULL;
+	} else {
+		VTAILQ_REMOVE(&vdire->directors, vdir, directors_list);
+		temp = *vdire->tempp;
+	}
+	Lck_Unlock(vdire->mtx);
+
+	if (vdir != NULL)
+		vcldir_retire(vdir, temp);
+}
+
+// unlocked version of vcl_iterdir
+// pat can also be NULL (to iterate all)
+static int
+vdire_iter(struct cli *cli, const char *pat, const struct vcl *vcl,
+    vcl_be_func *func, void *priv)
+{
+	int i, found = 0;
+	struct vcldir *vdir;
+	struct vdire *vdire = vcl->vdire;
+
+	vdire_start_iter(vdire);
+	VTAILQ_FOREACH(vdir, &vdire->directors, directors_list) {
+		if (pat != NULL && fnmatch(pat, vdir->cli_name, 0))
+			continue;
+		found++;
+		i = func(cli, vdir->dir, priv);
+		if (i < 0) {
+			found = i;
+			break;
+		}
+		found += i;
+	}
+	vdire_end_iter(vdire);
+	return (found);
+}
+
+
 /*--------------------------------------------------------------------*/
 
+// XXX locked case across VCLs - should do without
 static int
 vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
     vcl_be_func *func, void *priv)
@@ -378,7 +491,7 @@ vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
 	struct vcldir *vdir;
 
 	Lck_AssertHeld(&vcl_mtx);
-	VTAILQ_FOREACH(vdir, &vcl->director_list, list) {
+	VTAILQ_FOREACH(vdir, &vcl->vdire->directors, directors_list) {
 		if (fnmatch(pat, vdir->cli_name, 0))
 			continue;
 		found++;
@@ -416,10 +529,10 @@ VCL_IterDirector(struct cli *cli, const char *pat,
 		vcl = NULL;
 	}
 	AZ(VSB_finish(vsb));
-	Lck_Lock(&vcl_mtx);
 	if (vcl != NULL) {
-		found = vcl_iterdir(cli, VSB_data(vsb), vcl, func, priv);
+		found = vdire_iter(cli, VSB_data(vsb), vcl, func, priv);
 	} else {
+		Lck_Lock(&vcl_mtx);
 		VTAILQ_FOREACH(vcl, &vcl_head, list) {
 			i = vcl_iterdir(cli, VSB_data(vsb), vcl, func, priv);
 			if (i < 0) {
@@ -429,8 +542,8 @@ VCL_IterDirector(struct cli *cli, const char *pat,
 				found += i;
 			}
 		}
+		Lck_Unlock(&vcl_mtx);
 	}
-	Lck_Unlock(&vcl_mtx);
 	VSB_destroy(&vsb);
 	return (found);
 }
@@ -439,31 +552,37 @@ static void
 vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 {
 	struct vcldir *vdir;
+	struct vdire *vdire;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
+	vdire = vcl->vdire;
 
-	Lck_Lock(&vcl_mtx);
-	VTAILQ_FOREACH(vdir, &vcl->director_list, list)
+	vdire_start_iter(vdire);
+	VTAILQ_FOREACH(vdir, &vdire->directors, directors_list)
 		VDI_Event(vdir->dir, e);
-	Lck_Unlock(&vcl_mtx);
+	vdire_end_iter(vdire);
 }
 
 static void
 vcl_KillBackends(const struct vcl *vcl)
 {
 	struct vcldir *vdir, *vdir2;
+	struct vdire *vdire;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	assert(vcl->temp == VCL_TEMP_COLD || vcl->temp == VCL_TEMP_INIT);
+	vdire = vcl->vdire;
+	CHECK_OBJ_NOTNULL(vdire, VDIRE_MAGIC);
+
 	/*
-	 * Unlocked because no further directors can be added, and the
+	 * Unlocked and sidelining vdire because no further directors can be added, and the
 	 * remaining ones need to be able to remove themselves.
 	 */
-	VTAILQ_FOREACH_SAFE(vdir, &vcl->director_list, list, vdir2)
+	VTAILQ_FOREACH_SAFE(vdir, &vdire->directors, directors_list, vdir2)
 		VDI_Event(vdir->dir, VCL_EVENT_DISCARD);
-	assert(VTAILQ_EMPTY(&vcl->director_list));
+	assert(VTAILQ_EMPTY(&vdire->directors));
 }
 
 /*--------------------------------------------------------------------*/
@@ -522,6 +641,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 	AN(vcl);
 	vcl->dlh = dlh;
 	vcl->conf = cnf;
+	vcl->vdire = vdire_new(&vcl_mtx, &vcl->temp);
 	return (vcl);
 }
 
@@ -533,6 +653,7 @@ VCL_Close(struct vcl **vclp)
 	TAKE_OBJ_NOTNULL(vcl, vclp, VCL_MAGIC);
 	assert(VTAILQ_EMPTY(&vcl->filters));
 	AZ(dlclose(vcl->dlh));
+	FREE_OBJ(vcl->vdire);
 	FREE_OBJ(vcl);
 }
 
@@ -701,7 +822,6 @@ vcl_load(struct cli *cli,
 
 	vcl->loaded_name = strdup(name);
 	XXXAN(vcl->loaded_name);
-	VTAILQ_INIT(&vcl->director_list);
 	VTAILQ_INIT(&vcl->ref_list);
 	VTAILQ_INIT(&vcl->filters);
 
@@ -912,6 +1032,7 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	if (!strcmp(vcl->state, VCL_TEMP_LABEL->name)) {
 		VTAILQ_REMOVE(&vcl_head, vcl, list);
 		free(vcl->loaded_name);
+		AZ(vcl->vdire);
 		FREE_OBJ(vcl);
 	} else if (vcl->temp == VCL_TEMP_COLD) {
 		VCL_Poll();
