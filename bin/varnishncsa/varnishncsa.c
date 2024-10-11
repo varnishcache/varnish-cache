@@ -918,7 +918,8 @@ frag_line(enum update_mode um, const char *b, const char *e, struct fragment *f)
 }
 
 static void
-process_hdr(const struct watch_head *head, const char *b, const char *e)
+process_hdr(const struct watch_head *head, const char *b, const char *e,
+    enum update_mode um)
 {
 	struct watch *w;
 	const char *p;
@@ -927,7 +928,7 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
 		if (!isprefix(w->key, w->keylen, b, e, &p))
 			continue;
-		frag_line(UM_ALWAYS, p, e, &w->frag);
+		frag_line(um, p, e, &w->frag);
 	}
 }
 
@@ -1061,7 +1062,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_BereqHeader:
 			case SLT_ReqHeader:
-				process_hdr(&CTX.watch_reqhdr, b, e);
+				process_hdr(&CTX.watch_reqhdr, b, e, UM_ALWAYS);
 				if (ISPREFIX("Authorization:", b, e, &p) &&
 				    ISPREFIX("basic ", p, e, &p))
 					frag_line(UM_IF_NOT_SET, p, e,
@@ -1073,7 +1074,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_BerespHeader:
 			case SLT_RespHeader:
-				process_hdr(&CTX.watch_resphdr, b, e);
+				process_hdr(&CTX.watch_resphdr, b, e, UM_ALWAYS);
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
