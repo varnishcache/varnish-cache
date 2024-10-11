@@ -957,7 +957,7 @@ frag_line(enum format_policy fp, const char *b, const char *e,
 
 static void
 process_hdr(enum format_policy fp, const struct watch_head *head, const char *b,
-    const char *e)
+    const char *e, int unset)
 {
 	struct watch *w;
 	const char *p;
@@ -966,7 +966,12 @@ process_hdr(enum format_policy fp, const struct watch_head *head, const char *b,
 		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
 		if (!isprefix(w->key, w->keylen, b, e, &p))
 			continue;
-		frag_line(fp, p, e, &w->frag);
+		if (unset) {
+			frag_line(fp, CTX.missing_string,
+			    NULL,
+			    &w->frag);
+		} else
+			frag_line(fp, p, e, &w->frag);
 	}
 }
 
@@ -1101,7 +1106,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_BereqHeader:
 			case SLT_ReqHeader:
-				process_hdr(FMTPOL_REQ, &CTX.watch_reqhdr, b, e);
+				process_hdr(FMTPOL_REQ, &CTX.watch_reqhdr, b, e, 0);
 				if (ISPREFIX("Authorization:", b, e, &p) &&
 				    ISPREFIX("basic ", p, e, &p))
 					frag_line(FMTPOL_REQ, p, e,
@@ -1113,7 +1118,15 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_BerespHeader:
 			case SLT_RespHeader:
-				process_hdr(FMTPOL_RESP, &CTX.watch_resphdr, b, e);
+				process_hdr(FMTPOL_RESP, &CTX.watch_resphdr, b, e, 0);
+				break;
+			case SLT_BereqUnset:
+			case SLT_ReqUnset:
+				process_hdr(FMTPOL_REQ, &CTX.watch_reqhdr, b, e, 1);
+				break;
+			case SLT_BerespUnset:
+			case SLT_RespUnset:
+				process_hdr(FMTPOL_RESP, &CTX.watch_resphdr, b, e, 1);
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
