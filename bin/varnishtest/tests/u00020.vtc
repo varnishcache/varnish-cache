@@ -1,0 +1,163 @@
+varnishtest "new varnishncsa matching rules"
+
+# Test things we send to the backend
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_fetch {
+		set bereq.http.bereqhdr = "vbf-modified";
+		set bereq.method = "HEAD";
+		set bereq.url = "/vbf-url?q=vbfQuerry";
+		set bereq.http.Authorization = "basic dmJmOnBhc3M=";
+	}
+
+	sub vcl_backend_response {
+		set bereq.http.bereqhdr = "vbr-modified";
+		set bereq.http.notsent = "notsent";
+		set bereq.method = "CONNECT";
+		set bereq.url = "/vbr-url?q=vbrQuerry";
+		set bereq.http.Authorization = "basic dmJyOnBhc3M=";
+	}
+
+} -start
+
+
+client c1 {
+	txreq -url "/client-url?q=clientQuerry" -hdr "bereqhdr: client-header" -hdr "Authorization:basic Y2xpZW50OnBhc3M="
+	rxresp
+} -run
+
+shell {
+	varnishncsa -n ${v1_name} -d -b -F '%H %{bereqhdr}i %{notsent}i %m %q %U %u' > ncsa_sb.txt
+
+	cat >expected_sb.txt <<-EOF
+	HTTP/1.1 vbf-modified - HEAD ?q=vbfQuerry /vbf-url vbf
+	EOF
+	diff -u expected_sb.txt ncsa_sb.txt
+}
+
+varnish v1 -stop
+
+# Test things we receive from the backend
+
+server s1 {
+        rxreq
+        txresp -status 202 -hdr "beresp: origin"
+} -start
+
+varnish v1 -vcl+backend {
+
+        sub vcl_backend_response {
+		set beresp.http.beresp = "vbr-updated";
+		set beresp.status = 200;
+        }
+
+} -start
+
+
+client c1 {
+        txreq
+        rxresp
+} -run
+
+
+shell {
+	varnishncsa -n ${v1_name} -d -b -F '%s %{beresp}o' > ncsa_rb.txt
+
+	cat >expected_rb.txt <<-EOF
+	202 origin
+	EOF
+	diff -u expected_rb.txt ncsa_rb.txt
+}
+
+varnish v1 -stop
+
+# Test things we send to the client
+
+server s1 {
+	rxreq
+	txresp -status 202 -hdr "resp: origin"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.http.resp = "vbr-updated";
+		set beresp.status = 200;
+	}
+
+	sub vcl_deliver {
+		set resp.http.resp = "deliver-updated";
+		set resp.status = 201;
+		set resp.http.added = "deliver";
+	}
+
+} -start
+
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+shell {
+        varnishncsa -n ${v1_name} -d -c -F '%s %{resp}o %{added}o' > ncsa_sc.txt
+
+        cat >expected_sc.txt <<-EOF
+	201 deliver-updated deliver
+	EOF
+	diff -u expected_sc.txt ncsa_sc.txt
+}
+
+varnish v1 -stop
+
+# Test things we receive from the client
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_recv {
+		set req.http.reqhdr = "recv-modified";
+		set req.method = "HEAD";
+		set req.url = "/recv-url?q=recvQuerry";
+		set req.http.Authorization = "basic cmVjdjpwYXNz";
+		set req.http.notreceived = "recv";
+	}
+
+	sub vcl_hash {
+		set req.http.reqhdr = "hash-modified";
+		set req.method = "GET";
+		set req.url = "/hash-url?q=hashQuerry";
+		set req.http.Authorization = "basic aGFzaDpwYXNz";
+		set req.http.notreceived = "hash";
+	}
+
+} -start
+
+
+client c1 {
+	txreq -req "POST" -url "/client-url?q=clientQuerry" \
+	    -hdr "reqhdr: client-header" \
+	    -hdr "Authorization:basic Y2xpZW50OnBhc3M="
+	rxresp
+} -run
+
+
+shell {
+        varnishncsa -n ${v1_name} -d -c -F '%H %{reqhdr}i %{notreceived}i %m %q %U %u' > ncsa_rc.txt
+
+        cat >expected_rc.txt <<-EOF
+	HTTP/1.1 client-header - POST ?q=clientQuerry /client-url client
+        EOF
+        diff -u expected_rc.txt ncsa_rc.txt
+}
+# TODO: Handle Unset

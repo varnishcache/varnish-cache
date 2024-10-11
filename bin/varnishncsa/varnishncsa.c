@@ -165,9 +165,20 @@ static struct ctx {
 } CTX;
 
 enum update_mode {
+	UM_NEVER,
 	UM_IF_NOT_SET,
 	UM_ALWAYS
 };
+
+#define UPDATE_REQ_C(CTX) (CTX.vcl_recv_seen ? UM_NEVER : UM_ALWAYS)
+#define UPDATE_REQ_B(CTX) (CTX.vcl_br_seen ? UM_NEVER : UM_ALWAYS)
+
+#define UPDATE_REQ(CTX) (*CTX.side == 'b' ? UPDATE_REQ_B(CTX) : UPDATE_REQ_C(CTX))
+
+#define UPDATE_RESP_C(CTX) (UM_ALWAYS)
+#define UPDATE_RESP_B(CTX) (CTX.vcl_br_seen ? UM_NEVER : UM_ALWAYS)
+
+#define UPDATE_RESP(CTX) (*CTX.side == 'b' ? UPDATE_RESP_B(CTX) : UPDATE_RESP_C(CTX))
 
 static void parse_format(const char *format);
 
@@ -889,7 +900,8 @@ frag_fields(enum update_mode um, const char *b, const char *e, ...)
 		assert(p != NULL && q != NULL);
 		if (p >= e || q <= p)
 			continue;
-		if (frag->gen != CTX.gen || um == UM_ALWAYS) {
+		if ((frag->gen != CTX.gen && um == UM_IF_NOT_SET)
+		    || um == UM_ALWAYS) {
 			/* We only grab the same matching field once */
 			frag->gen = CTX.gen;
 			frag->b = p;
@@ -902,6 +914,9 @@ frag_fields(enum update_mode um, const char *b, const char *e, ...)
 static void
 frag_line(enum update_mode um, const char *b, const char *e, struct fragment *f)
 {
+	if (um == UM_NEVER)
+		return;
+
 	if (f->gen == CTX.gen && um == UM_IF_NOT_SET)
 		/* We only grab the same matching record once */
 		return;
@@ -1019,23 +1034,28 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_BereqMethod:
 			case SLT_ReqMethod:
-				frag_line(UM_IF_NOT_SET, b, e, &CTX.frag[F_m]);
+				frag_line(UPDATE_REQ(CTX),
+				    b, e, &CTX.frag[F_m]);
 				break;
 			case SLT_BereqURL:
 			case SLT_ReqURL:
 				p = memchr(b, '?', e - b);
 				if (p == NULL)
 					p = e;
-				frag_line(UM_IF_NOT_SET, b, p, &CTX.frag[F_U]);
-				frag_line(UM_IF_NOT_SET, p, e, &CTX.frag[F_q]);
+				frag_line(UPDATE_REQ(CTX),
+				    b, p, &CTX.frag[F_U]);
+				frag_line(UPDATE_REQ(CTX),
+				    p, e, &CTX.frag[F_q]);
 				break;
 			case SLT_BereqProtocol:
 			case SLT_ReqProtocol:
-				frag_line(UM_IF_NOT_SET, b, e, &CTX.frag[F_H]);
+				frag_line(UPDATE_REQ(CTX),
+				    b, e, &CTX.frag[F_H]);
 				break;
 			case SLT_BerespStatus:
 			case SLT_RespStatus:
-				frag_line(UM_ALWAYS, b, e, &CTX.frag[F_s]);
+				frag_line(UPDATE_RESP(CTX),
+				    b, e, &CTX.frag[F_s]);
 				break;
 			case SLT_BereqAcct:
 			case SLT_ReqAcct:
@@ -1066,19 +1086,21 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_BereqHeader:
 			case SLT_ReqHeader:
-				process_hdr(&CTX.watch_reqhdr, b, e, UM_ALWAYS);
+				process_hdr(&CTX.watch_reqhdr, b, e,
+				    UPDATE_REQ(CTX));
 				if (ISPREFIX("Authorization:", b, e, &p) &&
 				    ISPREFIX("basic ", p, e, &p))
-					frag_line(UM_IF_NOT_SET, p, e,
+					frag_line(UPDATE_REQ(CTX), p, e,
 					    &CTX.frag[F_auth]);
 				else if (ISPREFIX("Host:", b, e, &p))
-					frag_line(UM_IF_NOT_SET, p, e,
+					frag_line(UPDATE_REQ(CTX), p, e,
 					    &CTX.frag[F_host]);
 #undef ISPREFIX
 				break;
 			case SLT_BerespHeader:
 			case SLT_RespHeader:
-				process_hdr(&CTX.watch_resphdr, b, e, UM_ALWAYS);
+				process_hdr(&CTX.watch_resphdr, b, e,
+				    UPDATE_RESP(CTX));
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
