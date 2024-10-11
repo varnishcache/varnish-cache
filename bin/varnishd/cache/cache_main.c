@@ -130,6 +130,22 @@ THR_GetWorker(void)
 
 static pthread_key_t name_key;
 
+static void
+thr_setname_generic(const char *name)
+{
+	char buf[16];
+
+	/* The Linux kernel enforces a strict limitation of 15 bytes name,
+	 * truncate the name if we would overflow it.
+	 */
+	if (strlen(name) > 15) {
+		bprintf(buf, "%.14s~", name);
+		name = buf;
+	}
+
+	PTOK(pthread_setname_np(pthread_self(), name));
+}
+
 void
 THR_SetName(const char *name)
 {
@@ -140,7 +156,7 @@ THR_SetName(const char *name)
 #elif defined(__NetBSD__)
 	(void)pthread_setname_np(pthread_self(), "%s", (char *)(uintptr_t)name);
 #else
-	(void)pthread_setname_np(pthread_self(), name);
+	thr_setname_generic(name);
 #endif
 }
 
