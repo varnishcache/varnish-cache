@@ -160,6 +160,7 @@ static struct ctx {
 	const char		*handling;
 	const char		*side;
 	int64_t			vxid;
+	int			recv_compl;
 } CTX;
 
 static void parse_format(const char *format);
@@ -971,6 +972,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		} else
 			continue;
 
+		CTX.recv_compl = 0;
 		CTX.hitmiss = "-";
 		CTX.handling = "-";
 		CTX.vxid = t->vxid;
@@ -1073,6 +1075,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
+					CTX.recv_compl = 1;
 					CTX.hitmiss = "-";
 					CTX.handling = "-";
 				} else if (!strcasecmp(b, "hit")) {
@@ -1090,6 +1093,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					   wrong */
 					CTX.hitmiss = "miss";
 					CTX.handling = "synth";
+				} else if (!strcasecmp(b, "backend_response")) {
+					CTX.recv_compl = 1;
 				}
 				break;
 			case SLT_VCL_return:
