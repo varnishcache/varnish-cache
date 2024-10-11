@@ -14,11 +14,13 @@ varnish v1 -vcl+backend {
 		set bereq.method = "HEAD";
 		set bereq.url = "/vbf-url?q=vbfQuerry";
 		set bereq.http.Authorization = "basic dmJmOnBhc3M=";
+		unset bereq.http.unset;
 	}
 
 	sub vcl_backend_response {
 		set bereq.http.bereqhdr = "vbr-modified";
 		set bereq.http.notsent = "notsent";
+		set bereq.http.unset = "toolate";
 		set bereq.method = "CONNECT";
 		set bereq.url = "/vbr-url?q=vbrQuerry";
 		set bereq.http.Authorization = "basic dmJyOnBhc3M=";
@@ -28,15 +30,15 @@ varnish v1 -vcl+backend {
 
 
 client c1 {
-	txreq -url "/client-url?q=clientQuerry" -hdr "bereqhdr: client-header" -hdr "Authorization:basic Y2xpZW50OnBhc3M="
+	txreq -url "/client-url?q=clientQuerry" -hdr "bereqhdr: client-header" -hdr "unset: client" -hdr "Authorization:basic Y2xpZW50OnBhc3M="
 	rxresp
 } -run
 
 shell {
-	varnishncsa -n ${v1_name} -d -b -F '%H %{bereqhdr}i %{notsent}i %m %q %U %u' > ncsa_sb.txt
+	varnishncsa -n ${v1_name} -d -b -F '%H %{bereqhdr}i %{notsent}i %{unset}i %m %q %U %u' > ncsa_sb.txt
 
 	cat >expected_sb.txt <<-EOF
-	HTTP/1.1 vbf-modified - HEAD ?q=vbfQuerry /vbf-url vbf
+	HTTP/1.1 vbf-modified - - HEAD ?q=vbfQuerry /vbf-url vbf
 	EOF
 	diff -u expected_sb.txt ncsa_sb.txt
 }
@@ -47,7 +49,7 @@ varnish v1 -stop
 
 server s1 {
         rxreq
-        txresp -status 202 -hdr "beresp: origin"
+        txresp -status 202 -hdr "beresp: origin" -hdr "unset: origin"
 } -start
 
 varnish v1 -vcl+backend {
@@ -55,6 +57,7 @@ varnish v1 -vcl+backend {
         sub vcl_backend_response {
 		set beresp.http.beresp = "vbr-updated";
 		set beresp.status = 200;
+		unset beresp.http.unset;
         }
 
 } -start
@@ -67,10 +70,10 @@ client c1 {
 
 
 shell {
-	varnishncsa -n ${v1_name} -d -b -F '%s %{beresp}o' > ncsa_rb.txt
+	varnishncsa -n ${v1_name} -d -b -F '%s %{beresp}o %{unset}o' > ncsa_rb.txt
 
 	cat >expected_rb.txt <<-EOF
-	202 origin
+	202 origin origin
 	EOF
 	diff -u expected_rb.txt ncsa_rb.txt
 }
@@ -81,7 +84,7 @@ varnish v1 -stop
 
 server s1 {
 	rxreq
-	txresp -status 202 -hdr "resp: origin"
+	txresp -status 202 -hdr "resp: origin" -hdr "unset: origin"
 } -start
 
 varnish v1 -vcl+backend {
@@ -95,6 +98,7 @@ varnish v1 -vcl+backend {
 		set resp.http.resp = "deliver-updated";
 		set resp.status = 201;
 		set resp.http.added = "deliver";
+		unset resp.http.unset;
 	}
 
 } -start
@@ -106,10 +110,10 @@ client c1 {
 } -run
 
 shell {
-        varnishncsa -n ${v1_name} -d -c -F '%s %{resp}o %{added}o' > ncsa_sc.txt
+        varnishncsa -n ${v1_name} -d -c -F '%s %{resp}o %{unset}o %{added}o' > ncsa_sc.txt
 
         cat >expected_sc.txt <<-EOF
-	201 deliver-updated deliver
+	201 deliver-updated - deliver
 	EOF
 	diff -u expected_sc.txt ncsa_sc.txt
 }
@@ -131,6 +135,7 @@ varnish v1 -vcl+backend {
 		set req.url = "/recv-url?q=recvQuerry";
 		set req.http.Authorization = "basic cmVjdjpwYXNz";
 		set req.http.notreceived = "recv";
+		unset req.http.unset;
 	}
 
 	sub vcl_hash {
@@ -147,17 +152,17 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq -req "POST" -url "/client-url?q=clientQuerry" \
 	    -hdr "reqhdr: client-header" \
-	    -hdr "Authorization:basic Y2xpZW50OnBhc3M="
+	    -hdr "Authorization:basic Y2xpZW50OnBhc3M=" \
+	    -hdr "unset: client"
 	rxresp
 } -run
 
 
 shell {
-        varnishncsa -n ${v1_name} -d -c -F '%H %{reqhdr}i %{notreceived}i %m %q %U %u' > ncsa_rc.txt
+        varnishncsa -n ${v1_name} -d -c -F '%H %{reqhdr}i %{notreceived}i %{unset}i %m %q %U %u' > ncsa_rc.txt
 
         cat >expected_rc.txt <<-EOF
-	HTTP/1.1 client-header - POST ?q=clientQuerry /client-url client
+	HTTP/1.1 client-header - client POST ?q=clientQuerry /client-url client
         EOF
         diff -u expected_rc.txt ncsa_rc.txt
 }
-# TODO: Handle Unset
