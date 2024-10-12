@@ -116,6 +116,15 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 
 	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
+
+	if (FEATURE(FEATURE_VALIDATE_BACKEND_REQUESTS) &&
+	    HTTP_ValidateReq(hp)) {
+		VSLb(bo->vsl, SLT_VCL_Error,
+		    "Backend request failed HTTP validation");
+		htc->doclose = SC_TX_ERROR;
+		return (-1);
+	}
+
 	/* XXX: need a send_timeout for the backend side */
 	// XXX cache_param->http1_iovs ?
 	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, nan(""), 0);
