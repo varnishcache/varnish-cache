@@ -708,6 +708,11 @@ if test $? -ne 0 ; then
   AC_MSG_ERROR([wflags.py failure])
 fi
 
+OPTIMIZATION_CFLAGS=" \
+	-Wpadded \
+	-Wno-error=padded \
+"
+
 # zlib-specific flags
 AC_SUBST(VGZ_CFLAGS)
 
@@ -755,6 +760,17 @@ if test "x$SUNCC" != "xyes" && test "x$enable_developer_warnings" != "xno"; then
 
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}"
 	WFLAGS="${WFLAGS} ${DEVELOPER_CFLAGS}"
+fi
+
+# --enable-optimization-warnings
+AC_ARG_ENABLE(optimization-warnings,
+	AS_HELP_STRING([--enable-optimization-warnings],[enable strict warnings (default is NO)]),
+	[],
+	[enable_optimization_warnings=no])
+
+if test "x$SUNCC" != "xyes" && test "x$enable_optimization_warnings" != "xno"; then
+	CFLAGS="${CFLAGS} ${OPTIMIZATION_CFLAGS}"
+	OCFLAGS="${OCFLAGS} ${OPTIMIZATION_CFLAGS}"
 fi
 
 # gcc on solaris needs -fstack-protector when calling gcc in linker
