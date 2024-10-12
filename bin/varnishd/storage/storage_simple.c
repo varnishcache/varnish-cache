@@ -327,13 +327,34 @@ struct sml_hdl {
 	uint64_t		avail, returned;
 };
 
+static inline uint64_t
+st2lease(const struct storage *st)
+{
+	uint64_t r = (uintptr_t)st;
+
+	if (sizeof(void *) < 8)
+		r <<= 1;
+
+	return (r);
+}
+
+static inline struct storage *
+lease2st(uint64_t l)
+{
+
+	if (sizeof(void *) < 8)
+		l >>= 1;
+
+	return ((void *)l);
+}
+
 static inline void
 sml_ai_viov_fill(struct viov *viov, struct storage *st)
 {
 	INIT_OBJ(viov, VIOV_MAGIC);
 	viov->iov.iov_base = st->ptr;
 	viov->iov.iov_len = st->len;
-	viov->lease = (uintptr_t)st;
+	viov->lease = st2lease(st);
 	VAI_ASSERT_LEASE(viov->lease);
 }
 
@@ -460,7 +481,7 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct viov *viov, int viovcn
 			VSLb(wrk->vsl, SLT_Debug, "off %zu + l %zu == space st %p next st %p stvprv %p",
 			    hdl->st_off, l, hdl->st, next, hdl->boc->stevedore_priv);
 #endif
-			viov->lease = (uintptr_t)hdl->st;
+			viov->lease = st2lease(hdl->st);
 			hdl->st_off = 0;
 			hdl->st = next;
 		}
@@ -499,7 +520,7 @@ sml_ai_return(struct worker *wrk, vai_hdl vhdl, uint64_t *leases, int leasecnt)
 	for (p = leases, end = leases + leasecnt; p < end; p++) {
 		if (*p == sml_ai_lease_frag)
 			continue;
-		CAST_OBJ_NOTNULL(st, (void *)*p, STORAGE_MAGIC);
+		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
 		VTAILQ_REMOVE(&hdl->obj->list, st, list);
 		if (st == hdl->boc->stevedore_priv)
 			hdl->boc->stevedore_priv = trim_once;
@@ -509,7 +530,7 @@ sml_ai_return(struct worker *wrk, vai_hdl vhdl, uint64_t *leases, int leasecnt)
 	for (p = leases; p < end; p++) {
 		if (*p == sml_ai_lease_frag)
 			continue;
-		CAST_OBJ_NOTNULL(st, (void *)*p, STORAGE_MAGIC);
+		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
 		sml_stv_free(hdl->stv, st);
 	}
 }
