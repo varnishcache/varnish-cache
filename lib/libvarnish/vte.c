@@ -62,7 +62,8 @@ struct vte {
 	int		f_sz;		/* input field size */
 	int		f_cnt;		/* actual number of fields */
 	int		f_maxcnt;	/* maximum number of fields */
-	int		f_maxsz[];	/* maximum size per field */
+	int		f_maxsz[]
+	    v_counted_by_(f_cnt);	/* maximum size per field */
 };
 
 struct vte *
