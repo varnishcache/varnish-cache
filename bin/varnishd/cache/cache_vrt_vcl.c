@@ -240,7 +240,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	Lck_AssertHeld(&vcl_mtx);
 	temp = vcl->temp;
 	if (temp != VCL_TEMP_COOLING)
-		VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
+		VTAILQ_INSERT_TAIL(&vcl->vdire->directors, vdir, directors_list);
 	if (temp->is_warm)
 		VDI_Event(vdir->dir, VCL_EVENT_WARM);
 	Lck_Unlock(&vcl_mtx);
@@ -267,19 +267,15 @@ VRT_StaticDirector(VCL_BACKEND b)
 	vdir->flags |= VDIR_FLG_NOREFCNT;
 }
 
-static void
-vcldir_retire(struct vcldir *vdir)
+// vcldir is already removed from the directors list
+// to be called only from vdire_*
+void
+vcldir_retire(struct vcldir *vdir, const struct vcltemp *temp)
 {
-	const struct vcltemp *temp;
 
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 	assert(vdir->refcnt == 0);
-	CHECK_OBJ_NOTNULL(vdir->vcl, VCL_MAGIC);
-
-	Lck_Lock(&vcl_mtx);
-	temp = vdir->vcl->temp;
-	VTAILQ_REMOVE(&vdir->vcl->director_list, vdir, list);
-	Lck_Unlock(&vcl_mtx);
+	AN(temp);
 
 	if (temp->is_warm)
 		VDI_Event(vdir->dir, VCL_EVENT_COLD);
@@ -302,7 +298,7 @@ vcldir_deref(struct vcldir *vdir)
 	Lck_Unlock(&vdir->dlck);
 
 	if (!busy)
-		vcldir_retire(vdir);
+		vdire_resign(vdir->vcl->vdire, vdir);
 	return (busy);
 }
 
@@ -374,6 +370,7 @@ VRT_LookupDirector(VRT_CTX, VCL_STRING name)
 	struct vcl *vcl;
 	struct vcldir *vdir;
 	VCL_BACKEND dd, d = NULL;
+	struct vdire *vdire;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(name);
@@ -384,15 +381,17 @@ VRT_LookupDirector(VRT_CTX, VCL_STRING name)
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
-	Lck_Lock(&vcl_mtx);
-	VTAILQ_FOREACH(vdir, &vcl->director_list, list) {
+	vdire = vcl->vdire;
+
+	vdire_start_iter(vdire);
+	VTAILQ_FOREACH(vdir, &vdire->directors, directors_list) {
 		dd = vdir->dir;
 		if (strcmp(dd->vcl_name, name))
 			continue;
 		d = dd;
 		break;
 	}
-	Lck_Unlock(&vcl_mtx);
+	vdire_end_iter(vdire);
 
 	return (d);
 }
