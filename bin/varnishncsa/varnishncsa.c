@@ -160,7 +160,25 @@ static struct ctx {
 	const char		*handling;
 	const char		*side;
 	int64_t			vxid;
+	int			vcl_recv_seen;
+	int			vcl_br_seen;
 } CTX;
+
+enum update_mode {
+	UM_NEVER,
+	UM_IF_NOT_SET,
+	UM_ALWAYS
+};
+
+#define UPDATE_REQ_C(CTX) (CTX.vcl_recv_seen ? UM_NEVER : UM_ALWAYS)
+#define UPDATE_REQ_B(CTX) (CTX.vcl_br_seen ? UM_NEVER : UM_ALWAYS)
+
+#define UPDATE_REQ(CTX) (*CTX.side == 'b' ? UPDATE_REQ_B(CTX) : UPDATE_REQ_C(CTX))
+
+#define UPDATE_RESP_C(CTX) (UM_ALWAYS)
+#define UPDATE_RESP_B(CTX) (CTX.vcl_br_seen ? UM_NEVER : UM_ALWAYS)
+
+#define UPDATE_RESP(CTX) (*CTX.side == 'b' ? UPDATE_RESP_B(CTX) : UPDATE_RESP_C(CTX))
 
 static void parse_format(const char *format);
 
@@ -850,7 +868,7 @@ isprefix(const char *prefix, size_t len, const char *b,
 }
 
 static void
-frag_fields(int force, const char *b, const char *e, ...)
+frag_fields(enum update_mode um, const char *b, const char *e, ...)
 {
 	va_list ap;
 	const char *p, *q;
@@ -882,7 +900,8 @@ frag_fields(int force, const char *b, const char *e, ...)
 		assert(p != NULL && q != NULL);
 		if (p >= e || q <= p)
 			continue;
-		if (frag->gen != CTX.gen || force) {
+		if ((frag->gen != CTX.gen && um == UM_IF_NOT_SET)
+		    || um == UM_ALWAYS) {
 			/* We only grab the same matching field once */
 			frag->gen = CTX.gen;
 			frag->b = p;
@@ -893,10 +912,12 @@ frag_fields(int force, const char *b, const char *e, ...)
 }
 
 static void
-frag_line(int force, const char *b, const char *e, struct fragment *f)
+frag_line(enum update_mode um, const char *b, const char *e, struct fragment *f)
 {
+	if (um == UM_NEVER)
+		return;
 
-	if (f->gen == CTX.gen && !force)
+	if (f->gen == CTX.gen && um == UM_IF_NOT_SET)
 		/* We only grab the same matching record once */
 		return;
 
@@ -914,7 +935,8 @@ frag_line(int force, const char *b, const char *e, struct fragment *f)
 }
 
 static void
-process_hdr(const struct watch_head *head, const char *b, const char *e)
+process_hdr(const struct watch_head *head, const char *b, const char *e,
+    enum update_mode um, int unset)
 {
 	struct watch *w;
 	const char *p;
@@ -923,7 +945,12 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
 		if (!isprefix(w->key, w->keylen, b, e, &p))
 			continue;
-		frag_line(1, p, e, &w->frag);
+		if (unset) {
+			frag_line(um, CTX.missing_string,
+			    CTX.missing_string + strlen(CTX.missing_string),
+			    &w->frag);
+		} else
+			frag_line(um, p, e, &w->frag);
 	}
 }
 
@@ -942,9 +969,9 @@ process_vsl(const struct vsl_watch_head *head, enum VSL_tag_e tag,
 		    !isprefix(w->prefix, w->prefixlen, b, e, &p))
 			continue;
 		if (w->idx == 0)
-			frag_line(0, p, e, &w->frag);
+			frag_line(UM_IF_NOT_SET, p, e, &w->frag);
 		else
-			frag_fields(0, p, e, w->idx, &w->frag, 0, NULL);
+			frag_fields(UM_IF_NOT_SET, p, e, w->idx, &w->frag, 0, NULL);
 	}
 }
 
@@ -971,6 +998,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		} else
 			continue;
 
+		CTX.vcl_recv_seen = 0;
+		CTX.vcl_br_seen = 0;
 		CTX.hitmiss = "-";
 		CTX.handling = "-";
 		CTX.vxid = t->vxid;
@@ -993,44 +1022,49 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				skip = 1;
 				break;
 			case SLT_PipeAcct:
-				frag_fields(0, b, e,
+				frag_fields(UM_IF_NOT_SET, b, e,
 				    3, &CTX.frag[F_I],
 				    4, &CTX.frag[F_O],
 				    0, NULL);
 				break;
 			case SLT_BackendOpen:
-				frag_fields(1, b, e,
+				frag_fields(UM_ALWAYS, b, e,
 				    3, &CTX.frag[F_h],
 				    0, NULL);
 				break;
 			case SLT_ReqStart:
-				frag_fields(0, b, e,
+				frag_fields(UM_IF_NOT_SET, b, e,
 				    1, &CTX.frag[F_h],
 				    0, NULL);
 				break;
 			case SLT_BereqMethod:
 			case SLT_ReqMethod:
-				frag_line(0, b, e, &CTX.frag[F_m]);
+				frag_line(UPDATE_REQ(CTX),
+				    b, e, &CTX.frag[F_m]);
 				break;
 			case SLT_BereqURL:
 			case SLT_ReqURL:
 				p = memchr(b, '?', e - b);
 				if (p == NULL)
 					p = e;
-				frag_line(0, b, p, &CTX.frag[F_U]);
-				frag_line(0, p, e, &CTX.frag[F_q]);
+				frag_line(UPDATE_REQ(CTX),
+				    b, p, &CTX.frag[F_U]);
+				frag_line(UPDATE_REQ(CTX),
+				    p, e, &CTX.frag[F_q]);
 				break;
 			case SLT_BereqProtocol:
 			case SLT_ReqProtocol:
-				frag_line(0, b, e, &CTX.frag[F_H]);
+				frag_line(UPDATE_REQ(CTX),
+				    b, e, &CTX.frag[F_H]);
 				break;
 			case SLT_BerespStatus:
 			case SLT_RespStatus:
-				frag_line(1, b, e, &CTX.frag[F_s]);
+				frag_line(UPDATE_RESP(CTX),
+				    b, e, &CTX.frag[F_s]);
 				break;
 			case SLT_BereqAcct:
 			case SLT_ReqAcct:
-				frag_fields(0, b, e,
+				frag_fields(UM_IF_NOT_SET, b, e,
 				    3, &CTX.frag[F_I],
 				    5, &CTX.frag[F_b],
 				    6, &CTX.frag[F_O],
@@ -1039,40 +1073,53 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			case SLT_Timestamp:
 #define ISPREFIX(a, b, c, d)	isprefix(a, strlen(a), b, c, d)
 				if (ISPREFIX("Start:", b, e, &p)) {
-					frag_fields(0, p, e, 1,
+					frag_fields(UM_IF_NOT_SET, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
 				} else if (ISPREFIX("Resp:", b, e, &p) ||
 				    ISPREFIX("PipeSess:", b, e, &p) ||
 				    ISPREFIX("BerespBody:", b, e, &p)) {
-					frag_fields(0, p, e, 1,
+					frag_fields(UM_IF_NOT_SET, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
 				} else if (ISPREFIX("Process:", b, e, &p) ||
 				    ISPREFIX("Pipe:", b, e, &p) ||
 				    ISPREFIX("Beresp:", b, e, &p)) {
-					frag_fields(0, p, e, 2,
+					frag_fields(UM_IF_NOT_SET, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
 			case SLT_BereqHeader:
 			case SLT_ReqHeader:
-				process_hdr(&CTX.watch_reqhdr, b, e);
+				process_hdr(&CTX.watch_reqhdr, b, e,
+				    UPDATE_REQ(CTX), 0);
 				if (ISPREFIX("Authorization:", b, e, &p) &&
 				    ISPREFIX("basic ", p, e, &p))
-					frag_line(0, p, e,
+					frag_line(UPDATE_REQ(CTX), p, e,
 					    &CTX.frag[F_auth]);
 				else if (ISPREFIX("Host:", b, e, &p))
-					frag_line(0, p, e,
+					frag_line(UPDATE_REQ(CTX), p, e,
 					    &CTX.frag[F_host]);
 #undef ISPREFIX
 				break;
 			case SLT_BerespHeader:
 			case SLT_RespHeader:
-				process_hdr(&CTX.watch_resphdr, b, e);
+				process_hdr(&CTX.watch_resphdr, b, e,
+				    UPDATE_RESP(CTX), 0);
+				break;
+			case SLT_BereqUnset:
+			case SLT_ReqUnset:
+				process_hdr(&CTX.watch_reqhdr, b, e,
+				    UPDATE_REQ(CTX), 1);
+				break;
+			case SLT_BerespUnset:
+			case SLT_RespUnset:
+				process_hdr(&CTX.watch_resphdr, b, e,
+				    UPDATE_RESP(CTX), 1);
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
+					CTX.vcl_recv_seen = 1;
 					CTX.hitmiss = "-";
 					CTX.handling = "-";
 				} else if (!strcasecmp(b, "hit")) {
@@ -1090,6 +1137,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					   wrong */
 					CTX.hitmiss = "miss";
 					CTX.handling = "synth";
+				} else if (!strcasecmp(b, "backend_response")) {
+					CTX.vcl_br_seen = 1;
 				}
 				break;
 			case SLT_VCL_return:
@@ -1106,7 +1155,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					    strncmp(b, w->key, w->keylen))
 						continue;
 					p = b + w->keylen;
-					frag_line(0, p, e, &w->frag);
+					frag_line(UM_IF_NOT_SET, p, e, &w->frag);
 				}
 				break;
 			default:
