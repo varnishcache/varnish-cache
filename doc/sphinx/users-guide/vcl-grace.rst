@@ -69,7 +69,7 @@ behave as described above. However, if you want to customize how
 Varnish behaves, then you should know some of the details on how this
 works.
 
-When ``sub vcl_recv`` ends with ``return (lookup)`` (which is the
+When ``sub vcl_recv`` ends with ``return (hash)`` (which is the
 default behavior), Varnish will look for a matching object in its
 cache. Then, if it only found an object whose TTL has run out, Varnish
 will consider the following:
