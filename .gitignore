@@ -80,6 +80,8 @@ cscope.*out
 /vmod/vcc_*_if.c
 /vmod/vcc_*_if.h
 /vmod/vmod_*.rst
+/vcc_if.*
+/vmod_*.*
 
 # Man-files and binaries
 /man/*.1
