@@ -213,7 +213,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 		ObjSendEvent(wrk, oc, OEV_EXPIRE);
 		tmpoc = oc;
 		assert(oc->refcnt >= 2); /* Silence coverity */
-		(void)HSH_DerefObjCore(wrk, &oc, 0);
+		(void)HSH_DerefObjCore(wrk, &oc);
 		AZ(oc);
 		assert(tmpoc->refcnt >= 1); /* Silence coverity */
 	}
@@ -309,7 +309,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, double now)
 		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
 		    (intmax_t)oc->hits);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
+		(void)HSH_DerefObjCore(ep->wrk, &oc);
 		return;
 	}
 
@@ -387,7 +387,7 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
 		    (intmax_t)oc->hits);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
+		(void)HSH_DerefObjCore(ep->wrk, &oc);
 	}
 	return (0);
 }

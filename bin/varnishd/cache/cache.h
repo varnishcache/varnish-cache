@@ -356,6 +356,7 @@ struct objcore {
 	uint16_t		oa_present;
 
 	unsigned		timer_idx;	// XXX 4Gobj limit
+	unsigned		waitinglist_gen;
 	vtim_real		last_lru;
 	VTAILQ_ENTRY(objcore)	hsh_list;
 	VTAILQ_ENTRY(objcore)	lru_list;
@@ -473,6 +474,7 @@ struct req {
 	stream_close_t		doclose;
 	unsigned		restarts;
 	unsigned		esi_level;
+	unsigned		waitinglist_gen;
 
 	/* Delivery mode */
 	unsigned		res_mode;
@@ -498,9 +500,6 @@ struct req {
 	VTAILQ_ENTRY(req)	w_list;
 
 	struct objcore		*body_oc;
-
-	/* The busy objhead we sleep on */
-	struct objhead		*hash_objhead;
 
 	/* Built Vary string == workspace reservation */
 	uint8_t			*vary_b;
