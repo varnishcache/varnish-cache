@@ -42,6 +42,7 @@
 #define FETCH_STEPS \
 	FETCH_STEP(mkbereq,           MKBEREQ) \
 	FETCH_STEP(retry,             RETRY) \
+	FETCH_STEP(prepfetch,         PREPFETCH) \
 	FETCH_STEP(startfetch,        STARTFETCH) \
 	FETCH_STEP(condfetch,         CONDFETCH) \
 	FETCH_STEP(fetch,             FETCH) \
@@ -269,7 +270,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	}
 	http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 
-	if (bo->stale_oc != NULL &&
+	if (bo->stale_oc != NULL && !(bo->stale_oc->flags & OC_F_DYING) &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
 	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
 		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
@@ -298,7 +299,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 		bo->req = NULL;
 		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
 	}
-	return (F_STP_STARTFETCH);
+	return (F_STP_PREPFETCH);
 }
 
 /*--------------------------------------------------------------------
@@ -326,24 +327,30 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	assert(bo->director_state == DIR_S_NULL);
 
 	/* reset other bo attributes - See VBO_GetBusyObj */
-	bo->storage = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 	bo->was_304 = 0;
 	bo->err_code = 0;
 	bo->err_reason = NULL;
+	if (bo->htc != NULL)
+		bo->htc->doclose = SC_NULL;
+
+	if (bo->retry_fetch) {
+		bo->retry_fetch = 0;
+		return (F_STP_STARTFETCH);
+	}
+
+	bo->storage = NULL;
 	bo->connect_timeout = NAN;
 	bo->first_byte_timeout = NAN;
 	bo->between_bytes_timeout = NAN;
-	if (bo->htc != NULL)
-		bo->htc->doclose = SC_NULL;
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
 	VSLb_ts_busyobj(bo, "Start", bo->t_prev);
 	http_VSL_log(bo->bereq);
 
-	return (F_STP_STARTFETCH);
+	return (F_STP_PREPFETCH);
 }
 
 /*--------------------------------------------------------------------
@@ -388,17 +395,11 @@ vbf_304_logic(struct busyobj *bo)
  */
 
 static const struct fetch_step * v_matchproto_(vbf_state_f)
-vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
+vbf_stp_prepfetch(struct worker *wrk, struct busyobj *bo)
 {
-	int i;
-	vtim_real now;
-	unsigned handling;
-	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	oc = bo->fetch_objcore;
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AZ(bo->storage);
 	bo->storage = bo->uncacheable ? stv_transient : STV_next();
@@ -416,6 +417,25 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	assert (wrk->vpi->handling == VCL_RET_FETCH ||
 	    wrk->vpi->handling == VCL_RET_ERROR);
+	return (F_STP_STARTFETCH);
+}
+
+/*--------------------------------------------------------------------
+ * Send bereq, fetch beresp, run vcl_backend_response
+ */
+
+static const struct fetch_step * v_matchproto_(vbf_state_f)
+vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
+{
+	struct objcore *oc;
+	unsigned handling;
+	vtim_real now;
+	int i;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
@@ -832,6 +852,13 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	stale_oc = bo->stale_oc;
 	CHECK_OBJ_NOTNULL(stale_oc, OBJCORE_MAGIC);
+
+	if (stale_oc->flags & OC_F_DYING) {
+		(void)VFP_Error(bo->vfc, "Template object invalidated");
+		vbf_cleanup(bo);
+		wrk->stats->fetch_failed++;
+		return (F_STP_ERROR);
+	}
 
 	stale_boc = HSH_RefBoc(stale_oc);
 	CHECK_OBJ_ORNULL(stale_boc, BOC_MAGIC);

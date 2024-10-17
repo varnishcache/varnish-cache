@@ -637,6 +637,16 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
+void
+VPI_retry(VRT_CTX, unsigned is_task)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	ctx->bo->retry_fetch = !is_task;
+	VRT_handling(ctx, VCL_RET_RETRY);
+}
+
 VCL_VOID
 VRT_handling(VRT_CTX, unsigned hand)
 {
