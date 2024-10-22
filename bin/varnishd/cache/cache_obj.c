@@ -291,7 +291,8 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
  */
 
 void
-ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next)
+ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next,
+    unsigned broadcast)
 {
 	const struct obj_methods *om;
 
@@ -315,7 +316,8 @@ ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next)
 
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
-	PTOK(pthread_cond_broadcast(&oc->boc->cond));
+	if (broadcast)
+		PTOK(pthread_cond_broadcast(&oc->boc->cond));
 	Lck_Unlock(&oc->boc->mtx);
 }
 
