@@ -491,7 +491,8 @@ ObjVAICancel(struct worker *wrk, struct boc *boc, struct vai_qe *qe)
  */
 
 void
-ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next)
+ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next,
+    unsigned broadcast)
 {
 	const struct obj_methods *om;
 
@@ -515,7 +516,8 @@ ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next)
 
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
-	obj_boc_notify(oc->boc);
+	if (broadcast)
+		obj_boc_notify(oc->boc);
 	Lck_Unlock(&oc->boc->mtx);
 }
 

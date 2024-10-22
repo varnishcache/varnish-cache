@@ -169,3 +169,42 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	MPL_Free(vbopool, bo);
 }
+
+void
+VBO_SetState(struct worker *wrk, struct busyobj *bo, enum boc_state_e next)
+{
+	unsigned broadcast;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	switch (next) {
+	case BOS_REQ_DONE:
+		AN(bo->req);
+		bo->req = NULL;
+		broadcast = bo->is_bgfetch;
+		break;
+	case BOS_STREAM:
+		AN(bo->do_stream);
+		AZ(bo->req);
+		broadcast = 1;
+		break;
+	case BOS_FINISHED:
+	case BOS_FAILED:
+		/* We can't assert that either state already released its
+		 * request because a fetch may fail before reaching the
+		 * BOS_REQ_DONE state. Failing can also mean executing
+		 * vcl_backend_error and reaching BOS_FINISHED from there.
+		 * One can legitemately return(retry) from there and proceed
+		 * again with a usable req if a return(error) transition led
+		 * to vcl_backend_error instead of a failed fetch attempt.
+		 */
+		bo->req = NULL;
+		broadcast = 1;
+		break;
+	default:
+		WRONG("unexpected BOC state");
+	}
+
+	ObjSetState(wrk, bo->fetch_objcore, next, broadcast);
+}

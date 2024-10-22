@@ -292,14 +292,12 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	HTTP_Clone(bo->bereq, bo->bereq0);
 
 	if (bo->req->req_body_status->avail == 0) {
-		bo->req = NULL;
-		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
+		VBO_SetState(bo->wrk, bo, BOS_REQ_DONE);
 	} else if (bo->req->req_body_status == BS_CACHED) {
 		AN(bo->req->body_oc);
 		bo->bereq_body = bo->req->body_oc;
 		HSH_Ref(bo->bereq_body);
-		bo->req = NULL;
-		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
+		VBO_SetState(bo->wrk, bo, BOS_REQ_DONE);
 	}
 	return (F_STP_STARTFETCH);
 }
@@ -544,10 +542,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VSLb_ts_busyobj(bo, "Process", W_TIM_real(wrk));
 	assert(oc->boc->state <= BOS_REQ_DONE);
-	if (oc->boc->state != BOS_REQ_DONE) {
-		bo->req = NULL;
-		ObjSetState(wrk, oc, BOS_REQ_DONE);
-	}
+	if (oc->boc->state != BOS_REQ_DONE)
+		VBO_SetState(wrk, bo, BOS_REQ_DONE);
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
@@ -713,7 +709,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(oc->boc->state == BOS_REQ_DONE);
 
 	if (bo->do_stream)
-		ObjSetState(wrk, oc, BOS_STREAM);
+		VBO_SetState(wrk, bo, BOS_STREAM);
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
 	    bo->htc->body_status->nbr, bo->htc->body_status->name,
@@ -751,7 +747,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 	else
 		assert(oc->boc->state == BOS_REQ_DONE);
 
-	ObjSetState(wrk, oc, BOS_FINISHED);
+	VBO_SetState(wrk, bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	if (bo->stale_oc != NULL) {
 		VSL(SLT_ExpKill, NO_VXID, "VBF_Superseded x=%ju n=%ju",
@@ -879,7 +875,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjCopyAttr(bo->wrk, oc, stale_oc, OA_GZIPBITS));
 
 	if (bo->do_stream)
-		ObjSetState(wrk, oc, BOS_STREAM);
+		VBO_SetState(wrk, bo, BOS_STREAM);
 
 	INIT_OBJ(vop, VBF_OBITER_PRIV_MAGIC);
 	vop->bo = bo;
@@ -1015,7 +1011,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSB_destroy(&synth_body);
 	if (stale != NULL && oc->ttl > 0)
 		HSH_Kill(stale);
-	ObjSetState(wrk, oc, BOS_FINISHED);
+	VBO_SetState(wrk, bo, BOS_FINISHED);
 	return (F_STP_DONE);
 }
 
@@ -1033,7 +1029,7 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	assert(oc->boc->state < BOS_FINISHED);
-	ObjSetState(wrk, oc, BOS_FAILED);
+	VBO_SetState(wrk, bo, BOS_FAILED);
 	HSH_Kill(oc);
 	return (F_STP_DONE);
 }
