@@ -396,9 +396,10 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			sl += st->len;
 			st = VTAILQ_PREV(st, storagehead, list);
 			if (final && checkpoint != NULL) {
-				VTAILQ_REMOVE(&obj->list, checkpoint, list);
 				if (checkpoint == boc->stevedore_priv)
 					boc->stevedore_priv = trim_once;
+				else
+					VTAILQ_REMOVE(&obj->list, checkpoint, list);
 				sml_stv_free(stv, checkpoint);
 			}
 			checkpoint = st;
