@@ -43,7 +43,8 @@ struct vcldir {
 	struct director			*dir;
 	struct vcl			*vcl;
 	const struct vdi_methods	*methods;
-	VTAILQ_ENTRY(vcldir)		list;
+	VTAILQ_ENTRY(vcldir)		directors_list;
+	VTAILQ_ENTRY(vcldir)		resigning_list;
 	const struct vdi_ahealth	*admin_health;
 	vtim_real			health_changed;
 	char				*cli_name;
