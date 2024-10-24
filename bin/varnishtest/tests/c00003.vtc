@@ -1,5 +1,7 @@
 varnishtest "Check that we fail to start with erroneous -a/-b arguments"
 
+setenv VARNISH_DEFAULT_N ${tmpdir}
+
 # Duplicate -a arguments
 # XXX: this cannot be tested reliably, we tolerate port collision
 shell -err -match "have same address|already in use|Address in use" {
