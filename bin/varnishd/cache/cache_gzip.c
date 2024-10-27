@@ -345,10 +345,9 @@ vdp_gunzip_fini(struct vdp_ctx *vdc, void **priv)
 	struct vgz *vg;
 
 	(void)vdc;
-	CAST_OBJ_NOTNULL(vg, *priv, VGZ_MAGIC);
+	TAKE_OBJ_NOTNULL(vg, priv, VGZ_MAGIC);
 	AN(vg->m_buf);
 	(void)VGZ_Destroy(&vg);
-	*priv = NULL;
 	return (0);
 }
 

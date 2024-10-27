@@ -75,13 +75,15 @@ expression obj, priv, magic;
 @@
 
 - CAST_OBJ_NOTNULL(obj, *priv, magic);
-- *priv = NULL;
 + TAKE_OBJ_NOTNULL(obj, priv, magic);
+...
+- *priv = NULL;
 
 @@
 expression obj, priv, magic;
 @@
 
 - CAST_OBJ_NOTNULL(obj, priv, magic);
-- priv = NULL;
 + TAKE_OBJ_NOTNULL(obj, &priv, magic);
+...
+- priv = NULL;

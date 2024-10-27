@@ -292,11 +292,10 @@ xyzzy_pedantic_fini(struct vdp_ctx *vdc, void **priv)
 	AN(priv);
 	if (*priv == NULL)
 		return (0);
-	CAST_OBJ_NOTNULL(vdps, *priv, VDP_STATE_MAGIC);
+	TAKE_OBJ_NOTNULL(vdps, priv, VDP_STATE_MAGIC);
 	assert(vdps->state == VDPS_INIT || vdps->state == VDPS_END);
 	vdps->state = VDPS_FINI;
 
-	*priv = NULL;
 	return (0);
 }
 
@@ -497,8 +496,7 @@ xyzzy_chksha256_fini(struct vdp_ctx *vdc, void **priv)
 	AN(priv);
 	if (*priv == NULL)
 		return (0);
-	CAST_OBJ_NOTNULL(vdps, *priv, VDP_CHKSHA256_MAGIC);
-	*priv = NULL;
+	TAKE_OBJ_NOTNULL(vdps, priv, VDP_CHKSHA256_MAGIC);
 
 	VSHA256_Final(digest, vdps->cx);
 	r = memcmp(digest, vdps->cfg->expected, sizeof digest);
@@ -542,8 +540,7 @@ xyzzy_chkcrc32_fini(struct vdp_ctx *vdc, void **priv)
 	AN(priv);
 	if (*priv == NULL)
 		return (0);
-	CAST_OBJ_NOTNULL(vdps, *priv, VDP_CHKCRC32_MAGIC);
-	*priv = NULL;
+	TAKE_OBJ_NOTNULL(vdps, priv, VDP_CHKCRC32_MAGIC);
 
 	if (vdps->crc == vdps->cfg->expected)
 		return (0);
