@@ -71,6 +71,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	struct http_conn *htc;
 	struct vdp_ctx vdc[1];
 	intmax_t cl;
+	const char *err = NULL;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -97,16 +98,15 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 
 	VDP_Init(vdc, wrk, bo->vsl, NULL, bo, &cl);
 	if (bo->vdp_filter_list != NULL &&
-	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo)) {
-		VSLb(bo->vsl, SLT_FetchError, "Failure to push processors");
-		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
-		htc->doclose = SC_OVERLOAD;
-		return (-1);
-	}
-	if (v1f_stackv1l(vdc, bo)) {
-		VSLb(bo->vsl, SLT_FetchError, "Failure to push V1L");
-		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
+	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo))
+		err = "Failure to push processors";
+	else if (v1f_stackv1l(vdc, bo)) {
 		(void) VDP_Close(vdc, NULL, NULL);
+		err = "Failure to push V1L";
+	}
+	if (err != NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "%s", err);
+		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = SC_OVERLOAD;
 		return (-1);
 	}
