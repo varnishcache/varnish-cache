@@ -142,8 +142,10 @@ vtc_ws_find(VRT_CTX, VCL_ENUM which)
 		return (ctx->bo->ws);
 	if (which == VENUM(session))
 		return (ctx->req->sp->ws);
-	if (which == VENUM(thread))
+	if (which == VENUM(thread) && ctx->req != NULL)
 		return (ctx->req->wrk->aws);
+	if (which == VENUM(thread) && ctx->bo != NULL)
+		return (ctx->bo->wrk->aws);
 	WRONG("vtc_ws_find Illegal enum");
 }
 
