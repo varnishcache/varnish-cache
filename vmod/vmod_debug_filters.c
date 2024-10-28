@@ -630,6 +630,41 @@ xyzzy_chkcrc32(VRT_CTX, VCL_INT expected, VCL_ENUM mode_e)
 	cfg->expected = (uintmax_t)expected % UINT32_MAX;
 }
 
+/**********************************************************************
+ * reserve thread_workspace
+ */
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_awshog_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
+{
+	struct ws *aws;
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+	AN(priv);
+
+	if (ctx->req != NULL)
+		aws = ctx->req->wrk->aws;
+	else if (ctx->bo != NULL)
+		aws = ctx->bo->wrk->aws;
+	else
+		WRONG("neither req nor bo");
+
+	u = WS_ReserveAll(aws);
+	WS_Release(aws, 0);
+	(void) WS_Alloc(aws, u);
+	return (1);
+}
+
+static const struct vdp xyzzy_vdp_awshog = {
+	.name  = "debug.awshog",
+	.init  = xyzzy_awshog_init
+};
+
 void
 debug_add_filters(VRT_CTX)
 {
@@ -639,6 +674,7 @@ debug_add_filters(VRT_CTX)
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_slow, &xyzzy_vdp_slow));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chksha256));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chkcrc32));
+	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_awshog));
 }
 
 void
@@ -650,4 +686,5 @@ debug_remove_filters(VRT_CTX)
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chunked);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chksha256);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chkcrc32);
+	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_awshog);
 }
