@@ -100,7 +100,17 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	if (bo->vdp_filter_list != NULL &&
 	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo))
 		err = "Failure to push processors";
+	else if (V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, nan(""), 0),
+	    wrk->v1l == NULL) {
+		/* ^^^^^^
+		 * XXX: need a send_timeout for the backend side
+		 * XXX: use cache_param->http1_iovs ?
+		 */
+		(void) VDP_Close(vdc, NULL, NULL);
+		err = "Failure to open V1L (workspace_thread overflow)";
+	}
 	else if (v1f_stackv1l(vdc, bo)) {
+		(void) V1L_Close(wrk, &bytes);
 		(void) VDP_Close(vdc, NULL, NULL);
 		err = "Failure to push V1L";
 	}
@@ -116,9 +126,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 
 	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
-	/* XXX: need a send_timeout for the backend side */
-	// XXX cache_param->http1_iovs ?
-	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, nan(""), 0);
 	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */

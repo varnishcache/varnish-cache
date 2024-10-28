@@ -1,0 +1,21 @@
+varnishtest "Out of thread workspace when opening V1L on the backend side"
+
+server s1 {
+	non_fatal
+	rxreq
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_backend_fetch {
+		set bereq.filters += " debug.awshog";
+		return (fetch);
+	}
+} -start
+
+client c1 {
+	txreq -req "POST" -body "abc"
+	rxresp
+	expect resp.status == 503
+} -run
