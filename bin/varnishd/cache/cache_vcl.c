@@ -387,6 +387,7 @@ vdire_new(struct lock *mtx, const struct vcltemp **tempp)
 	VTAILQ_INIT(&vdire->directors);
 	VTAILQ_INIT(&vdire->resigning);
 	vdire->mtx = mtx;
+	PTOK(pthread_cond_init(&vdire->cond, NULL));
 	vdire->tempp = tempp;
 	return (vdire);
 }
@@ -399,6 +400,8 @@ vdire_start_iter(struct vdire *vdire)
 	CHECK_OBJ_NOTNULL(vdire, VDIRE_MAGIC);
 
 	Lck_Lock(vdire->mtx);
+	while (! VTAILQ_EMPTY(&vdire->resigning))
+		(void)Lck_CondWait(&vdire->cond, vdire->mtx);
 	vdire->iterating++;
 	Lck_Unlock(vdire->mtx);
 }
@@ -422,6 +425,7 @@ vdire_end_iter(struct vdire *vdire)
 		VTAILQ_FOREACH(vdir, &resigning, resigning_list)
 			VTAILQ_REMOVE(&vdire->directors, vdir, directors_list);
 		temp = *vdire->tempp;
+		PTOK(pthread_cond_broadcast(&vdire->cond));
 	}
 	Lck_Unlock(vdire->mtx);
 
@@ -653,6 +657,7 @@ VCL_Close(struct vcl **vclp)
 	TAKE_OBJ_NOTNULL(vcl, vclp, VCL_MAGIC);
 	assert(VTAILQ_EMPTY(&vcl->filters));
 	AZ(dlclose(vcl->dlh));
+	PTOK(pthread_cond_destroy(&vcl->vdire->cond));
 	FREE_OBJ(vcl->vdire);
 	FREE_OBJ(vcl);
 }
