@@ -47,6 +47,8 @@ struct vdire {
 	struct vcldir_head	resigning;
 	// vcl_mtx for now - to be refactored into separate mtx?
 	struct lock		*mtx;
+	// to signal when iterators can enter again
+	pthread_cond_t		cond;
 	const struct vcltemp	**tempp;
 };
 
