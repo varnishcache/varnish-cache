@@ -191,9 +191,9 @@ Supported formatters are:
     misses. In backend mode, this field is blank.
 
   Varnish:handling
-    In client mode, one of the 'hit', 'miss', 'pass', 'pipe' or 'synth' strings
-    indicating how the request was handled. In backend mode, this field is
-    blank.
+    In client mode, one of the 'hit', 'hitmiss', 'hitpass', 'miss', 'pass',
+    'pipe' or 'synth' strings indicating how the request was handled. In
+    backend mode, this field is blank.
 
   Varnish:side
     Backend or client side. One of two values, 'b' or 'c', depending

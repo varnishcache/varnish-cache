@@ -1128,6 +1128,14 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			case SLT_RespUnset:
 				process_hdr(FMTPOL_RESP, &CTX.watch_resphdr, b, e, 1);
 				break;
+			case SLT_HitMiss:
+				CTX.hitmiss = "miss";
+				CTX.handling = "hitmiss";
+				break;
+			case SLT_HitPass:
+				CTX.hitmiss = "miss";
+				CTX.handling = "hitpass";
+				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
 					CTX.recv_compl = 1;
@@ -1136,10 +1144,10 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				} else if (!strcasecmp(b, "hit")) {
 					CTX.hitmiss = "hit";
 					CTX.handling = "hit";
-				} else if (!strcasecmp(b, "miss")) {
+				} else if (!strcasecmp(b, "miss") && strcmp(CTX.handling, "hitmiss")) {
 					CTX.hitmiss = "miss";
 					CTX.handling = "miss";
-				} else if (!strcasecmp(b, "pass")) {
+				} else if (!strcasecmp(b, "pass") && strcmp(CTX.handling, "hitpass")) {
 					CTX.hitmiss = "miss";
 					CTX.handling = "pass";
 				} else if (!strcasecmp(b, "synth")) {

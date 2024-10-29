@@ -41,6 +41,13 @@ Varnish Cache NEXT (2025-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The ``hitmiss`` and ``hitpass`` handling indicators have been added to the
+  ``Varnish:handling`` format of ``varnishncsa``.
+
+* The scope of VCL variables `req.is_hitmiss` and `req.is_hitpass` is now restricted
+  to `vcl_miss, vcl_deliver, vcl_pass, vcl_synth` and `vcl_pass, vcl_deliver, vcl_synth`
+  respectively.
+
 * Two fields have been added to the VMOD data registered with varnish-cache:
 
   - ``vcs`` for Version Control System is intended as an identifier from the
