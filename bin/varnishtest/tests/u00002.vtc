@@ -1,8 +1,6 @@
 varnishtest "varnishncsa handling"
 
-server s1 {
-	rxreq
-	txresp
+server s1 -repeat 4 {
 	rxreq
 	txresp
 } -start
@@ -29,10 +27,16 @@ varnish v1 -vcl+backend {
 		set beresp.status = 200;
 		set beresp.ttl = 1y;
 		set beresp.body = bereq.url;
-		if (bereq.url == "/hitmiss") {
+		if (bereq.url ~ "^/hitmiss") {
 			set beresp.uncacheable  = true;
 		}
 		return (deliver);
+	}
+
+	sub vcl_miss {
+		if (req.url == "/hitmisspass" && req.is_hitmiss) {
+			return (pass);
+		}
 	}
 
 	sub vcl_recv {
@@ -49,6 +53,8 @@ client c1 {
 	# prime
 	txreq -url "/hitmiss"
 	rxresp
+	txreq -url "/hitmisspass"
+	rxresp
 	expect resp.status == 200
 	txreq -url "/hitpass"
 	rxresp
@@ -59,6 +65,9 @@ client c1 {
 
 	# re-check
 	txreq -url "/hitmiss"
+	rxresp
+	expect resp.status == 200
+	txreq -url "/hitmisspass"
 	rxresp
 	expect resp.status == 200
 	txreq -url "/hitpass"
@@ -80,9 +89,11 @@ client c1 {
 shell {
 	cat <<EOF >expect
 miss /hitmiss
+miss /hitmisspass
 miss /hitpass
 miss /hit
 hitmiss /hitmiss
+pass /hitmisspass
 hitpass /hitpass
 hit /hit
 pass /pass
