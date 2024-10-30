@@ -163,7 +163,44 @@ static struct ctx {
 	int			recv_compl;
 } CTX;
 
+enum format_policy {
+        FMTPOL_INTERNAL,
+        FMTPOL_REQ,
+        FMTPOL_RESP,
+};
+
 static void parse_format(const char *format);
+
+static unsigned
+frag_needed(const struct fragment *frag, enum format_policy fp)
+{
+	unsigned is_first, want_first, want_frag;
+
+        is_first = CTX.gen != frag->gen;
+
+        switch (fp) {
+        case FMTPOL_INTERNAL:
+                want_first = 1;
+                want_frag = 1;
+                break;
+        case FMTPOL_REQ:
+                want_first = *CTX.side == 'c';
+                want_frag = !CTX.recv_compl;
+                break;
+        case FMTPOL_RESP:
+                want_first = *CTX.side == 'b';
+                want_frag = (*CTX.side == 'c') || !CTX.recv_compl;
+                break;
+        default:
+                WRONG("Invalid format policy");
+        }
+
+        if (!want_frag)
+                return (0);
+        if (want_first && !is_first)
+                return (0);
+        return (1);
+}
 
 static void
 openout(int append)
@@ -851,7 +888,7 @@ isprefix(const char *prefix, size_t len, const char *b,
 }
 
 static void
-frag_fields(int force, const char *b, const char *e, ...)
+frag_fields(enum format_policy fp, const char *b, const char *e, ...)
 {
 	va_list ap;
 	const char *p, *q;
@@ -883,7 +920,7 @@ frag_fields(int force, const char *b, const char *e, ...)
 		assert(p != NULL && q != NULL);
 		if (p >= e || q <= p)
 			continue;
-		if (frag->gen != CTX.gen || force) {
+		if (frag_needed(frag, fp)) {
 			/* We only grab the same matching field once */
 			frag->gen = CTX.gen;
 			frag->b = p;
@@ -894,10 +931,11 @@ frag_fields(int force, const char *b, const char *e, ...)
 }
 
 static void
-frag_line(int force, const char *b, const char *e, struct fragment *f)
+frag_line(enum format_policy fp, const char *b, const char *e,
+    struct fragment *f)
 {
 
-	if (f->gen == CTX.gen && !force)
+	if (!frag_needed(f, fp))
 		/* We only grab the same matching record once */
 		return;
 
@@ -915,7 +953,8 @@ frag_line(int force, const char *b, const char *e, struct fragment *f)
 }
 
 static void
-process_hdr(const struct watch_head *head, const char *b, const char *e)
+process_hdr(enum format_policy fp, const struct watch_head *head, const char *b,
+    const char *e)
 {
 	struct watch *w;
 	const char *p;
@@ -924,7 +963,7 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
 		if (!isprefix(w->key, w->keylen, b, e, &p))
 			continue;
-		frag_line(1, p, e, &w->frag);
+		frag_line(fp, p, e, &w->frag);
 	}
 }
 
@@ -943,9 +982,9 @@ process_vsl(const struct vsl_watch_head *head, enum VSL_tag_e tag,
 		    !isprefix(w->prefix, w->prefixlen, b, e, &p))
 			continue;
 		if (w->idx == 0)
-			frag_line(0, p, e, &w->frag);
+			frag_line(FMTPOL_INTERNAL, p, e, &w->frag);
 		else
-			frag_fields(0, p, e, w->idx, &w->frag, 0, NULL);
+			frag_fields(FMTPOL_INTERNAL, p, e, w->idx, &w->frag, 0, NULL);
 	}
 }
 
@@ -995,44 +1034,44 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				skip = 1;
 				break;
 			case SLT_PipeAcct:
-				frag_fields(0, b, e,
+				frag_fields(FMTPOL_INTERNAL, b, e,
 				    3, &CTX.frag[F_I],
 				    4, &CTX.frag[F_O],
 				    0, NULL);
 				break;
 			case SLT_BackendOpen:
-				frag_fields(1, b, e,
+				frag_fields(FMTPOL_INTERNAL, b, e,
 				    3, &CTX.frag[F_h],
 				    0, NULL);
 				break;
 			case SLT_ReqStart:
-				frag_fields(0, b, e,
+				frag_fields(FMTPOL_INTERNAL, b, e,
 				    1, &CTX.frag[F_h],
 				    0, NULL);
 				break;
 			case SLT_BereqMethod:
 			case SLT_ReqMethod:
-				frag_line(0, b, e, &CTX.frag[F_m]);
+				frag_line(FMTPOL_REQ, b, e, &CTX.frag[F_m]);
 				break;
 			case SLT_BereqURL:
 			case SLT_ReqURL:
 				p = memchr(b, '?', e - b);
 				if (p == NULL)
 					p = e;
-				frag_line(0, b, p, &CTX.frag[F_U]);
-				frag_line(0, p, e, &CTX.frag[F_q]);
+				frag_line(FMTPOL_REQ, b, p, &CTX.frag[F_U]);
+				frag_line(FMTPOL_REQ, p, e, &CTX.frag[F_q]);
 				break;
 			case SLT_BereqProtocol:
 			case SLT_ReqProtocol:
-				frag_line(0, b, e, &CTX.frag[F_H]);
+				frag_line(FMTPOL_REQ, b, e, &CTX.frag[F_H]);
 				break;
 			case SLT_BerespStatus:
 			case SLT_RespStatus:
-				frag_line(1, b, e, &CTX.frag[F_s]);
+				frag_line(FMTPOL_RESP, b, e, &CTX.frag[F_s]);
 				break;
 			case SLT_BereqAcct:
 			case SLT_ReqAcct:
-				frag_fields(0, b, e,
+				frag_fields(FMTPOL_INTERNAL, b, e,
 				    3, &CTX.frag[F_I],
 				    5, &CTX.frag[F_b],
 				    6, &CTX.frag[F_O],
@@ -1041,37 +1080,37 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			case SLT_Timestamp:
 #define ISPREFIX(a, b, c, d)	isprefix(a, strlen(a), b, c, d)
 				if (ISPREFIX("Start:", b, e, &p)) {
-					frag_fields(0, p, e, 1,
+					frag_fields(FMTPOL_INTERNAL, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
 				} else if (ISPREFIX("Resp:", b, e, &p) ||
 				    ISPREFIX("PipeSess:", b, e, &p) ||
 				    ISPREFIX("BerespBody:", b, e, &p)) {
-					frag_fields(0, p, e, 1,
+					frag_fields(FMTPOL_INTERNAL, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
 				} else if (ISPREFIX("Process:", b, e, &p) ||
 				    ISPREFIX("Pipe:", b, e, &p) ||
 				    ISPREFIX("Beresp:", b, e, &p)) {
-					frag_fields(0, p, e, 2,
+					frag_fields(FMTPOL_INTERNAL, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
 			case SLT_BereqHeader:
 			case SLT_ReqHeader:
-				process_hdr(&CTX.watch_reqhdr, b, e);
+				process_hdr(FMTPOL_REQ, &CTX.watch_reqhdr, b, e);
 				if (ISPREFIX("Authorization:", b, e, &p) &&
 				    ISPREFIX("basic ", p, e, &p))
-					frag_line(0, p, e,
+					frag_line(FMTPOL_REQ, p, e,
 					    &CTX.frag[F_auth]);
 				else if (ISPREFIX("Host:", b, e, &p))
-					frag_line(0, p, e,
+					frag_line(FMTPOL_REQ, p, e,
 					    &CTX.frag[F_host]);
 #undef ISPREFIX
 				break;
 			case SLT_BerespHeader:
 			case SLT_RespHeader:
-				process_hdr(&CTX.watch_resphdr, b, e);
+				process_hdr(FMTPOL_RESP, &CTX.watch_resphdr, b, e);
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
@@ -1111,7 +1150,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					    strncmp(b, w->key, w->keylen))
 						continue;
 					p = b + w->keylen;
-					frag_line(0, p, e, &w->frag);
+					frag_line(FMTPOL_INTERNAL, p, e, &w->frag);
 				}
 				break;
 			default:
