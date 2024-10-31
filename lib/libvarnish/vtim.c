@@ -585,8 +585,8 @@ parse_check(time_t t, const char *s)
 	}
 }
 
-#define TTEST_MIN (sizeof(time_t) >= 8 ? -2209852800 : INT32_MIN)
-#define TTEST_MAX (sizeof(time_t) >= 8 ? 20000000000 : INT32_MAX)
+#define TTEST_MIN (sizeof(time_t) >= 8 ? -2209852800LL : INT32_MIN)
+#define TTEST_MAX (sizeof(time_t) >= 8 ? 20000000000LL : INT32_MAX)
 
 int
 main(int argc, char **argv)
