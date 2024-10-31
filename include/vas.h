@@ -114,7 +114,11 @@ do {									\
 #  define __has_extension(x)	0
 #endif
 
-#if __has_extension(c_static_assert)
+#if __STDC_VERSION__ - 0 >= 202311L
+#   define v_static_assert static_assert
+#elif __STDC_VERSION__ - 0 >= 201112L
+#   define v_static_assert _Static_assert
+#elif __has_extension(c_static_assert)
 #   define v_static_assert _Static_assert
 #elif __GNUC_PREREQ__(4,6) && !defined(__cplusplus)
 #   define v_static_assert _Static_assert
