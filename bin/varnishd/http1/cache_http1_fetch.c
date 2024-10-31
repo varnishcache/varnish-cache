@@ -72,6 +72,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	struct vdp_ctx vdc[1] = {{ 0 }};
 	intmax_t cl;
 	const char *err = NULL;
+	struct v1l *v1l = NULL;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -100,9 +101,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	if (bo->vdp_filter_list != NULL &&
 	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo))
 		err = "Failure to push processors";
-	else if (V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, nan(""), 0),
-	    wrk->v1l == NULL) {
-		/* ^^^^^^
+	else if ((v1l = V1L_Open(wrk->aws, htc->rfd, bo->vsl, nan(""), 0)) == NULL) {
+		/*      ^^^^^^^^
 		 * XXX: need a send_timeout for the backend side
 		 * XXX: use cache_param->http1_iovs ?
 		 */
@@ -111,8 +111,11 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	else if (v1f_stackv1l(vdc, bo))
 		err = "Failure to push V1L";
 
+	AZ(wrk->v1l);
+	wrk->v1l = v1l;
+
 	if (err != NULL) {
-		if (wrk->v1l != NULL)
+		if (v1l != NULL)
 			(void) V1L_Close(wrk, &bytes);
 		if (VALID_OBJ(vdc, VDP_CTX_MAGIC))
 			(void) VDP_Close(vdc, NULL, NULL);
@@ -121,6 +124,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		htc->doclose = SC_OVERLOAD;
 		return (-1);
 	}
+
 
 	assert(cl >= -1);
 	if (cl < 0)

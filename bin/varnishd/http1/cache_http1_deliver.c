@@ -46,8 +46,10 @@ v1d_error(struct req *req, struct boc *boc, const char *msg)
 	    "HTTP/1.1 500 Internal Server Error\r\n"
 	    "Server: Varnish\r\n"
 	    "Connection: close\r\n\r\n";
+	uint64_t bytes;
 
-	AZ(req->wrk->v1l);
+	if (req->wrk->v1l != NULL)
+		(void) V1L_Close(req->wrk, &bytes);
 
 	VSLbs(req->vsl, SLT_Error, TOSTRAND(msg));
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
@@ -71,6 +73,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	int err = 0, chunked = 0;
 	stream_close_t sc;
 	uint64_t hdrbytes, bytes;
+	struct v1l *v1l;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
@@ -86,6 +89,20 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		}
 	} else if (!http_GetHdr(req->resp, H_Connection, NULL))
 		http_SetHeader(req->resp, "Connection: keep-alive");
+
+	CHECK_OBJ_NOTNULL(req->wrk, WORKER_MAGIC);
+
+	v1l = V1L_Open(req->wrk->aws, &req->sp->fd, req->vsl,
+	    req->t_prev + SESS_TMO(req->sp, send_timeout),
+	    cache_param->http1_iovs);
+
+	if (v1l == NULL) {
+		v1d_error(req, boc, "Failure to init v1d (workspace_thread overflow)");
+		return;
+	}
+
+	AZ(req->wrk->v1l);
+	req->wrk->v1l = v1l;
 
 	if (sendbody) {
 		if (!http_GetHdr(req->resp, H_Content_Length, NULL)) {
@@ -114,10 +131,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		v1d_error(req, boc, "workspace_session overflow");
 		return;
 	}
-
-	V1L_Open(req->wrk, req->wrk->aws, &req->sp->fd, req->vsl,
-	    req->t_prev + SESS_TMO(req->sp, send_timeout),
-	    cache_param->http1_iovs);
 
 	if (WS_Overflowed(req->wrk->aws)) {
 		v1d_error(req, boc, "workspace_thread overflow");

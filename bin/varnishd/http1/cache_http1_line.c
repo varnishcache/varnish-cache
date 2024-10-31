@@ -75,19 +75,16 @@ struct v1l {
  * otherwise, up to niov
  */
 
-void
-V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
+struct v1l *
+V1L_Open(struct ws *ws, int *fd, struct vsl_log *vsl,
     vtim_real deadline, unsigned niov)
 {
 	struct v1l *v1l;
 	unsigned u;
 	uintptr_t ws_snap;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AZ(wrk->v1l);
-
 	if (WS_Overflowed(ws))
-		return;
+		return (NULL);
 
 	if (niov != 0)
 		assert(niov >= 3);
@@ -96,7 +93,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 
 	v1l = WS_Alloc(ws, sizeof *v1l);
 	if (v1l == NULL)
-		return;
+		return (NULL);
 	INIT_OBJ(v1l, V1L_MAGIC);
 
 	v1l->ws = ws;
@@ -107,7 +104,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 		/* Must have at least 3 in case of chunked encoding */
 		WS_Release(ws, 0);
 		WS_MarkOverflow(ws);
-		return;
+		return (NULL);
 	}
 	if (u > IOV_MAX)
 		u = IOV_MAX;
@@ -121,10 +118,8 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->vsl = vsl;
 	v1l->werr = SC_NULL;
 
-	AZ(wrk->v1l);
-	wrk->v1l = v1l;
-
 	WS_Release(ws, u * sizeof(struct iovec));
+	return (v1l);
 }
 
 stream_close_t
