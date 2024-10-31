@@ -143,6 +143,7 @@ thr_setname_generic(const char *name)
 		name = buf;
 	}
 
+	//lint --e{438} Last value assigned not used
 	PTOK(pthread_setname_np(pthread_self(), name));
 }
 
