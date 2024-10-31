@@ -331,8 +331,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		sendbody = 0;
 	}
 
-	AZ(req->wrk->v1l);
-
 	r2->t_send = req->t_prev;
 
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
@@ -351,6 +349,5 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 			(void)VDP_DeliverObj(req->vdc, req->objcore);
 	}
 
-	AZ(req->wrk->v1l);
 	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 }

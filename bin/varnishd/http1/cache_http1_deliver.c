@@ -40,7 +40,7 @@
 /*--------------------------------------------------------------------*/
 
 static void
-v1d_error(struct req *req, struct boc *boc, const char *msg)
+v1d_error(struct req *req, struct boc *boc, struct v1l **v1lp, const char *msg)
 {
 	static const char r_500[] =
 	    "HTTP/1.1 500 Internal Server Error\r\n"
@@ -48,8 +48,9 @@ v1d_error(struct req *req, struct boc *boc, const char *msg)
 	    "Connection: close\r\n\r\n";
 	uint64_t bytes;
 
-	if (req->wrk->v1l != NULL)
-		(void) V1L_Close(req->wrk, &bytes);
+	AN(v1lp);
+	if (*v1lp != NULL)
+		(void) V1L_Close(v1lp, &bytes);
 
 	VSLbs(req->vsl, SLT_Error, TOSTRAND(msg));
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
@@ -97,12 +98,9 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	    cache_param->http1_iovs);
 
 	if (v1l == NULL) {
-		v1d_error(req, boc, "Failure to init v1d (workspace_thread overflow)");
+		v1d_error(req, boc, &v1l, "Failure to init v1d (workspace_thread overflow)");
 		return;
 	}
-
-	AZ(req->wrk->v1l);
-	req->wrk->v1l = v1l;
 
 	if (sendbody) {
 		if (!http_GetHdr(req->resp, H_Content_Length, NULL)) {
@@ -116,41 +114,40 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		}
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
-		if (VDP_Push(ctx, req->vdc, req->ws, VDP_v1l, NULL)) {
-			v1d_error(req, boc, "Failure to push v1d processor");
+		if (VDP_Push(ctx, req->vdc, req->ws, VDP_v1l, v1l)) {
+			v1d_error(req, boc, &v1l, "Failure to push v1d processor");
 			return;
 		}
 	}
 
 	if (WS_Overflowed(req->ws)) {
-		v1d_error(req, boc, "workspace_client overflow");
+		v1d_error(req, boc, &v1l, "workspace_client overflow");
 		return;
 	}
 
 	if (WS_Overflowed(req->sp->ws)) {
-		v1d_error(req, boc, "workspace_session overflow");
+		v1d_error(req, boc, &v1l, "workspace_session overflow");
 		return;
 	}
 
 	if (WS_Overflowed(req->wrk->aws)) {
-		v1d_error(req, boc, "workspace_thread overflow");
+		v1d_error(req, boc, &v1l, "workspace_thread overflow");
 		return;
 	}
 
-	hdrbytes = HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
+	hdrbytes = HTTP1_Write(v1l, req->resp, HTTP1_Resp);
 
 	if (sendbody) {
 		if (DO_DEBUG(DBG_FLUSH_HEAD))
-			(void)V1L_Flush(req->wrk);
+			(void)V1L_Flush(v1l);
 		if (chunked)
-			V1L_Chunked(req->wrk);
+			V1L_Chunked(v1l);
 		err = VDP_DeliverObj(req->vdc, req->objcore);
 		if (!err && chunked)
-			V1L_EndChunk(req->wrk);
+			V1L_EndChunk(v1l);
 	}
 
-	sc = V1L_Close(req->wrk, &bytes);
-	AZ(req->wrk->v1l);
+	sc = V1L_Close(&v1l, &bytes);
 
 	req->acct.resp_hdrbytes += hdrbytes;
 	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);

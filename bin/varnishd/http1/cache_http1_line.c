@@ -68,6 +68,7 @@ struct v1l {
 	ssize_t			cnt;	/* Flushed byte count */
 	struct ws		*ws;
 	uintptr_t		ws_snap;
+	void			**vdp_priv;
 };
 
 /*--------------------------------------------------------------------
@@ -123,17 +124,20 @@ V1L_Open(struct ws *ws, int *fd, struct vsl_log *vsl,
 }
 
 stream_close_t
-V1L_Close(struct worker *wrk, uint64_t *cnt)
+V1L_Close(struct v1l **v1lp, uint64_t *cnt)
 {
 	struct v1l *v1l;
 	struct ws *ws;
 	uintptr_t ws_snap;
 	stream_close_t sc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(cnt);
-	sc = V1L_Flush(wrk);
-	TAKE_OBJ_NOTNULL(v1l, &wrk->v1l, V1L_MAGIC);
+	TAKE_OBJ_NOTNULL(v1l, v1lp, V1L_MAGIC);
+	if (v1l->vdp_priv != NULL) {
+		assert(*v1l->vdp_priv == v1l);
+		*v1l->vdp_priv = NULL;
+	}
+	sc = V1L_Flush(v1l);
 	*cnt = v1l->cnt;
 	ws = v1l->ws;
 	ws_snap = v1l->ws_snap;
@@ -167,15 +171,12 @@ v1l_prune(struct v1l *v1l, size_t bytes)
 }
 
 stream_close_t
-V1L_Flush(const struct worker *wrk)
+V1L_Flush(struct v1l *v1l)
 {
 	ssize_t i;
 	int err;
-	struct v1l *v1l;
 	char cbuf[32];
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	v1l = wrk->v1l;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	CHECK_OBJ_NOTNULL(v1l->werr, STREAM_CLOSE_MAGIC);
 	AN(v1l->wfd);
@@ -261,12 +262,9 @@ V1L_Flush(const struct worker *wrk)
 }
 
 size_t
-V1L_Write(const struct worker *wrk, const void *ptr, ssize_t len)
+V1L_Write(struct v1l *v1l, const void *ptr, ssize_t len)
 {
-	struct v1l *v1l;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	v1l = wrk->v1l;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	AN(v1l->wfd);
 	if (len == 0 || *v1l->wfd < 0)
@@ -280,19 +278,16 @@ V1L_Write(const struct worker *wrk, const void *ptr, ssize_t len)
 	v1l->niov++;
 	v1l->cliov += len;
 	if (v1l->niov >= v1l->siov) {
-		(void)V1L_Flush(wrk);
+		(void)V1L_Flush(v1l);
 		VSC_C_main->http1_iovs_flush++;
 	}
 	return (len);
 }
 
 void
-V1L_Chunked(const struct worker *wrk)
+V1L_Chunked(struct v1l *v1l)
 {
-	struct v1l *v1l;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	v1l = wrk->v1l;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 
 	assert(v1l->ciov == v1l->siov);
@@ -302,7 +297,7 @@ V1L_Chunked(const struct worker *wrk)
 	 * a chunk tail, we might as well flush right away.
 	 */
 	if (v1l->niov + 3 >= v1l->siov) {
-		(void)V1L_Flush(wrk);
+		(void)V1L_Flush(v1l);
 		VSC_C_main->http1_iovs_flush++;
 	}
 	v1l->siov--;
@@ -320,26 +315,38 @@ V1L_Chunked(const struct worker *wrk)
  */
 
 void
-V1L_EndChunk(const struct worker *wrk)
+V1L_EndChunk(struct v1l *v1l)
 {
-	struct v1l *v1l;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	v1l = wrk->v1l;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 
 	assert(v1l->ciov < v1l->siov);
-	(void)V1L_Flush(wrk);
+	(void)V1L_Flush(v1l);
 	v1l->siov++;
 	v1l->ciov = v1l->siov;
 	v1l->niov = 0;
 	v1l->cliov = 0;
-	(void)V1L_Write(wrk, "0\r\n\r\n", -1);
+	(void)V1L_Write(v1l, "0\r\n\r\n", -1);
 }
 
 /*--------------------------------------------------------------------
  * VDP using V1L
  */
+
+/* remember priv pointer for V1L_Close() to clear */
+static int v_matchproto_(vdp_init_f)
+v1l_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
+{
+	struct v1l *v1l;
+
+	(void) ctx;
+	(void) vdc;
+	AN(priv);
+	CAST_OBJ_NOTNULL(v1l, *priv, V1L_MAGIC);
+
+	v1l->vdp_priv = priv;
+	return (0);
+}
 
 static int v_matchproto_(vdp_bytes_f)
 v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
@@ -348,13 +355,13 @@ v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 	ssize_t wl = 0;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	(void)priv;
+	AN(priv);
 
 	AZ(vdc->nxt);		/* always at the bottom of the pile */
 
 	if (len > 0)
-		wl = V1L_Write(vdc->wrk, ptr, len);
-	if (act > VDP_NULL && V1L_Flush(vdc->wrk) != SC_NULL)
+		wl = V1L_Write(*priv, ptr, len);
+	if (act > VDP_NULL && V1L_Flush(*priv) != SC_NULL)
 		return (-1);
 	if (len != wl)
 		return (-1);
@@ -363,5 +370,6 @@ v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 
 const struct vdp * const VDP_v1l = &(struct vdp){
 	.name =		"V1B",
+	.init =		v1l_init,
 	.bytes =	v1l_bytes,
 };

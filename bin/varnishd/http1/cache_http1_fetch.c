@@ -43,13 +43,13 @@
 #include "cache_http1.h"
 
 static int
-v1f_stackv1l(struct vdp_ctx *vdc, struct busyobj *bo)
+v1f_stackv1l(struct vdp_ctx *vdc, struct busyobj *bo, struct v1l *v1l)
 {
 	struct vrt_ctx ctx[1];
 
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Bo2Ctx(ctx, bo);
-	return (VDP_Push(ctx, vdc, ctx->ws, VDP_v1l, NULL));
+	return (VDP_Push(ctx, vdc, ctx->ws, VDP_v1l, v1l));
 }
 
 /*--------------------------------------------------------------------
@@ -108,15 +108,12 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		 */
 		err = "Failure to open V1L (workspace_thread overflow)";
 	}
-	else if (v1f_stackv1l(vdc, bo))
+	else if (v1f_stackv1l(vdc, bo, v1l))
 		err = "Failure to push V1L";
-
-	AZ(wrk->v1l);
-	wrk->v1l = v1l;
 
 	if (err != NULL) {
 		if (v1l != NULL)
-			(void) V1L_Close(wrk, &bytes);
+			(void) V1L_Close(&v1l, &bytes);
 		if (VALID_OBJ(vdc, VDP_CTX_MAGIC))
 			(void) VDP_Close(vdc, NULL, NULL);
 		VSLb(bo->vsl, SLT_FetchError, "%s", err);
@@ -131,7 +128,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 
 	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
-	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
+	hdrbytes = HTTP1_Write(v1l, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
@@ -144,7 +141,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	} else if (bo->req != NULL &&
 	    bo->req->req_body_status != BS_NONE) {
 		if (cl < 0)
-			V1L_Chunked(wrk);
+			V1L_Chunked(v1l);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, VDP_ObjIterate, vdc);
 
 		if (bo->req->req_body_status != BS_CACHED)
@@ -167,10 +164,10 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			bo->req->doclose = SC_RX_BODY;
 		}
 		if (cl < 0)
-			V1L_EndChunk(wrk);
+			V1L_EndChunk(v1l);
 	}
 
-	sc = V1L_Close(wrk, &bytes);
+	sc = V1L_Close(&v1l, &bytes);
 	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 
 	/* Bytes accounting */

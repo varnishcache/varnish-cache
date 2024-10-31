@@ -59,11 +59,11 @@ stream_close_t V1P_Process(const struct req *, int fd, struct v1p_acct *,
 void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_vbe *);
 
 /* cache_http1_line.c */
-void V1L_Chunked(const struct worker *w);
-void V1L_EndChunk(const struct worker *w);
+void V1L_Chunked(struct v1l *v1l);
+void V1L_EndChunk(struct v1l *v1l);
 struct v1l * V1L_Open(struct ws *, int *fd, struct vsl_log *,
     vtim_real deadline, unsigned niov);
-stream_close_t V1L_Flush(const struct worker *w);
-stream_close_t V1L_Close(struct worker *w, uint64_t *cnt);
-size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);
+stream_close_t V1L_Flush(struct v1l *v1l);
+stream_close_t V1L_Close(struct v1l **v1lp, uint64_t *cnt);
+size_t V1L_Write(struct v1l *v1l, const void *ptr, ssize_t len);
 extern const struct vdp * const VDP_v1l;

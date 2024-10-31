@@ -252,8 +252,6 @@ struct worker {
 
 	vtim_real		lastused;
 
-	struct v1l		*v1l;
-
 	pthread_cond_t		cond;
 
 	struct ws		aws[1];

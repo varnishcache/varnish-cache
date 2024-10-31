@@ -84,7 +84,6 @@ http1_req(struct worker *wrk, void *arg)
 	THR_SetRequest(req);
 	assert(!WS_IsReserved(wrk->aws));
 	HTTP1_Session(wrk, req);
-	AZ(wrk->v1l);
 	WS_Assert(wrk->aws);
 	THR_SetRequest(NULL);
 }
