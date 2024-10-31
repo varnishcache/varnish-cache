@@ -69,7 +69,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	ssize_t i;
 	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;
-	struct vdp_ctx vdc[1];
+	struct vdp_ctx vdc[1] = { 0 };
 	intmax_t cl;
 	const char *err = NULL;
 
@@ -106,15 +106,16 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		 * XXX: need a send_timeout for the backend side
 		 * XXX: use cache_param->http1_iovs ?
 		 */
-		(void) VDP_Close(vdc, NULL, NULL);
 		err = "Failure to open V1L (workspace_thread overflow)";
 	}
-	else if (v1f_stackv1l(vdc, bo)) {
-		(void) V1L_Close(wrk, &bytes);
-		(void) VDP_Close(vdc, NULL, NULL);
+	else if (v1f_stackv1l(vdc, bo))
 		err = "Failure to push V1L";
-	}
+
 	if (err != NULL) {
+		if (wrk->v1l != NULL)
+			(void) V1L_Close(wrk, &bytes);
+		if (vdc->magic != 0)
+			(void) VDP_Close(vdc, NULL, NULL);
 		VSLb(bo->vsl, SLT_FetchError, "%s", err);
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = SC_OVERLOAD;
