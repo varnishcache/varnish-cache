@@ -69,7 +69,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	ssize_t i;
 	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;
-	struct vdp_ctx vdc[1];
+	struct vdp_ctx vdc[1] = {{ 0 }};
 	intmax_t cl;
 	const char *err = NULL;
 
@@ -96,7 +96,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	else
 		cl = 0;
 
-	vdc->magic = 0;
 	VDP_Init(vdc, wrk, bo->vsl, NULL, bo, &cl);
 	if (bo->vdp_filter_list != NULL &&
 	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo))
