@@ -188,7 +188,7 @@ VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
 	VRT_RemoveFilter(ctx, NULL, filter);
 }
 
-static const struct vfilter vfilter_error[1];
+static const struct vfilter vfilter_error[1] = {{0}};
 
 // XXX: idea(fgs): Allow filters (...) arguments in the list
 static const struct vfilter *

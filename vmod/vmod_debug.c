@@ -67,8 +67,8 @@ static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct vsc_seg *vsc_seg = NULL;
 static struct VSC_debug *vsc = NULL;
 static int loads;
-static const int store_ip_token;
-static const int fail_task_fini_token;
+static const int store_ip_token = 0;
+static const int fail_task_fini_token = 0;
 extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,
     const char *fmt, ...) v_printflike_(3,4);
 
