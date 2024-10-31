@@ -69,7 +69,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	ssize_t i;
 	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;
-	struct vdp_ctx vdc[1] = { 0 };
+	struct vdp_ctx vdc[1] = {{ 0 }};
 	intmax_t cl;
 	const char *err = NULL;
 
