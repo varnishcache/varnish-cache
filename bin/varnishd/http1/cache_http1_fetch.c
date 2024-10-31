@@ -114,7 +114,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	if (err != NULL) {
 		if (wrk->v1l != NULL)
 			(void) V1L_Close(wrk, &bytes);
-		if (vdc->magic != 0)
+		if (VALID_OBJ(vdc, VDP_CTX_MAGIC))
 			(void) VDP_Close(vdc, NULL, NULL);
 		VSLb(bo->vsl, SLT_FetchError, "%s", err);
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
