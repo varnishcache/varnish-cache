@@ -83,6 +83,7 @@ V1L_Open(struct ws *ws, int *fd, struct vsl_log *vsl,
 	struct v1l *v1l;
 	unsigned u;
 	uintptr_t ws_snap;
+	size_t sz;
 
 	if (WS_Overflowed(ws))
 		return (NULL);
@@ -119,7 +120,9 @@ V1L_Open(struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->vsl = vsl;
 	v1l->werr = SC_NULL;
 
-	WS_Release(ws, u * sizeof(struct iovec));
+	sz = u * sizeof(struct iovec);
+	assert(sz < UINT_MAX);
+	WS_Release(ws, (unsigned)sz);
 	return (v1l);
 }
 
