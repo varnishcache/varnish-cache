@@ -860,7 +860,7 @@ else
 			VCC_CC="exec $VCC_CC %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
 			;;
 		*cc)
-			VCC_CC="exec $VCC_CC %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			VCC_CC="exec $VCC_CC %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED,no%E_C99_INTEGER_PROMOTION $PTHREAD_CFLAGS -Kpic -G -o %o %s"
 			;;
 		esac
 		;;
