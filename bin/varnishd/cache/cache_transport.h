@@ -38,7 +38,7 @@
 struct req;
 struct boc;
 
-typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
+typedef void vtr_deliver_f (struct req *, int sendbody);
 typedef void vtr_req_body_f (struct req *);
 typedef void vtr_sess_panic_f (struct vsb *, const struct sess *);
 typedef void vtr_req_panic_f (struct vsb *, const struct req *);

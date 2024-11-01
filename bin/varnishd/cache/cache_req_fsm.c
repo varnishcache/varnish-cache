@@ -497,7 +497,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		}
 		if (req->resp_len == 0)
 			sendbody = 0;
-		req->transport->deliver(req, req->boc, sendbody);
+		req->transport->deliver(req, sendbody);
 	}
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));

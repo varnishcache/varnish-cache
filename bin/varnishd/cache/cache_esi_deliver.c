@@ -855,9 +855,9 @@ static const struct vdp ved_ved = {
 };
 
 static void
-ved_close(struct req *req, struct boc *boc, int error)
+ved_close(struct req *req, int error)
 {
-	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, req->boc);
 
 	if (! error)
 		return;
@@ -868,7 +868,7 @@ ved_close(struct req *req, struct boc *boc, int error)
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(vtr_deliver_f)
-ved_deliver(struct req *req, struct boc *boc, int wantbody)
+ved_deliver(struct req *req, int wantbody)
 {
 	int i = 0;
 	const char *p;
@@ -878,7 +878,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	struct vrt_ctx ctx[1];
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
+	CHECK_OBJ_ORNULL(req->boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
@@ -887,17 +887,17 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	if (FEATURE(FEATURE_ESI_INCLUDE_ONERROR) &&
 	    status != 200 && status != 204) {
-		ved_close(req, boc, ecx->abrt);
+		ved_close(req, ecx->abrt);
 		return;
 	}
 
 	if (wantbody == 0) {
-		ved_close(req, boc, 0);
+		ved_close(req, 0);
 		return;
 	}
 
-	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0) {
-		ved_close(req, boc, 0);
+	if (req->boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0) {
+		ved_close(req, 0);
 		return;
 	}
 
@@ -913,7 +913,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		/* A gzipped include which is not ESI processed */
 
 		/* OA_GZIPBITS are not valid until BOS_FINISHED */
-		if (boc != NULL)
+		if (req->boc != NULL)
 			ObjWaitState(req->objcore, BOS_FINISHED);
 
 		if (req->objcore->flags & OC_F_FAILED) {
@@ -921,7 +921,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 			 * the ESI body. Omit this ESI fragment.
 			 * XXX change error argument to 1
 			 */
-			ved_close(req, boc, 0);
+			ved_close(req, 0);
 			return;
 		}
 
@@ -947,5 +947,5 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	ved_close(req, boc, i && ecx->abrt ? 1 : 0);
+	ved_close(req, i && ecx->abrt ? 1 : 0);
 }

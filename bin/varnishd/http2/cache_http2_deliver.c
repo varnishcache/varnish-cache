@@ -293,7 +293,7 @@ h2_build_headers(struct vsb *resp, struct req *req)
 }
 
 void v_matchproto_(vtr_deliver_f)
-h2_deliver(struct req *req, struct boc *boc, int sendbody)
+h2_deliver(struct req *req, int sendbody)
 {
 	size_t sz;
 	const char *r;
@@ -304,7 +304,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	uintptr_t ss;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	sp = req->sp;
@@ -349,5 +348,5 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 			(void)VDP_DeliverObj(req->vdc, req->objcore);
 	}
 
-	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, req->boc);
 }
