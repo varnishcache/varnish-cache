@@ -66,7 +66,8 @@
   REQ_STEP(deliver,             DELIVER,	static) \
   REQ_STEP(vclfail,             VCLFAIL,	static) \
   REQ_STEP(synth,               SYNTH,		static) \
-  REQ_STEP(transmit,            TRANSMIT,	static)
+  REQ_STEP(transmit,            TRANSMIT,	static) \
+  REQ_STEP(finish,              FINISH,		static)
 
 #define REQ_STEP(l, U, priv) \
     static req_state_f cnt_##l; \
@@ -499,6 +500,16 @@ cnt_transmit(struct worker *wrk, struct req *req)
 			sendbody = 0;
 		req->transport->deliver(req, sendbody);
 	}
+	req->req_step = R_STP_FINISH;
+	return (REQ_FSM_MORE);
+}
+
+static enum req_fsm_nxt v_matchproto_(req_state_f)
+cnt_finish(struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
