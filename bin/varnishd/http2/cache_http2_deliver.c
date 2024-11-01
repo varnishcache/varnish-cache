@@ -292,7 +292,7 @@ h2_build_headers(struct vsb *resp, struct req *req)
 	}
 }
 
-void v_matchproto_(vtr_deliver_f)
+enum vtr_deliver_e v_matchproto_(vtr_deliver_f)
 h2_deliver(struct req *req, int sendbody)
 {
 	size_t sz;
@@ -349,4 +349,5 @@ h2_deliver(struct req *req, int sendbody)
 	}
 
 	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, req->boc);
+	return (VTR_D_DONE);
 }

@@ -867,7 +867,7 @@ ved_close(struct req *req, int error)
 
 /*--------------------------------------------------------------------*/
 
-static void v_matchproto_(vtr_deliver_f)
+static enum vtr_deliver_e v_matchproto_(vtr_deliver_f)
 ved_deliver(struct req *req, int wantbody)
 {
 	int i = 0;
@@ -888,17 +888,17 @@ ved_deliver(struct req *req, int wantbody)
 	if (FEATURE(FEATURE_ESI_INCLUDE_ONERROR) &&
 	    status != 200 && status != 204) {
 		ved_close(req, ecx->abrt);
-		return;
+		return (VTR_D_DONE);
 	}
 
 	if (wantbody == 0) {
 		ved_close(req, 0);
-		return;
+		return (VTR_D_DONE);
 	}
 
 	if (req->boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0) {
 		ved_close(req, 0);
-		return;
+		return (VTR_D_DONE);
 	}
 
 	if (http_GetHdr(req->resp, H_Content_Encoding, &p))
@@ -922,7 +922,7 @@ ved_deliver(struct req *req, int wantbody)
 			 * XXX change error argument to 1
 			 */
 			ved_close(req, 0);
-			return;
+			return (VTR_D_DONE);
 		}
 
 		INIT_OBJ(foo, VED_FOO_MAGIC);
@@ -948,4 +948,5 @@ ved_deliver(struct req *req, int wantbody)
 		req->doclose = SC_REM_CLOSE;
 
 	ved_close(req, i && ecx->abrt ? 1 : 0);
+	return (VTR_D_DONE);
 }

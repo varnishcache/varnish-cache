@@ -34,6 +34,7 @@
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
 #include "cache_http1.h"
+#include "cache/cache_transport.h"
 
 #include "vtcp.h"
 
@@ -67,7 +68,7 @@ v1d_error(struct req *req, struct v1l **v1lp, const char *msg)
 /*--------------------------------------------------------------------
  */
 
-void v_matchproto_(vtr_deliver_f)
+enum vtr_deliver_e v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, int sendbody)
 {
 	struct vrt_ctx ctx[1];
@@ -99,7 +100,7 @@ V1D_Deliver(struct req *req, int sendbody)
 
 	if (v1l == NULL) {
 		v1d_error(req, &v1l, "Failure to init v1d (workspace_thread overflow)");
-		return;
+		return (VTR_D_DONE);
 	}
 
 	if (sendbody) {
@@ -116,23 +117,23 @@ V1D_Deliver(struct req *req, int sendbody)
 		VCL_Req2Ctx(ctx, req);
 		if (VDP_Push(ctx, req->vdc, req->ws, VDP_v1l, v1l)) {
 			v1d_error(req, &v1l, "Failure to push v1d processor");
-			return;
+			return (VTR_D_DONE);
 		}
 	}
 
 	if (WS_Overflowed(req->ws)) {
 		v1d_error(req, &v1l, "workspace_client overflow");
-		return;
+		return (VTR_D_DONE);
 	}
 
 	if (WS_Overflowed(req->sp->ws)) {
 		v1d_error(req, &v1l, "workspace_session overflow");
-		return;
+		return (VTR_D_DONE);
 	}
 
 	if (WS_Overflowed(req->wrk->aws)) {
 		v1d_error(req, &v1l, "workspace_thread overflow");
-		return;
+		return (VTR_D_DONE);
 	}
 
 	hdrbytes = HTTP1_Write(v1l, req->resp, HTTP1_Resp);
@@ -156,4 +157,5 @@ V1D_Deliver(struct req *req, int sendbody)
 		sc = SC_REM_CLOSE;
 	if (sc != SC_NULL)
 		Req_Fail(req, sc);
+	return (VTR_D_DONE);
 }

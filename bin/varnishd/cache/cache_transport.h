@@ -38,7 +38,13 @@
 struct req;
 struct boc;
 
-typedef void vtr_deliver_f (struct req *, int sendbody);
+enum vtr_deliver_e {
+	VTR_D_INVAL = 0,
+	VTR_D_DONE = 1,
+	VTR_D_DISEMBARK
+};
+
+typedef enum vtr_deliver_e vtr_deliver_f (struct req *, int sendbody);
 typedef void vtr_req_body_f (struct req *);
 typedef void vtr_sess_panic_f (struct vsb *, const struct sess *);
 typedef void vtr_req_panic_f (struct vsb *, const struct req *);

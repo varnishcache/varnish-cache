@@ -430,6 +430,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_transmit(struct worker *wrk, struct req *req)
 {
+	enum req_fsm_nxt nxt = REQ_FSM_MORE;
+	enum vtr_deliver_e dnxt;
 	uint16_t status;
 	int sendbody, head;
 	intmax_t clval;
@@ -441,6 +443,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	AZ(req->stale_oc);
 	AZ(req->res_mode);
 	AZ(req->boc);
+	req->req_step = R_STP_FINISH;
 
 	/* Grab a ref to the bo if there is one (=streaming) */
 	req->boc = HSH_RefBoc(req->objcore);
@@ -498,10 +501,13 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		}
 		if (req->resp_len == 0)
 			sendbody = 0;
-		req->transport->deliver(req, sendbody);
+		dnxt = req->transport->deliver(req, sendbody);
+		if (dnxt == VTR_D_DISEMBARK)
+			nxt = REQ_FSM_DISEMBARK;
+		else
+			assert(dnxt == VTR_D_DONE);
 	}
-	req->req_step = R_STP_FINISH;
-	return (REQ_FSM_MORE);
+	return (nxt);
 }
 
 static enum req_fsm_nxt v_matchproto_(req_state_f)
@@ -1180,6 +1186,7 @@ CNT_Request(struct req *req)
 	 */
 	assert(
 	    req->req_step == R_STP_LOOKUP ||
+	    req->req_step == R_STP_FINISH ||
 	    req->req_step == R_STP_TRANSPORT);
 
 	AN(VXID_TAG(req->vsl->wid) & VSL_CLIENTMARKER);
