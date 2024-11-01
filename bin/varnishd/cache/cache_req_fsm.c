@@ -429,7 +429,6 @@ cnt_synth(struct worker *wrk, struct req *req)
 static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_transmit(struct worker *wrk, struct req *req)
 {
-	struct boc *boc;
 	uint16_t status;
 	int sendbody, head;
 	intmax_t clval;
@@ -440,17 +439,18 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	AZ(req->stale_oc);
 	AZ(req->res_mode);
+	AZ(req->boc);
 
 	/* Grab a ref to the bo if there is one (=streaming) */
-	boc = HSH_RefBoc(req->objcore);
-	if (boc && boc->state < BOS_STREAM)
+	req->boc = HSH_RefBoc(req->objcore);
+	if (req->boc && req->boc->state < BOS_STREAM)
 		ObjWaitState(req->objcore, BOS_STREAM);
 	clval = http_GetContentLength(req->resp);
 	/* RFC 7230, 3.3.3 */
 	status = http_GetStatus(req->resp);
 	head = http_method_eq(req->http0->hd[HTTP_HDR_METHOD].b, HEAD);
 
-	if (boc != NULL || (req->objcore->flags & (OC_F_FAILED)))
+	if (req->boc != NULL || (req->objcore->flags & (OC_F_FAILED)))
 		req->resp_len = clval;
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
@@ -470,7 +470,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 		req->acct.resp_bodybytes +=
-			VDP_Close(req->vdc, req->objcore, boc);
+			VDP_Close(req->vdc, req->objcore, req->boc);
 	} else {
 		if (status < 200 || status == 204) {
 			// rfc7230,l,1691,1695
@@ -497,7 +497,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		}
 		if (req->resp_len == 0)
 			sendbody = 0;
-		req->transport->deliver(req, boc, sendbody);
+		req->transport->deliver(req, req->boc, sendbody);
 	}
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
@@ -508,8 +508,10 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		req->doclose = SC_TX_ERROR;
 	}
 
-	if (boc != NULL)
+	if (req->boc != NULL) {
 		HSH_DerefBoc(wrk, req->objcore);
+		req->boc = NULL;
+	}
 
 	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 	http_Teardown(req->resp);

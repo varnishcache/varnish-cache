@@ -537,6 +537,7 @@ struct req {
 	struct ws		ws[1];
 	struct objcore		*objcore;
 	struct objcore		*stale_oc;
+	struct boc		*boc;		/* valid during cnt_transmit */
 
 	/* resp.body */
 	struct vdp_ctx		*vdc;
