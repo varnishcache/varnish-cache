@@ -332,6 +332,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->methods = priv_vcl_methods;
 
 	debug_add_filters(ctx);
+	debug_transport_init();
 	return (0);
 }
 
@@ -1280,4 +1281,10 @@ xyzzy_resolve_range(VRT_CTX, struct VARGS(resolve_range) *args)
 		VSB_printf(p.vsb, "%s%s", VSB_len(p.vsb) ? ", " : "Failed: ",
 		    *(p.errp));
 	return (WS_VSB_finish(p.vsb, ctx->ws, NULL));
+}
+
+VCL_VOID
+xyzzy_use_reembarking_http1(VRT_CTX)
+{
+	debug_transport_use_reembarking_http1(ctx);
 }

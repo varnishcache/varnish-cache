@@ -1,0 +1,39 @@
+varnishtest "VMOD debug reembarking transport"
+
+server s1 {
+	rxreq
+	txresp -bodylen 131072
+} -start
+
+varnish v1 \
+    -vcl+backend {
+	import debug;
+
+	sub vcl_hash {
+		hash_data("");
+		return (lookup);
+	}
+
+	sub vcl_deliver {
+		if (req.url == "/chunked") {
+			set resp.filters = "debug.chunked";
+		}
+		debug.use_reembarking_http1();
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set debug +req_state"
+
+client c1 -repeat 16 -keepalive {
+	txreq
+	rxresp
+} -start
+
+client c2 -repeat 16 -keepalive {
+	txreq -url "/chunked"
+	rxresp
+} -start
+
+client c1 -wait
+client c2 -wait

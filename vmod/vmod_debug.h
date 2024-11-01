@@ -33,3 +33,9 @@ void
 debug_add_filters(VRT_CTX);
 void
 debug_remove_filters(VRT_CTX);
+
+/* vmod_debug_transports.c */
+void
+debug_transport_use_reembarking_http1(VRT_CTX);
+void
+debug_transport_init(void);
