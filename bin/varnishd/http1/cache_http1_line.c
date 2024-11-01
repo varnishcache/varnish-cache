@@ -58,14 +58,14 @@ struct v1l {
 	int			*wfd;
 	stream_close_t		werr;	/* valid after V1L_Flush() */
 	struct iovec		*iov;
-	unsigned		siov;
-	unsigned		niov;
-	ssize_t			liov;
-	ssize_t			cliov;
-	unsigned		ciov;	/* Chunked header marker */
+	int			siov;
+	int			niov;
+	size_t			liov;
+	size_t			cliov;
+	int			ciov;	/* Chunked header marker */
 	vtim_real		deadline;
 	struct vsl_log		*vsl;
-	ssize_t			cnt;	/* Flushed byte count */
+	uint64_t		cnt;	/* Flushed byte count */
 	struct ws		*ws;
 	uintptr_t		ws_snap;
 	void			**vdp_priv;
@@ -113,8 +113,8 @@ V1L_Open(struct ws *ws, int *fd, struct vsl_log *vsl,
 	if (niov != 0 && u > niov)
 		u = niov;
 	v1l->iov = WS_Reservation(ws);
-	v1l->siov = u;
-	v1l->ciov = u;
+	v1l->siov = (int)u;
+	v1l->ciov = (int)u;
 	v1l->wfd = fd;
 	v1l->deadline = deadline;
 	v1l->vsl = vsl;
@@ -150,10 +150,14 @@ V1L_Close(struct v1l **v1lp, uint64_t *cnt)
 }
 
 static void
-v1l_prune(struct v1l *v1l, size_t bytes)
+v1l_prune(struct v1l *v1l, ssize_t abytes)
 {
-	ssize_t used = 0;
-	ssize_t j, used_here;
+	size_t used = 0;
+	size_t sz, bytes, used_here;
+	int j;
+
+	assert(abytes > 0);
+	bytes = (size_t)abytes;
 
 	for (j = 0; j < v1l->niov; j++) {
 		if (used + v1l->iov[j].iov_len > bytes) {
@@ -162,9 +166,11 @@ v1l_prune(struct v1l *v1l, size_t bytes)
 			v1l->iov[j].iov_len -= used_here;
 			v1l->iov[j].iov_base =
 			    (char*)v1l->iov[j].iov_base + used_here;
-			memmove(v1l->iov, &v1l->iov[j],
-			    (v1l->niov - j) * sizeof(struct iovec));
+			sz = (unsigned)v1l->niov - (unsigned)j;
+			sz *= sizeof(struct iovec);
+			memmove(v1l->iov, &v1l->iov[j], sz);
 			v1l->niov -= j;
+			assert(v1l->liov >= bytes);
 			v1l->liov -= bytes;
 			return;
 		}
@@ -177,6 +183,7 @@ stream_close_t
 V1L_Flush(struct v1l *v1l)
 {
 	ssize_t i;
+	size_t sz;
 	int err;
 	char cbuf[32];
 
@@ -190,13 +197,13 @@ V1L_Flush(struct v1l *v1l)
 		if (v1l->ciov < v1l->siov && v1l->cliov > 0) {
 			/* Add chunk head & tail */
 			bprintf(cbuf, "00%zx\r\n", v1l->cliov);
-			i = strlen(cbuf);
+			sz = strlen(cbuf);
 			v1l->iov[v1l->ciov].iov_base = cbuf;
-			v1l->iov[v1l->ciov].iov_len = i;
-			v1l->liov += i;
+			v1l->iov[v1l->ciov].iov_len = sz;
+			v1l->liov += sz;
 
 			/* This is OK, because siov was --'ed */
-			v1l->iov[v1l->niov].iov_base = cbuf + i - 2;
+			v1l->iov[v1l->niov].iov_base = cbuf + sz - 2;
 			v1l->iov[v1l->niov++].iov_len = 2;
 			v1l->liov += 2;
 		} else if (v1l->ciov < v1l->siov) {
@@ -217,11 +224,11 @@ V1L_Flush(struct v1l *v1l)
 			}
 
 			i = writev(*v1l->wfd, v1l->iov, v1l->niov);
-			if (i > 0)
-				v1l->cnt += i;
-
-			if (i == v1l->liov)
-				break;
+			if (i > 0) {
+				v1l->cnt += (size_t)i;
+				if ((size_t)i == v1l->liov)
+					break;
+			}
 
 			/* we hit a timeout, and some data may have been sent:
 			 * Remove sent data from start of I/O vector, then retry
@@ -265,15 +272,21 @@ V1L_Flush(struct v1l *v1l)
 }
 
 size_t
-V1L_Write(struct v1l *v1l, const void *ptr, ssize_t len)
+V1L_Write(struct v1l *v1l, const void *ptr, ssize_t alen)
 {
+	size_t len = 0;
 
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	AN(v1l->wfd);
-	if (len == 0 || *v1l->wfd < 0)
+	if (alen == 0 || *v1l->wfd < 0)
 		return (0);
-	if (len == -1)
+	if (alen > 0)
+		len = (size_t)alen;
+	else if (alen == -1)
 		len = strlen(ptr);
+	else
+		WRONG("alen");
+
 	assert(v1l->niov < v1l->siov);
 	v1l->iov[v1l->niov].iov_base = TRUST_ME(ptr);
 	v1l->iov[v1l->niov].iov_len = len;
@@ -355,7 +368,7 @@ static int v_matchproto_(vdp_bytes_f)
 v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
-	ssize_t wl = 0;
+	size_t wl = 0;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	AN(priv);
@@ -366,7 +379,7 @@ v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 		wl = V1L_Write(*priv, ptr, len);
 	if (act > VDP_NULL && V1L_Flush(*priv) != SC_NULL)
 		return (-1);
-	if (len != wl)
+	if ((size_t)len != wl)
 		return (-1);
 	return (0);
 }
