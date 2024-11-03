@@ -326,7 +326,7 @@ VCL objects
 A VCL object can be instantiated with the ``new`` keyword::
 
     sub vcl_init {
-        new b = directors.round_robin()
+        new b = directors.round_robin();
         b.add_backend(node1);
     }
 
