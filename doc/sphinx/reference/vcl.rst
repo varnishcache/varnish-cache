@@ -36,6 +36,39 @@ Starting with Varnish 4.0, each VCL file must start by declaring its
 version with ``vcl`` *<major>.<minor>*\ ``;`` marker at the top of
 the file.  See more about this under Versioning below.
 
+.. _Identifiers:
+
+Identifiers
+-----------
+
+VCL language elements are generally written in ASCII.
+
+Identifiers start with an ASCII alphabetic character and continue with any
+combination of alphabetic or numerical character, ``-`` or ``_``.
+
+To illustrate, ``e1xam_p-le`` is a valid identifier, ``1try`` and
+``a%remainder`` are not.
+
+Character Sets
+--------------
+
+.. _VMODs: https://varnish-cache.org/docs/trunk/reference/vmod.html
+
+While identifiers are written in ASCII, strings can contain any character set
+as long as the *NUL* (zero, 0) byte is reserved. The Varnish Configuration
+Language itself is not concerned with the character encoding of strings, VCL
+code handling strings in different character sets needs to track encodings
+itself. `VMODs`_ exist to help with such tasks.
+
+To illustrate, ``"🥬"`` is a valid UTF-8 *string* in UTF-8, but ``🥬`` is not a
+valid *identifier*.
+
+Character Sets in HTTP
+----------------------
+
+Not all valid strings in VCL are valid in HTTP elements other than the body
+(e.g. URLs and headers). For example, HTTP header field values can not contain
+control characters, see also the ``validate_headers`` :ref:`ref_param_feature`.
 
 Operators
 ---------
@@ -329,6 +362,9 @@ A VCL object can be instantiated with the ``new`` keyword::
         new b = directors.round_robin();
         b.add_backend(node1);
     }
+
+The object name (``b`` in the example) needs to be a valid :ref:`Identifier
+<Identifiers>`.
 
 This is only available in ``vcl_init``.
 
