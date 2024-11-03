@@ -45,7 +45,6 @@
 #include <sys/vfs.h>
 
 #include "mgt/mgt.h"
-#include "common/heritage.h"
 
 static int
 vjl_init(char **args)
