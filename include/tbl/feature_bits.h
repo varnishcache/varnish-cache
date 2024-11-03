@@ -79,7 +79,7 @@ FEATURE_BIT(WAIT_SILO,			wait_silo,
 )
 
 FEATURE_BIT(VALIDATE_HEADERS,		validate_headers,
-    "Validate all header set operations to conform to RFC7230."
+    "Validate all header set operations to conform to RFC9110 section 5.5."
 )
 
 FEATURE_BIT(BUSY_STATS_RATE,	busy_stats_rate,

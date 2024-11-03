@@ -539,8 +539,14 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 	return (r);
 }
 
-// rfc7230,l,1243,1244
-// ASCII VCHAR + TAB + obs-text (0x80-ff)
+
+// rfc9110,l,1585,1589
+//     field-content  = field-vchar
+//                      [ 1*( SP / HTAB / field-vchar ) field-vchar ]
+//     field-vchar    = VCHAR / obs-text
+//     obs-text       = %x80-FF
+//
+// This implementation is less strict, see #4221
 static inline VCL_BOOL
 validhdr(const char *p)
 {

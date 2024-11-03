@@ -374,7 +374,7 @@ A function mixing a named PRIV_TASK with optional parameters.
 
 $Function BOOL validhdr(STRANDS)
 
-Test if the argument is a valid header according to RFC7230 section 3.2.
+Test if the argument is a valid header according to RFC9110 section 5.5.
 
 $Function REGEX just_return_regex(REGEX)
 

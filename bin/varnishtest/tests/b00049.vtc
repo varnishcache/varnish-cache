@@ -1,4 +1,4 @@
-varnishtest "RFC 7230 compliance"
+varnishtest "RFC 9110 compliance"
 
 server s1 {
 	rxreq
