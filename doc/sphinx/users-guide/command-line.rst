@@ -8,10 +8,10 @@
 Required command line arguments
 -------------------------------
 
-There a two command line arguments you have to set when starting Varnish, these are:
+There only one command line argument you have to provide when starting Varnish,
+which is '-b' for where the backend server can be contacted.
 
-* what TCP port to serve HTTP from, and
-* where the backend server can be contacted.
+'-a' is another argument which is likely to require adjustment.
 
 If you have installed Varnish through using a provided operating system bound package,
 you will find the startup options here:
@@ -21,31 +21,31 @@ you will find the startup options here:
 * FreeBSD: `/etc/rc.conf` (See also: /usr/local/etc/rc.d/varnishd)
 
 
-'-a' *listen_address*
-^^^^^^^^^^^^^^^^^^^^^
+'-a' *<[name=][listen_address[,PROTO|,option=value,...]]>*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The '-a' argument defines what address Varnish should listen to, and service HTTP requests from.
+Each '-a' argument defines one endpoint which Varnish should service HTTP
+requests on.
 
-You will most likely want to set this to ":80" which is the Well
-Known Port for HTTP.
+The default is ``:80,http`` to listen on the Well Known Port for HTTP. If your
+webserver runs on the same machine, you will likely have to move it to another
+port number or bind it to a loopback address first.
 
-You can specify multiple addresses separated by a comma, and you
-can use numeric or host/service names if you like, Varnish will try
-to open and service as many of them as possible, but if none of them
-can be opened, `varnishd` will not start.
+Multiple '-a' arguments can be provided to service multiple endpoints. *name* is
+the ``local.socket`` name for VCL. *listen_address* can be an IPv4 or IPv6
+address with a port, a unix domain socket path or an abstract socket. See
+:ref:`varnishd(1)` for more details.
 
 Here are some examples::
 
-	-a :80
-	-a localhost:80
+	-a http=:80
+	-a localhost:80,HTTP
 	-a 192.168.1.100:8080
 	-a '[fe80::1]:80'
 	-a '0.0.0.0:8080,[::]:8081'
+        -a uds=/my/path,PROXY,mode=666
+        -a @abstract_socket
 
-.. XXX:brief explanation of some of the more complex examples perhaps? benc
-
-If your webserver runs on the same machine, you will have to move
-it to another port number first.
 
 '-f' *VCL-file* or '-b' *backend*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
