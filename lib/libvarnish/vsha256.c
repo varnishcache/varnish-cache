@@ -31,8 +31,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #ifndef __DARWIN_BYTE_ORDER
 #  include <endian.h>
 #  define VBYTE_ORDER	__BYTE_ORDER
@@ -42,6 +40,7 @@
 #  define VBIG_ENDIAN	__DARWIN_BIG_ENDIAN
 #endif
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
 
