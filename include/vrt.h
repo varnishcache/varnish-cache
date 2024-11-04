@@ -58,7 +58,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2024-03-15)
- * 20.1
+ * 20.1 (2024-11-08)
  *	VDI_EVENT_SICK added to enum vcl_event_e
  * 20.0 (2024-09-13)
  *	struct vrt_backend.backend_wait_timeout added
