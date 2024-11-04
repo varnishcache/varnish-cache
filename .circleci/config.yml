@@ -228,19 +228,23 @@ jobs:
           command: |
             case "<< parameters.dist >>" in
             almalinux|fedora)
-                dnf -y groupinstall "Development Tools"
                 case "<< parameters.dist >>:<< parameters.release >>" in
                     almalinux:9)
                         dnf -y install "dnf-command(config-manager)"
                         dnf config-manager --set-enabled crb
                         dnf -y install diffutils
                         dnf -y install epel-release
+                        dnf -y groupinstall "Development Tools"
                         ;;
                     almalinux:8)
                         dnf -y install "dnf-command(config-manager)"
                         dnf config-manager --set-enabled powertools
                         dnf -y install diffutils
                         dnf -y install epel-release
+                        dnf -y groupinstall "Development Tools"
+                        ;;
+                    fedora:*)
+                        dnf -y group install development-tools
                         ;;
                 esac
                 dnf -y install \
