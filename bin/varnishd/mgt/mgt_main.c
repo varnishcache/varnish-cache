@@ -92,6 +92,8 @@ mgt_DumpOptions(void)
 	       "compiled VCLs etc.\n\n");
 	printf("  In performance critical applications, this directory "
 	       "should be on a RAM backed filesystem.\n\n");
+	printf("  When running multiple varnishd instances, separate "
+	       "directories need to be used.\n\n");
 	VIN_DumpDefaults();
 }
 
