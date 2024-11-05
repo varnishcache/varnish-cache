@@ -82,7 +82,6 @@ http1_req(struct worker *wrk, void *arg)
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
 
 	THR_SetRequest(req);
-	req->transport = &HTTP1_transport;
 	assert(!WS_IsReserved(wrk->aws));
 	HTTP1_Session(wrk, req);
 	AZ(wrk->v1l);
@@ -309,8 +308,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	 */
 	if (http1_getstate(sp) == H1NEWREQ)
 		VTCP_blocking(sp->fd);
-
-	req->transport = &HTTP1_transport;
+	req->transport = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
 
 	while (1) {
 		st = http1_getstate(sp);
