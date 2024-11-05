@@ -272,7 +272,7 @@ static VTAILQ_HEAD(,transport)	transports =
 
 static uint16_t next_xport;
 
-static void
+void
 XPORT_Register(struct transport *xp)
 {
 

@@ -85,6 +85,7 @@ void H2_PU_Sess(struct worker *, struct sess *, struct req *);
 void H2_OU_Sess(struct worker *, struct sess *, struct req *);
 
 const struct transport *XPORT_ByNumber(uint16_t no);
+void XPORT_Register(struct transport *xp);
 int VPX_Send_Proxy(int fd, int version, const struct sess *);
 
 /* cache_session.c */
