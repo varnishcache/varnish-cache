@@ -114,7 +114,10 @@ http1_new_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	HTC_RxInit(req->htc, req->ws);
-	if (!SES_Reserve_proto_priv(sp, &u, &sz)) {
+
+	sz = sizeof u;
+	if (SES_Get_proto_priv(sp, &u) &&
+	    !SES_Reserve_proto_priv(sp, &u, &sz)) {
 		/* Out of session workspace. Free the req, close the sess,
 		 * and do not set a new task func, which will exit the
 		 * worker thread. */
