@@ -579,7 +579,7 @@ VRT_r_req_##nm(VRT_CTX)							\
 #define REQ_VAR_U(nm, elem, val)					\
 									\
 VCL_VOID								\
-VRT_u_req_##nm(VRT_CTX)						\
+VRT_u_req_##nm(VRT_CTX)							\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
