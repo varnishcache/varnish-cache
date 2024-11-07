@@ -35,7 +35,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.6.1 (unreleased)
+Varnish Cache 7.6.1 (2024-11-08)
 ================================
 
 * Fixed a bug introduced in 7.6.0 that could trigger a panic when using dynamic
