@@ -35,6 +35,30 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 7.6.1 (unreleased)
+================================
+
+* Fixed a bug introduced in 7.6.0 that could trigger a panic when using dynamic
+  backends (4183_).
+
+* Resolved a race condition that caused Varnish to exceed the connection limit
+  set to a backend with the `.max_connections` attribute (4154_).
+
+* Fixed an assertion that was added in 7.6.0 and that could lead to a panic in
+  the waiter code under certain conditions (4204_).
+
+* Removed an assertion on the pid value of varnishd that could trigger a panic in
+  container environments.
+
+* Added attempt to raise RLIMIT_MEMLOCK to infinity on startup and improved logging
+  for VSM mlock() errors. (4193_)
+
+.. _4183: https://github.com/varnishcache/varnish-cache/issues/4183
+.. _4154: https://github.com/varnishcache/varnish-cache/pull/4154
+.. _4204: https://github.com/varnishcache/varnish-cache/issues/4204
+.. _4193: https://github.com/varnishcache/varnish-cache/issues/4193
+
+================================
 Varnish Cache 7.6.0 (2024-09-13)
 ================================
 
