@@ -41,9 +41,33 @@ Varnish Cache NEXT (2025-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
-* The scope of VCL variables `req.is_hitmiss` and `req.is_hitpass` is now restricted
-  to `vcl_miss, vcl_deliver, vcl_pass, vcl_synth` and `vcl_pass, vcl_deliver, vcl_synth`
-  respectively.
+* The scope of VCL variables ``req.is_hitmiss`` and ``req.is_hitpass`` is now
+  restricted to ``vcl_miss, vcl_deliver, vcl_pass, vcl_synth`` and ``vcl_pass,
+  vcl_deliver, vcl_synth`` respectively.
+
+================================
+Varnish Cache 7.6.1 (2024-11-08)
+================================
+
+* Fixed a bug introduced in 7.6.0 that could trigger a panic when using dynamic
+  backends (4183_).
+
+* Resolved a race condition that caused Varnish to exceed the connection limit
+  set to a backend with the ``.max_connections`` attribute (4154_).
+
+* Fixed an assertion that was added in 7.6.0 and that could lead to a panic in
+  the waiter code under certain conditions (4204_).
+
+* Removed an assertion on the pid value of varnishd that could trigger a panic in
+  container environments.
+
+* Added attempt to raise RLIMIT_MEMLOCK to infinity on startup and improved logging
+  for VSM mlock() errors. (4193_)
+
+.. _4183: https://github.com/varnishcache/varnish-cache/issues/4183
+.. _4154: https://github.com/varnishcache/varnish-cache/pull/4154
+.. _4204: https://github.com/varnishcache/varnish-cache/issues/4204
+.. _4193: https://github.com/varnishcache/varnish-cache/issues/4193
 
 ================================
 Varnish Cache 7.6.0 (2024-09-13)
