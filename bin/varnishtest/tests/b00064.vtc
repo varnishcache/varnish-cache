@@ -33,6 +33,10 @@ varnish v1 -vcl+backend {
 		if (req.http.X-no-grace) {
 			set req.grace = 0s;
 		}
+		if (req.http.X-but-grace) {
+			unset req.grace;
+		}
+		set req.http.req-grace = req.grace;
 	}
 	sub vcl_hit {
 		set req.http.X-grace = obj.grace;
@@ -106,12 +110,11 @@ client c3 {
 
 delay .1
 
-# c4 does not disable grace, and should get the grace object even
-# though c3 is waiting on the background thread to deliver a new
-# version.
+# c4 unsets req.grace after sessing it and should get the grace object even
+# though c3 is waiting on the background thread to deliver a new version.
 
 client c4 {
-	txreq
+	txreq -hdr "X-no-grace: true" -hdr "X-but-grace: true"
 	rxresp
 	barrier b1 sync
 	expect resp.status == 200
