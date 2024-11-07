@@ -33,8 +33,16 @@
 
 #ifndef __DARWIN_BYTE_ORDER
 #  include <endian.h>
-#  define VBYTE_ORDER	__BYTE_ORDER
-#  define VBIG_ENDIAN	__BIG_ENDIAN
+#  ifdef _BYTE_ORDER
+#    define VBYTE_ORDER	_BYTE_ORDER
+#  else
+#    define VBYTE_ORDER	__BYTE_ORDER
+#  endif
+#  ifdef _BIG_ENDIAN
+#    define VBIG_ENDIAN	_BIG_ENDIAN
+#  else
+#    define VBIG_ENDIAN	__BIG_ENDIAN
+#  endif
 #else
 #  define VBYTE_ORDER	__DARWIN_BYTE_ORDER
 #  define VBIG_ENDIAN	__DARWIN_BIG_ENDIAN
