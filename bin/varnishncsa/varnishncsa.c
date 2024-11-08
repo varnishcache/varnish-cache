@@ -939,6 +939,9 @@ frag_line(enum format_policy fp, const char *b, const char *e,
 		/* We only grab the same matching record once */
 		return;
 
+	if (e == NULL)
+		e = b + strlen(b);
+
 	/* Skip leading space */
 	while (b < e && isspace(*b))
 		++b;
