@@ -54,13 +54,15 @@ Character Sets
 
 .. _VMODs: https://varnish-cache.org/docs/trunk/reference/vmod.html
 
-While identifiers are written in ASCII, strings can contain any character set
-as long as the *NUL* (zero, 0) byte is reserved. The Varnish Configuration
-Language itself is not concerned with the character encoding of strings, VCL
-code handling strings in different character sets needs to track encodings
-itself. `VMODs`_ exist to help with such tasks.
+While identifiers can only consist of this subset of ASCII, **strings** can
+contain any bytes except *NUL* (zero, 0), which marks the end of the string. The
+Varnish Configuration Language itself is not concerned with the character
+encoding of strings. VCL code handling strings in different character sets needs
+to track encodings itself. `VMODs`_ exist to help with such tasks (e.g.
+``iconv``).
 
-To illustrate, ``"🥬"`` is a valid UTF-8 *string* in UTF-8, but ``🥬`` is not a
+To illustrate, ``"🥬"`` is a valid **string** which, when interpreted as UTF-8,
+happens to represent code point ``U+1F96C`` (Leafy Green) but ``🥬`` is not a
 valid *identifier*.
 
 Character Sets in HTTP
