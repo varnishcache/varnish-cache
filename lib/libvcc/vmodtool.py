@@ -770,6 +770,7 @@ class ObjectStanza(Stanza):
         self.rstlbl = '%s.%s()' % (self.vcc.modname, self.proto.name)
         self.vcc.contents.append(self)
         self.methods = []
+        self.cli = None
 
     def rsthead(self, fo, man):
         if self.rstlbl:
@@ -803,11 +804,15 @@ class ObjectStanza(Stanza):
         fo.write(self.fini.cproto(['struct %s **' % sn], w))
         for i in self.methods:
             fo.write(i.proto.cproto(['VRT_CTX', 'struct %s *' % sn], w))
+        if self.cli is not None:
+            fo.write(self.cli.proto.cproto(['VRT_CTX', 'struct %s *' % sn], w))
         fo.write("\n")
 
     def cstruct(self, fo, define):
         self.fmt_cstruct_proto(fo, self.init, define)
         self.fmt_cstruct_proto(fo, self.fini, define)
+        if self.cli is not None:
+            self.cli.cstruct(fo, define)
         for i in self.methods:
             i.cstruct(fo, define)
         fo.write("\n")
@@ -828,6 +833,9 @@ class ObjectStanza(Stanza):
         l2 = ["$FINI"]
         ll.append(l2)
         self.fini.jsonproto(l2, self.fini.name)
+
+        if self.cli is not None:
+            self.cli.json(ll)
 
         for i in self.methods:
             i.json(ll)
@@ -933,6 +941,39 @@ class AliasStanza(Stanza):
 
 #######################################################################
 
+
+class CliStanza(Stanza):
+
+    ''' $Cli INT name (STRANDS) '''
+
+    def parse(self):
+        p = self.vcc.contents[-1]
+        assert isinstance(p, ObjectStanza)
+        self.pfx = p.proto.name
+        self.proto = ProtoType(self, prefix=self.pfx)
+        if p.cli is not None:
+            err("$Cli %s.%s: Cli method already defined for this class"
+                % (self.pfx, self.proto.bname), warn=False)
+        if self.proto.retval.vt != "INT":
+            err("$Cli %s.%s: Return value needs to be INT"
+                % (self.pfx, self.proto.bname), warn=False)
+        if len(self.proto.args) != 1 or self.proto.args[0].vt != 'STRANDS':
+            err("$Cli %s.%s: Need single argument of type STRANDS"
+                % (self.pfx, self.proto.bname), warn=False)
+#       self.proto.obj = "x" + self.pfx
+#       self.rstlbl = 'x%s()' % self.proto.name
+        p.cli = self
+
+    def cstruct(self, fo, define):
+        self.fmt_cstruct_proto(fo, self.proto, define)
+
+    def json(self, jl):
+        jl.append(["$CLI", self.proto.name])
+        self.proto.jsonproto(jl[-1], self.proto.cname())
+
+
+#######################################################################
+
 DISPATCH = {
     "Module":   ModuleStanza,
     "Prefix":   PrefixStanza,
@@ -941,6 +982,7 @@ DISPATCH = {
     "Function": FunctionStanza,
     "Object":   ObjectStanza,
     "Method":   MethodStanza,
+    "Cli":      CliStanza,
     "Synopsis": SynopsisStanza,
     "Alias":    AliasStanza,
     "Restrict": RestrictStanza,
