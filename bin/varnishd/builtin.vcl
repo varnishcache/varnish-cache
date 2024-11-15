@@ -266,6 +266,19 @@ sub vcl_backend_error {
 }
 
 sub vcl_builtin_backend_error {
+	call vcl_refresh_error;
+	call vcl_beresp_error;
+}
+
+sub vcl_refresh_error {
+	if (beresp.was_304) {
+		unset bereq.http.If-Modified-Since;
+		unset bereq.http.If-None-Match;
+		return (retry(fetch));
+	}
+}
+
+sub vcl_beresp_error {
 	set beresp.http.Content-Type = "text/html; charset=utf-8";
 	set beresp.http.Retry-After = "5";
 	set beresp.body = {"<!DOCTYPE html>
