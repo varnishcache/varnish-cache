@@ -311,7 +311,7 @@ vca_mk_uds(struct wrk_accept *wa, struct sess *sp)
 }
 
 static void v_matchproto_(task_func_t)
-vca_make_session(struct worker *wrk, void *arg)
+vca_uds_make_session(struct worker *wrk, void *arg)
 {
 	struct wrk_accept *wa;
 	struct sess *sp;
@@ -452,7 +452,7 @@ vca_uds_accept_task(struct worker *wrk, void *arg)
 		wa.acceptsock = i;
 
 		if (!Pool_Task_Arg(wrk, TASK_QUEUE_REQ,
-		    vca_make_session, &wa, sizeof wa)) {
+		    vca_uds_make_session, &wa, sizeof wa)) {
 			/*
 			 * We couldn't get another thread, so we will handle
 			 * the request in this worker thread, but first we
