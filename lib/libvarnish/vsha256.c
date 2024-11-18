@@ -40,6 +40,14 @@
 #  define VBIG_ENDIAN	__DARWIN_BIG_ENDIAN
 #endif
 
+#ifndef VBYTE_ORDER
+# error VBYTE_ORDER not defined
+#endif
+#ifndef VBIG_ENDIAN
+# error VBIG_ENDIAN not defined
+#endif
+
+
 #include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
@@ -50,7 +58,7 @@
 #include "vend.h"
 #include "vsha256.h"
 
-#if defined(VBYTE_ORDER) && VBYTE_ORDER == VBIG_ENDIAN
+#if VBYTE_ORDER == VBIG_ENDIAN
 
 /* Copy a vector of big-endian uint32_t into a vector of bytes */
 #define be32enc_vect(dst, src, len)	\
