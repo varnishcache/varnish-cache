@@ -184,6 +184,7 @@ SML_AllocBuf(struct worker *wrk, const struct stevedore *stv, size_t size,
 	if (st == NULL)
 		return (NULL);
 	assert(st->space >= size);
+	st->flags = STORAGE_F_BUFFER;
 	st->len = size;
 	*ppriv = (uintptr_t)st;
 	return (st->ptr);
@@ -198,6 +199,7 @@ SML_FreeBuf(struct worker *wrk, const struct stevedore *stv, uintptr_t priv)
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(st, (void *)priv, STORAGE_MAGIC);
+	assert(st->flags == STORAGE_F_BUFFER);
 	sml_stv_free(stv, st);
 }
 
