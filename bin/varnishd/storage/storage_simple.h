@@ -38,7 +38,8 @@
 struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
-
+	unsigned		flags;
+#define STORAGE_F_BUFFER	1
 
 	VTAILQ_ENTRY(storage)	list;
 	void			*priv;
