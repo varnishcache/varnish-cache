@@ -163,6 +163,8 @@ THR_SetName(const char *name)
 #  else
 	thr_setname_generic(name);
 #  endif
+#elif defined(HAVE_PTHREAD_SET_NAME_NP)
+	(void)pthread_set_name_np(pthread_self(), name);
 #endif
 }
 
