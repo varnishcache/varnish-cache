@@ -106,13 +106,15 @@ VCA_reopen_sockets(void)
 	return (fail);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * [name=][%kind,][listen_address[,PROTO|,option=value,...]]
+ */
 
 void
 VCA_Arg(const char *spec)
 {
-	struct acceptor *vca;
-	char **av;
+	struct acceptor *vca = NULL;
+	char **av, **ap;
 	struct listen_arg *la;
 	const char *err;
 	int error;
@@ -122,12 +124,21 @@ VCA_Arg(const char *spec)
 
 	av = MGT_NamedArg(spec, &name, "-a");
 	AN(av);
+	ap = av + 1;
 
 	ALLOC_OBJ(la, LISTEN_ARG_MAGIC);
 	AN(la);
 	VTAILQ_INIT(&la->socks);
 	VTAILQ_INSERT_TAIL(&listen_args, la, list);
-	la->endpoint = av[1];
+
+	if (ap[0] != NULL && ap[0][0] == '%') {
+		vca = VCA_Find(ap[0] + 1);
+		if (vca == NULL)
+			ARGV_ERR("Acceptor %s not found\n", ap[0] + 1);
+		ap++;
+	}
+
+	la->endpoint = *(ap++);
 
 	if (name == NULL) {
 		bprintf(name_buf, "a%u", seq++);
@@ -137,13 +148,13 @@ VCA_Arg(const char *spec)
 
 	la->name = name;
 
-	if (VUS_is(la->endpoint))
+	if (vca == NULL && VUS_is(la->endpoint))
 		vca = VCA_Find("uds");
-	else
+	else if (vca == NULL)
 		vca = VCA_Find("tcp");
 
 	AN(vca);
-	error = vca->open(av + 2, la, &err);
+	error = vca->open(ap, la, &err);
 
 	if (error) {
 		ARGV_ERR("Got no socket(s) for %s=%s (%s)\n",

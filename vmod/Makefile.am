@@ -31,6 +31,7 @@ include $(srcdir)/automake_boilerplate_blob.am
 include $(srcdir)/automake_boilerplate_h2.am
 include $(srcdir)/automake_boilerplate_cookie.am
 include $(srcdir)/automake_boilerplate_debug.am
+include $(srcdir)/automake_boilerplate_vext_debug.am
 include $(srcdir)/automake_boilerplate_directors.am
 include $(srcdir)/automake_boilerplate_proxy.am
 include $(srcdir)/automake_boilerplate_purge.am
@@ -55,6 +56,8 @@ vmod_debug_symbols_regex = 'Vmod_.*_Data'
 # not --strict
 vmodtoolargs_debug = --boilerplate -o vcc_debug_if
 
-dist_noinst_DATA = $(srcdir)/vmod_debug.vcc
+dist_noinst_DATA = \
+	$(srcdir)/vmod_debug.vcc \
+	$(srcdir)/vmod_vext_debug.vcc
 
 dist_vcc_DATA = $(vmod_vcc_files)

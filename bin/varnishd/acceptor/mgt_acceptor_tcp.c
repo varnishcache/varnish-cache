@@ -167,6 +167,7 @@ vca_tcp_open(char **av, struct listen_arg *la, const char **err)
 	CHECK_OBJ_NOTNULL(la, LISTEN_ARG_MAGIC);
 	AN(av);
 	AN(err);
+	AN(la->endpoint);
 	AZ(la->perms);
 
 	if (strchr(la->endpoint, '/') != NULL)
