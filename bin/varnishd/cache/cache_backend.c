@@ -246,6 +246,12 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	}
 	if (cw->cw_state != CW_BE_BUSY)
 		bp->n_conn++;
+
+	if (!VTAILQ_EMPTY(&bp->cw_head) && !BE_BUSY(bp)) {
+		/* Signal the new head of the waiting queue */
+		vbe_connwait_signal_locked(bp);
+	}
+
 	Lck_Unlock(bp->director->mtx);
 
 	if (cw->cw_state == CW_BE_BUSY) {
