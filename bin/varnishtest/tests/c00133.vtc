@@ -1,0 +1,86 @@
+varnishtest "Optimized HSH_Lookup - ban is checked after Vary is matched"
+
+server s1 {
+	rxreq
+	expect req.url == /foo
+	expect req.http.foobar == "1"
+	txresp -hdr "Vary: Foobar" -body "1111"
+
+	rxreq
+	expect req.url == /foo
+	expect req.http.foobar == "2"
+	txresp -hdr "Vary: Foobar" -body "2222"
+
+	rxreq
+	expect req.url == /foo
+	expect req.http.foobar == "3"
+	txresp -hdr "Vary: Foobar" -body "3333"
+
+	rxreq
+	expect req.url == /foo
+	expect req.http.foobar == "1"
+	txresp -hdr "Vary: Foobar" -body "1111"
+
+	rxreq
+	expect req.url == /foo
+	expect req.http.foobar == "1"
+	txresp -hdr "Vary: Foobar" -body "1111"	
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.url = bereq.url;
+	}
+} -start
+
+
+client c1 {
+	txreq -url /foo -hdr "Foobar: 1"
+	rxresp
+	expect resp.body == "1111"
+} -run
+
+client c1 {
+	txreq -url /foo -hdr "Foobar: 2" 
+	rxresp
+	expect resp.body == "2222"
+} -run
+
+client c1 {
+	txreq -url /foo -hdr "Foobar: 3" 
+	rxresp
+	expect resp.body == "3333"
+
+} -run
+
+varnish v1 -expect n_object == 3
+varnish v1 -expect cache_hit == 0
+varnish v1 -expect cache_miss == 3
+
+client c1 {
+	txreq -url /foo -hdr "Foobar: 1"
+	rxresp
+} -run
+
+varnish v1 -expect cache_hit == 1
+varnish v1 -expect cache_miss == 3
+
+varnish v1 -cliok "ban obj.http.url == /foo"
+varnish v1 -cliok "ban obj.http.url == /bar"
+varnish v1 -cliok "ban obj.http.url == /baz"
+
+client c1 {
+	txreq -url /foo -hdr "Foobar: 1"
+	rxresp
+} -run
+
+varnish v1 -expect bans_tested == 1
+varnish v1 -expect bans_tests_tested == 3
+varnish v1 -expect bans_obj_killed == 1
+varnish v1 -expect n_object == 3
+
+
+varnish v1 -expect cache_hit == 1
+varnish v1 -expect cache_miss == 4
+varnish v1 -expect client_req == 5
