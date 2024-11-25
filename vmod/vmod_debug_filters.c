@@ -463,7 +463,8 @@ xyzzy_chksha256_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 	struct vdp_chksha256_s *vdps;
 
 	CAST_OBJ_NOTNULL(vdps, *priv, VDP_CHKSHA256_MAGIC);
-	VSHA256_Update(vdps->cx, ptr, len);
+	if (len != 0)
+		VSHA256_Update(vdps->cx, ptr, len);
 	vdps->called++;
 	vdps->bytes += len;
 	return (VDP_bytes(vdc, act, ptr, len));
