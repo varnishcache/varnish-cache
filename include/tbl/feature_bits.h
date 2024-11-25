@@ -96,6 +96,10 @@ FEATURE_BIT(VCL_REQ_RESET,			vcl_req_reset,
     "When this happens MAIN.req_reset is incremented."
 )
 
+FEATURE_BIT(OVERFLOW_HTTP_RESP,			overflow_http_resp,
+    "Send an HTTP response instead of silently closing the socket"
+    "in case of RX_OVERFLOW.")
+
 #undef FEATURE_BIT
 
 /*lint -restore */
