@@ -196,7 +196,7 @@ dbg_deliver_finish(struct req *req, struct v1l **v1lp, int err)
 		Req_Fail(req, sc);
 }
 
-struct transport DBG_transport;
+static struct transport DBG_transport;
 
 void
 debug_transport_init(void)
