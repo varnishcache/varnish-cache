@@ -74,7 +74,7 @@ V1D_Deliver(struct req *req, int sendbody)
 	struct vrt_ctx ctx[1];
 	int err = 0, chunked = 0;
 	stream_close_t sc;
-	uint64_t hdrbytes, bytes;
+	uint64_t bytes;
 	struct v1l *v1l;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -136,7 +136,7 @@ V1D_Deliver(struct req *req, int sendbody)
 		return (VTR_D_DONE);
 	}
 
-	hdrbytes = HTTP1_Write(v1l, req->resp, HTTP1_Resp);
+	req->acct.resp_hdrbytes += HTTP1_Write(v1l, req->resp, HTTP1_Resp);
 
 	if (sendbody) {
 		if (DO_DEBUG(DBG_FLUSH_HEAD))
@@ -150,7 +150,6 @@ V1D_Deliver(struct req *req, int sendbody)
 
 	sc = V1L_Close(&v1l, &bytes);
 
-	req->acct.resp_hdrbytes += hdrbytes;
 	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, req->boc);
 
 	if (sc == SC_NULL && err && req->sp->fd >= 0)
