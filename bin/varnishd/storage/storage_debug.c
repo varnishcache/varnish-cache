@@ -79,7 +79,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 {
 	struct obj_methods *methods;
 	const char *ident;
-	int i, ac = 0;
+	int ac = 0;
 	size_t nac;
 	vtim_dur d, dinit = 0.0;
 	char **av;	//lint -e429
@@ -100,8 +100,8 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	nac++;
 	av = calloc(nac, sizeof *av);
 	AN(av);
-	for (i = 0; i < aac; i++) {
-		a = aav[i];
+	VARRAY_FOREACH(elem, aav, aac) {
+		a = *elem;
 		if (a != NULL) {
 			if (! strcmp(a, "lessspace")) {
 				methods->objgetspace = smd_lsp_getspace;

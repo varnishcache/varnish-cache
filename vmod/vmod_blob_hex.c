@@ -116,8 +116,8 @@ hex_decode(const enum encoding dec, blob_dest_t buf,
 	AN(strings);
 	assert(dec == HEX);
 
-	for (i = 0; i < strings->n; i++) {
-		s = strings->p[i];
+	VARRAY_FOREACH(elem, strings->p, strings->n) {
+		s = *elem;
 
 		if (s == NULL)
 			continue;

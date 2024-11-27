@@ -283,7 +283,7 @@ init_state(struct shard_state *state,
 VCL_BOOL
 sharddir_any_healthy(VRT_CTX, struct sharddir *shardd, VCL_TIME *changed)
 {
-	unsigned i, retval = 0;
+	unsigned retval = 0;
 	VCL_BACKEND be;
 	vtim_real c;
 
@@ -291,8 +291,8 @@ sharddir_any_healthy(VRT_CTX, struct sharddir *shardd, VCL_TIME *changed)
 	sharddir_rdlock(shardd);
 	if (changed != NULL)
 		*changed = 0;
-	for (i = 0; i < shardd->n_backend; i++) {
-		be = shardd->backend[i].backend;
+	VARRAY_FOREACH(elem, shardd->backend, shardd->n_backend) {
+		be = elem->backend;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		retval = VRT_Healthy(ctx, be, &c);
 		if (changed != NULL && c > *changed)
