@@ -270,3 +270,17 @@ typedef struct {
 /* #3020 dummy definitions until PR is merged*/
 #define LIKELY(x)	(x)
 #define UNLIKELY(x)	(x)
+
+/*
+ * VARRAY_FOREACH(var, arr, n):
+ *
+ * declare variable var and have it iterate over array arr of length n
+ */
+
+#define _varray_foreach(var, arr, n, end)					\
+	for (typeof(*(arr)) * var = (typeof(var))(arr), * end = var + n;	\
+	     var < end;								\
+	     var++)
+
+#define VARRAY_FOREACH(var, arr, n)						\
+	_varray_foreach(var, arr, n, VUNIQ_NAME(_v_ ## var ## _end))
