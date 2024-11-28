@@ -284,3 +284,23 @@ typedef struct {
 
 #define VARRAY_FOREACH(var, arr, n)						\
 	_varray_foreach(var, arr, n, VUNIQ_NAME(_v_ ## var ## _end))
+
+/*
+ * VPTRS_ITER(var, arr, n)
+ *
+ * given an array of pointers arr with length n,
+ * iterate variable var (declared outside the macro) over pointer values
+ *
+ * var has a broader scope to support keeping values from the array
+ */
+
+//lint -emacro(506, _vptrs_iter) constant value boolean
+#define _vptrs_iter(var, arr, n, iter, end)					\
+	for (typeof(*(arr)) * iter = (typeof(iter))(arr), * end = iter + n;	\
+	    iter < end && (var = *iter, 1);					\
+	    iter++)
+
+#define VPTRS_ITER(var, arr, n)							\
+	_vptrs_iter(var, arr, n,						\
+	    VUNIQ_NAME(_v_ ## var ## _iter),					\
+	    VUNIQ_NAME(_v_ ## var ## _end))
