@@ -104,7 +104,6 @@ HTTP1_Complete(struct http_conn *htc)
 
 /*--------------------------------------------------------------------
  * Dissect the headers of the HTTP protocol message.
- * Detect conditionals (headers which start with '^[Ii][Ff]-')
  */
 
 static uint16_t
