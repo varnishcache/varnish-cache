@@ -100,8 +100,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	nac++;
 	av = calloc(nac, sizeof *av);
 	AN(av);
-	VARRAY_FOREACH(elem, aav, aac) {
-		a = *elem;
+	VPTRS_ITER(a, aav, aac) {
 		if (a != NULL) {
 			if (! strcmp(a, "lessspace")) {
 				methods->objgetspace = smd_lsp_getspace;

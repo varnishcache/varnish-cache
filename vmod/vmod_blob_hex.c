@@ -115,9 +115,7 @@ hex_decode(const enum encoding dec, blob_dest_t buf,
 	AN(buf);
 	AN(strings);
 	assert(dec == HEX);
-
-	VARRAY_FOREACH(elem, strings->p, strings->n) {
-		s = *elem;
+	VPTRS_ITER(s, strings->p, strings->n) {
 
 		if (s == NULL)
 			continue;

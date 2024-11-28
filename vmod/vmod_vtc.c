@@ -498,9 +498,7 @@ vmod_vsl_replay(VRT_CTX, VCL_STRANDS s)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 	WS_VSB_new(cp, ctx->ws);
-
-	VARRAY_FOREACH(elem, s->p, s->n) {
-		p = *elem;
+	VPTRS_ITER(p, s->p, s->n) {
 		if (p == NULL || *p == '\0')
 			continue;
 		pp = strpbrk(p, "\r\n");

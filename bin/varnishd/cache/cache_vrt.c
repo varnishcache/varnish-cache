@@ -379,11 +379,9 @@ VRT_HashStrands32(VCL_STRANDS s)
 
 	AN(s);
 	VSHA256_Init(&sha_ctx);
-	VARRAY_FOREACH(elem, s->p, s->n) {
-		p = *elem;
+	VPTRS_ITER(p, s->p, s->n)
 		if (p != NULL && *p != '\0')
 			VSHA256_Update(&sha_ctx, p, strlen(p));
-	}
 	VSHA256_Final(sha256, &sha_ctx);
 
 	/* NB: for some reason vmod_director's shard director specifically
