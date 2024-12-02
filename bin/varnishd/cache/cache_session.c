@@ -302,7 +302,6 @@ HTC_RxPipeline(struct http_conn *htc, char *p)
  * number of bytes passed to func in htc->rxbuf_b through htc->rxbuf_e may
  * be larger.
  *
- * t0 is when we start
  * *t1 becomes time of first non-idle rx
  * *t2 becomes time of complete rx
  * ti is when we return IDLE if nothing has arrived
