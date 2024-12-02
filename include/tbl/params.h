@@ -1915,7 +1915,9 @@ PARAM_PRE
 PARAM_BITS(
 	/* name */	experimental,
 	/* fld */	experimental_bits,
-	/* def */	"none",
+	/* def */
+	"none,"
+	"+upstream_zlib",
 	/* descr */
 	"Enable/Disable experimental features.\n"
 	"\tnone\tDisable all experimental features\n\n"
