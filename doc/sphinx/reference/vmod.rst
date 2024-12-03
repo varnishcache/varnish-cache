@@ -196,6 +196,9 @@ declarations:
 	  with `n` starting at 1 and incrementing with the argument's
 	  position.
 
+Optionally, the VCL and C argument names can be specified independently using
+the ``<vclname>:<cname>`` syntax. See :ref:`ref-vmod-symbols` for details.
+
 .. _ref-vmod-vcl-c-objects:
 
 Objects and methods
@@ -550,13 +553,14 @@ For the above, the *<xxx>* placeholders are defined as:
         The vmod name fro the ``$Module`` stanza of the ``.vcc`` file.
 
 *<argument>*
-        The function or method argument name
+        The function or method argument *cname* or, if not given, *vclname*
+        as specified using the *<vclname>:<cname>* syntax.
 
 The other placeholders should be self-explanatory as the name of the respective
-function, class, method or handler name.
+function, class, method or handler.
 
-In summary, only some symbol names (those with *<prefix>*) can be influenced by
-the vmod author.
+In summary, symbol names can either be influenced by the vmod author globally
+using ``$Prefix``, or using the *<vclname>:<cname>* syntax for argument names.
 
 .. _ref-vmod-private-pointers:
 
