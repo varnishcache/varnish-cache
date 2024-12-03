@@ -162,7 +162,8 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
 	AN(vv3);
 	assert(vjsn_is_string(vv3));
 	vim->vmod_syntax = strtod(vv3->value, NULL);
-	assert (vim->vmod_syntax == 1.0);
+	if (vim->vmod_syntax != 2.0)
+		return ("Syntax != 2.0");
 
 	vv3 = VTAILQ_NEXT(vv3, list);
 	AN(vv3);

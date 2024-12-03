@@ -16,7 +16,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
 [
 	[
 	    "$VMOD",
-	    "1.0",
+	    "2.0",
 	    "wrong",
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
