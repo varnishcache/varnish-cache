@@ -59,12 +59,15 @@ varnish v1 -errvcl {Not string[2]} { import wrong; }
 filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02" "[[\"$VBLA\"]]" "\x03"
 varnish v1 -errvcl {Not $VMOD[3]} { import wrong; }
 
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02" "[[\"$VMOD\",\"1.0\"]]" "\x03"
+varnish v1 -errvcl {Syntax != 2.0} { import wrong; }
+
 filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
 filewrite -a ${tmpdir}/libvmod_wrong.so {
     [
 	[
 	    "$VMOD",
-	    "1.0",
+	    "2.0",
 	    "wrong",
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
@@ -82,7 +85,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
     [
 	[
 	    "$VMOD",
-	    "1.0",
+	    "2.0",
 	    "wrong",
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
@@ -103,7 +106,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
     [
 	[
 	    "$VMOD",
-	    "1.0",
+	    "2.0",
 	    "wrong",
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
@@ -123,7 +126,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
     [
 	[
 	    "$VMOD",
-	    "1.0",
+	    "2.0",
 	    "wrong",
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
@@ -141,7 +144,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
     [
 	[
 	    "$VMOD",
-	    "1.0",
+	    "2.0",
 	    "wrong",
 	    "Vmod_vmod_wrong_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",
@@ -163,7 +166,7 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
     [
 	[
 	    "$VMOD",
-	    "1.0",
+	    "2.0",
 	    "std",
 	    "Vmod_vmod_std_Func",
 	    "0000000000000000000000000000000000000000000000000000000000000000",

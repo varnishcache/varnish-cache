@@ -27,6 +27,10 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
+#
+# syntax version history:
+# 1.0: initial
+# 2.0: added cname (nm2) after argument name
 
 """
 Read the first existing file from arguments or vmod.vcc and produce:
@@ -319,7 +323,7 @@ class arg(CType):
         self.defval = x
 
     def jsonproto(self, jl):
-        jl.append([self.vt, self.nm, self.defval, self.spec])
+        jl.append([self.vt, self.nm, self.nm2, self.defval, self.spec])
         if self.opt:
             jl[-1].append(True)
         while jl[-1][-1] is None:
@@ -385,6 +389,8 @@ class ProtoType():
                 err("arguments cannot be of type '%s'" % t.vt, warn=False)
             if t.nm is None:
                 t.nm2 = "arg%d" % n
+            elif ':' in t.nm:
+                [t.nm, t.nm2] = t.nm.split(':')
             else:
                 t.nm2 = t.nm
             self.args.append(t)
@@ -466,8 +472,8 @@ class ProtoType():
         s = "\n" + self.argstructname() + " {\n"
         for i in self.args:
             if i.opt:
-                assert i.nm is not None
-                s += "\tchar\t\t\tvalid_%s;\n" % i.nm
+                assert i.nm2 is not None
+                s += "\tchar\t\t\tvalid_%s;\n" % i.nm2
         for i in self.args:
             s += "\t" + i.ct
             if len(i.ct) < 8:
@@ -1146,7 +1152,7 @@ class vcc():
 
     def iter_json(self, fnx):
 
-        jl = [["$VMOD", "1.0", self.modname, self.csn, self.file_id]]
+        jl = [["$VMOD", "2.0", self.modname, self.csn, self.file_id]]
         jl.append(["$CPROTO"])
         for i in open(fnx):
             jl[-1].append(i.rstrip())
