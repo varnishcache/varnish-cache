@@ -558,7 +558,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 			fa->result = vcc_priv_arg(tl, vvp->value, sym);
 			vvp = VTAILQ_NEXT(vvp, list);
 			if (vvp != NULL)
-				fa->name = vvp->value;
+				fa->cname = fa->name = vvp->value;
 			continue;
 		}
 		fa->type = VCC_Type(vvp->value);
@@ -566,6 +566,9 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		vvp = VTAILQ_NEXT(vvp, list);
 		if (vvp != NULL) {
 			fa->name = vvp->value;
+			vvp = VTAILQ_NEXT(vvp, list);
+			AN(vvp); /* vmod_syntax 2.0 */
+			fa->cname = vvp->value;
 			vvp = VTAILQ_NEXT(vvp, list);
 			if (vvp != NULL) {
 				fa->val = vvp->value;
@@ -642,9 +645,9 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
 		n++;
 		if (fa->optional) {
-			AN(fa->name);
+			AN(fa->cname);
 			bprintf(ssa, "\v1.valid_%s = %d,\n",
-			    fa->name, fa->avail);
+			    fa->cname, fa->avail);
 			e1 = vcc_expr_edit(tl, e1->fmt, ssa, e1, NULL);
 		}
 		if (fa->result == NULL && fa->type == ENUM && fa->val != NULL)
@@ -652,8 +655,8 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		if (fa->result == NULL && fa->val != NULL)
 			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
 		if (fa->result != NULL && sa != NULL) {
-			if (fa->name)
-				bprintf(ssa, "\v1.%s = \v2,\n", fa->name);
+			if (fa->cname)
+				bprintf(ssa, "\v1.%s = \v2,\n", fa->cname);
 			else
 				bprintf(ssa, "\v1.arg%d = \v2,\n", n);
 			e1 = vcc_expr_edit(tl, e1->fmt, ssa, e1, fa->result);
