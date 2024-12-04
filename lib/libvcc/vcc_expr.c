@@ -453,20 +453,20 @@ struct func_arg {
 	VTAILQ_ENTRY(func_arg)	list;
 };
 
-static void
-vcc_do_enum(struct vcc *tl, struct func_arg *fa, int len, const char *ptr)
+static struct expr *
+vcc_do_enum(struct vcc *tl, const char *cfunc, int len, const char *ptr)
 {
 	const char *r;
 
 	(void)tl;
-	r = strchr(fa->cname, '.');
+	r = strchr(cfunc, '.');
 	AN(r);
-	fa->result = vcc_mk_expr(VOID, "*%.*s.enum_%.*s",
-	    (int)(r - fa->cname), fa->cname, len, ptr);
+	return (vcc_mk_expr(VOID, "*%.*s.enum_%.*s",
+	    (int)(r - cfunc), cfunc, len, ptr));
 }
 
 static void
-vcc_do_arg(struct vcc *tl, struct func_arg *fa)
+vcc_do_arg(struct vcc *tl, const char *cfunc, struct func_arg *fa)
 {
 	struct expr *e2;
 	struct vjsn_val *vv;
@@ -485,7 +485,7 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		vcc_do_enum(tl, fa, PF(tl->t));
+		fa->result = vcc_do_enum(tl, cfunc, PF(tl->t));
 		SkipToken(tl, ID);
 	} else {
 		if (fa->type == SUB)
@@ -551,7 +551,6 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		assert(vjsn_is_array(vv));
 		fa = calloc(1, sizeof *fa);
 		AN(fa);
-		fa->cname = cfunc;
 		VTAILQ_INSERT_TAIL(&head, fa, list);
 
 		vvp = VTAILQ_FIRST(&vv->children);
@@ -594,7 +593,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 			if (t1->tok == '=')
 				break;
 		}
-		vcc_do_arg(tl, fa);
+		vcc_do_arg(tl, cfunc, fa);
 		if (tl->err)
 			VSB_printf(tl->sb, "Expected argument: %s %s\n\n",
 			    fa->type->name,
@@ -626,7 +625,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		}
 		vcc_NextToken(tl);
 		SkipToken(tl, '=');
-		vcc_do_arg(tl, fa);
+		vcc_do_arg(tl, cfunc, fa);
 		ERRCHK(tl);
 		if (tl->t->tok == ')')
 			break;
@@ -649,7 +648,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 			e1 = vcc_expr_edit(tl, e1->fmt, ssa, e1, NULL);
 		}
 		if (fa->result == NULL && fa->type == ENUM && fa->val != NULL)
-			vcc_do_enum(tl, fa, strlen(fa->val), fa->val);
+			fa->result = vcc_do_enum(tl, cfunc, strlen(fa->val), fa->val);
 		if (fa->result == NULL && fa->val != NULL)
 			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
 		if (fa->result != NULL && sa != NULL) {
