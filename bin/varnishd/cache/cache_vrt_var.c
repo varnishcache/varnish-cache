@@ -641,7 +641,7 @@ VRT_u_bereq_body(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	if (ctx->bo->bereq_body != NULL) {
-		(void)HSH_DerefObjCore(ctx->bo->wrk, &ctx->bo->bereq_body, 0);
+		(void)HSH_DerefObjCore(ctx->bo->wrk, &ctx->bo->bereq_body);
 		http_Unset(ctx->bo->bereq, H_Content_Length);
 	}
 

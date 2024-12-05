@@ -373,8 +373,11 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 	e = strchr(buf, '\0');
 	AN(e);
 	for (p = buf; p < e; p++) {
-		if (vtc_error || vtc_stop)
+		if (vtc_error || vtc_stop) {
+			vtc_log(vl, 1, "Aborting execution, test %s",
+			    vtc_error ? "failed" : "ended");
 			break;
+		}
 		/* Start of line */
 		if (isspace(*p))
 			continue;
@@ -484,7 +487,7 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 
 		if (!strcmp(token_s[0], "loop")) {
 			n = strtoul(token_s[1], NULL, 0);
-			for (m = 0; m < n; m++) {
+			for (m = 0; m < n && !vtc_error && !vtc_stop; m++) {
 				vtc_log(vl, 4, "Loop #%u", m);
 				parse_string(vl, priv, token_s[2]);
 			}

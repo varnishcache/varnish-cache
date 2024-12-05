@@ -179,8 +179,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 		wrk->stats->ws_backend_overflow++;
 
 	if (bo->fetch_objcore != NULL) {
-		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore,
-		    HSH_RUSH_POLICY);
+		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore);
 	}
 
 	VRT_Assign_Backend(&bo->director_req, NULL);
