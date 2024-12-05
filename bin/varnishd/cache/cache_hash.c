@@ -451,12 +451,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		if (oc->ttl <= 0.)
 			continue;
 
-		if (BAN_CheckObject(wrk, oc, req)) {
-			oc->flags |= OC_F_DYING;
-			EXP_Remove(oc, NULL);
-			continue;
-		}
-
 		if (!req->hash_ignore_vary && ObjHasAttr(wrk, oc, OA_VARY)) {
 			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
 			AN(vary);
@@ -464,6 +458,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				wrk->strangelove++;
 				continue;
 			}
+		}
+
+		if (BAN_CheckObject(wrk, oc, req)) {
+			oc->flags |= OC_F_DYING;
+			EXP_Remove(oc, NULL);
+			continue;
 		}
 
 		if (req->vcf != NULL) {
