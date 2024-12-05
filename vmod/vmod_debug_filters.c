@@ -585,6 +585,7 @@ static const struct vdp xyzzy_vdp_chkcrc32 = {
 		p->priv = WS_Alloc(ws, sizeof *cfg);						\
 		p->len = sizeof *cfg;								\
 	}											\
+	AN(p->priv);										\
 	cfg = p->priv;										\
 	INIT_OBJ(cfg, magic);									\
 	if (mode_e == VENUM(log))								\
