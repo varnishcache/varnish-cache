@@ -149,15 +149,15 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	nargs = a->valid_s + a->valid_bool + a->valid_bytes +
+	nargs = a->valid_s + a->valid_boola + a->valid_bytes +
 	    a->valid_duration + a->valid_real + a->valid_time;
 
 	if (!onearg(ctx, "integer", nargs))
 		return (0);
 
 	r = NAN;
-	if (a->valid_bool)
-		return (a->bool ? 1 : 0);
+	if (a->valid_boola)
+		return (a->boola ? 1 : 0);
 
 	if (a->valid_bytes)
 		return (a->bytes);
@@ -245,7 +245,7 @@ vmod_real(VRT_CTX, struct VARGS(real) *a)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	nargs = a->valid_s + a->valid_integer + a->valid_bool + a->valid_bytes +
+	nargs = a->valid_s + a->valid_integer + a->valid_boola + a->valid_bytes +
 	    a->valid_duration + a->valid_time;
 
 	if (!onearg(ctx, "real", nargs))
@@ -254,8 +254,8 @@ vmod_real(VRT_CTX, struct VARGS(real) *a)
 	if (a->valid_integer)
 		return ((VCL_REAL)a->integer);
 
-	if (a->valid_bool)
-		return ((VCL_REAL)(a->bool ? 1 : 0));
+	if (a->valid_boola)
+		return ((VCL_REAL)(a->boola ? 1 : 0));
 
 	if (a->valid_bytes)
 		return ((VCL_REAL)a->bytes);
