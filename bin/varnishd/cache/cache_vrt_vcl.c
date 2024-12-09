@@ -373,7 +373,7 @@ VRT_LookupDirector(VRT_CTX, VCL_STRING name)
 {
 	struct vcl *vcl;
 	struct vcldir *vdir;
-	VCL_BACKEND dd, d = NULL;
+	VCL_BACKEND dir = NULL;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(name);
@@ -386,15 +386,22 @@ VRT_LookupDirector(VRT_CTX, VCL_STRING name)
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_FOREACH(vdir, &vcl->director_list, list) {
-		dd = vdir->dir;
-		if (strcmp(dd->vcl_name, name))
-			continue;
-		d = dd;
-		break;
+		if (!strcmp(vdir->dir->vcl_name, name)) {
+			dir = vdir->dir;
+			break;
+		}
 	}
 	Lck_Unlock(&vcl_mtx);
 
-	return (d);
+	/* XXX: There is a race here between the supposedly incoming call
+	 * to VRT_Assign_Backend() and the next vcldir_deref() that could
+	 * even originate from the former.
+	 *
+	 * Maybe the VRT_CTX could keep a ref of the last director lookup
+	 * that would linger until the end of vcl_init.
+	 */
+
+	return (dir);
 }
 
 /*--------------------------------------------------------------------*/
