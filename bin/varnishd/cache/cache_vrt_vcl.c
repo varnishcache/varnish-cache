@@ -336,6 +336,8 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 	AN(dst);
 	CHECK_OBJ_ORNULL((*dst), DIRECTOR_MAGIC);
 	CHECK_OBJ_ORNULL(src, DIRECTOR_MAGIC);
+	if (*dst == src)
+		return;
 	if (*dst != NULL) {
 		vdir = (*dst)->vdir;
 		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
@@ -394,8 +396,7 @@ VRT_LookupDirector(VRT_CTX, VCL_STRING name)
 	Lck_Unlock(&vcl_mtx);
 
 	/* XXX: There is a race here between the supposedly incoming call
-	 * to VRT_Assign_Backend() and the next vcldir_deref() that could
-	 * even originate from the former.
+	 * to VRT_Assign_Backend() and the next vcldir_deref() call.
 	 *
 	 * Maybe the VRT_CTX could keep a ref of the last director lookup
 	 * that would linger until the end of vcl_init.
