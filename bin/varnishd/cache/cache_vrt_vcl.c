@@ -336,6 +336,8 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 	AN(dst);
 	CHECK_OBJ_ORNULL((*dst), DIRECTOR_MAGIC);
 	CHECK_OBJ_ORNULL(src, DIRECTOR_MAGIC);
+	if (*dst == src)
+		return;
 	if (*dst != NULL) {
 		vdir = (*dst)->vdir;
 		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
