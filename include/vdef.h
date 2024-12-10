@@ -280,3 +280,37 @@ typedef struct {
 /* #3020 dummy definitions until PR is merged*/
 #define LIKELY(x)	(x)
 #define UNLIKELY(x)	(x)
+
+/*
+ * VARRAY_FOREACH(var, arr, n):
+ *
+ * declare variable var and have it iterate over array arr of length n
+ */
+
+#define _varray_foreach(var, arr, n, end)					\
+	for (typeof(*(arr)) * var = (typeof(var))(arr), * end = var + n;	\
+	     var < end;								\
+	     var++)
+
+#define VARRAY_FOREACH(var, arr, n)						\
+	_varray_foreach(var, arr, n, VUNIQ_NAME(_v_ ## var ## _end))
+
+/*
+ * VPTRS_ITER(var, arr, n)
+ *
+ * given an array of pointers arr with length n,
+ * iterate variable var (declared outside the macro) over pointer values
+ *
+ * var has a broader scope to support keeping values from the array
+ */
+
+//lint -emacro(506, _vptrs_iter) constant value boolean
+#define _vptrs_iter(var, arr, n, iter, end)					\
+	for (typeof(*(arr)) * iter = (typeof(iter))(arr), * end = iter + n;	\
+	    iter < end && (var = *iter, 1);					\
+	    iter++)
+
+#define VPTRS_ITER(var, arr, n)							\
+	_vptrs_iter(var, arr, n,						\
+	    VUNIQ_NAME(_v_ ## var ## _iter),					\
+	    VUNIQ_NAME(_v_ ## var ## _end))

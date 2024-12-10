@@ -376,15 +376,12 @@ VRT_HashStrands32(VCL_STRANDS s)
 	struct VSHA256Context sha_ctx;
 	unsigned char sha256[VSHA256_LEN];
 	const char *p;
-	int i;
 
 	AN(s);
 	VSHA256_Init(&sha_ctx);
-	for (i = 0; i < s->n; i++) {
-		p = s->p[i];
+	VPTRS_ITER(p, s->p, s->n)
 		if (p != NULL && *p != '\0')
 			VSHA256_Update(&sha_ctx, p, strlen(p));
-	}
 	VSHA256_Final(sha256, &sha_ctx);
 
 	/* NB: for some reason vmod_director's shard director specifically

@@ -115,9 +115,7 @@ hex_decode(const enum encoding dec, blob_dest_t buf,
 	AN(buf);
 	AN(strings);
 	assert(dec == HEX);
-
-	for (i = 0; i < strings->n; i++) {
-		s = strings->p[i];
+	VPTRS_ITER(s, strings->p, strings->n) {
 
 		if (s == NULL)
 			continue;

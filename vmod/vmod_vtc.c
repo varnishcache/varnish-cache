@@ -490,7 +490,7 @@ vmod_vsl_replay(VRT_CTX, VCL_STRANDS s)
 	struct vsb cp[1];
 	const char *p, *pp;
 	size_t l;
-	int i, err = 0;
+	int err = 0;
 
 	if (s == NULL || s->n == 0)
 		return;
@@ -498,9 +498,7 @@ vmod_vsl_replay(VRT_CTX, VCL_STRANDS s)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 	WS_VSB_new(cp, ctx->ws);
-
-	for (i = 0; i < s->n; i++) {
-		p = s->p[i];
+	VPTRS_ITER(p, s->p, s->n) {
 		if (p == NULL || *p == '\0')
 			continue;
 		pp = strpbrk(p, "\r\n");
