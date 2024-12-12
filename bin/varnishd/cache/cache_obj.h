@@ -50,6 +50,103 @@ typedef void *objsetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t len, const void *ptr);
 typedef void objtouch_f(struct worker *, struct objcore *, vtim_real now);
 
+/* called by Obj/storage to notify that the lease function (vai_lease_f) can be
+ * called again after a -EAGAIN / -ENOBUFS return value
+ * NOTE:
+ * - the callback gets executed by an arbitrary thread
+ * - WITH the boc mtx held
+ * so it should never block and be efficient
+ */
+
+/* notify entry added to struct boc::vai_q_head */
+struct vai_qe {
+	unsigned		magic;
+#define VAI_Q_MAGIC		0x573e27eb
+	unsigned		flags;
+#define VAI_QF_INQUEUE		(1U<<0)
+	VSLIST_ENTRY(vai_qe)	list;
+	vai_notify_cb		*cb;
+	vai_hdl			hdl;
+	void			*priv;
+};
+
+#define VAI_ASSERT_LEASE(x) AZ((x) & 0x7)
+
+/*
+ * start an iteration. the ws can we used (reserved) by storage
+ * the void * will be passed as the second argument to vai_notify_cb
+ */
+typedef vai_hdl vai_init_f(struct worker *, struct objcore *, struct ws *,
+	vai_notify_cb *, void *);
+
+/*
+ * lease io vectors from storage
+ *
+ * vai_hdl is from vai_init_f
+ * viov / viovcnt is space provided by the caller to return leases
+ *
+ * return:
+ * -EAGAIN:	nothing available at the moment, storage will notify, no use to
+ *		call again until notification
+ * -ENOBUFS:	caller needs to return leases, storage will notify
+ * -EPIPE:	BOS_FAILED for busy object
+ * -(errno):	other problem, fatal
+ *  0:		EOF
+ *  n:		number of viovs filled
+ */
+typedef int vai_lease_f(struct worker *, vai_hdl, struct viov *viov, int viovcnt);
+
+/*
+ * return leases
+ */
+typedef void vai_return_f(struct worker *,vai_hdl, uint64_t *leases, int leasecnt);
+
+/*
+ * finish iteration, vai_return_f must have been called on all leases
+ */
+typedef void vai_fini_f(struct worker *, vai_hdl *);
+
+/*
+ * vai_hdl must start with this preamble such that when cast to it, cache_obj.c
+ * has access to the methods.
+ *
+ * The first magic is owned by storage, the second magic is owned by cache_obj.c
+ * and must be initialized to VAI_HDL_PREAMBLE_MAGIC2
+ *
+ */
+
+struct vai_hdl_preamble {
+	unsigned	magic;	// owned by storage
+	unsigned	magic2;
+#define VAI_HDL_PREAMBLE_MAGIC2	0x7a15d162
+	vai_lease_f	*vai_lease;
+	vai_return_f	*vai_return;	// optional
+	uintptr_t	reserve[4];	// abi fwd compat
+	vai_fini_f	*vai_fini;
+};
+
+#define INIT_VAI_HDL(to, x) do {				\
+	(void)memset(to, 0, sizeof *(to));			\
+	(to)->preamble.magic = (x);				\
+	(to)->preamble.magic2 = VAI_HDL_PREAMBLE_MAGIC2;	\
+} while (0)
+
+#define CHECK_VAI_HDL(obj, x) do {				\
+	assert(obj->preamble.magic == (x));			\
+	assert(obj->preamble.magic2 == VAI_HDL_PREAMBLE_MAGIC2);\
+} while (0)
+
+#define CHECK_VAI_HDL_NOTNULL(obj, x) do {			\
+	AN(obj);						\
+	CHECK_VAI_HDL(obj, x);					\
+} while (0)
+
+#define CAST_VAI_HDL_NOTNULL(obj, ptr, x) do {			\
+	AN(ptr);						\
+	(obj) = (ptr);						\
+	CHECK_VAI_HDL(obj, x);					\
+} while (0)
+
 struct obj_methods {
 	/* required */
 	objfree_f	*objfree;
@@ -64,5 +161,6 @@ struct obj_methods {
 	objslim_f	*objslim;
 	objtouch_f	*objtouch;
 	objsetstate_f	*objsetstate;
+	/* async iteration (VAI) */
+	vai_init_f	*vai_init;
 };
-
