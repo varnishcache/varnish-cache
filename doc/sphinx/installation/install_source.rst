@@ -170,7 +170,7 @@ dependencies:
 
     PATH="/opt/homebrew/opt/sphinx-doc/bin:/opt/homebrew/opt/docutils/bin:$PATH"
 
-It'll be a good idea to persist these changes .0m.so you can rebuild the source later.
+It'll be a good idea to persist these changes so you can rebuild the source later.
 
 Then continue `Compiling Varnish`_
 
