@@ -154,7 +154,7 @@ Build dependencies on macOS
 To compile varnish on macOS, these steps should install the required
 dependencies:
 
-* Install ``xcode`` via the App Store
+* Install xcode: `xcode-select --install`
 
 * Install dependencies via `brew`::
 
@@ -166,9 +166,11 @@ dependencies:
 	docutils \
 	sphinx-doc
 
-* Add sphinx to PATH as advised by the installer::
+* Add the sphinx tools and the docutils to PATH so `configure` will find them.
 
-    PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
+    PATH="/opt/homebrew/opt/sphinx-doc/bin:/opt/homebrew/opt/docutils/bin:$PATH"
+
+It'll be a good idea to persist these changes so you can rebuild the source later.
 
 Then continue `Compiling Varnish`_
 
