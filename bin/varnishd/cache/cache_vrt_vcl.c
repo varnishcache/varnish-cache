@@ -332,18 +332,15 @@ void
 VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 {
 	struct vcldir *vdir;
+	VCL_BACKEND tmp;
 
 	AN(dst);
 	CHECK_OBJ_ORNULL((*dst), DIRECTOR_MAGIC);
 	CHECK_OBJ_ORNULL(src, DIRECTOR_MAGIC);
 	if (*dst == src)
 		return;
-	if (*dst != NULL) {
-		vdir = (*dst)->vdir;
-		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
-		if (!(vdir->flags & VDIR_FLG_NOREFCNT))
-			(void)vcldir_deref(vdir);
-	}
+	tmp = *dst;
+	*dst = src;
 	if (src != NULL) {
 		vdir = src->vdir;
 		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
@@ -354,7 +351,12 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 			Lck_Unlock(&vdir->dlck);
 		}
 	}
-	*dst = src;
+	if (tmp != NULL) {
+		vdir = tmp->vdir;
+		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+		if (!(vdir->flags & VDIR_FLG_NOREFCNT))
+			(void)vcldir_deref(vdir);
+	}
 }
 
 void
