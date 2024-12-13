@@ -35,6 +35,8 @@ shell -match _.secret {
 	find "${tmpdir}"/v2/_.secret -perm 0640 -size 256c
 }
 
+shell "varnishadm -n ${tmpdir}/v2 ping"
+
 process p1 -stop -wait
 
 shell {
