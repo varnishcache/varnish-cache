@@ -472,6 +472,7 @@ void VSL_Flush(struct vsl_log *, int overflow);
 struct conn_pool;
 void VCP_Init(void);
 void VCP_Panic(struct vsb *, struct conn_pool *);
+void VCP_RelPoll(void);
 
 /* cache_backend_probe.c */
 void VBP_Init(void);
