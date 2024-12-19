@@ -350,7 +350,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 void
 H2_PU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 {
-	VSLb(req->vsl, SLT_Debug, "H2 Prior Knowledge Upgrade");
+	VSL(SLT_Debug, sp->vxid, "H2 Prior Knowledge Upgrade");
 	req->err_code = H2_PU_MARKER;
 	SES_SetTransport(wrk, sp, req, &HTTP2_transport);
 }
@@ -358,7 +358,7 @@ H2_PU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 void
 H2_OU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 {
-	VSLb(req->vsl, SLT_Debug, "H2 Optimistic Upgrade");
+	VSL(SLT_Debug, sp->vxid, "H2 Optimistic Upgrade");
 	req->err_code = H2_OU_MARKER;
 	SES_SetTransport(wrk, sp, req, &HTTP2_transport);
 }
