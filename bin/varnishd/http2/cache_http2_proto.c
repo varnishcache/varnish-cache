@@ -1415,8 +1415,8 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 		}
 		switch (r2->state) {
 		case H2_S_CLOSED:
-			if (!r2->scheduled)
-				h2_del_req(wrk, r2);
+			AZ(r2->scheduled);
+			h2_del_req(wrk, r2);
 			break;
 		case H2_S_CLOS_REM:
 			if (!r2->scheduled) {
