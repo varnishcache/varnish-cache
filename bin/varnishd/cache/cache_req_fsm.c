@@ -484,15 +484,12 @@ cnt_transmit(struct worker *wrk, struct req *req)
 			http_Unset(req->resp, H_Content_Length);
 		} else if (clval >= 0 && clval == req->resp_len) {
 			/* Reuse C-L header */
-		} else if (head && req->objcore->flags & OC_F_HFM) {
-			/*
-			 * Don't touch C-L header (debatable)
-			 *
-			 * The only way to do it correctly would be to GET
-			 * to the backend, and discard the body once the
-			 * filters have had a chance to chew on it, but that
-			 * would negate the "pass for huge objects" use case.
+		} else if (head) {
+			/* rfc9110,l,3226,3227
+			 * "MAY send Content-Length ... [for] HEAD"
+			 * do not touch to support cached HEAD #4245
 			 */
+			req->resp_len = 0;
 		} else {
 			http_Unset(req->resp, H_Content_Length);
 			if (req->resp_len >= 0)
