@@ -5,7 +5,9 @@ TESTS = @VMOD_TESTS@
 include $(top_srcdir)/vsc.am
 include $(top_srcdir)/vtc.am
 
-EXTRA_DIST = $(TESTS)
+EXTRA_DIST = $(TESTS) vmod_vcs_version.txt
+
+DISTCLEANFILES = vmod_vcs_version.txt
 
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
