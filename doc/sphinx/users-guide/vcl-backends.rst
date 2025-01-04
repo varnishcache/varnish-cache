@@ -21,7 +21,7 @@ Somewhere in the top there will be a section that looks a bit like this.::
     #     .port = "8080";
     # }
 
-We remove the comment markings in this text stanza making the it look like.::
+We remove the comment markings in this code block making it look like.::
 
     backend default {
         .host = "127.0.0.1";
@@ -141,7 +141,7 @@ You can have something like this::
 Note that the first regular expressions will match "foo.com",
 "www.foo.com", "zoop.foo.com" and any other host ending in "foo.com". In
 this example this is intentional but you might want it to be a bit
-more tight, maybe relying on the ``==`` operator in stead, like this::
+more tight, maybe relying on the ``==`` operator instead, like this::
 
     sub vcl_recv {
         if (req.http.host == "foo.com" || req.http.host == "www.foo.com") {
