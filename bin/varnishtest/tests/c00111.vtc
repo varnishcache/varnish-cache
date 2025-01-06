@@ -15,7 +15,8 @@ client c1 {
 } -run
 
 varnish v1 -vsl_catchup
-varnish v1 -expect fetch_failed == 1
+# with vai, this no longer fails systematically (which is good)
+varnish v1 -expect fetch_failed <= 1
 
 varnish v1 -cliok "param.set transit_buffer 4k"
 
@@ -26,4 +27,4 @@ client c2 {
 
 varnish v1 -vsl_catchup
 varnish v1 -expect s_fetch == 2
-varnish v1 -expect fetch_failed == 1
+varnish v1 -expect fetch_failed <= 1

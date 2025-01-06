@@ -696,6 +696,7 @@ smp_init(void)
 	smp_oc_realmethods.objsetattr = SML_methods.objsetattr;
 	smp_oc_realmethods.objtouch = LRU_Touch;
 	smp_oc_realmethods.objfree = smp_oc_objfree;
+	smp_oc_realmethods.vai_init	= SML_methods.vai_init;
 }
 
 /*--------------------------------------------------------------------
