@@ -919,6 +919,7 @@ struct vscaret {
 vai_hdl ObjVAIinit(struct worker *, struct objcore *, struct ws *,
     vai_notify_cb *, void *);
 int ObjVAIlease(struct worker *, vai_hdl, struct vscarab *);
+int ObjVAIbuffer(struct worker *, vai_hdl, struct vscarab *);
 void ObjVAIreturn(struct worker *, vai_hdl, struct vscaret *);
 void ObjVAIfini(struct worker *, vai_hdl *);
 

@@ -218,10 +218,31 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
  *	used by the caller between lease and return, but must be cleared to
  *	zero before returning.
  *
+ * ObjVAIbuffer() allocates temporary buffers, returns:
+ *
+ *	-EAGAIN:  allocation can not be fulfilled immediately, storage will notify,
+ *		  no use to call again until notification
+ *	-EINVAL:  size larger than UINT_MAX requested
+ *	-(errno): other problem, fatal
+ *	n:	  n > 0, number of viovs filled
+ *
+ *	The struct vscarab is used on the way in and out: On the way in, the
+ *	iov.iov_len members contain the sizes the caller requests, all other
+ *	members of the struct viovs are expected to be zero initialized.
+ *
+ *	The maximum size to be requested is UINT_MAX.
+ *
+ *	ObjVAIbuffer() may return sizes larger than requested. The returned n
+ *	might be smaller than requested.
+ *
  * ObjVAIreturn() returns leases collected in a struct vscaret
  *
- *	it must be called with a vscaret, which holds an array of lease values from viovs
- *	received when the caller can guarantee that they are no longer accessed
+ *	it must be called with a vscaret, which holds an array of lease values
+ *	received via ObjVAIlease() or ObjVAIbuffer() when the caller can
+ *	guarantee that they are no longer accessed.
+ *
+ *	ObjVAIreturn() may retain leases in the vscaret if the implementation
+ *	still requires them, iow, the vscaret might not be empty upon return.
  *
  * ObjVAIfini() finalized iteration
  *
@@ -252,6 +273,17 @@ ObjVAIlease(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 	return (vaip->vai_lease(wrk, vhdl, scarab));
 }
 
+int
+ObjVAIbuffer(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
+{
+	struct vai_hdl_preamble *vaip = vhdl;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	AN(vaip->vai_buffer);
+	return (vaip->vai_buffer(wrk, vhdl, scarab));
+}
+
 void
 ObjVAIreturn(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 {
@@ -259,11 +291,8 @@ ObjVAIreturn(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 
 	AN(vaip);
 	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
-	/* vai_return is optional */
-	if (vaip->vai_return != NULL)
-		vaip->vai_return(wrk, vhdl, scaret);
-	else
-		VSCARET_INIT(scaret, scaret->capacity);
+	AN(vaip->vai_return);
+	vaip->vai_return(wrk, vhdl, scaret);
 }
 
 void

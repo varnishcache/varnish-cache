@@ -50,8 +50,9 @@ typedef void *objsetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t len, const void *ptr);
 typedef void objtouch_f(struct worker *, struct objcore *, vtim_real now);
 
-/* called by Obj/storage to notify that the lease function (vai_lease_f) can be
- * called again after a -EAGAIN / -ENOBUFS return value
+/* called by Obj/storage to notify that the lease function (vai_lease_f) or
+ * buffer function (vai_buffer_f) can be called again after return of
+ * -EAGAIN or -ENOBUFS
  * NOTE:
  * - the callback gets executed by an arbitrary thread
  * - WITH the boc mtx held
@@ -96,7 +97,26 @@ typedef vai_hdl vai_init_f(struct worker *, struct objcore *, struct ws *,
 typedef int vai_lease_f(struct worker *, vai_hdl, struct vscarab *);
 
 /*
- * return leases
+ * get io vectors with temporary buffers from storage
+ *
+ * vai_hdl is from vai_init_f
+ * the vscarab needs to be initialized with the number of requested elements
+ * and each iov.iov_len contings the requested sizes. all iov_base need to be
+ * zero.
+ *
+ * after return, the vscarab can be smaller than requested if only some
+ * allocation requests could be fulfilled
+ *
+ * return:
+ * -EAGAIN:	allocation can not be fulfilled immediately, storage will notify,
+ *		no use to call again until notification
+ * -(errno):	other problem, fatal
+ *  n:		n > 0, number of viovs filled
+ */
+typedef int vai_buffer_f(struct worker *, vai_hdl, struct vscarab *);
+
+/*
+ * return leases from vai_lease_f or vai_buffer_f
  */
 typedef void vai_return_f(struct worker *, vai_hdl, struct vscaret *);
 
@@ -120,7 +140,8 @@ struct vai_hdl_preamble {
 	unsigned	magic2;
 #define VAI_HDL_PREAMBLE_MAGIC2	0x7a15d162
 	vai_lease_f	*vai_lease;
-	vai_return_f	*vai_return;	// optional
+	vai_buffer_f	*vai_buffer;
+	vai_return_f	*vai_return;
 	uintptr_t	reserve[4];	// abi fwd compat
 	vai_fini_f	*vai_fini;
 };

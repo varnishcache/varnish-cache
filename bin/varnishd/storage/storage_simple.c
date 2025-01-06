@@ -315,6 +315,7 @@ struct sml_hdl {
 	struct vai_hdl_preamble	preamble;
 #define SML_HDL_MAGIC		0x37dfd996
 	struct vai_qe		qe;
+	struct pool_task	task;	// unfortunate
 	struct ws		*ws;	// NULL is malloc()
 	struct objcore		*oc;
 	struct object		*obj;
@@ -357,6 +358,72 @@ sml_ai_viov_fill(struct viov *viov, struct storage *st)
 	viov->iov.iov_len = st->len;
 	viov->lease = st2lease(st);
 	VAI_ASSERT_LEASE(viov->lease);
+}
+
+// sml has no mechanism to notify "I got free space again now"
+// (we could add that, but because storage.h is used in mgt, a first attempt
+//  looks at least like this would cause some include spill for vai_q_head or
+//  something similar)
+//
+// So anyway, to get ahead we just implement a pretty stupid "call the notify
+// some time later" on a thread
+static void
+sml_ai_later_task(struct worker *wrk, void *priv)
+{
+	struct sml_hdl *hdl;
+	const vtim_dur dur = 0.0042;
+
+	(void)wrk;
+	VTIM_sleep(dur);
+	CAST_VAI_HDL_NOTNULL(hdl, priv, SML_HDL_MAGIC);
+	memset(&hdl->task, 0, sizeof hdl->task);
+	hdl->qe.cb(hdl, hdl->qe.priv);
+}
+static void
+sml_ai_later(struct worker *wrk, struct sml_hdl *hdl)
+{
+	AZ(hdl->task.func);
+	AZ(hdl->task.priv);
+	hdl->task.func = sml_ai_later_task;
+	hdl->task.priv = hdl;
+	AZ(Pool_Task(wrk->pool, &hdl->task, TASK_QUEUE_BG));
+}
+
+
+static int
+sml_ai_buffer(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
+{
+	const struct stevedore *stv;
+	struct sml_hdl *hdl;
+	struct storage *st;
+	struct viov *vio;
+	int r = 0;
+
+	(void) wrk;
+	CAST_VAI_HDL_NOTNULL(hdl, vhdl, SML_HDL_MAGIC);
+	stv = hdl->stv;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	VSCARAB_FOREACH(vio, scarab)
+		if (vio->iov.iov_len > UINT_MAX)
+			return (-EINVAL);
+
+	VSCARAB_FOREACH(vio, scarab) {
+		st = objallocwithnuke(wrk, stv, vio->iov.iov_len, 0);
+		if (st == NULL)
+			break;
+		assert(st->space >= vio->iov.iov_len);
+		st->flags = STORAGE_F_BUFFER;
+		st->len = st->space;
+
+		sml_ai_viov_fill(vio, st);
+		r++;
+	}
+	if (r == 0) {
+		sml_ai_later(wrk, hdl);
+		r = -EAGAIN;
+	}
+	return (r);
 }
 
 static int
@@ -497,6 +564,29 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 	return (r);
 }
 
+// return only buffers, used if object is not streaming
+static void v_matchproto_(vai_return_f)
+sml_ai_return_buffers(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
+{
+	struct storage *st;
+	struct sml_hdl *hdl;
+	uint64_t *p;
+
+	(void) wrk;
+	CAST_VAI_HDL_NOTNULL(hdl, vhdl, SML_HDL_MAGIC);
+
+	VSCARET_FOREACH(p, scaret) {
+		if (*p == VAI_LEASE_NORET)
+			continue;
+		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
+		if ((st->flags & STORAGE_F_BUFFER) == 0)
+			continue;
+		sml_stv_free(hdl->stv, st);
+	}
+	VSCARET_INIT(scaret, scaret->capacity);
+}
+
+// generic return for buffers and object leases, used when streaming
 static void v_matchproto_(vai_return_f)
 sml_ai_return(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 {
@@ -528,6 +618,8 @@ sml_ai_return(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 	Lck_Lock(&hdl->boc->mtx);
 	VSCARET_FOREACH(p, todo) {
 		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
+		if ((st->flags & STORAGE_F_BUFFER) != 0)
+			continue;
 		VTAILQ_REMOVE(&hdl->obj->list, st, list);
 		if (st == hdl->boc->stevedore_priv)
 			hdl->boc->stevedore_priv = trim_once;
@@ -578,6 +670,8 @@ sml_ai_init(struct worker *wrk, struct objcore *oc, struct ws *ws,
 	AN(hdl);
 	INIT_VAI_HDL(hdl, SML_HDL_MAGIC);
 	hdl->preamble.vai_lease = sml_ai_lease_simple;
+	hdl->preamble.vai_buffer = sml_ai_buffer;
+	hdl->preamble.vai_return = sml_ai_return_buffers;
 	hdl->preamble.vai_fini = sml_ai_fini;
 	hdl->ws = ws;
 
@@ -590,6 +684,11 @@ sml_ai_init(struct worker *wrk, struct objcore *oc, struct ws *ws,
 	hdl->st = VTAILQ_LAST(&hdl->obj->list, storagehead);
 	CHECK_OBJ_ORNULL(hdl->st, STORAGE_MAGIC);
 
+	hdl->qe.magic = VAI_Q_MAGIC;
+	hdl->qe.cb = notify;
+	hdl->qe.hdl = hdl;
+	hdl->qe.priv = notify_priv;
+
 	hdl->boc = HSH_RefBoc(oc);
 	if (hdl->boc == NULL)
 		return (hdl);
@@ -599,10 +698,6 @@ sml_ai_init(struct worker *wrk, struct objcore *oc, struct ws *ws,
 	hdl->preamble.vai_lease = sml_ai_lease_boc;
 	if ((hdl->oc->flags & OC_F_TRANSIENT) != 0)
 		hdl->preamble.vai_return = sml_ai_return;
-	hdl->qe.magic = VAI_Q_MAGIC;
-	hdl->qe.cb = notify;
-	hdl->qe.hdl = hdl;
-	hdl->qe.priv = notify_priv;
 	return (hdl);
 }
 
