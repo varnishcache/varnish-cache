@@ -405,9 +405,55 @@ static struct cli_proto child_cmds[] = {
 	{ NULL }
 };
 
+#define CAP 17U
+
+static void
+t_vscarab1(struct vscarab *scarab)
+{
+	struct viov *v;
+	uint64_t sum;
+
+	VSCARAB_CHECK_NOTNULL(scarab);
+	AZ(scarab->used);
+
+	v = VSCARAB_GET(scarab);
+	AN(v);
+	v->lease = 12;
+
+	VSCARAB_ADD(scarab, (struct viov){.lease = 30});
+
+	sum = 0;
+	VSCARAB_FOREACH(v, scarab)
+		sum += v->lease;
+
+	assert(sum == 42);
+}
+
+static void
+t_vscarab(void)
+{
+	char testbuf[VSCARAB_SIZE(CAP)];
+	struct vscarab *frombuf = (void *)testbuf;
+	VSCARAB_INIT(frombuf, CAP);
+	t_vscarab1(frombuf);
+
+	// ---
+
+	VSCARAB_LOCAL(scarab, CAP);
+	t_vscarab1(scarab);
+
+	// ---
+
+	struct vscarab *heap;
+	VSCARAB_ALLOC(heap, CAP);
+	t_vscarab1(heap);
+	free(heap);
+}
+
 void
 child_main(int sigmagic, size_t altstksz)
 {
+	t_vscarab();
 
 	if (sigmagic)
 		child_sigmagic(altstksz);

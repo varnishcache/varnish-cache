@@ -42,6 +42,7 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 
 #include "vdef.h"
 #include "vrt.h"
@@ -774,6 +775,152 @@ int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
 
 typedef void *vai_hdl;
 typedef void vai_notify_cb(vai_hdl, void *priv);
+
+
+/*
+ * VSCARAB: Varnish SCatter ARAy of Buffers:
+ *
+ * an array of viovs, elsewhere also called an siov or sarray
+ */
+struct viov {
+	uint64_t	lease;
+	struct iovec	iov;
+};
+
+struct vscarab {
+	unsigned	magic;
+#define VSCARAB_MAGIC	0x05ca7ab0
+	unsigned	flags;
+#define VSCARAB_F_END	1	// last viov is last overall
+	unsigned	capacity;
+	unsigned	used;
+	struct viov	s[] v_counted_by_(capacity);
+};
+
+// VFLA: starting generic container-with-flexible-array-member macros
+// aka "struct hack"
+//
+// type : struct name
+// name : a pointer to struct type
+// mag  : the magic value for this VFLA
+// cptr : pointer to container struct (aka "head")
+// fam  : member name of the flexible array member
+// cap  : capacity
+//
+// common properties of all VFLAs:
+// - are a miniobj (have magic as the first element)
+// - capacity member is the fam capacity
+// - used member is the number of fam elements used
+//
+// VFLA_SIZE ignores the cap == 0 case, we assert in _INIT
+// offsetoff ref: https://gustedt.wordpress.com/2011/03/14/flexible-array-member/
+//lint -emacro(413, VFLA_SIZE)
+#define VFLA_SIZE(type, fam, cap) (offsetof(struct type, fam) +	\
+	(cap) * sizeof(((struct type *)0)->fam[0]))
+#define VFLA_INIT_(type, cptr, mag, fam, cap, save) do {	\
+	unsigned save = (cap);					\
+	AN(save);						\
+	memset((cptr), 0, VFLA_SIZE(type, fam, save));		\
+	(cptr)->magic = (mag);					\
+	(cptr)->capacity = (save);				\
+} while (0)
+#define VFLA_INIT(type, cptr, mag, fam, cap)			\
+	VFLA_INIT_(type, cptr, mag, fam, cap, VUNIQ_NAME(save))
+// declare, allocate and initialize a local VFLA
+// the additional VLA buf declaration avoids
+// "Variable-sized object may not be initialized"
+#define VFLA_LOCAL_(type, name, mag, fam, cap, bufname)				\
+	char bufname[VFLA_SIZE(type, fam, cap)];				\
+	struct type *name = (void *)bufname;					\
+	VFLA_INIT(type, name, mag, fam, cap)
+#define VFLA_LOCAL(type, name, mag, fam, cap)					\
+	VFLA_LOCAL_(type, name, mag, fam, cap, VUNIQ_NAME(buf))
+// malloc and initialize a VFLA
+#define VFLA_ALLOC(type, name, mag, fam, cap)	do {			\
+	(name) = malloc(VFLA_SIZE(type, fam, cap));			\
+	if ((name) != NULL)						\
+		VFLA_INIT(type, name, mag, fam, cap);			\
+} while(0)
+#define VFLA_FOREACH(var, cptr, fam)						\
+	for (var = &(cptr)->fam[0]; var < &(cptr)->fam[(cptr)->used]; var++)
+// continue iterating after a break of a _FOREACH
+#define VFLA_FOREACH_RESUME(var, cptr, fam)					\
+	for (; var != NULL && var < &(cptr)->fam[(cptr)->used]; var++)
+#define VFLA_GET(cptr, fam) ((cptr)->used < (cptr)->capacity ? &(cptr)->fam[(cptr)->used++] : NULL)
+// asserts sufficient capacity
+#define VFLA_ADD(cptr, fam, val) do {						\
+	assert((cptr)->used < (cptr)->capacity);				\
+	(cptr)->fam[(cptr)->used++] = (val);					\
+} while(0)
+
+#define VSCARAB_SIZE(cap) VFLA_SIZE(vscarab, s, cap)
+#define VSCARAB_INIT(scarab, cap) VFLA_INIT(vscarab, scarab, VSCARAB_MAGIC, s, cap)
+#define VSCARAB_LOCAL(scarab, cap) VFLA_LOCAL(vscarab, scarab, VSCARAB_MAGIC, s, cap)
+#define VSCARAB_ALLOC(scarab, cap) VFLA_ALLOC(vscarab, scarab, VSCARAB_MAGIC, s, cap)
+#define VSCARAB_FOREACH(var, scarab) VFLA_FOREACH(var, scarab, s)
+#define VSCARAB_FOREACH_RESUME(var, scarab) VFLA_FOREACH_RESUME(var, scarab, s)
+#define VSCARAB_GET(scarab) VFLA_GET(scarab, s)
+#define VSCARAB_ADD(scarab, val) VFLA_ADD(scarab, s, val)
+//lint -emacro(64, VSCARAB_ADD_IOV_NORET) weird flexelint bug?
+#define VSCARAB_ADD_IOV_NORET(scarab, vec)					\
+	VSCARAB_ADD(scarab, ((struct viov){.lease = VAI_LEASE_NORET, .iov = (vec)}))
+#define VSCARAB_LAST(scarab) (&(scarab)->s[(scarab)->used - 1])
+
+#define VSCARAB_CHECK(scarab) do {						\
+	CHECK_OBJ(scarab, VSCARAB_MAGIC);					\
+	assert(scarab->used <= scarab->capacity);				\
+} while(0)
+
+#define VSCARAB_CHECK_NOTNULL(scarab) do {					\
+	AN(scarab);								\
+	VSCARAB_CHECK(scarab);							\
+} while(0)
+
+/*
+ * VSCARET: Varnish SCatter Array Return
+ *
+ * an array of leases obtained from a vscarab
+ */
+
+struct vscaret {
+	unsigned	magic;
+#define VSCARET_MAGIC	0x9c1f3d7b
+	unsigned	capacity;
+	unsigned	used;
+	uint64_t	lease[] v_counted_by_(capacity);
+};
+
+#define VSCARET_SIZE(cap) VFLA_SIZE(vscaret, lease, cap)
+#define VSCARET_INIT(scaret, cap) VFLA_INIT(vscaret, scaret, VSCARET_MAGIC, lease, cap)
+#define VSCARET_LOCAL(scaret, cap) VFLA_LOCAL(vscaret, scaret, VSCARET_MAGIC, lease, cap)
+#define VSCARET_ALLOC(scaret, cap) VFLA_ALLOC(vscaret, scaret, VSCARET_MAGIC, lease, cap)
+#define VSCARET_FOREACH(var, scaret) VFLA_FOREACH(var, scaret, lease)
+#define VSCARET_GET(scaret) VFLA_GET(scaret, lease)
+#define VSCARET_ADD(scaret, val) VFLA_ADD(scaret, lease, val)
+
+#define VSCARET_CHECK(scaret) do {						\
+	CHECK_OBJ(scaret, VSCARET_MAGIC);					\
+	assert(scaret->used <= scaret->capacity);				\
+} while(0)
+
+#define VSCARET_CHECK_NOTNULL(scaret) do {					\
+	AN(scaret);								\
+	VSCARET_CHECK(scaret);							\
+} while(0)
+
+/*
+ * VSCARABs can contain leases which are not to be returned to storage, for
+ * example static data or fragments of larger leases to be returned later. For
+ * these cases, use this magic value as the lease. This is deliberately not 0 to
+ * catch oversights.
+ */
+#define VAI_LEASE_NORET ((uint64_t)0x8)
+
+vai_hdl ObjVAIinit(struct worker *, struct objcore *, struct ws *,
+    vai_notify_cb *, void *);
+int ObjVAIlease(struct worker *, vai_hdl, struct vscarab *);
+void ObjVAIreturn(struct worker *, vai_hdl, struct vscaret *);
+void ObjVAIfini(struct worker *, vai_hdl *);
 
 /* cache_req_body.c */
 ssize_t VRB_Iterate(struct worker *, struct vsl_log *, struct req *,

@@ -70,6 +70,78 @@ struct vai_qe {
 	void			*priv;
 };
 
+#define VAI_ASSERT_LEASE(x) AZ((x) & 0x7)
+
+/*
+ * start an iteration. the ws can we used (reserved) by storage
+ * the void * will be passed as the second argument to vai_notify_cb
+ */
+typedef vai_hdl vai_init_f(struct worker *, struct objcore *, struct ws *,
+	vai_notify_cb *, void *);
+
+/*
+ * lease io vectors from storage
+ *
+ * vai_hdl is from vai_init_f
+ * the vscarab is provided by the caller to return leases
+ *
+ * return:
+ * -EAGAIN:	nothing available at the moment, storage will notify, no use to
+ *		call again until notification
+ * -ENOBUFS:	caller needs to return leases, storage will notify
+ * -EPIPE:	BOS_FAILED for busy object
+ * -(errno):	other problem, fatal
+ *  >= 0:	number of viovs added
+ */
+typedef int vai_lease_f(struct worker *, vai_hdl, struct vscarab *);
+
+/*
+ * return leases
+ */
+typedef void vai_return_f(struct worker *, vai_hdl, struct vscaret *);
+
+/*
+ * finish iteration, vai_return_f must have been called on all leases
+ */
+typedef void vai_fini_f(struct worker *, vai_hdl *);
+
+/*
+ * vai_hdl must start with this preamble such that when cast to it, cache_obj.c
+ * has access to the methods.
+ *
+ * The first magic is owned by storage, the second magic is owned by cache_obj.c
+ * and must be initialized to VAI_HDL_PREAMBLE_MAGIC2
+ *
+ */
+
+//lint -esym(768, vai_hdl_preamble::reserve)
+struct vai_hdl_preamble {
+	unsigned	magic;	// owned by storage
+	unsigned	magic2;
+#define VAI_HDL_PREAMBLE_MAGIC2	0x7a15d162
+	vai_lease_f	*vai_lease;
+	vai_return_f	*vai_return;	// optional
+	uintptr_t	reserve[4];	// abi fwd compat
+	vai_fini_f	*vai_fini;
+};
+
+#define INIT_VAI_HDL(to, x) do {				\
+	(void)memset(to, 0, sizeof *(to));			\
+	(to)->preamble.magic = (x);				\
+	(to)->preamble.magic2 = VAI_HDL_PREAMBLE_MAGIC2;	\
+} while (0)
+
+#define CHECK_VAI_HDL(obj, x) do {				\
+	assert(obj->preamble.magic == (x));			\
+	assert(obj->preamble.magic2 == VAI_HDL_PREAMBLE_MAGIC2);\
+} while (0)
+
+#define CAST_VAI_HDL_NOTNULL(obj, ptr, x) do {			\
+	AN(ptr);						\
+	(obj) = (ptr);						\
+	CHECK_VAI_HDL(obj, x);					\
+} while (0)
+
 struct obj_methods {
 	/* required */
 	objfree_f	*objfree;
@@ -84,5 +156,6 @@ struct obj_methods {
 	objslim_f	*objslim;
 	objtouch_f	*objtouch;
 	objsetstate_f	*objsetstate;
+	/* async iteration (VAI) */
+	vai_init_f	*vai_init;
 };
-
