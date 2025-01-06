@@ -184,6 +184,130 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
 }
 
 /*====================================================================
+ * ObjVAI...(): Asynchronous Iteration
+ *
+ *
+ * ObjVAIinit() returns an opaque handle, or NULL if not supported
+ *
+ *	A VAI handle must not be used concurrently
+ *
+ *	the vai_notify_cb(priv) will be called asynchronously by the storage
+ *	engine when a -EAGAIN / -ENOBUFS condition is over and ObjVAIlease()
+ *	can be called again.
+ *
+ *	Note:
+ *	- the callback gets executed by an arbitrary thread
+ *	- WITH the boc mtx held
+ *	so it should never block and only do minimal work
+ *
+ * ObjVAIlease() fills the vscarab with leases. returns:
+ *
+ *	-EAGAIN:  nothing available at the moment, storage will notify, no use to
+ *		  call again until notification
+ *	-ENOBUFS: caller needs to return leases, storage will notify
+ *	-EPIPE:	  BOS_FAILED for busy object
+ *	-(errno): other problem, fatal
+ *	0:	  EOF
+ *	n:	  number of viovs filled (== scarab->used)
+ *
+ *	struct vscarab:
+ *
+ *	the leases can be used by the caller until returned with
+ *	ObjVAIreturn(). The storage guarantees that the lease member is a
+ *	multiple of 8 (that is, the lower three bits are zero). These can be
+ *	used by the caller between lease and return, but must be cleared to
+ *	zero before returning.
+ *
+ * ObjVAIbuffer() allocates temporary buffers, returns:
+ *
+ *	-EAGAIN:  allocation can not be fulfilled immediately, storage will notify,
+ *		  no use to call again until notification
+ *	-EINVAL:  size larger than UINT_MAX requested
+ *	-(errno): other problem, fatal
+ *	n:	  n > 0, number of viovs filled
+ *
+ *	The struct vscarab is used on the way in and out: On the way in, the
+ *	iov.iov_len members contain the sizes the caller requests, all other
+ *	members of the struct viovs are expected to be zero initialized.
+ *
+ *	The maximum size to be requested is UINT_MAX.
+ *
+ *	ObjVAIbuffer() may return sizes larger than requested. The returned n
+ *	might be smaller than requested.
+ *
+ * ObjVAIreturn() returns leases collected in a struct vscaret
+ *
+ *	it must be called with a vscaret, which holds an array of lease values
+ *	received via ObjVAIlease() or ObjVAIbuffer() when the caller can
+ *	guarantee that they are no longer accessed.
+ *
+ *	ObjVAIreturn() may retain leases in the vscaret if the implementation
+ *	still requires them, iow, the vscaret might not be empty upon return.
+ *
+ * ObjVAIfini() finalized iteration
+ *
+ *	it must be called when iteration is done, irrespective of error status
+ */
+
+vai_hdl
+ObjVAIinit(struct worker *wrk, struct objcore *oc, struct ws *ws,
+    vai_notify_cb *cb, void *cb_priv)
+{
+	const struct obj_methods *om = obj_getmethods(oc);
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	if (om->vai_init == NULL)
+		return (NULL);
+	return (om->vai_init(wrk, oc, ws, cb, cb_priv));
+}
+
+int
+ObjVAIlease(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
+{
+	struct vai_hdl_preamble *vaip = vhdl;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	AN(vaip->vai_lease);
+	return (vaip->vai_lease(wrk, vhdl, scarab));
+}
+
+int
+ObjVAIbuffer(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
+{
+	struct vai_hdl_preamble *vaip = vhdl;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	AN(vaip->vai_buffer);
+	return (vaip->vai_buffer(wrk, vhdl, scarab));
+}
+
+void
+ObjVAIreturn(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
+{
+	struct vai_hdl_preamble *vaip = vhdl;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	AN(vaip->vai_return);
+	vaip->vai_return(wrk, vhdl, scaret);
+}
+
+void
+ObjVAIfini(struct worker *wrk, vai_hdl *vhdlp)
+{
+	AN(vhdlp);
+	struct vai_hdl_preamble *vaip = *vhdlp;
+
+	AN(vaip);
+	assert(vaip->magic2 == VAI_HDL_PREAMBLE_MAGIC2);
+	AN(vaip->vai_lease);
+	return (vaip->vai_fini(wrk, vhdlp));
+}
+
+/*====================================================================
  * ObjGetSpace()
  *
  * This function returns a pointer and length of free space.  If there
@@ -231,6 +355,29 @@ obj_extend_condwait(const struct objcore *oc)
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
 }
 
+// notify of an extension of the boc or state change
+//lint -sem(obj_boc_notify_Unlock, thread_unlock)
+
+static void
+obj_boc_notify_Unlock(struct boc *boc)
+{
+	struct vai_qe *qe, *next;
+
+	PTOK(pthread_cond_broadcast(&boc->cond));
+	qe = VSLIST_FIRST(&boc->vai_q_head);
+	VSLIST_FIRST(&boc->vai_q_head) = NULL;
+	while (qe != NULL) {
+		CHECK_OBJ(qe, VAI_Q_MAGIC);
+		AN(qe->flags & VAI_QF_INQUEUE);
+		qe->flags &= ~VAI_QF_INQUEUE;
+		next = VSLIST_NEXT(qe, list);
+		VSLIST_NEXT(qe, list) = NULL;
+		qe->cb(qe->hdl, qe->priv);
+		qe = next;
+	}
+	Lck_Unlock(&boc->mtx);
+}
+
 void
 ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 {
@@ -241,14 +388,13 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 	AN(om->objextend);
 	assert(l >= 0);
 
-	Lck_Lock(&oc->boc->mtx);
 	if (l > 0) {
+		Lck_Lock(&oc->boc->mtx);
 		obj_extend_condwait(oc);
 		om->objextend(wrk, oc, l);
 		oc->boc->fetched_so_far += l;
-		PTOK(pthread_cond_broadcast(&oc->boc->cond));
+		obj_boc_notify_Unlock(oc->boc);
 	}
-	Lck_Unlock(&oc->boc->mtx);
 
 	assert(oc->boc->state < BOS_FINISHED);
 	if (final && om->objtrimstore != NULL)
@@ -257,6 +403,17 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 
 /*====================================================================
  */
+
+static inline void
+objSignalFetchLocked(const struct objcore *oc, uint64_t l)
+{
+	if (oc->boc->transit_buffer > 0) {
+		assert(oc->flags & OC_F_TRANSIENT);
+		/* Signal the new client position */
+		oc->boc->delivered_so_far = l;
+		PTOK(pthread_cond_signal(&oc->boc->cond));
+	}
+}
 
 uint64_t
 ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
@@ -272,13 +429,8 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
 	while (1) {
 		rv = oc->boc->fetched_so_far;
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
-		if (oc->boc->transit_buffer > 0) {
-			assert(oc->flags & OC_F_TRANSIENT);
-			/* Signal the new client position */
-			oc->boc->delivered_so_far = l;
-			PTOK(pthread_cond_signal(&oc->boc->cond));
-		}
 		state = oc->boc->state;
+		objSignalFetchLocked(oc, l);
 		if (rv > l || state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
@@ -288,6 +440,51 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l,
 		*statep = state;
 	return (rv);
 }
+
+// get a new extension _or_ register a notification
+uint64_t
+ObjVAIGetExtend(struct worker *wrk, const struct objcore *oc, uint64_t l,
+    enum boc_state_e *statep, struct vai_qe *qe)
+{
+	enum boc_state_e state;
+	uint64_t rv;
+
+	(void) wrk;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(qe, VAI_Q_MAGIC);
+	Lck_Lock(&oc->boc->mtx);
+	rv = oc->boc->fetched_so_far;
+	assert(l <= rv || oc->boc->state == BOS_FAILED);
+	state = oc->boc->state;
+	objSignalFetchLocked(oc, l);
+	if (l == rv && state < BOS_FINISHED &&
+	    (qe->flags & VAI_QF_INQUEUE) == 0) {
+		qe->flags |= VAI_QF_INQUEUE;
+		VSLIST_INSERT_HEAD(&oc->boc->vai_q_head, qe, list);
+	}
+	Lck_Unlock(&oc->boc->mtx);
+	if (statep != NULL)
+		*statep = state;
+	return (rv);
+}
+
+void
+ObjVAICancel(struct worker *wrk, struct boc *boc, struct vai_qe *qe)
+{
+
+	(void) wrk;
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(qe, VAI_Q_MAGIC);
+
+	Lck_Lock(&boc->mtx);
+	// inefficient, but should be rare
+	if ((qe->flags & VAI_QF_INQUEUE) != 0)
+		VSLIST_REMOVE(&boc->vai_q_head, qe, vai_qe, list);
+	qe->flags = 0;
+	Lck_Unlock(&boc->mtx);
+}
+
 /*====================================================================
  */
 
@@ -313,8 +510,7 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
-	PTOK(pthread_cond_broadcast(&oc->boc->cond));
-	Lck_Unlock(&oc->boc->mtx);
+	obj_boc_notify_Unlock(oc->boc);
 }
 
 /*====================================================================
