@@ -27,3 +27,97 @@ Pull requests are handled like other tickets.
 
 Trivial pull requests (fix typos, etc) are welcomed, but they may be committed
 by a core team member and the author credited in the commit message.
+
+When suggesting more involved changes, please work by these rules:
+
+1) Keep the code consistent
+2) Keep the git repository consistent
+3) Maintain bisectability
+
+Code style
+~~~~~~~~~~
+
+Our main principle is consistency. New code should be consistent with (a large
+portion of) existing code.
+
+Other than that, we broadly follow bsd style(9) https://man.freebsd.org/cgi/man.cgi?query=style&sektion=9
+
+Commits
+~~~~~~~
+
+Each commit should do one thing, and one thing only. If you find yourself,
+in the commit message, adding phrases like "Also do [...]" or "While in
+here [...]", then that's a sign that the change should have been split
+into multiple commits. If your change includes some refactoring of code to
+make your change possible, then that refactoring should be a separate
+commit, done first. That means this preparatory commit won't have any
+functional changes, and hence should be a no-op. It also means that your
+main commit, with the change that you actually care about, will be smaller
+and easier to review.
+
+Each commit must stand on its own in terms of what it provides, and how it
+works. Lots of changes are just a single commit, but for something a bit
+more involved, it's not uncommon to have a pull request contain multiple
+commits. Make each commit as simple as possible, and not any simpler. We'd
+much rather see 10 simple commits than 2 more complicated ones. If you
+stumble across something that needs fixing while making an unrelated
+change, then please make that change as a separate commit, explaining why
+it's being made.
+
+Each commit in a series must be buildable, it's not enough that the end
+result is buildable. "make distcheck" should succeed for each commit.
+
+No fixup commits! Sometimes people post a change and errors are pointed
+out in the commit, and the author then does a followup fix for that
+error. This isn't acceptable, please squash fixup commits into the
+commit that introduced the problem in the first place. This is done by
+amending the fix into the original commit that caused the issue. You can
+do that with git rebase -i <sha> and arrange the commit order such that
+the fixup is right after the original commit, and then use 's' (for
+squash) to squash the fixup into the original commit. Don't forget to
+edit the commit message while doing that, as git will combine the two
+commit messages into one. Or you can do it manually. Once done, force
+push your rewritten git history.
+
+Commit message
+~~~~~~~~~~~~~~
+
+A good commit explains the WHY of a commit - explain the reason for this
+commit to exist. Don't explain what the code in commit does, that should
+be readily apparent from just reading the code. If that isn't the case,
+then a comment in the code is going to be more useful than a lengthy
+explanation in the commit message.
+
+The WHY should explain the problem being solved, the solution idea and, for
+anything more involved, why a particular implementation was chosen and which
+alternatives were considered.
+
+Each commit message should be formatted so each full line is 72-74 chars
+wide. For many of us, GitHub is not the primary location, and git log is
+often used in a terminal to browse the repo. Breaking lines at 72-74
+characters retains readability in an xterm/terminal.
+
+Pull Requests
+~~~~~~~~~~~~~
+
+The git repository itself is the canonical location for information. It's
+quite fine to provide a lengthy explanation for a pull request on GitHub,
+however please ensure that this doesn't come at the expense of the commit
+messages themselves being lacking. The commit messages should stand on
+their own and contain everything that you'd otherwise put in the PR
+message. If you've worked on projects that send patches before, consider
+the PR message similar to the cover letter for a series of patches.
+
+Linear History
+~~~~~~~~~~~~~~
+
+The Varnish-Cache repository has a linear history, so all changes are rebased on
+top of the current upstream head always. When your PR can no longer be merged,
+rebase it and force-push your changes.
+
+Acknowledgements
+----------------
+
+Large portions of this document where copied from
+https://github.com/axboe/liburing/blob/master/CONTRIBUTING.md and edited. Thank
+you, Jens.
