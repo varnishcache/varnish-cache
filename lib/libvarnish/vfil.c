@@ -387,3 +387,31 @@ VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
 	VSB_destroy(&vsb);
 	return (-1);
 }
+
+char **
+VFIL_concat(const struct vfil_path *vp, const char *name)
+{
+	struct vsb *vsb;
+	struct vfil_dir *vd;
+	char **arr;
+	int len = 0;
+
+	CHECK_OBJ_NOTNULL(vp, VFIL_PATH_MAGIC);
+	AN(name);
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VTAILQ_FOREACH(vd, &vp->paths, list)
+		len++;
+	arr = calloc(len + 1, sizeof(char*));
+	len = 0;
+	VTAILQ_FOREACH(vd, &vp->paths, list) {
+		VSB_clear(vsb);
+		VSB_printf(vsb, "%s/%s", vd->dir, name);
+		AZ(VSB_finish(vsb));
+		arr[len++] = strdup(VSB_data(vsb));
+	}
+	arr[len] = NULL;
+	VSB_destroy(&vsb);
+	return (arr);
+}
