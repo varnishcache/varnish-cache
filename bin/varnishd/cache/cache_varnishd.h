@@ -199,6 +199,13 @@ extern const struct vdp VDP_gunzip;
 extern const struct vdp VDP_esi;
 extern const struct vdp VDP_range;
 
+uint64_t VDPIO_Close(struct vdp_ctx *, struct objcore *, struct boc *);
+int VDPIO_Upgrade(VRT_CTX, struct vdp_ctx *vdc);
+#ifdef LATER
+int VDPIO_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
+    void *priv);
+#endif
+
 
 /* cache_exp.c */
 vtim_real EXP_Ttl(const struct req *, const struct objcore *);
