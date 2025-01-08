@@ -244,6 +244,139 @@ VDP_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 
 /*--------------------------------------------------------------------*/
 
+/*
+ * Push a VDPIO vdp. This can only be used with only vdpio-enabled VDPs or
+ * after a successful upgrade
+ */
+int
+VDPIO_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
+    void *priv)
+{
+	struct vdp_entry *vdpe;
+	int r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+	assert(*vdc->clen >= -1);
+	AN(ws);
+	AN(vdp);
+	AN(vdp->name);
+
+	if (vdc->retval < 0)
+		return (vdc->retval);
+
+	AN(vdp->io_init);
+
+	// the first VDP (which leases from storage) only gets the minimum
+	// capacity requirement of 1
+	if (vdc->retval == 0) {
+		assert(VTAILQ_EMPTY(&vdc->vdp));
+		vdc->retval = 1;
+	}
+
+	if (DO_DEBUG(DBG_PROCESSORS))
+		VSLb(vdc->vsl, SLT_Debug, "VDPIO_push(%s)", vdp->name);
+
+	vdpe = WS_Alloc(ws, sizeof *vdpe);
+	if (vdpe == NULL) {
+		vdc->retval = -ENOMEM;
+		return (vdc->retval);
+	}
+	INIT_OBJ(vdpe, VDP_ENTRY_MAGIC);
+	vdpe->vdp = vdp;
+	vdpe->priv = priv;
+	VTAILQ_INSERT_TAIL(&vdc->vdp, vdpe, list);
+	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
+
+	assert(vdc->retval > 0);
+	if (vdpe->vdp->io_init != NULL) {
+		r = vdpe->vdp->io_init(ctx, vdc, &vdpe->priv, vdc->retval);
+		if (r <= 0) {
+			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
+			vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
+		}
+		else
+			AN(vdp->io_lease);
+		if (r != 0)
+			vdc->retval = r;
+	}
+	vdc->oc = NULL;
+	return (vdc->retval);
+}
+
+/*
+ * upgrade an already initialized VDP filter chain to VDPIO, if possible
+ * returns:
+ * > 0 cap
+ * -ENOTSUP io_upgrade missing for at least one filter
+ * vdc->retval if < 0
+ */
+int
+VDPIO_Upgrade(VRT_CTX, struct vdp_ctx *vdc)
+{
+	struct vdp_entry *vdpe;
+	int cap, r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+
+	VTAILQ_FOREACH(vdpe, &vdc->vdp, list)
+		if (vdpe->vdp->io_upgrade == NULL)
+			return (-ENOTSUP);
+
+	if (vdc->retval < 0)
+		return (vdc->retval);
+
+	// minimum capacity requirement for the first filter (after storage)
+	r = cap = 1;
+	VTAILQ_FOREACH(vdpe, &vdc->vdp, list) {
+		r = vdpe->vdp->io_upgrade(ctx, vdc, &vdpe->priv, cap);
+		if (DO_DEBUG(DBG_PROCESSORS)) {
+			VSLb(vdc->vsl, SLT_Debug, "VDPIO_Upgrade "
+			    "%d = %s(cap = %d)",
+			    r, vdpe->vdp->name, cap);
+		}
+		if (r < 0)
+			return ((vdc->retval = r));
+		// XXX remove if filter does not want to be pushed?
+		assert(r != 0);
+		cap = r;
+	}
+	return ((vdc->retval = r));
+}
+
+uint64_t
+VDPIO_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
+{
+	struct vdp_entry *vdpe;
+	uint64_t rv = 0;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
+
+	while ((vdpe = VTAILQ_FIRST(&vdc->vdp)) != NULL) {
+		CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
+		rv = vdpe->bytes_in;
+		VSLb(vdc->vsl, SLT_VdpAcct, "%s %ju %ju", vdpe->vdp->name,
+		    (uintmax_t)vdpe->calls, (uintmax_t)rv);
+		if (vdpe->vdp->io_fini != NULL)
+			vdpe->vdp->io_fini(vdc, &vdpe->priv);
+		AZ(vdpe->priv);
+		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
+		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
+	}
+
+	if (oc != NULL)
+		HSH_Cancel(vdc->wrk, oc, boc);
+	return (rv);
+}
+
+/*--------------------------------------------------------------------*/
 int v_matchproto_(objiterate_f)
 VDP_ObjIterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
