@@ -255,6 +255,44 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, ssize_t *plen)
 	return (VGZ_ERROR);
 }
 
+/* set vz pointers for in and out iovecs */
+static inline void
+vgz_iovec_update(struct vgz *vg, const struct iovec *in, const struct iovec *buf)
+{
+	/* in: either fully consumed or the same */
+	assert(vg->vz.avail_in == 0 || vg->vz.next_in == in->iov_base);
+	vg->vz.next_in = in->iov_base;
+	vg->vz.avail_in = in->iov_len;
+	vg->vz.next_out = buf->iov_base;
+	vg->vz.avail_out = buf->iov_len;
+}
+
+static enum vgzret_e
+vgz_gunzip_iovec(struct vgz *vg, struct iovec *in, struct iovec *buf, struct iovec *out)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	AN(in && buf && out);
+	vgz_iovec_update(vg, in, buf);
+
+	i = inflate(&vg->vz, 0);
+	if (i == Z_OK || i == Z_STREAM_END) {
+		iovec_collect(buf, out, pdiff(buf->iov_base, vg->vz.next_out));
+		in->iov_base = vg->vz.next_in;
+		in->iov_len = vg->vz.avail_in;
+	}
+	vg->last_i = i;
+	if (i == Z_OK)
+		return (VGZ_OK);
+	if (i == Z_STREAM_END)
+		return (VGZ_END);
+	if (i == Z_BUF_ERROR)
+		return (VGZ_STUCK);
+	VSLb(vg->vsl, SLT_Gzip, "Gunzip error: %d (%s)", i, vgz_msg(vg));
+	return (VGZ_ERROR);
+}
+
 /*--------------------------------------------------------------------*/
 
 enum vgzret_e
@@ -404,6 +442,7 @@ vdp_gunzip_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 		vg->m_len += dl;
 		if (vr < VGZ_OK)
 			return (-1);
+		// END or STUCK
 		if (vg->m_len == vg->m_sz || vr != VGZ_OK) {
 			if (VDP_bytes(vdc, vr == VGZ_END ? VDP_END : VDP_FLUSH,
 			    vg->m_buf, vg->m_len))
@@ -416,11 +455,179 @@ vdp_gunzip_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 	return (0);
 }
 
+#ifdef LATER
+/*
+ * XXX does it make sense to work on more than one buffer?
+ */
+static int v_matchproto_(vdpio_init_f)
+vdpio_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+	struct vgz *vg;
+	struct vscarab *in;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(vdc->oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->hp, HTTP_MAGIC);
+	AN(vdc->clen);
+	AN(priv);
+	assert(capacity >= 1);
+
+	if (capacity < 4)
+		capacity = 4;
+
+	in = WS_Alloc(ctx->ws, VSCARAB_SIZE(capacity));
+	if (in == NULL)
+		return (-1);
+
+	vg = VGZ_NewGunzip(vdc->vsl, "U D -");
+	if (vg == NULL)
+		return (-1);
+
+	AZ(vg->m_buf);
+	vg->m_buf = (void *)in;
+
+	*priv = vg;
+	AZ(vdp_gunzip_init_common(vdc));
+	return (1);
+}
+#endif
+
+static int v_matchproto_(vdpio_init_f)
+vdpio_gunzip_upgrade(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+	struct vgz *vg;
+	struct vscarab *in;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	AN(priv);
+	assert(capacity >= 1);
+
+	if (capacity < 4)
+		capacity = 4;
+
+	/* done in vdp_gunzip_init */
+	CAST_OBJ_NOTNULL(vg, *priv, VGZ_MAGIC);
+
+	in = WS_Alloc(ctx->ws, VSCARAB_SIZE(capacity));
+	if (in == NULL)
+		return (-1);
+	VSCARAB_INIT(in, capacity);
+
+	// XXX duplicate work - remove when completing transition to VAI
+	AN(vg->m_buf);
+	AN(vg->stvbuf);
+	STV_FreeBuf(vdc->wrk, &vg->stvbuf);
+	vg->stvbuf = NULL;
+	vg->m_buf = (void *)in;
+
+	return (1);
+}
+
+static int v_matchproto_(vdpio_lease_f)
+vdpio_gunzip_lease(struct vdp_ctx *vdc, struct vdp_entry *this, struct vscarab *out)
+{
+	struct vscarab *in;
+	enum vgzret_e vr;
+	struct vgz *vg;
+	struct viov *v, *b, *o;
+	int r;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(this, VDP_ENTRY_MAGIC);
+	CAST_OBJ_NOTNULL(vg, this->priv, VGZ_MAGIC);
+	CAST_OBJ_NOTNULL(in, (void*)vg->m_buf, VSCARAB_MAGIC);
+
+	this->calls++;
+
+	if (out->used == out->capacity)
+		return (0);
+
+	if (in->used < in->capacity && (in->flags & VSCARAB_F_END) == 0)
+		r = vdpio_pull(vdc, this, in);
+	else
+		r = 0;
+
+	if (in->used == 0) {
+		out->flags = in->flags & VSCARAB_F_END;
+		return (r);
+	}
+
+	// XXX more than one buffer?
+	VSCARAB_LOCAL(buf, 1);
+	b = VSCARAB_GET(buf);
+	AN(b);
+	b->iov.iov_len = cache_param->gzip_buffer;
+	r = ObjVAIbuffer(vdc->wrk, vdc->vai_hdl, buf);
+	if (r < 0)
+		return (out->used ? 0 : r);
+
+	o = VSCARAB_GET(out);
+	AN(o);
+	r = 0;
+
+	VSCARAB_FOREACH(v, in) {
+		this->bytes_in += v->iov.iov_len;
+		vr = vgz_gunzip_iovec(vg, &v->iov, &b->iov, &o->iov);
+		if (vr == VGZ_END && v->iov.iov_len > 0) {
+			VSLb(vg->vsl, SLT_Gzip, "G(un)zip error: %d (%s)",
+			     vr, "junk after VGZ_END");
+			r = -EMSGSIZE;
+			break;
+		}
+		if (vr < VGZ_OK)
+			break;
+
+		if (b->iov.iov_len == 0 || vr != VGZ_OK) {
+			r = 1;
+			break;
+		}
+	}
+
+	if (r <= 0) {
+		o->iov.iov_base = NULL;
+		o->iov.iov_len = 0;
+		vdpio_return_lease(vdc, b->lease);
+		return (r);
+	}
+
+	o->lease = b->lease;
+	b->lease = 0;
+
+	vdpio_consolidate_vscarab(vdc, in);
+	if (in->used == 0)
+		out->flags = in->flags & VSCARAB_F_END;
+
+	return (r);
+}
+
+static void v_matchproto_(vdpio_fini_f)
+vdpio_gunzip_fini(struct vdp_ctx *vdc, void **priv)
+{
+	struct vscarab *in;
+	struct vgz *vg;
+
+	(void)vdc;
+	TAKE_OBJ_NOTNULL(vg, priv, VGZ_MAGIC);
+	CAST_OBJ_NOTNULL(in, (void *)vg->m_buf, VSCARAB_MAGIC);
+	vg->m_buf = NULL;
+
+	(void)VGZ_Destroy(vdc->wrk, &vg);
+}
+
 const struct vdp VDP_gunzip = {
 	.name =		"gunzip",
 	.init =		vdp_gunzip_init,
 	.bytes =	vdp_gunzip_bytes,
 	.fini =		vdp_gunzip_fini,
+
+#ifdef LATER
+	.io_init =	vdpio_gunzip_init,
+#endif
+	.io_upgrade =	vdpio_gunzip_upgrade,
+	.io_lease =	vdpio_gunzip_lease,
+	.io_fini =	vdpio_gunzip_fini,
 };
 
 /*--------------------------------------------------------------------*/
