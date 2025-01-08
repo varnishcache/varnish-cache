@@ -33,6 +33,7 @@ struct req;
 struct vfp_entry;
 struct vfp_ctx;
 struct vdp_ctx;
+struct vdp_entry;
 
 /* Fetch processors --------------------------------------------------*/
 
@@ -125,12 +126,55 @@ typedef int vdp_fini_f(struct vdp_ctx *, void **priv);
 typedef int vdp_bytes_f(struct vdp_ctx *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
 
+/*
+ * ============================================================
+ * vdpio io-vector interface
+ */
+typedef int vdpio_init_f(VRT_CTX, struct vdp_ctx *, void **priv, int capacity);
+/*
+ * the vdpio_init_f() are called front (object iterator) to back (consumer).
+ *
+ * each init function returns the minimum number of io vectors (vscarab
+ * capacity) that it requires the next filter to accept. This capacity is
+ * passed to the next init function such that it can allocate sufficient
+ * space to fulfil the requirement of the previous filter.
+ *
+ * Return values:
+ *   < 0 : Error
+ *  == 0 ; NOOP, do not push this filter
+ *  >= 1 : capacity requirement
+ *
+ * typedef is shared with upgrade
+ */
+
+typedef int vdpio_lease_f(struct vdp_ctx *, struct vdp_entry *, struct vscarab *scarab);
+/*
+ * vdpio_lease_f() returns leases provided by this filter layer in the vscarab
+ * probided by the caller.
+ *
+ * called via vdpio_pull(): the last filter is called first by delivery. Each
+ * filter calls the previous layer for leases. The first filter calls storage.
+ *
+ * return values are as for ObjVAIlease()
+ *
+ * Other notable differences to vdp_bytes_f:
+ * - responsible for updating (struct vdp_entry).bytes_in and .calls
+ *
+ */
+
+typedef void vdpio_fini_f(struct vdp_ctx *, void **priv);
+
 struct vdp {
 	const char		*name;
 	vdp_init_f		*init;
 	vdp_bytes_f		*bytes;
 	vdp_fini_f		*fini;
 	const void		*priv1;
+
+	vdpio_init_f		*io_init;
+	vdpio_init_f		*io_upgrade;
+	vdpio_lease_f		*io_lease;
+	vdpio_fini_f		*io_fini;
 };
 
 struct vdp_entry {
@@ -149,10 +193,10 @@ VTAILQ_HEAD(vdp_entry_s, vdp_entry);
 struct vdp_ctx {
 	unsigned		magic;
 #define VDP_CTX_MAGIC		0xee501df7
-	int			retval;
-	uint64_t		bytes_done;
+	int			retval;		// vdpio: error or capacity
+	uint64_t		bytes_done;	// not used with vdpio
 	struct vdp_entry_s	vdp;
-	struct vdp_entry	*nxt;
+	struct vdp_entry	*nxt;		// not needed for vdpio
 	struct worker		*wrk;
 	struct vsl_log		*vsl;
 	// NULL'ed after the first filter has been pushed
@@ -160,9 +204,118 @@ struct vdp_ctx {
 	// NULL'ed for delivery
 	struct http		*hp;
 	intmax_t		*clen;
+	// only for vdpio
+	vai_hdl			vai_hdl;
+	struct vscaret		*scaret;
 };
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *, ssize_t);
+
+/*
+ * vdpe == NULL: get lesaes from the last layer
+ * vdpe != NULL: get leases from the previous layer or storage
+ *
+ * conversely to VDP_bytes, vdpio calls happen back (delivery) to front (storage)
+ *
+ * ends up in a tail call to the previous layer to save stack space
+ */
+static inline int
+vdpio_pull(struct vdp_ctx *vdc, struct vdp_entry *vdpe, struct vscarab *scarab)
+{
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+
+	if (vdpe == NULL)
+		vdpe = VTAILQ_LAST(&vdc->vdp, vdp_entry_s);
+	else {
+		CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
+		vdpe = VTAILQ_PREV(vdpe, vdp_entry_s, list);
+	}
+
+	if (vdpe != NULL)
+		return (vdpe->vdp->io_lease(vdc, vdpe, scarab));
+	else
+		return (ObjVAIlease(vdc->wrk, vdc->vai_hdl, scarab));
+}
+
+/*
+ * ============================================================
+ * VDPIO helpers
+ */
+
+/*
+ * l bytes have been written to buf. save these to out and checkpoint buf for
+ * the remaining free space
+ */
+static inline void
+iovec_collect(struct iovec *buf, struct iovec *out, size_t l)
+{
+	if (out->iov_base == NULL)
+		out->iov_base = buf->iov_base;
+	assert((char *)out->iov_base + out->iov_len == buf->iov_base);
+	out->iov_len += l;
+	buf->iov_base = (char *)buf->iov_base + l;
+	buf->iov_len -= l;
+}
+
+/*
+ * return a single lease via the vdc vscaret
+ */
+static inline
+void vdpio_return_lease(const struct vdp_ctx *vdc, uint64_t lease)
+{
+	struct vscaret *scaret;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	scaret = vdc->scaret;
+	VSCARET_CHECK_NOTNULL(scaret);
+
+	if (scaret->used == scaret->capacity)
+		ObjVAIreturn(vdc->wrk, vdc->vai_hdl, scaret);
+	VSCARET_ADD(scaret, lease);
+}
+
+/*
+ * add all leases from the vscarab to the vscaret
+ */
+static inline
+void vdpio_return_vscarab(const struct vdp_ctx *vdc, struct vscarab *scarab)
+{
+	struct viov *v;
+
+	VSCARAB_CHECK_NOTNULL(scarab);
+	VSCARAB_FOREACH(v, scarab)
+		vdpio_return_lease(vdc, v->lease);
+	VSCARAB_INIT(scarab, scarab->capacity);
+}
+
+/*
+ * return used up iovs (len == 0)
+ * move remaining to the beginning of the scarab
+ */
+static inline void
+vdpio_consolidate_vscarab(const struct vdp_ctx *vdc, struct vscarab *scarab)
+{
+	struct viov *v, *f = NULL;
+
+	VSCARAB_CHECK_NOTNULL(scarab);
+	VSCARAB_FOREACH(v, scarab) {
+		if (v->iov.iov_len == 0) {
+			AN(v->iov.iov_base);
+			vdpio_return_lease(vdc, v->lease);
+			if (f == NULL)
+				f = v;
+			continue;
+		}
+		else if (f == NULL)
+			continue;
+		memmove(f, v, scarab->used - (v - scarab->s) * sizeof (*v));
+		break;
+	}
+	if (f != NULL)
+		scarab->used = f - scarab->s;
+}
+
 
 void v_deprecated_ VRT_AddVDP(VRT_CTX, const struct vdp *);
 void v_deprecated_ VRT_RemoveVDP(VRT_CTX, const struct vdp *);
