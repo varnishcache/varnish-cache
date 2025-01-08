@@ -300,15 +300,13 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  * VDP for gunzip'ing
  */
 
+// common for traditional interface and vdpio
+static int vdp_gunzip_init_common(struct vdp_ctx *vdc);
+
 static int v_matchproto_(vdp_init_f)
 vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
 	struct vgz *vg;
-	struct boc *boc;
-	enum boc_state_e bos;
-	const char *p;
-	ssize_t dl;
-	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
@@ -326,7 +324,17 @@ vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 
 	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 	*priv = vg;
+	return (vdp_gunzip_init_common(vdc));
+}
 
+static int
+vdp_gunzip_init_common(struct vdp_ctx *vdc)
+{
+	struct boc *boc;
+	enum boc_state_e bos;
+	const char *p;
+	ssize_t dl;
+	uint64_t u;
 	http_Unset(vdc->hp, H_Content_Encoding);
 
 	*vdc->clen = -1;
