@@ -109,12 +109,13 @@ usage(void)
 
 	printf("\nBasic options:\n");
 
-	printf(FMT, "[-a [name=][listen_address",
+	printf(FMT, "[-a [name=][%kind,][listen_address",
 	    "HTTP listen address, protocol, options.");
 	printf(FMT, "     [,PROTO|,option=value,...]]",
 	    "Can be specified multiple times.");
 	printf(FMT, "",
 	    "  default: \":80,HTTP\"");
+	printf(FMT, "  %kind", "Selects an acceptor implementation");
 	printf(FMT, "  options:",
 	    "Proto can be \"PROXY\" or \"HTTP\" (default)");
 	printf(FMT, "    [,user=<u>][,group=<g>]",
@@ -628,7 +629,6 @@ main(int argc, char * const *argv)
 	const char *h_arg = "critbit";
 	const char *n_arg = getenv("VARNISH_DEFAULT_N");
 	const char *S_arg = NULL;
-	const char *s_arg = "default,100m";
 	const char *W_arg = NULL;
 	const char *c;
 	char *p;
@@ -796,9 +796,6 @@ main(int argc, char * const *argv)
 	/* Process delayed arguments */
 	VTAILQ_FOREACH(alp, &arglist, list) {
 		switch(alp->arg[0]) {
-		case 'a':
-			VCA_Arg(alp->val);
-			break;
 		case 'f':
 			if (*alp->val != '\0')
 				alp->priv = mgt_f_read(alp->val);
@@ -828,9 +825,6 @@ main(int argc, char * const *argv)
 			break;
 		case 'r':
 			MCF_ParamProtect(cli, alp->val);
-			break;
-		case 's':
-			STV_Config(alp->val);
 			break;
 		default:
 			break;
@@ -921,16 +915,31 @@ main(int argc, char * const *argv)
 	if (C_flag)
 		AZ(atexit(mgt_Cflag_atexit));
 
-	/* If no -s argument specified, process default -s argument */
+	vext_copyin(vident);
+	vext_load();
+
+	/* defaults if arguments not present */
 	if (!arg_list_count("s"))
-		STV_Config(s_arg);
+		(void) arg_list_add('s', "default,100m");
+
+	VTAILQ_FOREACH(alp, &arglist, list) {
+		switch(alp->arg[0]) {
+		case 'a':
+			VCA_Arg(alp->val);
+			break;
+		case 's':
+			STV_Config(alp->val);
+			break;
+		default:
+			break;
+		}
+		cli_check(cli);
+	}
 
 	/* Configure CLI and Transient storage, if user did not */
 	STV_Config_Final();
 
 	mgt_vcl_init();
-
-	vext_copyin(vident);
 
 	u = 0;
 	VTAILQ_FOREACH(alp, &arglist, list) {

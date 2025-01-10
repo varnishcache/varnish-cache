@@ -1,0 +1,27 @@
+varnishtest "Minimal acceptor VEXT test"
+
+shell -err -expect {Error: Acceptor foo not found} {
+	varnishd -b None -a %foo,socket -n ${tmpdir}
+}
+
+shell -err -expect {Error: Acceptor bar not found} {
+	varnishd -b None -a name=%bar,socket -n ${tmpdir}
+}
+
+varnish v1 \
+    -arg "-E ${topbuild}/vmod/.libs/libvmod_vext_debug.so" \
+    -arg "-a dbg=%dbg,${listen_addr}" \
+    -vcl {
+
+	backend none none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+} -start
+
+#client c1 -repeat 10 {
+client c1 {
+	txreq
+	rxresp
+} -run

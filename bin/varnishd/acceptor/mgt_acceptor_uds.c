@@ -171,7 +171,12 @@ vca_uds_open(char **av, struct listen_arg *la, const char **err)
 	CHECK_OBJ_NOTNULL(la, LISTEN_ARG_MAGIC);
 	AN(av);
 	AN(err);
+	AN(la->endpoint);
 
+	if (! VUS_is(la->endpoint)) {
+		ARGV_ERR("Not a unix domain socket addresses"
+		    " in -a (%s)\n", la->endpoint);
+	}
 	if (*la->endpoint != '/' && strchr(la->endpoint, '/') != NULL)
 		ARGV_ERR("Unix domain socket addresses must be"
 		    " absolute paths in -a (%s)\n", la->endpoint);
