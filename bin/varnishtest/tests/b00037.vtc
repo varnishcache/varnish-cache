@@ -11,6 +11,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 varnish v1 -expect client_req_400 == 1
+varnish v1 -expect sc_rx_bad == 1
 
 client c1 {
 	txreq -method POST -hdr "Content-Length: 12" -hdr "Content-Length: 12" -bodylen 12
@@ -20,6 +21,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 varnish v1 -expect client_req_400 == 2
+varnish v1 -expect sc_rx_bad == 2
 
 varnish v1 -cliok "param.set feature +http2"
 
