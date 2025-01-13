@@ -563,7 +563,7 @@ VJSN_TYPES
 	def emit(fin):
 		if fin in skip:
 			return
-		x = bytearray(open(fin).read())
+		x = bytearray(open(fin, 'rb').read())
 		if 0 in x:
 			return
 		if len(x) > 1000:
