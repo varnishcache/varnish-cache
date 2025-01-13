@@ -576,15 +576,15 @@ VJSN_TYPES
 				t = '\t"'
 		print(t + '",')
 
-	print("const char *good[] = {")
+	print("static const char *good[] = {")
 	l = list(glob.glob("y_*"))
 	l.sort()
 	for f in l:
 		emit(f)
 	print("\tNULL")
-	print("};")
+	print("};\n")
 
-	print("const char *bad[] = {")
+	print("static const char *bad[] = {")
 	l = list(glob.glob("n_*"))
 	l.sort()
 	for f in l:
@@ -728,6 +728,7 @@ static const char *good[] = {
 	"\x20\x5b\x5d\x20",
 	NULL
 };
+
 static const char *bad[] = {
 	"\x5b\x31\x20\x74\x72\x75\x65\x5d",
 	"\x5b\x61\xe5\x5d",
