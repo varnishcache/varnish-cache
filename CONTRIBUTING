@@ -27,3 +27,18 @@ Pull requests are handled like other tickets.
 
 Trivial pull requests (fix typos, etc) are welcomed, but they may be committed
 by a core team member and the author credited in the commit message.
+
+For anything non trivial, please take Jens Axboe's excellent contributing guide
+as guidance: https://github.com/axboe/liburing/blob/master/CONTRIBUTING.md
+
+Notable differences for Varnish-Cache are:
+
+* For code style, we broadly follow bsd style(9) https://man.freebsd.org/cgi/man.cgi?query=style&sektion=9
+
+* Regarding commit messages, we are usually less strict
+
+* The Varnish-Cache repository uses a linear history, so all changes are rebased
+  on top of the current upstream head always. When your PR can no longer be
+  merged, rebase it and force-push your changes.
+
+* For testing `make distcheck` should pass
