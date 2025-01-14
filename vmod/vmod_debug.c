@@ -333,6 +333,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 
 	debug_add_filters(ctx);
 	debug_transport_reembarking_http1_init();
+	debug_transport_vai_init();
 	return (0);
 }
 
@@ -1287,6 +1288,12 @@ VCL_VOID
 xyzzy_use_reembarking_http1(VRT_CTX)
 {
 	debug_transport_reembarking_http1_use(ctx);
+}
+
+VCL_VOID
+xyzzy_use_vai_http1(VRT_CTX)
+{
+	debug_transport_vai_use(ctx);
 }
 
 static int

@@ -1,0 +1,44 @@
+varnishtest "VMOD debug vai transport"
+
+server s1 {
+	rxreq
+	txresp -gziplen 13107
+} -start
+
+varnish v1 \
+    -arg "-p fetch_chunksize=4k" \
+    -vcl+backend {
+	import debug;
+
+	sub vcl_hash {
+		hash_data("");
+		return (lookup);
+	}
+
+	sub vcl_deliver {
+		if (req.url == "/chunked") {
+			set resp.filters += " debug.chunked";
+		}
+		debug.use_vai_http1();
+		set resp.http.filters = resp.filters;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set debug +req_state"
+
+client c1 -repeat 16 -keepalive {
+	txreq
+	rxresp
+	expect resp.bodylen == 13107
+} -start
+
+client c2 -repeat 16 -keepalive {
+	txreq -url "/chunked"
+	rxresp
+	expect resp.http.Content-Length == <undef>
+	expect resp.bodylen == 13107
+} -start
+
+client c1 -wait
+client c2 -wait
