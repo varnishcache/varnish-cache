@@ -237,7 +237,7 @@ SIGNALS
 NOTES
 =====
 
-The %r formatter is equivalent to "%m http://%{Host}i%U%q %H". This
+The %r formatter is equivalent to ``%m http://%{Host}i%U%q %H``. This
 differs from apache's %r behavior, equivalent to "%m %U%q %H".
 Furthermore, when using the %r formatter, if the Host header appears
 multiple times in a single transaction, the first occurrence is used.

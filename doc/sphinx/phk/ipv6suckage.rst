@@ -37,11 +37,15 @@ webserver on the same machine.
 No worries, says the power that controls what URLs look like, we
 will just stick the port number after the IP# with a colon:
 
+.. code-block:: text
+
 	http://192.168.0.1:8080/...
 
 That obviously does not work with IPv6, so RFC3986 comes around and
 says "darn, we didn't think of that" and puts the IPV6 address in
 [...] giving us:
+
+.. code-block:: text
 
 	http://[1080::8:800:200C:417A]:8080/
 
@@ -55,11 +59,15 @@ even need to know if it is a IPv4 or IPv6 address in the first place.
 But it returns the IP# in one buffer and the port number in another,
 so if you want to format the sockaddr in the by RFC5952 recommended
 way (the same as RFC3986), you need to inspect the version field
-in the sockaddr to see if you should do
+in the sockaddr to see if you should do:
+
+.. code-block:: text
 
 	"%s:%s", host, port
 
-or
+or:
+
+.. code-block:: text
 
 	"[%s]:%s", host, port
 
