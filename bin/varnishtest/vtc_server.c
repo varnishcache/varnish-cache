@@ -265,7 +265,7 @@ server_disc(void *priv, struct vtclog *vl, int *fdp)
 	struct server *s;
 
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
-	vtc_log(vl, 3, "shutting fd %d", *fdp);
+	vtc_log(vl, 3, "shutting fd %d (server run)", *fdp);
 	j = shutdown(*fdp, SHUT_WR);
 	if (!vtc_stop && !VTCP_Check(j))
 		vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));
@@ -322,7 +322,7 @@ server_dispatch_wrk(void *priv)
 
 	vtc_log(vl, 3, "start with fd %d", fd);
 	fd = sess_process(vl, s->vsp, s->spec, fd, &s->sock, s->listen);
-	vtc_log(vl, 3, "shutting fd %d", fd);
+	vtc_log(vl, 3, "shutting fd %d (server dispatch)", fd);
 	j = shutdown(fd, SHUT_WR);
 	if (!VTCP_Check(j))
 		vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));

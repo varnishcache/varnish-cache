@@ -858,7 +858,7 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	rush_exponent,
 	/* type */	uint,
-	/* min */	"2",
+	/* min */	"1",
 	/* max */	NULL,
 	/* def */	"3",
 	/* units */	"requests per request",
@@ -866,7 +866,9 @@ PARAM_SIMPLE(
 	"How many parked request we start for each completed request on "
 	"the object.\n"
 	"NB: Even with the implicit delay of delivery, this parameter "
-	"controls an exponential increase in number of worker threads.",
+	"controls an exponential increase in number of worker threads. "
+	"A value of 1 will instead serialize requests resumption and is "
+	"only useful for testing purposes.",
 	/* flags */	EXPERIMENTAL
 )
 
