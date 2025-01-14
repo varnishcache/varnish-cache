@@ -199,7 +199,7 @@ dbg_deliver_finish(struct req *req, struct v1l **v1lp, int err)
 static struct transport DBG_transport;
 
 void
-debug_transport_init(void)
+debug_transport_reembarking_http1_init(void)
 {
 	DBG_transport = HTTP1_transport;
 	DBG_transport.name = "DBG";
@@ -207,7 +207,7 @@ debug_transport_init(void)
 }
 
 void
-debug_transport_use_reembarking_http1(VRT_CTX)
+debug_transport_reembarking_http1_use(VRT_CTX)
 {
 	struct req *req;
 

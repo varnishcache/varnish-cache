@@ -332,7 +332,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->methods = priv_vcl_methods;
 
 	debug_add_filters(ctx);
-	debug_transport_init();
+	debug_transport_reembarking_http1_init();
 	return (0);
 }
 
@@ -1286,5 +1286,5 @@ xyzzy_resolve_range(VRT_CTX, struct VARGS(resolve_range) *args)
 VCL_VOID
 xyzzy_use_reembarking_http1(VRT_CTX)
 {
-	debug_transport_use_reembarking_http1(ctx);
+	debug_transport_reembarking_http1_use(ctx);
 }
