@@ -107,8 +107,23 @@ vcc_include_glob_file(struct vcc *tl, const struct source *src_sp,
     const char *filename, const struct token *parent_token)
 {
 	glob_t	g[1];
+	char **paths, **p;
 	unsigned u;
 	int i;
+
+	if (filename[0] != '/') {
+		paths = VFIL_concat(tl->vcl_path, filename);
+		p = paths;
+		while (*p != NULL) {
+			assert(*p[0] == '/');
+			vcc_include_glob_file(tl, src_sp, *p, parent_token);
+			free(*p);
+			*p = NULL;
+			p++;
+		}
+		free(paths);
+		return;
+	}
 
 	memset(g, 0, sizeof g);
 	i = glob(filename, 0, NULL, g);

@@ -67,3 +67,35 @@ client c1 {
 	expect resp.http.foo == foo
 	expect resp.http.bar == bar
 } -run
+
+shell {
+	rm ${tmpdir}/top.vcl
+	mkdir -p ${tmpdir}/vclpath/vcl1
+	mkdir -p ${tmpdir}/vclpath/vcl2
+	echo 'sub vcl_synth { set resp.http.foo = "vcl1"; }' > ${tmpdir}/vclpath/vcl1/sub_foo.vcl
+	echo 'sub vcl_synth { set resp.http.bar = "vcl2"; }' > ${tmpdir}/vclpath/vcl2/sub_bar.vcl
+	cat > ${tmpdir}/vclpath/top.vcl <<-EOF
+		vcl 4.1;
+
+		backend default {
+			.host = "0:0";
+		}
+
+		include +glob "vcl*/sub_*.vcl";
+
+		sub vcl_recv {
+			return (synth(200));
+		}
+	EOF
+}
+
+varnish v1 -cliok "param.set vcl_path ${tmpdir}/vclpath"
+varnish v1 -cliok "vcl.load globtest top.vcl"
+varnish v1 -cliok "vcl.use globtest"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == vcl1
+	expect resp.http.bar == vcl2
+} -run
