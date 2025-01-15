@@ -722,6 +722,20 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	ban_any_variant,
+	/* type */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"10000",
+	/* units */	"checks",
+	/* descr */
+	"Maximum number of possibly non matching variants that we evaluate "
+	"against the ban list during a lookup.\n"
+	"Setting this to 0 means that only the matching variants will be "
+	"evaluated against the current ban list."
+)
+
+PARAM_SIMPLE(
 	/* name */	max_esi_depth,
 	/* type */	uint,
 	/* min */	"0",
