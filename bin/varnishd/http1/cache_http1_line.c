@@ -393,8 +393,78 @@ v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 	return (0);
 }
 
+/*--------------------------------------------------------------------
+ * VDPIO using V1L
+ *
+ * this is deliverately half-baked to reduce work in progress while heading
+ * towards VAI/VDPIO: we update the v1l with the scarab, which we
+ * return unmodified.
+ *
+ */
+
+/* remember priv pointer for V1L_Close() to clear */
+static int v_matchproto_(vpio_init_f)
+v1l_io_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+	struct v1l *v1l;
+
+	(void) ctx;
+	(void) vdc;
+	AN(priv);
+
+	CAST_OBJ_NOTNULL(v1l, *priv, V1L_MAGIC);
+
+	v1l->vdp_priv = priv;
+	return (capacity);
+}
+
+static int v_matchproto_(vpio_init_f)
+v1l_io_upgrade(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+	return (v1l_io_init(ctx, vdc, priv, capacity));
+}
+
+/*
+ * API note
+ *
+ * this VDP is special in that it does not transform data, but prepares
+ * the write. From the perspective of VDPIO, its current state is only
+ * transitional.
+ *
+ * Because the VDP prepares the actual writes, but the caller needs
+ * to return the scarab's leases, the caller in this case is
+ * required to empty the scarab after V1L_Flush()'ing.
+ */
+
+static int v_matchproto_(vdpio_lease_f)
+v1l_io_lease(struct vdp_ctx *vdc, struct vdp_entry *this, struct vscarab *scarab)
+{
+	struct v1l *v1l;
+	struct viov *v;
+	int r;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(this, VDP_ENTRY_MAGIC);
+	CAST_OBJ_NOTNULL(v1l, this->priv, V1L_MAGIC);
+	VSCARAB_CHECK(scarab);
+	AZ(scarab->used);	// see note above
+	this->calls++;
+	r = vdpio_pull(vdc, this, scarab);
+	if (r < 0)
+		return (r);
+	VSCARAB_FOREACH(v, scarab)
+		this->bytes_in += V1L_Write(v1l, v->iov.iov_base, v->iov.iov_len);
+	return (r);
+}
+
 const struct vdp * const VDP_v1l = &(struct vdp){
 	.name =		"V1B",
 	.init =		v1l_init,
 	.bytes =	v1l_bytes,
+
+#ifdef LATER
+	.io_init =	v1l_io_init,
+#endif
+	.io_upgrade =	v1l_io_upgrade,
+	.io_lease =	v1l_io_lease,
 };
