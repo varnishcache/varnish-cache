@@ -88,6 +88,23 @@ the regular expression is required by the Varnish cli interface.
 Bans are checked when we hit an object in the cache, but before we
 deliver it. *An object is only checked against newer bans*.
 
+During lookup, object variants that may not satisfy the current request
+are also tested against the ban list, which means that a ban may also
+hit a non matching variant.
+
+However, the parameter `ban_any_variant` can be used to limit the number
+of possibly non matching variants that are checked against the ban list during
+lookup for a particular request. This means that at most `ban_any_variant`
+variants will be evaluated, and possibly evicted, before looking for matching
+variants. A value of 0 means that every request would only evaluate bans
+against matching variants. In contrast, a value that is too high may cause a
+request to evaluate all variants against all active bans, which can add
+significant delays for configurations having a large number of variants
+and/or bans.
+
+In the next major release of varnish (8.0), the default value of
+`ban_any_variant` will be set to 0.
+
 Bans that only match against `obj.*` are also processed by a background
 worker threads called the `ban lurker`. The `ban lurker` will walk the
 heap and try to match objects and will evict the matching objects. How
