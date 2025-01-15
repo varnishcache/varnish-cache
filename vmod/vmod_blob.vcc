@@ -277,6 +277,14 @@ Example::
 	set resp.http.urlencoded
 	    = blob.transcode(encoded="foo bar", encoding=URL);
 
+$Function STRING urldecode(STRANDS s)
+
+Shorthand for ``blob.transcode(encoded = *s*, decoding=URL);``
+
+$Function STRING urlencode(STRANDS s)
+
+Shorthand for ``blob.transcode(encoded = *s*, encoding=URL);``
+
 $Function BOOL same(BLOB, BLOB)
 
 Returns ``true`` if and only if the two BLOB arguments are the same
