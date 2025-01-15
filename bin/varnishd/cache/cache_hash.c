@@ -371,6 +371,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	const uint8_t *vary;
 	intmax_t boc_progress;
 	unsigned xid = 0;
+	unsigned ban_checks;
+	unsigned ban_any_variant;
 	float dttl = 0.0;
 
 	AN(ocp);
@@ -420,6 +422,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	busy_found = 0;
 	exp_oc = NULL;
 	exp_t_origin = 0.0;
+	ban_checks = 0;
+	ban_any_variant = cache_param->ban_any_variant;
 	VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
@@ -451,7 +455,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		if (oc->ttl <= 0.)
 			continue;
 
-		if (BAN_CheckObject(wrk, oc, req)) {
+		if (ban_checks++ < ban_any_variant
+		    && BAN_CheckObject(wrk, oc, req)) {
 			oc->flags |= OC_F_DYING;
 			EXP_Remove(oc, NULL);
 			continue;
@@ -464,6 +469,13 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				wrk->strangelove++;
 				continue;
 			}
+		}
+
+		if (ban_checks >= ban_any_variant
+		    && BAN_CheckObject(wrk, oc, req)) {
+			oc->flags |= OC_F_DYING;
+			EXP_Remove(oc, NULL);
+			continue;
 		}
 
 		if (req->vcf != NULL) {
