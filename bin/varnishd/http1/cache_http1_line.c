@@ -393,8 +393,84 @@ v1l_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 	return (0);
 }
 
+/*--------------------------------------------------------------------
+ * VDPIO using V1L
+ *
+ * this is deliverately half-baked to reduce work in progress while heading
+ * towards VAI/VDPIO: we update the v1l with the scarab, which we
+ * return unmodified.
+ *
+ */
+
+#ifdef LATER
+/* remember priv pointer for V1L_Close() to clear */
+static int v_matchproto_(vpio_init_f)
+v1l_io_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+	struct v1l *v1l;
+
+	(void) ctx;
+	(void) vdc;
+	AN(priv);
+	CAST_OBJ_NOTNULL(v1l, *priv, V1L_MAGIC);
+
+	// XXX how can the caller ensure this?
+	assert(capacity < (v1l->siov - v1l->niov));
+
+	v1l->vdp_priv = priv;
+	return (capacity);
+}
+#endif
+
+static int v_matchproto_(vpio_init_f)
+v1l_io_upgrade(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+	struct v1l *v1l;
+
+	(void) ctx;
+	(void) vdc;
+
+	CAST_OBJ_NOTNULL(v1l, *priv, V1L_MAGIC);
+
+	// XXX how can the caller ensure this?
+	assert(capacity < (v1l->siov - v1l->niov));
+
+	v1l->vdp_priv = priv;
+	return (v1l->siov - v1l->niov);
+}
+
+static int v_matchproto_(vdpio_lease_f)
+v1l_io_lease(struct vdp_ctx *vdc, struct vdp_entry *this, struct vscarab *scarab)
+{
+	struct v1l *v1l;
+	struct viov *v;
+	int r;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CAST_OBJ_NOTNULL(v1l, this->priv, V1L_MAGIC);
+	VSCARAB_CHECK(scarab);
+	r = v1l->siov - v1l->niov;
+	assert(r >= (int)scarab->used);
+
+	// XXX half-baked: caller needs to always complete the scarab / v1l
+	AZ(scarab->used);
+	r = vdpio_pull(vdc, this, scarab);
+	if (r <= 0)
+		return (r);
+
+	VSCARAB_FOREACH(v, scarab)
+		(void)V1L_Write(v1l, v->iov.iov_base, v->iov.iov_len);
+	return (r);
+}
+
 const struct vdp * const VDP_v1l = &(struct vdp){
 	.name =		"V1B",
 	.init =		v1l_init,
 	.bytes =	v1l_bytes,
+
+#ifdef LATER
+	.io_init =	v1l_io_init,
+#endif
+	.io_upgrade =	v1l_io_upgrade,
+	.io_lease =	v1l_io_lease,
 };
