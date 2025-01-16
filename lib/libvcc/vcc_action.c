@@ -344,6 +344,27 @@ vcc_act_return_vcl(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcc_act_return_retry(struct vcc *tl)
+{
+	unsigned is_task = 0;
+
+	ExpectErr(tl, '(');
+	vcc_NextToken(tl);
+	if (vcc_IdIs(tl->t, "task"))
+		is_task = 1;
+	else if (!vcc_IdIs(tl->t, "fetch")) {
+		VSB_printf(tl->sb, "Expected \"task\" or \"fetch\" retry.\n");
+		vcc_ErrWhere(tl, tl->t);
+	}
+	ERRCHK(tl);
+	Fb(tl, 1, "VPI_retry(ctx, %u);\n", is_task);
+	SkipToken(tl, ID);
+	SkipToken(tl, ')');
+}
+
+/*--------------------------------------------------------------------*/
+
 static void v_matchproto_(sym_act_f)
 vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 {
@@ -388,6 +409,8 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 			vcc_act_return_vcl(tl);
 		else if (hand == VCL_RET_PASS)
 			vcc_act_return_pass(tl);
+		else if (hand == VCL_RET_RETRY)
+			vcc_act_return_retry(tl);
 		else if (hand == VCL_RET_FAIL)
 			vcc_act_return_fail(tl);
 		else {
