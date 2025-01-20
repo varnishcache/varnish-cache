@@ -114,8 +114,8 @@ VRBT_GENERATE_FIND(vrb, conn_pool, entry, vcp_cmp, static)
 VRBT_GENERATE_INSERT_COLOR(vrb, conn_pool, entry, static)
 VRBT_GENERATE_INSERT_FINISH(vrb, conn_pool, entry, static)
 VRBT_GENERATE_INSERT(vrb, conn_pool, entry, vcp_cmp, static)
-VRBT_GENERATE_NEXT(vrb, conn_pool, entry, static);
-VRBT_GENERATE_MINMAX(vrb, conn_pool, entry, static);
+VRBT_GENERATE_NEXT(vrb, conn_pool, entry, static)
+VRBT_GENERATE_MINMAX(vrb, conn_pool, entry, static)
 
 static struct vrb conn_pools = VRBT_INITIALIZER(&conn_pools);
 static struct vrb dead_pools = VRBT_INITIALIZER(&dying_cps);
