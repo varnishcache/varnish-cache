@@ -444,7 +444,6 @@ vcc_priv_arg(struct vcc *tl, const char *p, struct symbol *sym)
 struct func_arg {
 	vcc_type_t		type;
 	const struct vjsn_val	*enums;
-	const char		*cname;
 	const char		*name;
 	const char		*val;
 	struct expr		*result;
