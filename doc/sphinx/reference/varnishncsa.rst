@@ -106,7 +106,8 @@ Supported formatters are:
 
 %{X}i
   The contents of request header X. If the header appears multiple times
-  in a single transaction, the last occurrence is used.
+  in a single transaction, the last occurrence is used in backend mode
+  and the first one in client mode.
 
 %l
   Remote logname. Always '-'.
@@ -116,7 +117,8 @@ Supported formatters are:
 
 %{X}o
   The contents of response header X. If the header appears multiple
-  times in a single transaction, the last occurrence is used.
+  times in a single transaction, the last occurrence is used in client
+  mode and the first one in backend mode.
 
 %O
   In client mode, total bytes sent to client.  In backend mode, total
@@ -239,8 +241,20 @@ NOTES
 
 The %r formatter is equivalent to ``%m http://%{Host}i%U%q %H``. This
 differs from apache's %r behavior, equivalent to "%m %U%q %H".
-Furthermore, when using the %r formatter, if the Host header appears
-multiple times in a single transaction, the first occurrence is used.
+
+Note that request fields are collected on a first match basis in client mode
+and last match basis in backend mode. Similarly, response fields are collected
+on a first match basis in backend mode and last match basis in client mode.
+
+In other words, this means that requests are represented as they were received
+from the client and as they were sent to the backend, while responses are
+represented as they were sent to the client and as they were received from
+the backend.
+
+Furthermore, these rules also apply for items that appear multiple times in a
+transaction. For exampe, if a header appears multiple times in a client request,
+the first occurence would be shown in client mode, while the last one would be
+used in backend mode.
 
 EXAMPLE
 =======
