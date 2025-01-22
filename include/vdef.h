@@ -243,8 +243,10 @@ int __llvm_gcov_flush(void);
 
 #if __GNUC_PREREQ__(4, 3) || defined(__clang__)
 #  define v_cold_    __attribute__((cold))
+#  define v_used_(x) __attribute__((x, used))
 #else
 #  define v_cold_
+#  define v_used_(x)
 #endif
 
 #if defined __has_attribute

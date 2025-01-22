@@ -1245,7 +1245,7 @@ class vcc():
         vmd = "Vmod_%s_Data" % self.modname
         fo.write('\n')
         fo.write('static const char vmod_vcs[] ')
-        fo.write('__attribute__((section(".vmod_vcs"), used)) = %s;\n' % vcs)
+        fo.write('v_used_(section(".vmod_vcs")) = %s;\n' % vcs)
         for i in (714, 759, 765):
             fo.write("/*lint -esym(%d, %s) */\n" % (i, vmd))
         fo.write("\nextern const struct vmod_data %s;\n" % vmd)
