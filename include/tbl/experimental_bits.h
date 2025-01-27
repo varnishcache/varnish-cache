@@ -34,6 +34,7 @@
 /*lint -save -e525 -e539 */
 
 EXPERIMENTAL_BIT(DROP_POOLS,	drop_pools,	"Drop thread pools")
+EXPERIMENTAL_BIT(UPSTREAM_ZLIB,	upstream_zlib,	"Work with a regular zlib")
 #undef EXPERIMENTAL_BIT
 
 /*lint -restore */

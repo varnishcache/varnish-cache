@@ -106,8 +106,8 @@ typedef struct z_stream_s {
 
 #define VGZ_EXTENSIONS 1
     uLong   start_bit;	/* Bit pos of first deflate block */
+    uLong   last_bit;	/* Bit pos of last deflate block */
     uLong   stop_bit;	/* Bit pos after last deflate block */
-    uLong   last_bit;	/* Bit pos of 'last' bit */
 } z_stream;
 
 typedef z_stream FAR *z_streamp;
