@@ -18,6 +18,13 @@ configuration is to use the malloc backend with a limited size. For a
 serious Varnish deployment you probably would want to adjust the storage
 settings.
 
+All built-in storage backends cache full objects only, so, for example, to
+support *n* concurrent cache hits on 1GB sized objects, the storage backend
+should be configured to provide at least *n*\ GB of storage. For uncacheable
+objects, the rule of thumb is *n* x ``transit_buffer``.
+
+Storage backends are also called stevedores.
+
 default
 ~~~~~~~
 
