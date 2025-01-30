@@ -10,6 +10,42 @@ Platform specific notes
 On some platforms it is necessary to adjust the operating system before running
 Varnish on it. The systems and steps known to us are described in this section.
 
+On Linux, use tmpfs for the workdir
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Varnish uses mapped files for shared memory, for which performance depends on
+writes not blocking. On Linux, however, write throttling implemented by some
+file systems (which is generally useful in other scenarios) can interact badly
+with the way Varnish works and cause lockups or performance impacts. To avoid
+such problems, it is recommended to use a ``tmpfs`` "virtual memory file system"
+as the *workdir*.
+
+To ensure ``tmpfs`` is used, check the following:
+
+Determine the *workdir*. If you use a specific ``-n`` option to ``varnishd`` or
+set the ``VARNISH_DEFAULT_N`` variable, it is that value. Otherwise run
+``varnishd -x options``, which outputs the *workdir* default.
+
+Run ``df *workdir*``. If it reports ``tmpfs`` as the file system in the first
+column, no additional action is necessary.
+
+Otherwise, consider creating a ``tmpfs`` mountpoint at *workdir*, or configure
+*workdir* on an existing ``tmpfs``.
+
+Note: Very valid reasons exist for *not* following this recommendation, if you
+know what you are doing.
+
+Lift locked memory limits
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For the same reason as explained above, varnish tries to lock shared memory in
+RAM. Therefore, the locked memory limit should ideally be set to unlimited or
+sufficiently high to accommodate all mapped files. The specific minimum required
+value is dynamic, depending among other factors on the number of VCLs loaded and
+backends configured. As a rule of thumb, it should be a generous multiple of the
+size of *workdir* when varnish is running.
+
+See :ref:`ref-vsm` for details.
 
 Transparent hugepages on Redhat Enterprise Linux 6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

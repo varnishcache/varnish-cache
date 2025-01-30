@@ -3,6 +3,8 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
+.. _ref-vsm:
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 VSM: Shared Memory Logging and Statistics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
