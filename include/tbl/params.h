@@ -870,6 +870,18 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	req_overflow_status,
+	/* type */	uint,
+	/* min */	"400",
+	/* max */	"500",
+	/* def */	"500",
+	/* units */	"HTTP code",
+	/* descr */
+	"HTTP code to be returned in case of a request overflow."
+	"Default value 500 closes connection silently without sending HTTP response."
+)
+
+PARAM_SIMPLE(
 	/* name */	rush_exponent,
 	/* type */	uint,
 	/* min */	"2",
