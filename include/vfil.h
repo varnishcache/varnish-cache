@@ -45,4 +45,5 @@ void VFIL_setpath(struct vfil_path**, const char *path);
 typedef int vfil_path_func_f(void *priv, const char *fn);
 int VFIL_searchpath(const struct vfil_path *, vfil_path_func_f *func,
     void *priv, const char *fni, char **fno);
+char **VFIL_concat(const struct vfil_path *vp, const char *name);
 
