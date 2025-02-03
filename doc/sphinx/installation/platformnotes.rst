@@ -39,7 +39,7 @@ workdir can not be mounted ``noexec``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Varnish compiles VCL to a shared object and needs to load it at runtime. So the
-workdie can not reside on a file system mounted with ``noexec``.
+*workdir* can not reside on a file system mounted with ``noexec``.
 
 Lift locked memory limits
 ~~~~~~~~~~~~~~~~~~~~~~~~~
