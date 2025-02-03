@@ -1831,7 +1831,8 @@ PARAM_STRING(
 	"VCL files in both the system configuration and shared "
 	"data directories to allow packages to drop their VCL "
 	"files in a standard location where relative includes "
-	"would work.",
+	"would work. Includes using +glob cannot be searched "
+	"in vcl_path.",
 	/* flags */	BUILD_OPTIONS,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	NULL,
