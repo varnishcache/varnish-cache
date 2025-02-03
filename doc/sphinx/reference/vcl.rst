@@ -258,7 +258,11 @@ The included file can be specified as follows:
 Optionally, the ``include`` keyword can take a ``+glob`` flag to include all
 files matching a glob pattern::
 
-    include +glob "example.org/*.vcl";
+    include +glob "/etc/varnish/example.org/*.vcl";
+
+Note that the ``+glob`` option can only be used with absolute paths and
+relative paths starting with './', which means that ``+glob`` includes cannot
+be searched in ``vcl_path`` directories.
 
 Import statement
 ----------------

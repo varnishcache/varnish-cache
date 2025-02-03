@@ -67,3 +67,8 @@ client c1 {
 	expect resp.http.foo == foo
 	expect resp.http.bar == bar
 } -run
+
+varnish v1 -errvcl "+glob can only be used with absolute paths or relative paths starting with './'" {
+	include +glob "sub_*.vcl";
+	backend default none;
+}
