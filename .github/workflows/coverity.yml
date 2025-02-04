@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: ./autogen.sh
       - run: ./configure --with-persistent-storage
-      - uses: vapier/coverity-scan-action@v0
+      - uses: vapier/coverity-scan-action@v1.8.0
         with:
           project: varnish
           email: varnish-dev@varnish-cache.org
