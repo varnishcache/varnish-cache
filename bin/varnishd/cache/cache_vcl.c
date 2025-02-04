@@ -436,6 +436,36 @@ vdire_end_iter(struct vdire *vdire)
 		vcldir_retire(vdir, temp);
 }
 
+/*
+ * like vdire_start_iter, but also prepare for backend_event_*()
+ * by setting the checkpoint
+ */
+static void
+vdire_start_event(struct vdire *vdire, const struct vcltemp *temp)
+{
+
+	CHECK_OBJ_NOTNULL(vdire, VDIRE_MAGIC);
+	AN(temp);
+
+	Lck_AssertHeld(vdire->mtx);
+
+	// https://github.com/varnishcache/varnish-cache/pull/4142#issuecomment-2593091097
+	ASSERT_CLI();
+
+	AZ(vdire->checkpoint);
+	vdire->checkpoint = VTAILQ_LAST(&vdire->directors, vcldir_head);
+	AN(vdire->tempp);
+	*vdire->tempp = temp;
+	vdire->iterating++;
+}
+
+static void
+vdire_end_event(struct vdire *vdire)
+{
+	vdire->checkpoint = NULL;
+	vdire_end_iter(vdire);
+}
+
 // if there are no iterators, remove from directors and retire
 // otherwise put on resigning list to work when iterators end
 void
@@ -557,8 +587,13 @@ VCL_IterDirector(struct cli *cli, const char *pat,
 	return (found);
 }
 
+/*
+ * vdire_start_event() must have been called before
+ *
+ * send event to directors pre checkpoint
+ */
 static void
-vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
+backend_event_base(const struct vcl *vcl, enum vcl_event_e e)
 {
 	struct vcldir *vdir;
 	struct vdire *vdire;
@@ -567,11 +602,56 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 	vdire = vcl->vdire;
+	AN(vdire->iterating);
 
-	vdire_start_iter(vdire);
-	VTAILQ_FOREACH(vdir, &vdire->directors, directors_list)
+	vdir = vdire->checkpoint;
+	if (vdir == NULL)
+		return;
+
+	CHECK_OBJ(vdir, VCLDIR_MAGIC);
+	VTAILQ_FOREACH_REVERSE_FROM(vdir, &vdire->directors,
+	    vcldir_head, directors_list) {
+		CHECK_OBJ(vdir, VCLDIR_MAGIC);
 		VDI_Event(vdir->dir, e);
-	vdire_end_iter(vdire);
+	}
+}
+
+/*
+ * vdire_start_event() must have been called before
+ *
+ * set a new temperature.
+ * send event to directors added post checkpoint, but before
+ * the new temperature
+ */
+static void
+backend_event_delta(const struct vcl *vcl, enum vcl_event_e e, const struct vcltemp *temp)
+{
+	struct vcldir *vdir, *end;
+	struct vdire *vdire;
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	AZ(vcl->busy);
+	vdire = vcl->vdire;
+	AN(temp);
+	AN(vdire->iterating);
+
+	Lck_Lock(vdire->mtx);
+	if (vdire->checkpoint == NULL)
+		vdir = VTAILQ_FIRST(&vdire->directors);
+	else
+		vdir = VTAILQ_NEXT(vdire->checkpoint, directors_list);
+	AN(vdire->tempp);
+	*vdire->tempp = temp;
+	end = VTAILQ_LAST(&vdire->directors, vcldir_head);
+	Lck_Unlock(vdire->mtx);
+
+	while (vdir != NULL) {
+		VDI_Event(vdir->dir, e);
+		if (vdir == end)
+			break;
+		vdir = VTAILQ_NEXT(vdire->checkpoint, directors_list);
+	}
 }
 
 static void
@@ -742,10 +822,12 @@ vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 			break;
 		if (vcl->busy == 0 && vcl->temp->is_warm) {
 			Lck_Lock(&vcl_mtx);
-			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
-			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
+			vdire_start_event(vcl->vdire, VTAILQ_EMPTY(&vcl->ref_list) ?
+			    VCL_TEMP_COLD : VCL_TEMP_COOLING);
 			Lck_Unlock(&vcl_mtx);
-			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
+			backend_event_base(vcl, VCL_EVENT_COLD);
+			vdire_end_event(vcl->vdire);
+			// delta directors at VCL_TEMP_COLD do not need an event
 			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, msg));
 			AZ(*msg);
 		}
@@ -769,16 +851,19 @@ vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 		}
 		else {
 			Lck_Lock(&vcl_mtx);
-			vcl->temp = VCL_TEMP_WARM;
+			vdire_start_event(vcl->vdire, VCL_TEMP_WARM);
 			Lck_Unlock(&vcl_mtx);
 			i = vcl_send_event(vcl, VCL_EVENT_WARM, msg);
 			if (i == 0) {
-				vcl_BackendEvent(vcl, VCL_EVENT_WARM);
+				backend_event_base(vcl, VCL_EVENT_WARM);
+				// delta directors are already warm
+				vdire_end_event(vcl->vdire);
 				break;
 			}
 			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, &nomsg));
 			AZ(nomsg);
-			vcl->temp = VCL_TEMP_COLD;
+			backend_event_delta(vcl, VCL_EVENT_COLD, VCL_TEMP_COLD);
+			vdire_end_event(vcl->vdire);
 		}
 		break;
 	default:
