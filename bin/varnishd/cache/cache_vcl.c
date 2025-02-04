@@ -414,7 +414,7 @@ vdire_end_iter(struct vdire *vdire)
 {
 	struct vcldir_head resigning = VTAILQ_HEAD_INITIALIZER(resigning);
 	const struct vcltemp *temp = NULL;
-	struct vcldir *vdir;
+	struct vcldir *vdir, *next;
 	unsigned n;
 
 	CHECK_OBJ_NOTNULL(vdire, VDIRE_MAGIC);
@@ -432,7 +432,7 @@ vdire_end_iter(struct vdire *vdire)
 	}
 	Lck_Unlock(vdire->mtx);
 
-	VTAILQ_FOREACH(vdir, &resigning, resigning_list)
+	VTAILQ_FOREACH_SAFE(vdir, &resigning, resigning_list, next)
 		vcldir_retire(vdir, temp);
 }
 
