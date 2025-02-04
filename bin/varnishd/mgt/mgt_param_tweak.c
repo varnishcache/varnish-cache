@@ -637,6 +637,13 @@ bit_clear(uint8_t *p, unsigned l)
 	memset(p, 0, ((size_t)l + 7) >> 3);
 }
 
+static inline void
+bit_set(uint8_t *p, unsigned l)
+{
+
+	memset(p, 255, ((size_t)l + 7) >> 3);
+}
+
 /*--------------------------------------------------------------------
  */
 
@@ -661,8 +668,16 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 			bit_clear(p, l);
 			continue;
 		}
+		if (sign == '+' && !strcmp(s, "all")) {
+			bit_set(p, l);
+			continue;
+		}
 		if (sign == '-' && !strcmp(s, "all")) {
 			bit_clear(p, l);
+			continue;
+		}
+		if (sign == '-' && !strcmp(s, "none")) {
+			bit_set(p, l);
 			continue;
 		}
 		if (*s != '-' && *s != '+') {
@@ -711,6 +726,8 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 
 	all = 1;
 	for (j = 0; all && j < l; j++) {
+		if (tags[j] == NULL)
+			continue;
 		if (!bit(p, j, BTST))
 			all = 0;
 	}
@@ -722,6 +739,8 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 	else
 		VSB_cat(vsb, sign == '+' ? "none" : "all");
 	for (j = 0; !all && j < l; j++) {
+		if (tags[j] == NULL)
+			continue;
 		if (bit(p, j, BTST))
 			VSB_printf(vsb, ",%c%s", sign, tags[j]);
 	}
