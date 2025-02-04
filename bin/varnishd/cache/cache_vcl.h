@@ -50,6 +50,8 @@ struct vdire {
 	// to signal when iterators can enter again
 	pthread_cond_t		cond;
 	const struct vcltemp	**tempp;
+	// last director present when vdire_start_event is called
+	struct vcldir           *checkpoint;
 };
 
 struct vcl {
