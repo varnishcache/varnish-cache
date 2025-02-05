@@ -48,6 +48,7 @@
 #include "vjsn.h"
 #include "vsb.h"
 #include "vsc_priv.h"
+#include "vtim.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
