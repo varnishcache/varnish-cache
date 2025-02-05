@@ -20,6 +20,7 @@ varnishd_SOURCES = \
 	cache/cache_backend_probe.c \
 	cache/cache_ban.c \
 	cache/cache_ban_build.c \
+	cache/cache_ban_idx.c \
 	cache/cache_ban_lurker.c \
 	cache/cache_busyobj.c \
 	cache/cache_cli.c \

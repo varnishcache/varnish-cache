@@ -124,8 +124,10 @@ BAN_Release(void)
 	assert(ban_holds > 0);
 	ban_holds--;
 	Lck_Unlock(&ban_mtx);
-	if (ban_holds == 0)
+	if (ban_holds == 0) {
+		BANIDX_fini();
 		WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -294,7 +296,8 @@ BAN_FindBan(vtim_real t0)
 	vtim_real t1;
 
 	assert(ban_holds > 0);
-	VTAILQ_FOREACH(b, &ban_head, list) {
+	b = BANIDX_lookup(t0);
+	VTAILQ_FOREACH_FROM(b, &ban_head, list) {
 		t1 = ban_time(b->spec);
 		if (t1 == t0)
 			return (b);
@@ -392,11 +395,13 @@ ban_reload(const uint8_t *ban, unsigned len)
 	vtim_real t0, t1, t2 = 9e99;
 	ASSERT_CLI();
 	Lck_AssertHeld(&ban_mtx);
+	assert(ban_holds > 0);
 
 	t0 = ban_time(ban);
 	assert(len == ban_len(ban));
 
-	VTAILQ_FOREACH(b, &ban_head, list) {
+	b = BANIDX_lookup(t0);
+	VTAILQ_FOREACH_FROM(b, &ban_head, list) {
 		t1 = ban_time(b->spec);
 		assert(t1 < t2);
 		t2 = t1;

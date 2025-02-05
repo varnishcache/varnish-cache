@@ -156,3 +156,7 @@ vtim_real ban_time(const uint8_t *banspec);
 int ban_equal(const uint8_t *bs1, const uint8_t *bs2);
 void BAN_Free(struct ban *b);
 void ban_kick_lurker(void);
+
+// cache_ban_idx.c
+struct ban * BANIDX_lookup(vtim_real);
+void BANIDX_fini(void);
