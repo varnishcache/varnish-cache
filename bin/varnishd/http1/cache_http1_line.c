@@ -126,6 +126,14 @@ V1L_Open(struct ws *ws, int *fd, struct vsl_log *vsl,
 	return (v1l);
 }
 
+void
+V1L_NoRollback(struct v1l *v1l)
+{
+
+	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
+	v1l->ws_snap = 0;
+}
+
 stream_close_t
 V1L_Close(struct v1l **v1lp, uint64_t *cnt)
 {
@@ -145,7 +153,8 @@ V1L_Close(struct v1l **v1lp, uint64_t *cnt)
 	ws = v1l->ws;
 	ws_snap = v1l->ws_snap;
 	ZERO_OBJ(v1l, sizeof *v1l);
-	WS_Rollback(ws, ws_snap);
+	if (ws_snap != 0)
+		WS_Rollback(ws, ws_snap);
 	return (sc);
 }
 

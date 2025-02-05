@@ -89,6 +89,9 @@ dbg_deliver(struct req *req, int sendbody)
 		return (VTR_D_DONE);
 	}
 
+	// Do not roll back req->ws upon V1L_Close()
+	V1L_NoRollback(v1l);
+
 	if (sendbody) {
 		if (!http_GetHdr(req->resp, H_Content_Length, NULL)) {
 			if (req->http->protover == 11) {

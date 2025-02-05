@@ -63,6 +63,7 @@ void V1L_Chunked(struct v1l *v1l);
 void V1L_EndChunk(struct v1l *v1l);
 struct v1l * V1L_Open(struct ws *, int *fd, struct vsl_log *,
     vtim_real deadline, unsigned niov);
+void V1L_NoRollback(struct v1l *v1l);
 stream_close_t V1L_Flush(struct v1l *v1l);
 stream_close_t V1L_Close(struct v1l **v1lp, uint64_t *cnt);
 size_t V1L_Write(struct v1l *v1l, const void *ptr, ssize_t len);
