@@ -293,6 +293,21 @@ tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
 	    par->dyn_min_reason, par->dyn_max_reason));
 }
 
+int v_matchproto_(tweak_t)
+tweak_uint_orzero(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	volatile unsigned *dest;
+
+	dest = par->priv;
+	if (arg != NULL && arg != JSON_FMT && ! strcmp(arg, "0")) {
+		VSB_cat(vsb, "0");
+		*dest = 0;
+		return (0);
+	}
+	return (tweak_generic_uint(vsb, dest, arg, par->min, par->max,
+	    par->dyn_min_reason, par->dyn_max_reason));
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
