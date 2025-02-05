@@ -126,7 +126,7 @@ varnish_fatal_cleanup(const struct varnish *v)
 		}
 
 		if (n == 1)
-			usleep(10000);
+			VTIM_sleep(0.01);
 	} while (n > 0);
 }
 
@@ -193,7 +193,7 @@ wait_stopped(const struct varnish *v)
 		}
 		free(r);
 		r = NULL;
-		(void)usleep(200000);
+		VTIM_sleep(0.2);
 	}
 }
 /**********************************************************************
@@ -227,7 +227,7 @@ wait_running(const struct varnish *v)
 		}
 		free(r);
 		r = NULL;
-		(void)usleep(200000);
+		VTIM_sleep(0.2);
 	}
 }
 

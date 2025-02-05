@@ -309,7 +309,7 @@ term_expect_text(struct process *pp,
 		vtc_fatal(pp->vl, "YYY %d nlin %d", y, pp->nlin);
 	x = strtoul(col, NULL, 0);
 	for(l = 0; l <= 10 && x > pp->ncol; l++)	// wait for screen change
-		usleep(100000);
+		VTIM_sleep(0.1);
 	if (x < 0 || x > pp->ncol)
 		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
 	l = strlen(pat);
@@ -344,7 +344,7 @@ term_expect_cursor(const struct process *pp, const char *lin, const char *col)
 		vtc_fatal(pp->vl, "YYY %d nlin %d", y, pp->nlin);
 	x = strtoul(col, NULL, 0);
 	for(l = 0; l < 10 && x > pp->ncol; l++)	// wait for screen change
-		usleep(100000);
+		VTIM_sleep(0.1);
 	if (x < 0 || x > pp->ncol)
 		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
 	if (y != 0 && (y-1) != pos->tp_row)
@@ -374,7 +374,7 @@ term_match_text(struct process *pp,
 		vtc_fatal(pp->vl, "YYY %zd nlin %d", y, pp->nlin);
 	x = strtoul(col, NULL, 0);
 	for(l = 0; l < 10 && x > pp->ncol; l++)	// wait for screen change
-		usleep(100000);
+		VTIM_sleep(0.1);
 	if (x < 0 || x > pp->ncol)
 		vtc_fatal(pp->vl, "XXX %zd ncol %d", x, pp->ncol);
 
@@ -1142,7 +1142,7 @@ cmd_process(CMD_ARGS)
 				v = p->stdout_bytes;
 				PTOK(pthread_mutex_unlock(&p->mtx));
 				vtc_log(p->vl, 4, "Have %ju bytes", v);
-				usleep(500000);
+				VTIM_sleep(0.5);
 			} while(v < u);
 			continue;
 		}

@@ -824,7 +824,7 @@ haproxy_wait(struct haproxy *h)
 			vtc_log(h->vl, 4,
 			    "Kill(%d)=%d: %s", sig, i, strerror(errno));
 		}
-		usleep(100000);
+		VTIM_sleep(0.1);
 		if (++n == 20) {
 			switch (sig) {
 			case SIGINT:	sig = SIGTERM ; break;

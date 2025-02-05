@@ -1682,7 +1682,7 @@ cmd_http_txpri(CMD_ARGS)
 	if (l != 18)
 		vtc_log(vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
 		    l, sizeof(PREFACE), strerror(errno));
-	usleep(10000);
+	VTIM_sleep(0.01);
 	l = write(hp->sess->fd, PREFACE + 18, sizeof(PREFACE) - 18);
 	if (l != sizeof(PREFACE) - 18)
 		vtc_log(vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
