@@ -402,7 +402,7 @@ vsc_map_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
 	 * operations, so there is no reason to allow a long retry
 	 * time. */
 	for (retry = 10; retry > 0 && head->ready == 0; retry--)
-		usleep(10000);
+		VTIM_sleep(0.01);
 
 	if (head->ready == 0) {
 		AZ(VSM_Unmap(vsm, sp->fantom));
