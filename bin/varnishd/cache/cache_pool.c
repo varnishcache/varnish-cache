@@ -42,6 +42,8 @@
 #include "cache_varnishd.h"
 #include "cache_pool.h"
 
+#include "vtim.h"
+
 static pthread_t		thr_pool_herder;
 
 static struct lock		wstat_mtx;
