@@ -47,6 +47,7 @@
 #include "vnum.h"
 #include "vrnd.h"
 #include "vtcp.h"
+#include "vtim.h"
 #include "hpack.h"
 
 extern const struct cmds http_cmds[];

@@ -55,6 +55,7 @@
 #include "vlu.h"
 #include "vsb.h"
 #include "vsub.h"
+#include "vtim.h"
 
 #include "teken.h"
 
