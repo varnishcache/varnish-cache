@@ -380,7 +380,7 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 		 * have N+1 backend connections rather than N, which is
 		 * entirely harmless.
 		 */
-		(void)usleep(10000);
+		VTIM_sleep(0.01);
 	}
 }
 

@@ -259,7 +259,7 @@ vwp_fini(struct waiter *w)
 	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
 	vp = NULL;
 	while (vwp->hpoll > 1)
-		(void)usleep(100000);
+		VTIM_sleep(0.1);
 	// XXX: set write pipe blocking
 	assert(write(vwp->pipes[1], &vp, sizeof vp) == sizeof vp);
 	PTOK(pthread_join(vwp->thread, &vp));

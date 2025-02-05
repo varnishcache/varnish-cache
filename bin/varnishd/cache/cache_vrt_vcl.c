@@ -83,7 +83,7 @@ VCL_Refresh(struct vcl **vcc)
 {
 
 	while (vcl_active == NULL)
-		(void)usleep(100000);
+		VTIM_sleep(0.1);
 
 	ASSERT_VCL_ACTIVE();
 	if (*vcc == vcl_active)

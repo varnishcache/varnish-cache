@@ -166,7 +166,7 @@ pool_mkpool(unsigned pool_no)
 	PTOK(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
 
 	while (VTAILQ_EMPTY(&pp->idle_queue))
-		(void)usleep(10000);
+		VTIM_sleep(0.01);
 
 	SES_NewPool(pp, pool_no);
 	VCA_NewPool(pp);
@@ -282,5 +282,5 @@ Pool_Init(void)
 	Lck_New(&pool_mtx, lck_wq);
 	PTOK(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
 	while (!VSC_C_main->pools)
-		(void)usleep(10000);
+		VTIM_sleep(0.01);
 }

@@ -268,7 +268,7 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		 * 20220329 /phk
 		 */
 		if (errno == EINVAL) {
-			usleep(100);
+			VTIM_sleep(0.0001);
 			errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
 		}
 #endif

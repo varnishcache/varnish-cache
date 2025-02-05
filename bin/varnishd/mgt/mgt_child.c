@@ -555,7 +555,7 @@ mgt_reap_child(void)
 		r = waitpid(child_pid, &status, WNOHANG);
 		if (r == child_pid)
 			break;
-		(void)usleep(100000);
+		VTIM_sleep(0.1);
 	}
 	if (r == 0) {
 		VSB_printf(vsb, "Child (%jd) not dying (waitpid = %jd),"

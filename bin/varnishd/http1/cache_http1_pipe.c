@@ -63,7 +63,7 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 			return (1);
 		*pcnt += j;
 		if (i != j)
-			(void)usleep(100000);		/* XXX hack */
+			VTIM_sleep(0.1);		/* XXX hack */
 	}
 	return (0);
 }
