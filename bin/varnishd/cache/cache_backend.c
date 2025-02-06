@@ -334,9 +334,15 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 
 	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s %s",
-	    *fdp, VRT_BACKEND_string(dir), abuf2, pbuf2, abuf1, pbuf1,
-	    PFD_State(pfd) == PFD_STATE_STOLEN ? "reuse" : "connect");
+	if (PFD_State(pfd) != PFD_STATE_STOLEN) {
+		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s connect",
+		    *fdp, VRT_BACKEND_string(dir), abuf2, pbuf2, abuf1, pbuf1);
+	} else {
+		VSLb(bo->vsl, SLT_BackendOpen,
+		    "%d %s %s %s %s %s reuse %.6f %ju", *fdp,
+		    VRT_BACKEND_string(dir), abuf2, pbuf2, abuf1, pbuf1,
+		    PFD_Age(pfd), PFD_Reused(pfd));
+	}
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = pfd;
