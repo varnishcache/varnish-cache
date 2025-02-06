@@ -248,6 +248,7 @@ VCP_Rel(struct conn_pool **cpp)
 {
 	struct conn_pool *cp;
 	struct pfd *pfd, *pfd2;
+	int n_kill;
 
 	TAKE_OBJ_NOTNULL(cp, cpp, CONN_POOL_MAGIC);
 
@@ -270,8 +271,9 @@ VCP_Rel(struct conn_pool **cpp)
 		(void)shutdown(pfd->fd, SHUT_RDWR);
 		cp->n_kill++;
 	}
+	n_kill = cp->n_kill;
 	Lck_Unlock(&cp->mtx);
-	if (cp->n_kill == 0) {
+	if (n_kill == 0) {
 		vcp_destroy(&cp);
 		return;
 	}
@@ -289,6 +291,7 @@ VCP_RelPoll(void)
 {
 	struct vrb dead;
 	struct conn_pool *cp, *cp2;
+	int n_kill;
 
 	ASSERT_CLI();
 
@@ -303,7 +306,10 @@ VCP_RelPoll(void)
 
 	VRBT_FOREACH_SAFE(cp, vrb, &dead, cp2) {
 		CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
-		if (cp->n_kill > 0)
+		Lck_Lock(&cp->mtx);
+		n_kill = cp->n_kill;
+		Lck_Unlock(&cp->mtx);
+		if (n_kill > 0)
 			continue;
 		VRBT_REMOVE(vrb, &dead, cp);
 		vcp_destroy(&cp);
