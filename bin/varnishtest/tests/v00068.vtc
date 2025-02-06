@@ -9,7 +9,8 @@ server s1 {
 
 	rxreq
 	expect req.method == "GET"
-	expect req.url == "/cached"
+	expect req.url == "/cachednobody"
+	expect req.http.Content-Length == <undef>
 	txresp
 } -start
 
@@ -31,7 +32,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 
-	txreq -url "/cached"
+	txreq -url "/cachednobody"
 	rxresp
 	expect resp.status == 200
 } -run
