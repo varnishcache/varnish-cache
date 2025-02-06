@@ -12,6 +12,18 @@ server s1 {
 	expect req.url == "/cachednobody"
 	expect req.http.Content-Length == <undef>
 	txresp
+
+	rxreq
+	expect req.method == "HEAD"
+	expect req.url == "/head-restart-get"
+	expect req.http.Content-Length == <undef>
+	txresp
+
+	rxreq
+	expect req.method == "GET"
+	expect req.url == "/head-restart-get"
+	expect req.http.Content-Length == <undef>
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
@@ -21,9 +33,28 @@ varnish v1 -vcl+backend {
 		if (req.url == "/cached") {
 			std.cache_req_body(2KB);
 		}
+		set req.http.restarts = req.restarts;
 	}
+
+	sub vcl_hash {
+		hash_data(req.restarts);
+	}
+
+	sub vcl_deliver {
+		if (req.url == "/head-restart-get" && req.restarts == 0) {
+			return (restart);
+		}
+	}
+
 	sub vcl_backend_fetch {
-		unset bereq.body;
+		if (bereq.url == "/head-restart-get" && bereq.http.restarts == "0") {
+			set bereq.method = "HEAD";
+		}
+
+		if (bereq.http.restarts == "0") {
+			unset bereq.body;
+		}
+		return (fetch);
 	}
 } -start
 
@@ -33,6 +64,10 @@ client c1 {
 	expect resp.status == 200
 
 	txreq -url "/cachednobody"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/head-restart-get" -body "fine"
 	rxresp
 	expect resp.status == 200
 } -run

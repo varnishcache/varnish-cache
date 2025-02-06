@@ -410,6 +410,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
+	if (bo->bereq_body == NULL && bo->req == NULL)
+		http_Unset(bo->bereq, H_Content_Length);
+
 	if (wrk->vpi->handling == VCL_RET_ABANDON ||
 	    wrk->vpi->handling == VCL_RET_FAIL)
 		return (F_STP_FAIL);
