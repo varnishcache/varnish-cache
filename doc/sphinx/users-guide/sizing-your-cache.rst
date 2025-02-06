@@ -23,10 +23,5 @@ Deciding on cache size can be a tricky task. A few things to consider:
    evicting objects due to space constraints and you should consider
    increasing the size of the cache.
 
-Be aware that every object that is stored also carries overhead that
-is kept outside the actually storage area. So, even if you specify ``-s
-malloc,16G`` Varnish might actually use **double** that. Varnish has a
-overhead of about 1KB per object. So, if you have lots of small objects
-in your cache the overhead might be significant.
-
-.. XXX:This seems to contradict the last paragraph in "storage-backends". benc
+Also, there are additional considerations for specific storage engines
+(stevedores), see :ref:`guide-storage` for details.

@@ -53,6 +53,8 @@ size of *workdir* when varnish is running.
 
 See :ref:`ref-vsm` for details.
 
+.. _platform-thp:
+
 Transparent hugepages on Redhat Enterprise Linux 6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

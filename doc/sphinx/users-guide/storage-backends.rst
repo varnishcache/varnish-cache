@@ -25,6 +25,11 @@ objects, the rule of thumb is *n* x ``transit_buffer``.
 
 Storage backends are also called stevedores.
 
+.. _vmods: https://www.varnish-cache.org/vmods
+
+Besides the built-in storage backends, separately distributed extensions exist,
+which can be found on the `vmods`_ page by searching for "stevedore".
+
 default
 ~~~~~~~
 
@@ -38,18 +43,13 @@ malloc
 
 syntax: malloc[,size]
 
-Malloc is a memory based backend. Each object will be allocated from
-memory. If your system runs low on memory swap will be used.
+Malloc is a virtual memory based storage backend. Each object will be allocated
+using whatever ``malloc()`` implementation is in effect. If configured, virtual
+memory might get paged in and out to swap space by the operating system.
 
-Be aware that the size limitation only limits the actual storage and that the
-approximately 1k of memory per object, used for various internal
-structures, is included in the actual storage as well.
-
-.. XXX:This seems to contradict the last paragraph in "sizing-your-cache". benc
-
-The size parameter specifies the maximum amount of memory `varnishd`
-will allocate.  The size is assumed to be in bytes, unless followed by
-one of the following suffixes:
+The size parameter specifies the maximum *net* amount of memory `varnishd` will
+allocate.  The size is assumed to be in bytes, unless followed by one of the
+following suffixes:
 
       K, k    The size is expressed in kibibytes.
 
@@ -61,9 +61,21 @@ one of the following suffixes:
 
 The default size is unlimited.
 
-malloc's performance is bound to memory speed so it is very fast. If
-the dataset is bigger than available memory performance will
-depend on the operating systems ability to page effectively.
+The *net* amount of memory comprises object metadata (typically in the order of
+the total size of headers), segmented body data and metadata for the storage
+engine itself.
+
+This *net* amount of memory is the sum of all allocation sizes from the
+perspective of `varnishd`, but for the actual *gross* amount, two additional
+factors need to be considered: `varnishd` also requires memory outside the
+storage engine in the order of 1KB per object. And, more importantly, due to
+fragmentation, the amount of memory actually used by the malloc implementation
+might be substantially higher by a factor of typically **two to four times**.
+Specific optimizations like :ref:`platform-thp` can amplify this effect.
+
+malloc's performance is bound to memory speed, so it is very fast. If
+the dataset is bigger than available memory, performance will
+depend on the operating system's ability to page effectively.
 
 .. _guide-storage_umem:
 
