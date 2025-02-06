@@ -1,13 +1,15 @@
-varnishtest "unset bereq.body with cached req body"
+varnishtest "unset bereq.body tests"
 
 server s1 {
 	rxreq
 	expect req.method == "GET"
+	expect req.url == "/cached"
 	expect req.http.Content-Length == <undef>
 	txresp
 
 	rxreq
 	expect req.method == "GET"
+	expect req.url == "/cached"
 	txresp
 } -start
 
@@ -15,7 +17,9 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_recv {
-		std.cache_req_body(2KB);
+		if (req.url == "/cached") {
+			std.cache_req_body(2KB);
+		}
 	}
 	sub vcl_backend_fetch {
 		unset bereq.body;
@@ -23,11 +27,11 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -body "fine"
+	txreq -url "/cached" -body "fine"
 	rxresp
 	expect resp.status == 200
 
-	txreq
+	txreq -url "/cached"
 	rxresp
 	expect resp.status == 200
 } -run
