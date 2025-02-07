@@ -43,3 +43,11 @@
 #else
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
+
+#if 1
+#define AC(x) assert((x) != ERR)
+#define IC(x) (void)x
+#else
+#define AC(x) (void)x
+#define IC(x) (void)x
+#endif

@@ -58,12 +58,6 @@
 #include "vut.h"
 #include "vapi/vsig.h"
 
-#if 0
-#define AC(x) assert((x) != ERR)
-#else
-#define AC(x) x
-#endif
-
 static struct VUT *vut;
 
 struct top {

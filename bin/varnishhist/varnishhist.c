@@ -56,14 +56,6 @@
 #include "vut.h"
 #include "vtim.h"
 
-#if 1
-#define AC(x) assert((x) != ERR)
-#define IC(x) (void)x
-#else
-#define AC(x) (void)x
-#define IC(x) (void)x
-#endif
-
 #define HIST_N 2000		/* how far back we remember */
 #define HIST_RES 100		/* bucket resolution */
 
