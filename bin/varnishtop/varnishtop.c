@@ -257,7 +257,7 @@ do_curses(void *arg)
 	AC(noecho());
 	AC(nonl());
 	AC(intrflush(stdscr, FALSE));
-	(void)curs_set(0);
+	IC(curs_set(0));
 	AC(erase());
 	timeout(1000);
 	while (!VSIG_int && !VSIG_term && !VSIG_hup) {

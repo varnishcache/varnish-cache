@@ -150,13 +150,13 @@ update(void)
 		(void)mvaddch(LINES - 2, k, '-');
 	for (i = 0, j = hist_low; i < hist_range; ++i, ++j) {
 		(void)mvaddch(LINES - 2, w * i, '+');
-		mvprintw(LINES - 1, w * i, "|1e%d", j);
+		IC(mvprintw(LINES - 1, w * i, "|1e%d", j));
 	}
 
 	if (end_of_file)
-		mvprintw(0, 0, "%*s", COLS - 1, "EOF");
+		IC(mvprintw(0, 0, "%*s", COLS - 1, "EOF"));
 	else
-		mvprintw(0, 0, "%*s", COLS - 1, ident);
+		IC(mvprintw(0, 0, "%*s", COLS - 1, ident));
 
 	/* count our flock */
 	memset(bm, 0, sizeof bm);
@@ -178,14 +178,15 @@ update(void)
 	if (vsl_t0 > 0) {
 		VTIM_format(vsl_ts, t);
 
-		mvprintw(0, 0, "1:%u, n = %u, d = %g @ %s x %g",
-		    scale, nhist, 1e-3 * ms_delay, t, timebend);
-	} else
-		mvprintw(0, 0, "1:%u, n = %u, d = %g",
-		    scale, nhist, 1e-3 * ms_delay);
+		IC(mvprintw(0, 0, "1:%u, n = %u, d = %g @ %s x %g",
+		    scale, nhist, 1e-3 * ms_delay, t, timebend));
+	} else {
+		IC(mvprintw(0, 0, "1:%u, n = %u, d = %g",
+		    scale, nhist, 1e-3 * ms_delay));
+	}
 
 	for (j = 5; j < LINES - 2; j += 5)
-		mvprintw((LINES - 2) - j, 0, "%u_", j * scale);
+		IC(mvprintw((LINES - 2) - j, 0, "%u_", j * scale));
 
 	/* show them */
 	for (k = 0; k < n; ++k) {
@@ -396,7 +397,7 @@ do_curses(void *arg)
 #endif
 		case '\014':	/* Ctrl-L */
 		case '\024':	/* Ctrl-T */
-			redrawwin(stdscr);
+			AC(redrawwin(stdscr));
 			AC(refresh());
 			break;
 		case '\032':	/* Ctrl-Z */

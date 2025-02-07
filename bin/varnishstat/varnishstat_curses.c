@@ -327,7 +327,7 @@ destroy_window(WINDOW **w)
 	AN(w);
 	if (*w == NULL)
 		return;
-	assert(delwin(*w) != ERR);
+	AC(delwin(*w));
 	*w = NULL;
 }
 
@@ -373,28 +373,28 @@ make_windows(void)
 
 	w_status = newwin(l_status, X, y_status, 0);
 	AN(w_status);
-	nodelay(w_status, 1);
-	keypad(w_status, 1);
-	wnoutrefresh(w_status);
+	AC(nodelay(w_status, 1));
+	AC(keypad(w_status, 1));
+	AC(wnoutrefresh(w_status));
 
 	w_bar_t = newwin(l_bar_t, X, y_bar_t, 0);
 	AN(w_bar_t);
 	wbkgd(w_bar_t, A_REVERSE);
-	wnoutrefresh(w_bar_t);
+	AC(wnoutrefresh(w_bar_t));
 
 	w_points = newwin(l_points, X, y_points, 0);
 	AN(w_points);
-	wnoutrefresh(w_points);
+	AC(wnoutrefresh(w_points));
 
 	w_bar_b = newwin(l_bar_b, X, y_bar_b, 0);
 	AN(w_bar_b);
 	wbkgd(w_bar_b, A_REVERSE);
-	wnoutrefresh(w_bar_b);
+	AC(wnoutrefresh(w_bar_b));
 
 	if (l_info) {
 		w_info = newwin(l_info, X, y_info, 0);
 		AN(w_info);
-		wnoutrefresh(w_info);
+		AC(wnoutrefresh(w_info));
 	}
 
 	if (X - COLW_NAME_MIN > N_COL * COLW)
@@ -409,9 +409,9 @@ static void
 print_duration(WINDOW *w, uint64_t t)
 {
 
-	wprintw(w, "%4ju+%02ju:%02ju:%02ju",
+	IC(wprintw(w, "%4ju+%02ju:%02ju:%02ju",
 	    (uintmax_t)t / 86400, (uintmax_t)(t % 86400) / 3600,
-	    (uintmax_t)(t % 3600) / 60, (uintmax_t)t % 60);
+	    (uintmax_t)(t % 3600) / 60, (uintmax_t)t % 60));
 }
 
 static void
@@ -421,7 +421,7 @@ running(WINDOW *w, uint64_t up, int flg)
 		print_duration(w_status, up);
 	} else {
 		wattron(w, A_STANDOUT);
-		wprintw(w, "  Not Running");
+		IC(wprintw(w, "  Not Running"));
 		wattroff(w, A_STANDOUT);
 	}
 }
@@ -434,32 +434,32 @@ draw_status(void)
 
 	AN(w_status);
 
-	werase(w_status);
+	AC(werase(w_status));
 
 	if (mgt_uptime != NULL)
 		up_mgt = *mgt_uptime;
 	if (main_uptime != NULL)
 		up_chld = *main_uptime;
 
-	mvwprintw(w_status, 0, 0, "Uptime mgt:   ");
+	IC(mvwprintw(w_status, 0, 0, "Uptime mgt:   "));
 	running(w_status, up_mgt, VSM_MGT_RUNNING);
-	mvwprintw(w_status, 1, 0, "Uptime child: ");
+	IC(mvwprintw(w_status, 1, 0, "Uptime child: "));
 	running(w_status, up_chld, VSM_WRK_RUNNING);
-	mvwprintw(w_status, 2, 0, "Press <h> to toggle help screen");
+	IC(mvwprintw(w_status, 2, 0, "Press <h> to toggle help screen"));
 
 	if (VTIM_mono() < notification_eol)
 		mvwaddstr(w_status, 2, 0, notification_message);
 
 	if (COLS > 70) {
-		mvwprintw(w_status, 0, getmaxx(w_status) - 37,
+		IC(mvwprintw(w_status, 0, getmaxx(w_status) - 37,
 		    "Hitrate n: %8u %8u %8u", hitrate.hr_10.n, hitrate.hr_100.n,
-		    hitrate.hr_1000.n);
-		mvwprintw(w_status, 1, getmaxx(w_status) - 37,
+		    hitrate.hr_1000.n));
+		IC(mvwprintw(w_status, 1, getmaxx(w_status) - 37,
 		    "   avg(n): %8.4f %8.4f %8.4f", hitrate.hr_10.acc,
-		    hitrate.hr_100.acc, hitrate.hr_1000.acc);
+		    hitrate.hr_100.acc, hitrate.hr_1000.acc));
 	}
 
-	wnoutrefresh(w_status);
+	AC(wnoutrefresh(w_status));
 }
 
 static void
@@ -480,11 +480,11 @@ draw_bar_t(void)
 
 	X = getmaxx(w_bar_t);
 	x = 0;
-	werase(w_bar_t);
+	AC(werase(w_bar_t));
 	if (page_start > 0)
-		mvwprintw(w_bar_t, 0, x, "^^^");
+		IC(mvwprintw(w_bar_t, 0, x, "^^^"));
 	x += 4;
-	mvwprintw(w_bar_t, 0, x, "%.*s", colw_name - 4, "NAME");
+	IC(mvwprintw(w_bar_t, 0, x, "%.*s", colw_name - 4, "NAME"));
 	x += colw_name - 4;
 	col = COL_CUR;
 	while (col < COL_LAST) {
@@ -492,22 +492,22 @@ draw_bar_t(void)
 			break;
 		switch (col) {
 		case COL_CUR:
-			mvwprintw(w_bar_t, 0, x, " %12.12s", "CURRENT");
+			IC(mvwprintw(w_bar_t, 0, x, " %12.12s", "CURRENT"));
 			break;
 		case COL_CHG:
-			mvwprintw(w_bar_t, 0, x, " %12.12s", "CHANGE");
+			IC(mvwprintw(w_bar_t, 0, x, " %12.12s", "CHANGE"));
 			break;
 		case COL_AVG:
-			mvwprintw(w_bar_t, 0, x, " %12.12s", "AVERAGE");
+			IC(mvwprintw(w_bar_t, 0, x, " %12.12s", "AVERAGE"));
 			break;
 		case COL_MA10:
-			mvwprintw(w_bar_t, 0, x, " %12.12s", "AVG_10");
+			IC(mvwprintw(w_bar_t, 0, x, " %12.12s", "AVG_10"));
 			break;
 		case COL_MA100:
-			mvwprintw(w_bar_t, 0, x, " %12.12s", "AVG_100");
+			IC(mvwprintw(w_bar_t, 0, x, " %12.12s", "AVG_100"));
 			break;
 		case COL_MA1000:
-			mvwprintw(w_bar_t, 0, x, " %12.12s", "AVG_1000");
+			IC(mvwprintw(w_bar_t, 0, x, " %12.12s", "AVG_1000"));
 			break;
 		default:
 			break;
@@ -516,7 +516,7 @@ draw_bar_t(void)
 		col++;
 	}
 
-	wnoutrefresh(w_bar_t);
+	AC(wnoutrefresh(w_bar_t));
 }
 
 static void
@@ -541,28 +541,28 @@ draw_line_default(WINDOW *w, int y, int x, int X, const struct pt *pt)
 			break;
 		switch (col) {
 		case COL_CUR:
-			mvwprintw(w, y, x, " %12ju", (uintmax_t)pt->cur);
+			IC(mvwprintw(w, y, x, " %12ju", (uintmax_t)pt->cur));
 			break;
 		case COL_CHG:
 			if (pt->t_last)
-				mvwprintw(w, y, x, " %12.2f", pt->chg);
+				IC(mvwprintw(w, y, x, " %12.2f", pt->chg));
 			else
-				mvwprintw(w, y, x, " %12s", ".  ");
+				IC(mvwprintw(w, y, x, " %12s", ".  "));
 			break;
 		case COL_AVG:
 			if (pt->avg)
-				mvwprintw(w, y, x, " %12.2f", pt->avg);
+				IC(mvwprintw(w, y, x, " %12.2f", pt->avg));
 			else
-				mvwprintw(w, y, x, " %12s", ".  ");
+				IC(mvwprintw(w, y, x, " %12s", ".  "));
 			break;
 		case COL_MA10:
-			mvwprintw(w, y, x, " %12.2f", pt->ma_10.acc);
+			IC(mvwprintw(w, y, x, " %12.2f", pt->ma_10.acc));
 			break;
 		case COL_MA100:
-			mvwprintw(w, y, x, " %12.2f", pt->ma_100.acc);
+			IC(mvwprintw(w, y, x, " %12.2f", pt->ma_100.acc));
 			break;
 		case COL_MA1000:
-			mvwprintw(w, y, x, " %12.2f", pt->ma_1000.acc);
+			IC(mvwprintw(w, y, x, " %12.2f", pt->ma_1000.acc));
 			break;
 		default:
 			break;
@@ -593,7 +593,7 @@ print_bytes(WINDOW *w, double val)
 
 	if (scale)
 		val = scale_bytes(val, &q);
-	wprintw(w, " %12.2f%c", val, q);
+	IC(wprintw(w, " %12.2f%c", val, q));
 }
 
 static void
@@ -602,9 +602,9 @@ print_trunc(WINDOW *w, uintmax_t val)
 	if (val > VALUE_MAX) {
 		while (val > VALUE_MAX)
 			val /= 1000;
-		wprintw(w, " %9ju...", val);
+		IC(wprintw(w, " %9ju...", val));
 	} else
-		wprintw(w, " %12ju", val);
+		IC(wprintw(w, " %12ju", val));
 }
 
 static void
@@ -639,13 +639,13 @@ draw_line_bytes(WINDOW *w, int y, int x, int X, const struct pt *pt)
 			if (pt->t_last)
 				print_bytes(w, pt->chg);
 			else
-				wprintw(w, " %12s", ".  ");
+				IC(wprintw(w, " %12s", ".  "));
 			break;
 		case COL_AVG:
 			if (pt->avg)
 				print_bytes(w, pt->avg);
 			else
-				wprintw(w, " %12s", ".  ");
+				IC(wprintw(w, " %12s", ".  "));
 			break;
 		case COL_MA10:
 			print_bytes(w, pt->ma_10.acc);
@@ -684,8 +684,8 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, const struct pt *pt)
 		case COL_VAL:
 			if (X - x < COLW)
 				return;
-			mvwprintw(w, y, x, "   %10.10jx",
-			    (uintmax_t)((pt->cur >> 24) & 0xffffffffffLL));
+			IC(mvwprintw(w, y, x, "   %10.10jx",
+			    (uintmax_t)((pt->cur >> 24) & 0xffffffffffLL)));
 			x += COLW;
 			break;
 		case COL_MAP:
@@ -728,7 +728,7 @@ draw_line_duration(WINDOW *w, int y, int x, int X, const struct pt *pt)
 			if (scale)
 				print_duration(w, pt->cur);
 			else
-				wprintw(w, " %12ju", (uintmax_t)pt->cur);
+				IC(wprintw(w, " %12ju", (uintmax_t)pt->cur));
 			break;
 		default:
 			break;
@@ -747,9 +747,9 @@ draw_line(WINDOW *w, int y, const struct pt *pt)
 	X = getmaxx(w);
 	x = 0;
 	if (strlen(pt->vpt->name) > colw_name)
-		mvwprintw(w, y, x, "%.*s...", colw_name - 3, pt->vpt->name);
+		IC(mvwprintw(w, y, x, "%.*s...", colw_name - 3, pt->vpt->name));
 	else
-		mvwprintw(w, y, x, "%.*s", colw_name, pt->vpt->name);
+		IC(mvwprintw(w, y, x, "%.*s", colw_name, pt->vpt->name));
 	x += colw_name;
 
 	switch (pt->vpt->format) {
@@ -776,9 +776,9 @@ draw_points(void)
 
 	AN(w_points);
 
-	werase(w_points);
+	AC(werase(w_points));
 	if (n_ptarray == 0) {
-		wnoutrefresh(w_points);
+		AC(wnoutrefresh(w_points));
 		return;
 	}
 
@@ -799,7 +799,7 @@ draw_points(void)
 		if (n == current)
 			wattroff(w_points, A_BOLD);
 	}
-	wnoutrefresh(w_points);
+	AC(wnoutrefresh(w_points));
 }
 
 static void
@@ -818,19 +818,19 @@ draw_help(void)
 	}
 
 	X = getmaxx(w_points);
-	werase(w_points);
+	AC(werase(w_points));
 
 	for (y = 0, p = bindings_help + help_line; y < l; y++, p++) {
 		if (**p == '\t') {
-			mvwprintw(w_points, y, 0, "    %.*s", X - 4, *p + 1);
+			IC(mvwprintw(w_points, y, 0, "    %.*s", X - 4, *p + 1));
 		} else {
 			wattron(w_points, A_BOLD);
-			mvwprintw(w_points, y, 0, "%.*s", X, *p);
+			IC(mvwprintw(w_points, y, 0, "%.*s", X, *p));
 			wattroff(w_points, A_BOLD);
 		}
 	}
 
-	wnoutrefresh(w_points);
+	AC(wnoutrefresh(w_points));
 }
 
 static void
@@ -843,33 +843,33 @@ draw_bar_b(void)
 
 	x = 0;
 	X = getmaxx(w_bar_b);
-	werase(w_bar_b);
+	AC(werase(w_bar_b));
 	if (page_start + l_points < n_ptarray)
-		mvwprintw(w_bar_b, 0, x, "vvv");
+		IC(mvwprintw(w_bar_b, 0, x, "vvv"));
 	x += 4;
 	if (current < n_ptarray)
-		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->vpt->name);
+		IC(mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->vpt->name));
 
 	bprintf(buf, "%d-%d/%d", page_start + 1,
 	    page_start + l_points < n_ptarray ?
 		page_start + l_points : n_ptarray,
 	    n_ptarray);
-	mvwprintw(w_bar_b, 0, X - strlen(buf), "%s", buf);
+	IC(mvwprintw(w_bar_b, 0, X - strlen(buf), "%s", buf));
 	X -= strlen(buf) + 2;
 
 	if (verbosity != NULL) {
-		mvwprintw(w_bar_b, 0, X - strlen(verbosity->label), "%s",
-		    verbosity->label);
+		IC(mvwprintw(w_bar_b, 0, X - strlen(verbosity->label), "%s",
+		    verbosity->label));
 		X -= strlen(verbosity->label) + 2;
 	}
 	if (!hide_unseen) {
-		mvwprintw(w_bar_b, 0, X - 6, "%s", "UNSEEN");
+		IC(mvwprintw(w_bar_b, 0, X - 6, "%s", "UNSEEN"));
 		X -= 8;
 	}
 	if (raw_vsc)
-		mvwprintw(w_bar_b, 0, X - 3, "%s", "RAW");
+		IC(mvwprintw(w_bar_b, 0, X - 3, "%s", "RAW"));
 
-	wnoutrefresh(w_bar_b);
+	AC(wnoutrefresh(w_bar_b));
 }
 
 static void
@@ -879,15 +879,15 @@ draw_info(void)
 	if (w_info == NULL)
 		return;
 
-	werase(w_info);
+	AC(werase(w_info));
 	if (current < n_ptarray) {
 		/* XXX: Word wrapping, and overflow handling? */
-		mvwprintw(w_info, 0, 0, "%s:",
-		    ptarray[current]->vpt->sdesc);
-		mvwprintw(w_info, 1, 0, "%s",
-		    ptarray[current]->vpt->ldesc);
+		IC(mvwprintw(w_info, 0, 0, "%s:",
+		    ptarray[current]->vpt->sdesc));
+		IC(mvwprintw(w_info, 1, 0, "%s",
+		    ptarray[current]->vpt->ldesc));
 	}
-	wnoutrefresh(w_info);
+	AC(wnoutrefresh(w_info));
 }
 
 static void
@@ -895,12 +895,12 @@ draw_screen(void)
 {
 	draw_status();
 	if (show_help) {
-		werase(w_bar_t);
-		werase(w_bar_b);
-		werase(w_info);
-		wnoutrefresh(w_bar_t);
-		wnoutrefresh(w_bar_b);
-		wnoutrefresh(w_info);
+		AC(werase(w_bar_t));
+		AC(werase(w_bar_b));
+		AC(werase(w_info));
+		AC(wnoutrefresh(w_bar_t));
+		AC(wnoutrefresh(w_bar_b));
+		AC(wnoutrefresh(w_info));
 		draw_help();
 	} else {
 		draw_bar_t();
@@ -908,7 +908,7 @@ draw_screen(void)
 		draw_bar_b();
 		draw_info();
 	}
-	doupdate();
+	AC(doupdate());
 	redraw = 0;
 }
 
@@ -1154,13 +1154,13 @@ do_curses(struct vsm *vsm, struct vsc *vsc)
 	verbosity = VSC_ChangeLevel(NULL, 0);
 
 	(void)initscr();
-	raw();
-	noecho();
-	nonl();
-	curs_set(0);
+	AC(raw());
+	AC(noecho());
+	AC(nonl());
+	IC(curs_set(0));
 
 	make_windows();
-	doupdate();
+	AC(doupdate());
 
 	VSC_State(vsc, newpt, delpt, NULL);
 
