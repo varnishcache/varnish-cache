@@ -110,7 +110,7 @@ varnish v1 -vcl {
 		.via = v2;
 		.host = "${s1_addr}";
 		.port = "${s1_port}";
-		.host_header = "host.com:1234";
+		.host_header = "host.com";
 	}
 
 	sub vcl_recv {
