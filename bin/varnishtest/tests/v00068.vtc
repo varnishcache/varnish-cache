@@ -72,6 +72,11 @@ varnish v1 -vcl+backend {
 		if (bereq.http.restarts == "0") {
 			unset bereq.body;
 		}
+
+		if (bereq.http.Content-Length) {
+			return (abandon);
+		}
+
 		return (fetch);
 	}
 } -start
