@@ -392,8 +392,9 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	vtim_dur first_byte_timeout = NAN;
 	vtim_dur between_bytes_timeout = NAN;
 	vtim_dur backend_wait_timeout = NAN;
-	char *p;
+	char *p, *pp;
 	unsigned u;
+	int l;
 
 	if (tl->t->tok == ID &&
 	    (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
@@ -706,8 +707,11 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 			vcc_ErrWhere(tl, t_val);
 		}
 
+		pp = strchr(p, ':');
+		l = (pp == NULL) ? -1 : (int)(pp - p);
+
 		Fb(tl, 0, "\t.authority = ");
-		VSB_quote(tl->fb, p, -1, VSB_QUOTE_CSTR);
+		VSB_quote(tl->fb, p, l, VSB_QUOTE_CSTR);
 		Fb(tl, 0, ",\n");
 	}
 
