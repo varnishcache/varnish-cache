@@ -36,8 +36,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 
 #include "vcc_compile.h"
+#include "vsa.h"
+#include "vss.h"
 #include "vus.h"
 
 /*--------------------------------------------------------------------
@@ -73,6 +79,18 @@ Emit_Sockaddr(struct vcc *tl, struct vsb *vsb1, const struct token *t_host,
 		    ipv6);
 	}
 	VSB_cat(vsb1, "\t.uds_path = (void *) 0,\n");
+}
+
+/*
+ * a string represents an IP address if getaddrinfo(AI_NUMERICHOST) succeeds
+ */
+static int
+isip(const char *addr)
+{
+	char buf[vsa_suckaddr_len];
+
+	return (VSS_ResolveOne(buf, addr, "80", AF_UNSPEC, SOCK_STREAM,
+	    AI_NUMERICHOST | AI_NUMERICSERV) != NULL);
 }
 
 /*
@@ -660,10 +678,12 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	 *
 	 * When authority is "", sending the TLV is disabled.
 	 *
-	 * Falling back to host may result in an IP address in authority,
-	 * which is an illegal SNI HostName (RFC 4366 ch. 3.1). But we
-	 * document the potential error, rather than try to find out
-	 * whether or not Emit_Sockaddr() had to look up a name.
+	 * authority must be a valid SNI HostName (RFC 4366 ch. 3.1), but the
+	 * RFC does not define what that is and defers to "DNS hostname".
+	 *
+	 * So instead of trying to attempt a solution to that pandora's box, we
+	 * just implement >>Literal IPv4 and IPv6 addresses are not permitted in
+	 * "HostName".<<
 	 */
 	if (via != NULL) {
 		AN(t_host);
@@ -674,6 +694,17 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 		else
 			t_val = t_host;
 		p = t_val->dec;
+
+		if (isip(p)) {
+			if (t_val == t_authority)
+				VSB_cat(tl->sb, ".authority can not be an ip address with .via.\n");
+			else {
+				VSB_printf(tl->sb, ".%s used as authority can not be an ip address with .via.\n",
+					t_val == t_hosthdr ? "host_header" : "host");
+				VSB_cat(tl->sb, "Hint: configure .authority explicitly\n");
+			}
+			vcc_ErrWhere(tl, t_val);
+		}
 
 		Fb(tl, 0, "\t.authority = ");
 		VSB_quote(tl->fb, p, -1, VSB_QUOTE_CSTR);

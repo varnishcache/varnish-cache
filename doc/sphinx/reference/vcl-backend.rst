@@ -219,6 +219,8 @@ The HTTP authority to use when connecting to this backend. If unset,
 
 ``.authority = ""`` disables sending an authority.
 
+``.authority`` can not be an IP address.
+
 As of this release, the attribute is only used by ``.via`` connections
 as a ``PP2_TYPE_AUTHORITY`` Type-Length-Value (TLV) in the `PROXY2`_
 preamble.

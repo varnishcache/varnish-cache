@@ -47,8 +47,8 @@ varnish v2 -cliok "param.set debug +syncvsl"
 
 varnish v1 -vcl {
 	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
-	backend s1 { .via = v2; .host = "${s1_addr}"; .port = "${s1_port}"; }
-	backend s2 { .via = v2; .host = "${s2_addr}"; .port = "${s2_port}"; }
+	backend s1 { .via = v2; .authority = "1.2.3.4.example.com"; .host = "${s1_addr}"; .port = "${s1_port}"; }
+	backend s2 { .via = v2; .authority = "s2"; .host = "${s2_addr}"; .port = "${s2_port}"; }
 
 	sub vcl_recv {
 		if (req.url ~ "^/s1/") {
@@ -65,19 +65,19 @@ client c1 {
 	txreq -url /s1/1
 	rxresp
 	expect resp.status == 200
-	expect resp.http.Authority == "${s1_addr}"
+	expect resp.http.Authority == "1.2.3.4.example.com"
 	expect resp.http.Server == "s1"
 
 	txreq -url /s2/1
 	rxresp
 	expect resp.status == 200
-	expect resp.http.Authority == "${s2_addr}"
+	expect resp.http.Authority == "s2"
 	expect resp.http.Server == "s2"
 
 	txreq -url /s1/2
 	rxresp
 	expect resp.status == 200
-	expect resp.http.Authority == "${s1_addr}"
+	expect resp.http.Authority == "1.2.3.4.example.com"
 	expect resp.http.Server == "s1"
 } -run
 
@@ -150,6 +150,27 @@ client c1 {
 	expect resp.http.Authority == ""
 } -run
 
+varnish v1 -errvcl ".host used as authority can not be an ip address with .via" {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+	}
+}
+
+varnish v1 -errvcl ".host_header used as authority can not be an ip address with .via" {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.host = "${s1_addr}";
+		.host_header = "${s1_addr}";
+		.port = "${s1_port}";
+	}
+}
+
 varnish v1 -errvcl "Cannot set both .via and .path" {
 	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
 
@@ -164,11 +185,13 @@ varnish v1 -errvcl "Cannot stack .via backends" {
 
 	backend b {
 		.via = a;
+		.host_header = "b";
 		.host = "127.0.0.1";
 	}
 
 	backend c {
 		.via = b;
+		.authority = "c";
 		.host = "127.0.0.2";
 	}
 
@@ -180,5 +203,5 @@ varnish v1 -errvcl "Cannot stack .via backends" {
 # issue #4177: backend named default with .via property
 varnish v1 -vcl {
 	backend via { .host = "${localhost}"; }
-	backend default { .via = via; .host = "${localhost}"; }
+	backend default { .via = via; .authority = "localhost"; .host = "${localhost}"; }
 }
