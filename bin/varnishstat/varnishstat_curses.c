@@ -1153,7 +1153,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc)
 
 	verbosity = VSC_ChangeLevel(NULL, 0);
 
-	initscr();
+	(void)initscr();
 	raw();
 	noecho();
 	nonl();

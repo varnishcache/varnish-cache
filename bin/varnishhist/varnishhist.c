@@ -369,7 +369,7 @@ do_curses(void *arg)
 	int ch;
 	(void)arg;
 
-	initscr();
+	(void)initscr();
 	AC(raw());
 	AC(noecho());
 	AC(nonl());
