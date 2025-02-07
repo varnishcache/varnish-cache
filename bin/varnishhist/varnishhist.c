@@ -58,8 +58,10 @@
 
 #if 1
 #define AC(x) assert((x) != ERR)
+#define IC(x) (void)x
 #else
-#define AC(x) x
+#define AC(x) (void)x
+#define IC(x) (void)x
 #endif
 
 #define HIST_N 2000		/* how far back we remember */
@@ -380,7 +382,7 @@ do_curses(void *arg)
 	AC(noecho());
 	AC(nonl());
 	AC(intrflush(stdscr, FALSE));
-	AC(curs_set(0));
+	IC(curs_set(0));
 	AC(erase());
 	while (!VSIG_int && !VSIG_term && !VSIG_hup) {
 
