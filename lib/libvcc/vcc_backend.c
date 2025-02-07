@@ -667,13 +667,16 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	 */
 	if (via != NULL) {
 		AN(t_host);
-		Fb(tl, 0, "\t.authority = ");
 		if (t_authority != NULL)
-			EncToken(tl->fb, t_authority);
+			t_val = t_authority;
 		else if (t_hosthdr != NULL)
-			EncToken(tl->fb, t_hosthdr);
+			t_val = t_hosthdr;
 		else
-			EncToken(tl->fb, t_host);
+			t_val = t_host;
+		p = t_val->dec;
+
+		Fb(tl, 0, "\t.authority = ");
+		VSB_quote(tl->fb, p, -1, VSB_QUOTE_CSTR);
 		Fb(tl, 0, ",\n");
 	}
 
