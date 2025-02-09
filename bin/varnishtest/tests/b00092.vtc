@@ -1,0 +1,48 @@
+varnishtest "Use multiple objects for a single request"
+
+server s0 {
+	rxreq
+	txresp -hdr "method: O1_METHOD"
+	rxreq
+	txresp -hdr "url: /o2_url"
+	rxreq
+	txresp -hdr "val: 3"
+} -start
+
+
+# we use req.method and url because they could simply keep a reference to
+# the object rather than copying, while, to copy headers, we currently always
+# copy anyway to (re)generate the header name (we could avoid that by special
+# casing copies from workspaces and objects)
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_deliver {
+		if (req.restarts == 0) {
+			set req.method = resp.http.method;
+			debug.log_strands("resp.http.method", resp.http.method);
+		} else if (req.restarts == 1) {
+			set req.url = resp.http.url;
+			debug.log_strands("resp.http.url", resp.http.url);
+		} else {
+			set resp.http.method = req.method;
+			set resp.http.url = req.url;
+			debug.log_strands("req.method", req.method);
+			debug.log_strands("req.url", req.url);
+			return (deliver);
+		}
+		return (restart);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.method == O1_METHOD
+	expect resp.http.url == /o2_url
+	expect resp.http.val == 3
+} -run
