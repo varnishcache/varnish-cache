@@ -383,6 +383,7 @@ struct busyobj {
 
 	char			*end;
 
+	unsigned		max_retries;
 	unsigned		retries;
 	struct req		*req;
 	struct sess		*sp;

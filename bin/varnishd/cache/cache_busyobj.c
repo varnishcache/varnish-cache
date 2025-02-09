@@ -72,6 +72,7 @@ VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 	XXXAN(bo);
 	bo->magic = BUSYOBJ_MAGIC;
 	bo->end = (char *)bo + sz;
+	bo->max_retries = cache_param->max_retries;
 
 	p = (void*)(bo + 1);
 	p = (void*)PRNDUP(p);

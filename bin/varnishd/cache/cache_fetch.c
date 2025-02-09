@@ -530,7 +530,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
 
-		if (bo->retries++ < cache_param->max_retries)
+		if (bo->retries++ < bo->max_retries)
 			return (F_STP_RETRY);
 
 		VSLb(bo->vsl, SLT_VCL_Error,
@@ -995,7 +995,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	if (wrk->vpi->handling == VCL_RET_RETRY) {
 		VSB_destroy(&synth_body);
-		if (bo->retries++ < cache_param->max_retries)
+		if (bo->retries++ < bo->max_retries)
 			return (F_STP_RETRY);
 		VSLb(bo->vsl, SLT_VCL_Error, "Too many retries, failing");
 		return (F_STP_FAIL);
