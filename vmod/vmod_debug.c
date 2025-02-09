@@ -1353,12 +1353,14 @@ xyzzy_log_strands(VRT_CTX, VCL_STRING prefix, VCL_STRANDS subject, VCL_INT nn)
 	AN(subject);
 	if (nn > INT_MAX)
 		n = INT_MAX;
+	if (nn < 0)
+		n = 0;
 	else
 		n = nn;
 
 	for (i = 0; i < subject->n; i++) {
 		const char *p = subject->p[i];
 		mylog(ctx->vsl, SLT_Debug, "%s[%d]: (%s) %p %.*s%s", prefix, i,
-		    ptr_where(ctx, p), p, n, p, strlen(p) > n ? "..." : "");
+		    ptr_where(ctx, p), p, n, p, strlen(p) > (unsigned)n ? "..." : "");
 	}
 }
