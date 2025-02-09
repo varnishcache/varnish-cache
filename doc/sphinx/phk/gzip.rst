@@ -70,11 +70,12 @@ Tuning, tweaking and frobbing
 In vcl_recv{} you have a chance to modify the client's
 Accept-Encoding: header before anything else happens.
 
-In vcl_pass{} the clients Accept-Encoding header is copied to the
+In vcl_pass{} the client's Accept-Encoding header is copied to the
 backend request unchanged.
-Even if the client does not support gzip, you can force the A-C header
-to "gzip" to save bandwidth between the backend and varnish, varnish will
-gunzip the object before delivering to the client.
+Even if the client does not support gzip, you can force the A-E header
+to "gzip" on bereq.http in vcl_backend_fetch{} to save bandwidth between
+the backend and varnish. Varnish will gunzip the object before delivering
+to the client.
 
 In vcl_miss{} you can remove the "Accept-Encoding: gzip" header, if you
 do not want the backend to gzip this object.
