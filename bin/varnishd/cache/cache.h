@@ -383,10 +383,6 @@ struct busyobj {
 
 	char			*end;
 
-	/*
-	 * All fields from retries and down are zeroed when the busyobj
-	 * is recycled.
-	 */
 	unsigned		retries;
 	struct req		*req;
 	struct sess		*sp;
