@@ -466,6 +466,7 @@ struct req {
 	body_status_t		req_body_status;
 	stream_close_t		doclose;
 	unsigned		restarts;
+	unsigned		max_restarts;
 	unsigned		esi_level;
 
 	/* Delivery mode */

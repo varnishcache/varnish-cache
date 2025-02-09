@@ -195,6 +195,7 @@ Req_New(struct sess *sp)
 	req->t_req = NAN;
 	req->req_step = R_STP_TRANSPORT;
 	req->doclose = SC_NULL;
+	req->max_restarts = cache_param->max_restarts;
 
 	return (req);
 }

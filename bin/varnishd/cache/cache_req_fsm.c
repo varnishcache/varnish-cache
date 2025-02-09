@@ -236,7 +236,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	req->t_resp = W_TIM_real(wrk);
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 
-	assert(req->restarts <= cache_param->max_restarts);
+	assert(req->restarts <= req->max_restarts);
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
@@ -356,8 +356,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	if (wrk->vpi->handling == VCL_RET_RESTART &&
-	    req->restarts > cache_param->max_restarts)
+	if (wrk->vpi->handling == VCL_RET_RESTART && req->restarts > req->max_restarts)
 		wrk->vpi->handling = VCL_RET_DELIVER;
 
 	if (wrk->vpi->handling == VCL_RET_RESTART) {
@@ -870,7 +869,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	AZ(req->stale_oc);
 
-	if (++req->restarts > cache_param->max_restarts) {
+	if (++req->restarts > req->max_restarts) {
 		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
