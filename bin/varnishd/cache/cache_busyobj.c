@@ -58,29 +58,6 @@ VBO_Init(void)
  * BusyObj handling
  */
 
-static struct busyobj *
-vbo_New(void)
-{
-	struct busyobj *bo;
-	unsigned sz;
-
-	bo = MPL_Get(vbopool, &sz);
-	XXXAN(bo);
-	bo->magic = BUSYOBJ_MAGIC;
-	bo->end = (char *)bo + sz;
-	return (bo);
-}
-
-static void
-vbo_Free(struct busyobj **bop)
-{
-	struct busyobj *bo;
-
-	TAKE_OBJ_NOTNULL(bo, bop, BUSYOBJ_MAGIC);
-	AZ(bo->htc);
-	MPL_Free(vbopool, bo);
-}
-
 struct busyobj *
 VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 {
@@ -91,8 +68,10 @@ VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	bo = vbo_New();
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	bo = MPL_Get(vbopool, &sz);
+	XXXAN(bo);
+	bo->magic = BUSYOBJ_MAGIC;
+	bo->end = (char *)bo + sz;
 
 	p = (void*)(bo + 1);
 	p = (void*)PRNDUP(p);
@@ -173,8 +152,6 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	VSL_End(bo->vsl);
 
-	AZ(bo->htc);
-
 	if (WS_Overflowed(bo->ws))
 		wrk->stats->ws_backend_overflow++;
 
@@ -190,5 +167,5 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	WS_Rollback(bo->ws, 0);
 #endif
 
-	vbo_Free(&bo);
+	MPL_Free(vbopool, bo);
 }
