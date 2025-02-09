@@ -137,6 +137,14 @@ ban_add_lump(const struct ban_proto *bp, const void *p, uint32_t len)
 /*--------------------------------------------------------------------
  */
 
+const char *
+BAN_Error(struct ban_proto *bp)
+{
+
+	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
+	return (bp->err);
+}
+
 static const char *
 ban_error(struct ban_proto *bp, const char *fmt, ...)
 {
@@ -304,6 +312,57 @@ BAN_AddTest(struct ban_proto *bp,
 	return (NULL);
 }
 
+struct ban *
+BAN_Alloc(struct ban_proto *bp, ssize_t *lnp)
+{
+	struct ban *b;
+	ssize_t ln;
+	double t0;
+	uint64_t u;
+
+	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
+	AN(bp->vsb);
+	assert(sizeof u == sizeof t0);
+
+	if (ban_shutdown) {
+		ban_error(bp, "Shutting down");
+		return (NULL);
+	}
+
+	AZ(VSB_finish(bp->vsb));
+	ln = VSB_len(bp->vsb);
+	assert(ln >= 0);
+
+	ALLOC_OBJ(b, BAN_MAGIC);
+	if (b == NULL) {
+		ban_error(bp, ban_build_err_no_mem);
+		return (NULL);
+	}
+	VTAILQ_INIT(&b->objcore);
+
+	b->spec = malloc(ln + BANS_HEAD_LEN);
+	if (b->spec == NULL) {
+		free(b);
+		ban_error(bp, ban_build_err_no_mem);
+		return (NULL);
+	}
+
+	b->flags = bp->flags;
+
+	memset(b->spec, 0, BANS_HEAD_LEN);
+	t0 = VTIM_real();
+	memcpy(&u, &t0, sizeof u);
+	vbe64enc(b->spec + BANS_TIMESTAMP, u);
+	b->spec[BANS_FLAGS] = b->flags & 0xff;
+	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(bp->vsb), ln);
+	ln += BANS_HEAD_LEN;
+	vbe32enc(b->spec + BANS_LENGTH, ln);
+
+	if (lnp != NULL)
+		*lnp = ln;
+	return (b);
+}
+
 /*--------------------------------------------------------------------
  * We maintain ban_start as a pointer to the first element of the list
  * as a separate variable from the VTAILQ, to avoid depending on the
@@ -319,43 +378,18 @@ BAN_AddTest(struct ban_proto *bp,
 const char *
 BAN_Commit(struct ban_proto *bp)
 {
-	struct ban  *b, *bi;
+	struct ban *b, *bi;
 	ssize_t ln;
-	vtim_real t0;
-	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
-	AN(bp->vsb);
-	assert(sizeof u == sizeof t0);
 
-	if (ban_shutdown)
-		return (ban_error(bp, "Shutting down"));
-
-	AZ(VSB_finish(bp->vsb));
-	ln = VSB_len(bp->vsb);
-	assert(ln >= 0);
-
-	ALLOC_OBJ(b, BAN_MAGIC);
-	if (b == NULL)
-		return (ban_error(bp, ban_build_err_no_mem));
-	VTAILQ_INIT(&b->objcore);
-
-	b->spec = malloc(ln + BANS_HEAD_LEN);
-	if (b->spec == NULL) {
-		free(b);
-		return (ban_error(bp, ban_build_err_no_mem));
+	b = BAN_Alloc(bp, &ln);
+	if (b == NULL) {
+		AN(bp->err);
+		return (bp->err);
 	}
 
-	b->flags = bp->flags;
-
-	memset(b->spec, 0, BANS_HEAD_LEN);
-	t0 = VTIM_real();
-	memcpy(&u, &t0, sizeof u);
-	vbe64enc(b->spec + BANS_TIMESTAMP, u);
-	b->spec[BANS_FLAGS] = b->flags & 0xff;
-	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(bp->vsb), ln);
-	ln += BANS_HEAD_LEN;
-	vbe32enc(b->spec + BANS_LENGTH, ln);
+	assert(ln > 0);
 
 	Lck_Lock(&ban_mtx);
 	if (ban_shutdown) {
@@ -382,15 +416,8 @@ BAN_Commit(struct ban_proto *bp)
 		ban_info_new(b->spec, ln);	/* Notify stevedores */
 
 	if (cache_param->ban_dups) {
-		/* Hunt down duplicates, and mark them as completed */
-		for (bi = VTAILQ_NEXT(b, list); bi != NULL;
-		    bi = VTAILQ_NEXT(bi, list)) {
-			if (!(bi->flags & BANS_FLAG_COMPLETED) &&
-			    ban_equal(b->spec, bi->spec)) {
-				ban_mark_completed(bi);
-				VSC_C_main->bans_dups++;
-			}
-		}
+		VSC_C_main->bans_dups += BAN_Cancel(b->spec,
+		    VTAILQ_NEXT(b, list));
 	}
 	if (!(b->flags & BANS_FLAG_REQ))
 		ban_kick_lurker();

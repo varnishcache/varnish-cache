@@ -42,6 +42,7 @@
 #include "vcli_serve.h"
 #include "vend.h"
 #include "vmb.h"
+#include "vqueue.h"
 
 /* cache_ban_build.c */
 void BAN_Build_Init(void);
@@ -154,7 +155,7 @@ ban_len(const uint8_t *banspec)
 	return (u);
 }
 
-int
+static int
 ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 {
 	unsigned u;
@@ -430,16 +431,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 		VTAILQ_INSERT_BEFORE(b, b2, list);
 	bans_persisted_bytes += len;
 	VSC_C_main->bans_persisted_bytes = bans_persisted_bytes;
-
-	/* Hunt down older duplicates */
-	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
-		if (b->flags & BANS_FLAG_COMPLETED)
-			continue;
-		if (ban_equal(b->spec, ban)) {
-			ban_mark_completed(b);
-			VSC_C_main->bans_dups++;
-		}
-	}
+	VSC_C_main->bans_dups += BAN_Cancel(ban, VTAILQ_NEXT(b2, list));
 }
 
 /*--------------------------------------------------------------------
@@ -713,17 +705,15 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * CLI functions to add bans
+ * Build a ban from CLI arguments.
  */
 
-static void v_matchproto_(cli_func_t)
-ccf_ban(struct cli *cli, const char * const *av, void *priv)
+static struct ban_proto *
+ban_proto_build(struct cli *cli, const char * const *av)
 {
 	int narg, i;
 	struct ban_proto *bp;
 	const char *err = NULL;
-
-	(void)priv;
 
 	/* First do some cheap checks on the arguments */
 	for (narg = 0; av[narg + 2] != NULL; narg++)
@@ -731,13 +721,13 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	if ((narg % 4) != 3) {
 		VCLI_Out(cli, "Wrong number of arguments");
 		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
+		return (NULL);
 	}
 	for (i = 3; i < narg; i += 4) {
 		if (strcmp(av[i + 2], "&&")) {
 			VCLI_Out(cli, "Found \"%s\" expected &&", av[i + 2]);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (NULL);
 		}
 	}
 
@@ -745,7 +735,7 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	if (bp == NULL) {
 		VCLI_Out(cli, "Out of Memory");
 		VCLI_SetResult(cli, CLIS_CANT);
-		return;
+		return (NULL);
 	}
 	for (i = 0; i < narg; i += 4) {
 		err = BAN_AddTest(bp, av[i + 2], av[i + 3], av[i + 4]);
@@ -753,7 +743,31 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 			break;
 	}
 
-	if (err == NULL) {
+	if (err != NULL) {
+		VCLI_Out(cli, "%s", err);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		BAN_Abandon(bp);
+		bp = NULL;
+	}
+
+	return (bp);
+}
+
+/*--------------------------------------------------------------------
+ * CLI functions to add bans
+ */
+
+static void v_matchproto_(cli_func_t)
+ccf_ban(struct cli *cli, const char * const *av, void *priv)
+{
+	struct ban_proto *bp;
+	const char *err = NULL;
+
+	(void)priv;
+
+	bp = ban_proto_build(cli, av);
+
+	if (bp != NULL) {
 		// XXX racy - grab wstat lock?
 		err = BAN_Commit(bp);
 	}
@@ -763,6 +777,50 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 		BAN_Abandon(bp);
 		VCLI_SetResult(cli, CLIS_PARAM);
 	}
+}
+
+static void v_matchproto_(cli_func_t)
+ccf_ban_cancel(struct cli *cli, const char * const *av, void *priv)
+{
+	struct ban_proto *bp;
+	struct ban *b;
+	unsigned dups, json;
+
+	(void)priv;
+
+	json = !strcmp(av[2], "-j");
+	bp = ban_proto_build(cli, av + json);
+	if (bp == NULL)
+		return;
+
+	b = BAN_Alloc(bp, NULL);
+	if (b == NULL) {
+		VCLI_Out(cli, "%s", BAN_Error(bp));
+		VCLI_SetResult(cli, CLIS_CANT);
+		BAN_Abandon(bp);
+		return;
+	}
+
+	Lck_Lock(&ban_mtx);
+	dups = BAN_Cancel(b->spec, VTAILQ_FIRST(&ban_head));
+	Lck_Unlock(&ban_mtx);
+	BAN_Free(b);
+	BAN_Abandon(bp);
+
+	if (!dups) {
+		VCLI_Out(cli, "No ban to cancel");
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
+	}
+
+	if (!json) {
+		VCLI_Out(cli, "Bans cancelled: %u\n", dups);
+		return;
+	}
+
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n  {\"cancelled\": %u}", dups);
+	VCLI_JSON_end(cli);
 }
 
 #define Ms 60
@@ -944,9 +1002,9 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto ban_cmds[] = {
-	{ CLICMD_BAN,				"", ccf_ban },
-	{ CLICMD_BAN_LIST,			"", ccf_ban_list,
-	  ccf_ban_list },
+	{ CLICMD_BAN,		"", ccf_ban },
+	{ CLICMD_BAN_CANCEL,	"", ccf_ban_cancel,	ccf_ban_cancel },
+	{ CLICMD_BAN_LIST,	"", ccf_ban_list,	ccf_ban_list },
 	{ NULL }
 };
 
@@ -979,6 +1037,33 @@ BAN_Compile(void)
 	ban_start = VTAILQ_FIRST(&ban_head);
 	BAN_Release();
 }
+
+/*--------------------------------------------------------------------
+ * Hunt down duplicates, and mark them as completed.
+ */
+
+unsigned
+BAN_Cancel(const uint8_t *spec, struct ban *ban)
+{
+	unsigned dups;
+
+	AN(spec);
+	CHECK_OBJ_ORNULL(ban, BAN_MAGIC);
+	Lck_AssertHeld(&ban_mtx);
+
+	for (dups = 0; ban != NULL; ban = VTAILQ_NEXT(ban, list)) {
+		if (ban->flags & BANS_FLAG_COMPLETED)
+			continue;
+		if (!ban_equal(spec, ban->spec))
+			continue;
+		ban_mark_completed(ban);
+		dups++;
+	}
+	return (dups);
+}
+
+/*--------------------------------------------------------------------
+ */
 
 void
 BAN_Init(void)
