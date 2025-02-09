@@ -1288,3 +1288,77 @@ xyzzy_use_reembarking_http1(VRT_CTX)
 {
 	debug_transport_reembarking_http1_use(ctx);
 }
+
+static int
+in_oc(struct worker *wrk, struct objcore *oc, const char *p)
+{
+	const char *hdrs;
+	ssize_t len = 0;
+
+	if (oc == NULL)
+		return (0);
+	hdrs = ObjGetAttr(wrk, oc, OA_HEADERS, &len);
+	if (hdrs == NULL)
+		return (0);
+	if (p < hdrs)
+		return (0);
+	if (p > hdrs + len)
+		return (0);
+	return (1);
+}
+
+static const char *
+ptr_where(VRT_CTX, const char *p)
+{
+	struct ws *ws = ctx->ws;
+	struct ws *aws;
+	struct worker *wrk;
+	struct objcore *oc, *stale_oc;
+
+	if (ctx->req != NULL) {
+		wrk = ctx->req->wrk;
+		oc = ctx->req->objcore;
+		stale_oc = ctx->req->stale_oc;
+	}
+	else if (ctx->bo != NULL) {
+		wrk = ctx->bo->wrk;
+		oc = ctx->bo->fetch_objcore;
+		stale_oc = ctx->bo->stale_oc;
+	}
+	else
+		WRONG("ctx");
+
+	AN(wrk);
+	aws = ctx->req->wrk->aws;
+
+	if (WS_Allocated(ws, p, -1))
+		return ("ws");
+	if (WS_Allocated(aws, p, -1))
+		return ("aws");
+	if (in_oc(wrk, oc, p))
+		return ("oc");
+	if (in_oc(wrk, stale_oc, p))
+		return ("stale_oc");
+	return ("?");
+}
+
+VCL_VOID
+xyzzy_log_strands(VRT_CTX, VCL_STRING prefix, VCL_STRANDS subject, VCL_INT nn)
+{
+	int i, n;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (prefix == NULL)
+		prefix = "";
+	AN(subject);
+	if (nn > INT_MAX)
+		n = INT_MAX;
+	else
+		n = nn;
+
+	for (i = 0; i < subject->n; i++) {
+		const char *p = subject->p[i];
+		mylog(ctx->vsl, SLT_Debug, "%s[%d]: (%s) %p %.*s%s", prefix, i,
+		    ptr_where(ctx, p), p, n, p, strlen(p) > n ? "..." : "");
+	}
+}

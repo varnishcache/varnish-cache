@@ -447,6 +447,25 @@ $Restrict vcl_deliver
 Switch to the reembarking http1 debug transport. Calling it from any other
 transport than http1 results in VCL failure.
 
+$Function VOID log_strands(STRING prefix, STRANDS subject, INT n=4)
+
+For each strands member, emit one ``Debug`` log line as formatted using
+``printf()`` with prefix as ``%s``, the strands member index as ``[%d]:``, the
+*origin* as ``(%s)``, addresses of each strands as ``%p`` and at most the first
+*n* characters of each strand, with truncations marked by "...".
+
+*origin* can be one of:
+
+* ``ws`` if from ``ctx->ws``
+* ``aws`` if from ``wrk->aws``
+* ``oc`` if from ``OA_HEADERS`` of ``req->objcore`` or ``bo->fetch_objcore``
+* ``stale_oc`` if from ``OA_HEADERS`` of ``req->stale_oc`` or bo->stale_oc``
+* ``?`` otherwise
+
+Example::
+
+	Debug		c prefix[0]: (ws) 0x7fe69ef80420 abcd...
+
 DEPRECATED
 ==========
 

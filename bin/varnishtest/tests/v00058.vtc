@@ -1,4 +1,4 @@
-varnishtest "Test VRT STRANDS functions"
+varnishtest "Test VRT STRANDS related functions"
 
 varnish v1 -arg "-i foobar" -vcl {
 	import debug;
@@ -85,6 +85,11 @@ varnish v1 -arg "-i foobar" -vcl {
 			    req.url + "<-->" + req.url
 			)
 		    );
+		debug.log_strands("return_strands",
+			debug.return_strands(
+			    req.url + "<-->" + req.url
+			)
+		);
 	}
 } -start
 
