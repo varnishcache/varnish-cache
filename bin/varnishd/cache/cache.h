@@ -470,11 +470,6 @@ struct req {
 	unsigned		max_restarts;
 	unsigned		esi_level;
 
-	/* Delivery mode */
-	unsigned		res_mode;
-#define RES_ESI			(1<<4)
-#define RES_PIPE		(1<<7)
-
 	const struct req_step	*req_step;
 	struct reqtop		*top;	/* esi_level == 0 request */
 

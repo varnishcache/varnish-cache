@@ -511,7 +511,7 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 	v1a.req = ctx->req->acct.req_hdrbytes;
 	ctx->req->acct.req_hdrbytes = 0;
 
-	ctx->req->res_mode = RES_PIPE;
+	ctx->req->res_pipe = 1;
 
 	retval = SC_TX_ERROR;
 	pfd = vbe_dir_getfd(ctx, ctx->req->wrk, d, bp, 0);

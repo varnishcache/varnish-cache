@@ -440,7 +440,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	AZ(req->stale_oc);
-	AZ(req->res_mode);
+	AZ(req->res_pipe | req->res_esi);
 	AZ(req->boc);
 	req->req_step = R_STP_FINISH;
 
@@ -533,7 +533,8 @@ cnt_finish(struct worker *wrk, struct req *req)
 	http_Teardown(req->resp);
 
 	req->vdp_filter_list = NULL;
-	req->res_mode = 0;
+	req->res_pipe = 0;
+	req->res_esi = 0;
 	return (REQ_FSM_DONE);
 }
 

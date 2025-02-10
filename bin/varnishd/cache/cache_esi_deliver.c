@@ -290,7 +290,7 @@ ved_vdp_esi_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 	*priv = ecx;
 	RFC2616_Weaken_Etag(vdc->hp);
 
-	ctx->req->res_mode |= RES_ESI;
+	ctx->req->res_esi = 1;
 	if (*vdc->clen != 0)
 		*vdc->clen = -1;
 	if (ctx->req->esi_level > 0) {
@@ -909,7 +909,7 @@ ved_deliver(struct req *req, int wantbody)
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Req2Ctx(ctx, req);
 
-	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
+	if (ecx->isgzip && i && !req->res_esi) {
 		/* A gzipped include which is not ESI processed */
 
 		/* OA_GZIPBITS are not valid until BOS_FINISHED */

@@ -55,7 +55,7 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 
 	a = &req->acct;
 
-	if (!IS_NO_VXID(req->vsl->wid) && !(req->res_mode & RES_PIPE)) {
+	if (!IS_NO_VXID(req->vsl->wid) && !req->res_pipe) {
 		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
 		    (uintmax_t)a->req_hdrbytes,
 		    (uintmax_t)a->req_bodybytes,
