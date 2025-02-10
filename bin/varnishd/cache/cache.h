@@ -410,10 +410,15 @@ struct busyobj {
 
 	struct pool_task	fetch_task[1];
 
+	const char		*err_reason;
+	enum director_state_e	director_state;
+	uint16_t		err_code;
+
 #define BERESP_FLAG(l, r, w, f, d) unsigned	l:1;
 #define BEREQ_FLAG(l, r, w, d) BERESP_FLAG(l, r, w, 0, d)
 #include "tbl/bereq_flags.h"
 #include "tbl/beresp_flags.h"
+
 
 	/* Timeouts */
 	vtim_dur		connect_timeout;
@@ -432,16 +437,12 @@ struct busyobj {
 	const struct stevedore	*storage;
 	const struct director	*director_req;
 	const struct director	*director_resp;
-	enum director_state_e	director_state;
 	struct vcl		*vcl;
 
 	struct vsl_log		vsl[1];
 
 	uint8_t			digest[DIGEST_LEN];
 	struct vrt_privs	privs[1];
-
-	uint16_t		err_code;
-	const char		*err_reason;
 
 	const char		*client_identity;
 };
