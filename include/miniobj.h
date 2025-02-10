@@ -38,7 +38,12 @@
 	} while (0)
 
 #define ALLOC_FLEX_OBJ(to, fld, len, type_magic)			\
-	ALLOC_OBJ_EXTRA(to, (len) * sizeof *((to)->fld), (type_magic))
+	do {								\
+		(to) = calloc(1, offsetof(typeof(*to), fld) +		\
+		    sizeof *(to)->fld * len);				\
+		if ((to) != NULL)					\
+			(to)->magic = (type_magic);			\
+	} while (0)
 
 #define FREE_OBJ(to)							\
 	do {								\
