@@ -652,6 +652,13 @@ bit_clear(uint8_t *p, unsigned l)
 	memset(p, 0, ((size_t)l + 7) >> 3);
 }
 
+static inline void
+bit_set(uint8_t *p, unsigned l)
+{
+
+	memset(p, 255, ((size_t)l + 7) >> 3);
+}
+
 /*--------------------------------------------------------------------
  */
 
@@ -676,8 +683,16 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 			bit_clear(p, l);
 			continue;
 		}
+		if (sign == '+' && !strcmp(s, "all")) {
+			bit_set(p, l);
+			continue;
+		}
 		if (sign == '-' && !strcmp(s, "all")) {
 			bit_clear(p, l);
+			continue;
+		}
+		if (sign == '-' && !strcmp(s, "none")) {
+			bit_set(p, l);
 			continue;
 		}
 		if (*s != '-' && *s != '+') {
@@ -713,7 +728,7 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
     uint8_t *p, unsigned l, const char * const *tags, const char *desc,
     char sign)
 {
-	unsigned j;
+	unsigned j, all;
 
 	if (arg != NULL && !strcmp(arg, "default")) {
 		/* XXX: deprecated in favor of param.reset */
@@ -724,10 +739,23 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 	if (arg != NULL && arg != JSON_FMT)
 		return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
 
+	all = 1;
+	for (j = 0; all && j < l; j++) {
+		if (tags[j] == NULL)
+			continue;
+		if (!bit(p, j, BTST))
+			all = 0;
+	}
+
 	if (arg == JSON_FMT)
 		VSB_putc(vsb, '"');
-	VSB_cat(vsb, sign == '+' ? "none" : "all");
-	for (j = 0; j < l; j++) {
+	if (all)
+		VSB_cat(vsb, sign == '+' ? "all" : "none");
+	else
+		VSB_cat(vsb, sign == '+' ? "none" : "all");
+	for (j = 0; !all && j < l; j++) {
+		if (tags[j] == NULL)
+			continue;
 		if (bit(p, j, BTST))
 			VSB_printf(vsb, ",%c%s", sign, tags[j]);
 	}
