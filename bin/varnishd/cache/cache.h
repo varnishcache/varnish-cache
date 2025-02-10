@@ -464,19 +464,19 @@ struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0xfb4abf6d
 
+	unsigned		esi_level;
 	body_status_t		req_body_status;
 	stream_close_t		doclose;
 	unsigned		restarts;
 	unsigned		max_restarts;
-	unsigned		esi_level;
 
 	const struct req_step	*req_step;
 	struct reqtop		*top;	/* esi_level == 0 request */
 
+	uint16_t		err_code;
 #define REQ_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/req_flags.h"
 
-	uint16_t		err_code;
 	const char		*err_reason;
 
 	struct sess		*sp;
