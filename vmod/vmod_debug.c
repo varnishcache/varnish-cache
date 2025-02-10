@@ -1329,7 +1329,7 @@ ptr_where(VRT_CTX, const char *p)
 		WRONG("ctx");
 
 	AN(wrk);
-	aws = ctx->req->wrk->aws;
+	aws = wrk->aws;
 
 	if (WS_Allocated(ws, p, -1))
 		return ("ws");
@@ -1353,7 +1353,7 @@ xyzzy_log_strands(VRT_CTX, VCL_STRING prefix, VCL_STRANDS subject, VCL_INT nn)
 	AN(subject);
 	if (nn > INT_MAX)
 		n = INT_MAX;
-	if (nn < 0)
+	else if (nn < 0)
 		n = 0;
 	else
 		n = nn;
