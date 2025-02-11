@@ -93,14 +93,6 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 		return;
 	}
 
-	if (reason && !WS_Allocated(ctx->ws, reason, -1)) {
-		reason = WS_Copy(ctx->ws, reason, -1);
-		if (!reason) {
-			VRT_fail(ctx, "Workspace overflow");
-			return;
-		}
-	}
-
 	if (ctx->req == NULL) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		ctx->bo->err_code = (uint16_t)code;
@@ -445,12 +437,11 @@ VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
 		}
 	}
 
-	if (q == NULL) {
-		if (h == NULL)
-			return ("");
-		if (WS_Allocated(ws, h, -1))
-			return (h);
-	} else if (h == NULL && WS_Allocated(ws, q, -1)) {
+	if (q == NULL && h == NULL)
+		return ("");
+	if (q == NULL)
+		return (h);
+	if (h == NULL) {
 		for (i++; i < s->n; i++)
 			if (s->p[i] != NULL && *s->p[i] != '\0')
 				break;
