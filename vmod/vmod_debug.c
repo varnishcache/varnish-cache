@@ -646,8 +646,6 @@ xyzzy_concatenate(VRT_CTX, VCL_STRANDS s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	r = VRT_StrandsWS(ctx->ws, NULL, s);
-	if (r != NULL && *r != '\0')
-		AN(WS_Allocated(ctx->ws, r, strlen(r) + 1));
 	return (r);
 }
 
@@ -658,8 +656,6 @@ xyzzy_collect(VRT_CTX, VCL_STRANDS s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	r = VRT_STRANDS_string(ctx, s);
-	if (r != NULL && *r != '\0')
-		AN(WS_Allocated(ctx->ws, r, strlen(r) + 1));
 	return (r);
 }
 
@@ -692,8 +688,6 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 			VSLbs(ctx->vsl, SLT_LostHeader,
 			    TOSTRAND(hdr->what->str));
 		} else {
-			if (*b != '\0')
-				AN(WS_Allocated(hp->ws, b, strlen(b) + 1));
 			http_Unset(hp, hdr->what);
 			http_SetHeader(hp, b);
 		}
