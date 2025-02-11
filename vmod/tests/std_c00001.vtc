@@ -299,7 +299,7 @@ varnish v1 -vcl+backend {
 			set req.http.response = "123";
 			set req.http.response2 = "Another response";
 			if (req.url == "/9") {
-				vtc.workspace_alloc(client, -200);
+				vtc.workspace_alloc(client, -256);
 			} else if (req.url == "/10") {
 				vtc.workspace_alloc(client, -10);
 				std.rollback(req);

@@ -40,6 +40,8 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "cache_varnishd.h"
 #include "cache_filter.h"
 #include "cache_objhead.h"
@@ -77,6 +79,68 @@
     }};
 REQ_STEPS
 #undef REQ_STEP
+
+/*--------------------------------------------------------------------
+ * Remember additional objcores to deref when the task ends
+ */
+
+struct ocstash {
+	unsigned		magic;
+#define OCSTASH_MAGIC		0xe361b34d
+	unsigned		malloced;
+	unsigned		n;
+	unsigned		l;
+	struct objcore *	ocs[] v_counted_by_(l);
+};
+
+static void
+ocstash_fini(struct worker *wrk, struct ocstash **stashp)
+{
+	struct ocstash *stash;
+	unsigned u;
+
+	AN(stashp);
+	if (*stashp == NULL)
+		return;
+	TAKE_OBJ_NOTNULL(stash, stashp, OCSTASH_MAGIC);
+	assert(stash->n <= stash->l);
+	for (u = 0; u < stash->n; u++)
+		(void)HSH_DerefObjCore(wrk, &stash->ocs[u], HSH_RUSH_POLICY);
+	if (stash->malloced)
+		free(stash);
+}
+
+static inline size_t
+stash_sz(unsigned cap)
+{
+	return (offsetof(struct ocstash, ocs) + sizeof(struct objcore *) * cap);
+}
+
+// never fails unless malloc() fails
+static void
+stash_oc(struct ocstash **stashp, struct objcore **ocp, struct ws *ws, unsigned l)
+{
+	struct ocstash *stash;
+
+	AN(stashp);
+	AN(ocp);
+
+	stash = *stashp;
+	if (stash == NULL) {
+		stash = WS_Alloc(ws, (unsigned)stash_sz(l));
+		if (stash == NULL)
+			stash = malloc(stash_sz(l));
+		AN(stash);
+		memset(stash, 0, stash_sz(l));
+		stash->magic = OCSTASH_MAGIC;
+		stash->l = l;
+		*stashp = stash;
+	}
+	CHECK_OBJ(stash, OCSTASH_MAGIC);
+	assert(stash->n < stash->l);
+	TAKE_OBJ_NOTNULL(stash->ocs[stash->n], ocp, OBJCORE_MAGIC);
+	stash->n++;
+}
 
 /*--------------------------------------------------------------------
  * Handle "Expect:" and "Connection:" on incoming request
@@ -240,7 +304,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
-		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+		stash_oc(&req->ocstash, &req->objcore, req->ws, req->max_restarts + 1);
 		http_Teardown(req->resp);
 
 		switch (wrk->vpi->handling) {
@@ -285,6 +349,8 @@ cnt_vclfail(struct worker *wrk, struct req *req)
 
 	AZ(req->objcore);
 	AZ(req->stale_oc);
+
+	ocstash_fini(wrk, &req->ocstash);
 
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Req2Ctx(ctx, req);
@@ -557,6 +623,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
+		// VCL did not get to see this object, no need to stash
 		(void)HSH_DerefObjCore(wrk, &req->objcore, 1);
 		AZ(req->objcore);
 		return (REQ_FSM_MORE);
@@ -684,8 +751,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_hit{}");
 	}
 
-	/* Drop our object, we won't need it */
-	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+	stash_oc(&req->ocstash, &req->objcore, req->ws, req->max_restarts + 1);
 
 	if (busy != NULL) {
 		(void)HSH_DerefObjCore(wrk, &busy, 0);
@@ -1213,6 +1279,7 @@ CNT_Request(struct req *req)
 	}
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
+		ocstash_fini(wrk, &req->ocstash);
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
 		if (IS_TOPREQ(req)) {
