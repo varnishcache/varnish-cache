@@ -282,6 +282,9 @@
 // "miniobj.h"
 
 -emacro(774, REPLACE)
+// Flexelint does not understand offsetof(typeof(*ptr))
+-emacro(10, ALLOC_FLEX_OBJ)
+-emacro(40, ALLOC_FLEX_OBJ)
 
 
 // It is ok to default after handling a few select SLT_* tags
