@@ -110,6 +110,13 @@ vcc_include_glob_file(struct vcc *tl, const struct source *src_sp,
 	unsigned u;
 	int i;
 
+	if (filename[0] != '/' && (filename[0] != '.' || filename[1] != '/')) {
+		VSB_cat(tl->sb,
+		    "+glob can only be used with absolute paths or relative "
+		    "paths starting with './'\n");
+		tl->err = 1;
+		return;
+	}
 	memset(g, 0, sizeof g);
 	i = glob(filename, 0, NULL, g);
 	switch (i) {
