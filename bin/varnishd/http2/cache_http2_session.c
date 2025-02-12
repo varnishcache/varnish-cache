@@ -132,7 +132,7 @@ h2_init_sess(struct sess *sp,
 	assert(*up == 0);
 
 	if (srq == NULL)
-		srq = Req_New(sp);
+		srq = Req_New(sp, NULL);
 	AN(srq);
 	h2 = h2s;
 	AN(h2);
