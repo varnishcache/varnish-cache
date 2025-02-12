@@ -117,9 +117,15 @@ vju_getccgid(const char *arg)
 /**********************************************************************
  */
 
+// avoid line breaks
+#define JERR(what, val)						\
+	ARGV_ERR("Unix jail: %s " what " not found.\n", val)
+
 static int v_matchproto_(jail_init_f)
 vju_init(char **args)
 {
+	const char *val;
+
 	if (args == NULL) {
 		/* Autoconfig */
 		if (geteuid() != 0)
@@ -132,31 +138,22 @@ vju_init(char **args)
 			ARGV_ERR("Unix Jail: Must be root.\n");
 
 		for (;*args != NULL; args++) {
-			const char * const a_user = "user=";
-			const size_t l_user = strlen(a_user);
-			if (!strncmp(*args, a_user, l_user)) {
-				if (vju_getuid((*args) + l_user))
-					ARGV_ERR(
-					    "Unix jail: %s user not found.\n",
-					    (*args) + 5);
+			val = keyval(*args, "user=");
+			if (val != NULL) {
+				if (vju_getuid(val))
+					JERR("user", val);
 				continue;
 			}
-			const char * const a_workuser = "workuser=";
-			const size_t l_workuser = strlen(a_workuser);
-			if (!strncmp(*args, a_workuser, l_workuser)) {
-				if (vju_getwrkuid((*args) + l_workuser))
-					ARGV_ERR(
-					    "Unix jail: %s user not found.\n",
-					    (*args) + 9);
+			val = keyval(*args, "workuser=");
+			if (val != NULL) {
+				if (vju_getwrkuid(val))
+					JERR("user", val);
 				continue;
 			}
-			const char * const a_ccgroup = "ccgroup=";
-			const size_t l_ccgroup = strlen(a_ccgroup);
-			if (!strncmp(*args, "ccgroup=", l_ccgroup)) {
-				if (vju_getccgid((*args) + l_ccgroup))
-					ARGV_ERR(
-					    "Unix jail: %s group not found.\n",
-					    (*args) + 8);
+			val = keyval(*args, "ccgroup=");
+			if (val != NULL) {
+				if (vju_getccgid(val))
+					JERR("group", val);
 				continue;
 			}
 			ARGV_ERR("Unix jail: unknown sub-argument '%s'\n",
@@ -164,8 +161,7 @@ vju_init(char **args)
 		}
 
 		if (vju_user == NULL && vju_getuid(VARNISH_USER))
-			ARGV_ERR("Unix jail: %s user not found.\n",
-			    VARNISH_USER);
+			JERR("user", VARNISH_USER);
 	}
 
 	AN(vju_user);
@@ -186,6 +182,8 @@ vju_init(char **args)
 	AZ(seteuid(vju_uid));
 	return (0);
 }
+
+#undef JERR
 
 static void v_matchproto_(jail_master_f)
 vju_master(enum jail_master_e jme)

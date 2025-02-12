@@ -38,6 +38,7 @@
 
 #include <stdint.h>
 
+#include "string.h"
 #include <sys/types.h>
 
 #include "vdef.h"
@@ -63,6 +64,16 @@ struct vclprog;
 extern struct vev_root	*mgt_evb;
 extern unsigned		d_flag;
 extern int		exit_status;
+
+/* option=value argument parse helper */
+static inline const char *
+keyval(const char *p, const char *name)
+{
+	size_t l = strlen(name);
+	if (strncmp(p, name, l))
+		return (NULL);
+	return (p + l);
+}
 
 /* builtin_vcl.c */
 

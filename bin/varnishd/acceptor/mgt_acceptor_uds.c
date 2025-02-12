@@ -179,10 +179,9 @@ vca_uds_open(char **av, struct listen_arg *la, const char **err)
 	heritage.min_vcl_version = vmax(heritage.min_vcl_version, 41U);
 
 	for (int i = 0; av[i] != NULL; i++) {
-		char *eq, *val;
-		int len;
+		const char *val;
 
-		if ((eq = strchr(av[i], '=')) == NULL) {
+		if (strchr(av[i], '=') == NULL) {
 			if (xp != NULL)
 				ARGV_ERR("Too many protocol sub-args"
 				    " in -a (%s)\n", av[i]);
@@ -195,41 +194,35 @@ vca_uds_open(char **av, struct listen_arg *la, const char **err)
 			ARGV_ERR("Invalid sub-arg %s"
 			    " in -a\n", av[i]);
 
-		val = eq + 1;
-		len = eq - av[i];
-		assert(len >= 0);
-		if (len == 0)
-			ARGV_ERR("Invalid sub-arg %s in -a\n", av[i]);
-
-		if (strncmp(av[i], "user", len) == 0) {
-			if (pwd != NULL)
-				ARGV_ERR("Too many user sub-args in -a (%s)\n",
-					 av[i]);
+		val = keyval(av[i], "user=");
+		if (val != NULL && pwd != NULL)
+			ARGV_ERR("Too many user sub-args in -a (%s)\n", av[i]);
+		if (val != NULL) {
 			pwd = getpwnam(val);
 			if (pwd == NULL)
 				ARGV_ERR("Unknown user %s in -a\n", val);
 			continue;
 		}
 
-		if (strncmp(av[i], "group", len) == 0) {
-			if (grp != NULL)
-				ARGV_ERR("Too many group sub-args in -a (%s)\n",
-					 av[i]);
+		val = keyval(av[i], "group=");
+		if (val != NULL && grp != NULL)
+			ARGV_ERR("Too many group sub-args in -a (%s)\n", av[i]);
+		if (val != NULL) {
 			grp = getgrnam(val);
 			if (grp == NULL)
 				ARGV_ERR("Unknown group %s in -a\n", val);
 			continue;
 		}
 
-		if (strncmp(av[i], "mode", len) == 0) {
+		val = keyval(av[i], "mode=");
+		if (val != NULL && mode != 0)
+			ARGV_ERR("Too many mode sub-args in -a (%s)\n", av[i]);
+		if (val != NULL && *val == '\0')
+			ARGV_ERR("Empty mode sub-arg in -a\n");
+		if (val != NULL) {
 			long m;
 			char *p;
 
-			if (mode != 0)
-				ARGV_ERR("Too many mode sub-args in -a (%s)\n",
-					 av[i]);
-			if (*val == '\0')
-				ARGV_ERR("Empty mode sub-arg in -a\n");
 			errno = 0;
 			m = strtol(val, &p, 8);
 			if (*p != '\0')

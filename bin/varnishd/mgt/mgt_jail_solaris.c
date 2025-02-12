@@ -323,13 +323,14 @@ static int v_matchproto_(jail_init_f)
 vjs_init(char **args)
 {
 	priv_set_t **sets, *permitted, *inheritable, *user = NULL;
-	const char *e;
+	const char *e, *val;
 	int vj, vs;
 
 	if (args != NULL && *args != NULL) {
 		for (;*args != NULL; args++) {
-			if (!strncmp(*args, "worker=", 7)) {
-				user = priv_str_to_set((*args) + 7, ",", &e);
+			val = keyval(*args, "worker=");
+			if (val != NULL) {
+				user = priv_str_to_set(val, ",", &e);
 				if (user == NULL)
 					ARGV_ERR(
 					    "-jsolaris: parsing worker= "
