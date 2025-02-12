@@ -94,18 +94,18 @@ struct ocstash {
 };
 
 static void
-ocstash_fini(struct worker *wrk, struct ocstash **stashp)
+ReqFiniObjcoreStash(struct req *req)
 {
 	struct ocstash *stash;
 	unsigned u;
 
-	AN(stashp);
-	if (*stashp == NULL)
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->ocstash == NULL)
 		return;
-	TAKE_OBJ_NOTNULL(stash, stashp, OCSTASH_MAGIC);
+	TAKE_OBJ_NOTNULL(stash, &req->ocstash, OCSTASH_MAGIC);
 	assert(stash->n <= stash->l);
 	for (u = 0; u < stash->n; u++)
-		(void)HSH_DerefObjCore(wrk, &stash->ocs[u], HSH_RUSH_POLICY);
+		(void)HSH_DerefObjCore(req->wrk, &stash->ocs[u], HSH_RUSH_POLICY);
 	if (stash->malloced)
 		free(stash);
 }
@@ -118,27 +118,30 @@ stash_sz(unsigned cap)
 
 // never fails unless malloc() fails
 static void
-stash_oc(struct ocstash **stashp, struct objcore **ocp, struct ws *ws, unsigned l)
+ReqStashObjcore(struct req *req)
 {
 	struct ocstash *stash;
+	unsigned l;
+	size_t sz;
 
-	AN(stashp);
-	AN(ocp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	stash = *stashp;
+	stash = req->ocstash;
 	if (stash == NULL) {
-		stash = WS_Alloc(ws, (unsigned)stash_sz(l));
+		l = req->max_restarts + 1;
+		sz = stash_sz(l);
+		stash = WS_Alloc(req->ws, (unsigned)sz);
 		if (stash == NULL)
 			stash = malloc(stash_sz(l));
 		AN(stash);
-		memset(stash, 0, stash_sz(l));
+		memset(stash, 0, sz);
 		stash->magic = OCSTASH_MAGIC;
 		stash->l = l;
-		*stashp = stash;
+		req->ocstash = stash;
 	}
 	CHECK_OBJ(stash, OCSTASH_MAGIC);
 	assert(stash->n < stash->l);
-	TAKE_OBJ_NOTNULL(stash->ocs[stash->n], ocp, OBJCORE_MAGIC);
+	TAKE_OBJ_NOTNULL(stash->ocs[stash->n], &req->objcore, OBJCORE_MAGIC);
 	stash->n++;
 }
 
@@ -304,7 +307,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
-		stash_oc(&req->ocstash, &req->objcore, req->ws, req->max_restarts + 1);
+		ReqStashObjcore(req);
 		http_Teardown(req->resp);
 
 		switch (wrk->vpi->handling) {
@@ -350,7 +353,7 @@ cnt_vclfail(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	AZ(req->stale_oc);
 
-	ocstash_fini(wrk, &req->ocstash);
+	ReqFiniObjcoreStash(req);
 
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Req2Ctx(ctx, req);
@@ -751,7 +754,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_hit{}");
 	}
 
-	stash_oc(&req->ocstash, &req->objcore, req->ws, req->max_restarts + 1);
+	ReqStashObjcore(req);
 
 	if (busy != NULL) {
 		(void)HSH_DerefObjCore(wrk, &busy, 0);
@@ -1279,7 +1282,7 @@ CNT_Request(struct req *req)
 	}
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
-		ocstash_fini(wrk, &req->ocstash);
+		ReqFiniObjcoreStash(req);
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
 		if (IS_TOPREQ(req)) {
