@@ -11,6 +11,7 @@ FLOPS='
 	-DVARNISH_STATE_DIR="foo"
 	-DVARNISH_VMOD_DIR="foo"
 	-DVARNISH_VCL_DIR="foo"
+	-DWITH_PERSISTENT_STORAGE
 	acceptor/*.c
 	cache/*.c
 	common/*.c

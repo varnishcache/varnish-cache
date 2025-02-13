@@ -61,6 +61,10 @@ static struct VSC_lck *lck_smp;
 
 static void smp_init(void);
 
+#ifndef WITH_PERSISTENT_STORAGE
+#error "WITH_PERSISTENT_STORAGE must be defined"
+#endif
+
 /*--------------------------------------------------------------------*/
 
 /*
