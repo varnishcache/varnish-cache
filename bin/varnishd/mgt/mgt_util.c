@@ -144,20 +144,12 @@ const char C_SECURITY[] = "Security:";
 const char C_CLI[] = "Cli:";
 
 void
-MGT_Complain(const char *loud, const char *fmt, ...)
+MGT_ComplainVSB(const char *loud, const struct vsb *vsb)
 {
-	va_list ap;
-	struct vsb *vsb;
 	int sf;
 
 	if (loud == C_CLI && !mgt_param.syslog_cli_traffic)
 		return;
-	vsb = VSB_new_auto();
-	AN(vsb);
-	va_start(ap, fmt);
-	VSB_vprintf(vsb, fmt, ap);
-	va_end(ap);
-	AZ(VSB_finish(vsb));
 
 	if (loud == C_ERR)
 		sf = LOG_ERR;
@@ -177,6 +169,21 @@ MGT_Complain(const char *loud, const char *fmt, ...)
 
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE))
 		syslog(sf, "%s", VSB_data(vsb));
+}
+
+void
+MGT_Complain(const char *loud, const char *fmt, ...)
+{
+	va_list ap;
+	struct vsb *vsb;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	va_start(ap, fmt);
+	VSB_vprintf(vsb, fmt, ap);
+	va_end(ap);
+	AZ(VSB_finish(vsb));
+	MGT_ComplainVSB(loud, vsb);
 	VSB_destroy(&vsb);
 }
 
