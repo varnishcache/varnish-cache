@@ -117,6 +117,7 @@ struct cli;
 struct http_conn;
 struct listen_sock;
 struct mempool;
+struct ocstash;
 struct objcore;
 struct objhead;
 struct pool;
@@ -548,6 +549,8 @@ struct req {
 	struct vrt_privs	privs[1];
 
 	struct vcf		*vcf;
+
+	struct ocstash		*ocstash;
 };
 
 #define IS_TOPREQ(req) ((req)->top->topreq == (req))
