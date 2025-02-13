@@ -240,7 +240,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
-		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+		Req_StashObjcore(req);
 		http_Teardown(req->resp);
 
 		switch (wrk->vpi->handling) {
@@ -684,8 +684,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_hit{}");
 	}
 
-	/* Drop our object, we won't need it */
-	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+	Req_StashObjcore(req);
 
 	if (busy != NULL) {
 		(void)HSH_DerefObjCore(wrk, &busy, 0);
