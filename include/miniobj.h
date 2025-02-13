@@ -37,10 +37,12 @@
 			(to)->magic = (type_magic);			\
 	} while (0)
 
+#define SIZEOF_FLEX_OBJ(to, fld, len)					\
+	(offsetof(typeof(*to), fld) + sizeof *(to)->fld * len)
+
 #define ALLOC_FLEX_OBJ(to, fld, len, type_magic)			\
 	do {								\
-		(to) = calloc(1, offsetof(typeof(*to), fld) +		\
-		    sizeof *(to)->fld * len);				\
+		(to) = calloc(1, SIZEOF_FLEX_OBJ(to, fld, len));	\
 		if ((to) != NULL)					\
 			(to)->magic = (type_magic);			\
 	} while (0)
