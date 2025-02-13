@@ -157,3 +157,19 @@ VBT_format(struct vsb *vsb)
 	vbt_execinfo(vsb);
 #endif
 }
+
+int
+VBT_dump(size_t len, char buf[len])
+{
+	struct vsb vsb[1];
+
+	if (buf == NULL || VSB_init(vsb, buf, len) == NULL)
+		return (-1);
+
+	VSB_printf(vsb, "Backtrace:\n");
+	VSB_indent(vsb, 2);
+	VBT_format(vsb);
+	VSB_indent(vsb, -2);
+
+	return (0);
+}
