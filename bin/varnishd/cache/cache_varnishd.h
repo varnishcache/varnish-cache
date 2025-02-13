@@ -419,6 +419,7 @@ void Req_Fail(struct req *req, stream_close_t reason);
 void Req_AcctLogCharge(struct VSC_main_wrk *, struct req *);
 void Req_LogHit(struct worker *, struct req *, struct objcore *, intmax_t);
 const char *Req_LogStart(const struct worker *, struct req *);
+void Req_StashObjcore(struct req *);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
