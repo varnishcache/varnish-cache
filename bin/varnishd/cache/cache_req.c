@@ -123,7 +123,7 @@ Req_LogStart(const struct worker *wrk, struct req *req)
  */
 
 struct req *
-Req_New(struct sess *sp)
+Req_New(struct sess *sp, struct req *preq)
 {
 	struct pool *pp;
 	struct req *req;
@@ -134,6 +134,7 @@ Req_New(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	CHECK_OBJ_ORNULL(preq, REQ_MAGIC);
 
 	req = MPL_Get(pp->mpl_req, &sz);
 	AN(req);
@@ -181,10 +182,14 @@ Req_New(struct sess *sp)
 	req->htc->doclose = SC_NULL;
 	p = (void*)PRNDUP(p + sizeof(*req->htc));
 
-	req->top = (void*)p;
-	INIT_OBJ(req->top, REQTOP_MAGIC);
-	req->top->topreq = req;
-	p = (void*)PRNDUP(p + sizeof(*req->top));
+	if (UNLIKELY(preq != NULL))
+		req->top = preq->top;
+	else {
+		req->top = (void*)p;
+		INIT_OBJ(req->top, REQTOP_MAGIC);
+		req->top->topreq = req;
+		p = (void*)PRNDUP(p + sizeof(*req->top));
+	}
 
 	assert(p < e);
 

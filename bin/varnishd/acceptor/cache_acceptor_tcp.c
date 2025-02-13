@@ -406,7 +406,7 @@ vca_tcp_make_session(struct worker *wrk, void *arg)
 
 	vca_tcp_sockopt_set(wa->acceptlsock, sp);
 
-	req = Req_New(sp);
+	req = Req_New(sp, NULL);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->rfd = &sp->fd;
 

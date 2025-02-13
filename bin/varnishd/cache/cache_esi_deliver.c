@@ -132,7 +132,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		return;
 	}
 
-	req = Req_New(sp);
+	req = Req_New(sp, preq);
 	AN(req);
 	THR_SetRequest(req);
 	assert(IS_NO_VXID(req->vsl->wid));
@@ -147,9 +147,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 	    (uintmax_t)VXID(req->vsl->wid), req->esi_level);
 
 	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
-
-	memset(req->top, 0, sizeof *req->top);
-	req->top = preq->top;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 	HTTP_Dup(req->http, preq->http0);
@@ -182,7 +179,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->req_body_status = BS_NONE;
 
 	AZ(req->vcl);
-	AN(req->top);
+	assert(req->top == preq->top);
 	if (req->top->vcl0)
 		req->vcl = req->top->vcl0;
 	else
