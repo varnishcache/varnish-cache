@@ -786,7 +786,7 @@ PARAM_SIMPLE(
 	/* name */	max_restarts,
 	/* type */	uint,
 	/* min */	"0",
-	/* max */	"65534",	// (1<<16)-2 #4269
+	/* max */	"32766",	// (1<<15)-2 #4269
 	/* def */	"4",
 	/* units */	"restarts",
 	/* descr */
