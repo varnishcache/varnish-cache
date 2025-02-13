@@ -879,8 +879,7 @@ main(int argc, char * const *argv)
 	openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
 	if (VJ_make_workdir(workdir))
-		ARGV_ERR("Cannot create working directory (%s): %s\n",
-		    workdir, VAS_errtxt(errno));
+		ARGV_EXIT;
 
 	VJ_master(JAIL_MASTER_SYSTEM);
 #ifdef RLIMIT_MEMLOCK
