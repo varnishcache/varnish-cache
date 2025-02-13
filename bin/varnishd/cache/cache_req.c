@@ -39,11 +39,56 @@
 
 #include "cache_varnishd.h"
 #include "cache_filter.h"
+#include "cache_objhead.h"
 #include "cache_pool.h"
 #include "cache_transport.h"
 
 #include "common/heritage.h"
 #include "vtim.h"
+
+/*--------------------------------------------------------------------
+ * TODO: describe.
+ */
+
+struct ocstash {
+	unsigned		l;
+	unsigned		n;
+	struct objcore *	ocs[] v_counted_by_(l);
+};
+
+static void
+ocstash_push(struct ocstash *stash, struct objcore **ocp)
+{
+
+	AN(stash);
+	assert(stash->n < stash->l);
+	TAKE_OBJ_NOTNULL(stash->ocs[stash->n], ocp, OBJCORE_MAGIC);
+	stash->n++;
+}
+
+static void
+ocstash_clear(struct worker *wrk, struct ocstash *stash)
+{
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(stash);
+	for (u = 0; u < stash->n; u++)
+		(void)HSH_DerefObjCore(wrk, &stash->ocs[u], HSH_RUSH_POLICY);
+	for (; u < stash->l; u++)
+		AZ(stash->ocs[u]);
+	stash->n = 0;
+}
+
+void
+Req_StashObjcore(struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	ocstash_push(req->stash, &req->objcore);
+}
+
+/*--------------------------------------------------------------------*/
 
 void
 Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
@@ -186,6 +231,14 @@ Req_New(struct sess *sp)
 	req->top->topreq = req;
 	p = (void*)PRNDUP(p + sizeof(*req->top));
 
+	req->max_restarts = cache_param->max_restarts;
+	sz = SIZEOF_FLEX_OBJ(req->stash, ocs, req->max_restarts + 1);
+	req->stash = (void*)p;
+	ZERO_OBJ(req->stash, sz);
+	req->stash->l = req->max_restarts + 1;
+	p += sz;
+	p = (void*)PRNDUP(p);
+
 	assert(p < e);
 
 	WS_Init(req->ws, "req", p, e - p);
@@ -195,7 +248,6 @@ Req_New(struct sess *sp)
 	req->t_req = NAN;
 	req->req_step = R_STP_TRANSPORT;
 	req->doclose = SC_NULL;
-	req->max_restarts = cache_param->max_restarts;
 
 	return (req);
 }
@@ -248,6 +300,7 @@ Req_Rollback(VRT_CTX)
 	if (IS_TOPREQ(req))
 		VCL_TaskLeave(ctx, req->top->privs);
 	VCL_TaskLeave(ctx, req->privs);
+	ocstash_clear(req->wrk, req->stash);
 	VCL_TaskEnter(req->privs);
 	if (IS_TOPREQ(req))
 		VCL_TaskEnter(req->top->privs);
@@ -278,6 +331,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	AZ(req->director_hint);
 	req->restarts = 0;
+
+	ocstash_clear(wrk, req->stash);
 
 	if (req->vcl != NULL)
 		VCL_Recache(wrk, &req->vcl);
