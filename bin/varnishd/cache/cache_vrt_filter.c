@@ -404,7 +404,7 @@ static const char *
 bereq_Empty_Filter(struct busyobj *bo)
 {
 
-	(void)bo;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	return ("");
 }
 
@@ -437,6 +437,7 @@ resp_default_filter_list(void *arg, struct vsb *vsb)
 const char *
 resp_Get_Filter_List(struct req *req)
 {
+
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return (filter_on_ws(req->ws, resp_default_filter_list, req));
 }
@@ -445,15 +446,19 @@ static const char *
 req_Empty_Filter(struct req *req)
 {
 
-	(void)req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return ("");
 }
 
-/*--------------------------------------------------------------------*/
-static int
-req_filter_can(struct req *req) {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+/*--------------------------------------------------------------------
+ * XXX: why ignore needless filters for everything but req?
+ */
 
+static int
+req_filter_can(struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return (req->req_body_status->avail == 1);
 }
 
