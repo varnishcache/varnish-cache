@@ -265,11 +265,11 @@ vju_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 
 	AN(dname);
 	AZ(what);
-	AZ(vsb);
+	AN(vsb);
 	AZ(seteuid(0));
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
-		MGT_Complain(C_ERR, "Cannot create working directory '%s': %s",
+		VSB_printf(vsb, "Cannot create working directory '%s': %s",
 		    dname, VAS_errtxt(errno));
 		return (1);
 	}

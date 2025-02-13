@@ -39,7 +39,6 @@
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <sys/prctl.h>
 #include <sys/vfs.h>
@@ -87,22 +86,19 @@ vjl_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 {
 	struct statfs info;
 
+	AN(vsb);
 	if (jail_tech_unix.make_workdir(dname, what, vsb) != 0)
 		return (1);
 
 	vjl_master(JAIL_MASTER_FILE);
 	if (statfs(dname, &info) != 0) {
-		if (vsb)
-			VSB_printf(vsb, "Could not stat working directory '%s': %s (%d)\n", dname, VAS_errtxt(errno), errno);
-		else
-			MGT_Complain(C_ERR, "Could not stat working directory '%s': %s (%d)", dname, VAS_errtxt(errno), errno);
+		VSB_printf(vsb, "Could not stat working directory '%s':"
+		    " %s (%d)\n", dname, VAS_errtxt(errno), errno);
 		return (1);
 	}
 	if (info.f_type != TMPFS_MAGIC) {
-		if (vsb != NULL)
-			VSB_printf(vsb, "Working directory not mounted on tmpfs partition\n");
-		else
-			MGT_Complain(C_INFO, "Working directory not mounted on tmpfs partition");
+		VSB_printf(vsb, "Working directory not mounted on"
+		    " tmpfs partition\n");
 	}
 	vjl_master(JAIL_MASTER_LOW);
 	return (0);

@@ -143,12 +143,20 @@ VJ_subproc(enum jail_subproc_e jse)
 int
 VJ_make_workdir(const char *dname)
 {
+	struct vsb *vsb;
 	int i;
 
 	AN(dname);
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
+
 	if (vjt->make_workdir != NULL) {
-		i = vjt->make_workdir(dname, NULL, NULL);
+		vsb = VSB_new_auto();
+		AN(vsb);
+		i = vjt->make_workdir(dname, NULL, vsb);
+		AZ(VSB_finish(vsb));
+		if (VSB_len(vsb) > 0)
+			MGT_ComplainVSB(i ? C_ERR : C_INFO, vsb);
+		VSB_destroy(&vsb);
 		if (i)
 			return (i);
 		VJ_master(JAIL_MASTER_FILE);
