@@ -274,7 +274,11 @@ vju_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 		return (1);
 	}
 	//lint -e{570}
-	AZ(chown(dname, -1, vju_gid));
+	if (chown(dname, -1, vju_gid)) {
+		MGT_Complain(C_ERR, "Cannot change group of working directory '%s': %s",
+		    dname, VAS_errtxt(errno));
+		return (1);
+	}
 	AZ(seteuid(vju_uid));
 	return (0);
 }
