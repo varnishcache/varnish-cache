@@ -55,21 +55,29 @@ See :ref:`ref-vsm` for details.
 
 .. _platform-thp:
 
-Transparent hugepages on Redhat Enterprise Linux 6
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Transparent Hugepage on Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-On RHEL6 Transparent Hugepage kernel support is enabled by default.
-This is known to cause sporadic crashes of Varnish.
+On certain Linux distributions Transparent Hugepage kernel support is enabled
+by default. This is known to cause instabilities of Varnish.
 
-It is recommended to disable transparent hugepages on affected
-systems. This can be done with
-``echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled``
-(runtime) or by adding "transparent_hugepage=never" to the kernel boot
-line in the "/etc/grub.conf" file (persistent).
+It is recommended to disable Transparent Hugepage on affected systems.
+If Varnish is the only significant service running on this system, this can be
+done during runtime with::
 
-On Debian/Ubuntu systems running 3.2 kernels the default value is "madvise" and
-does not need to be changed.
+  echo never > /sys/kernel/mm/transparent_hugepage/enabled
 
+Alternatively, this can be persisted in your bootloader configuration by adding
+``transparent_hugepage=never`` to the kernel command line.
+
+On other systems the default value is ``madvise`` and does not need to be
+changed. Either way, the Linux :ref:`ref-varnishd-opt_j` will try to disable
+Transparent Hugepage in the ``varnishd`` process.
+
+The general recommendation is to mount the working directory in a ``tmpfs``
+partition, usually ``/var/lib/varnish``. By default tmpfs should be mounted with
+Transparent Hugepage disabled. Consider mounting the working directory with the
+``huge=never`` mount option if that is not the case with your OS vendor.
 
 OpenVZ
 ~~~~~~
