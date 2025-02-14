@@ -141,39 +141,42 @@ VJ_subproc(enum jail_subproc_e jse)
 }
 
 int
-VJ_make_workdir(const char *dname)
+VJ_make_workdir(const char *dname, struct vsb *vsb)
 {
-	struct vsb *vsb;
 	int i;
 
 	AN(dname);
+	AN(vsb);
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
 
 	if (vjt->make_workdir != NULL) {
-		vsb = VSB_new_auto();
-		AN(vsb);
 		i = vjt->make_workdir(dname, NULL, vsb);
-		MGT_ComplainVSB(i ? C_ERR : C_INFO, vsb);
-		VSB_destroy(&vsb);
 		if (i)
 			return (i);
 		VJ_master(JAIL_MASTER_FILE);
 	} else {
 		VJ_master(JAIL_MASTER_FILE);
-		if (mkdir(dname, 0755) < 0 && errno != EEXIST)
-			ARGV_ERR("Cannot create working directory '%s': %s\n",
-				 dname, VAS_errtxt(errno));
+		if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
+			VSB_printf(vsb,
+			    "Cannot create working directory '%s': %s\n",
+			    dname, VAS_errtxt(errno));
+			return (1);
+		}
 	}
 
-	if (chdir(dname) < 0)
-		ARGV_ERR("Cannot change to working directory '%s': %s\n",
+	if (chdir(dname) < 0) {
+		VSB_printf(vsb, "Cannot change to working directory '%s': %s\n",
 		    dname, VAS_errtxt(errno));
+		return (1);
+	}
 
 	i = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
-	if (i < 0)
-		ARGV_ERR("Cannot create test-file in %s (%s)\n"
+	if (i < 0) {
+		VSB_printf(vsb, "Cannot create test-file in %s (%s)\n"
 		    "Check permissions (or delete old directory)\n",
 		    dname, VAS_errtxt(errno));
+		return (1);
+	}
 
 #ifdef ST_NOEXEC
 	struct statvfs vfs[1];
@@ -182,8 +185,9 @@ VJ_make_workdir(const char *dname)
 	if (! fstatvfs(i, vfs) && vfs->f_flag & ST_NOEXEC) {
 		closefd(&i);
 		AZ(unlink("_.testfile"));
-		ARGV_ERR("Working directory %s (-n argument) "
+		VSB_printf(vsb, "Working directory %s (-n argument) "
 		    "cannot reside on a file system mounted noexec\n", dname);
+		return (1);
 	}
 #endif
 

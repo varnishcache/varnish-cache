@@ -879,7 +879,11 @@ main(int argc, char * const *argv)
 
 	openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
-	if (VJ_make_workdir(workdir))
+	vsb = VSB_new_auto();
+	AN(vsb);
+	o = VJ_make_workdir(workdir, vsb);
+	MGT_ComplainVSB(o ? C_ERR : C_INFO, vsb);
+	if (o)
 		ARGV_EXIT;
 
 	VJ_master(JAIL_MASTER_SYSTEM);
@@ -897,8 +901,6 @@ main(int argc, char * const *argv)
 	AZ(system("rm -rf vmod_cache vext_cache worker_tmpdir"));
 	VJ_master(JAIL_MASTER_LOW);
 
-	vsb = VSB_new_auto();
-	AN(vsb);
 	o = VJ_make_subdir("vmod_cache", "VMOD cache", vsb) ||
 	    VJ_make_subdir("worker_tmpdir",
 		"TMPDIR for the worker process", vsb) ||

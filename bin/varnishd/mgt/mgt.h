@@ -161,7 +161,7 @@ struct jail_tech {
 void VJ_Init(const char *);
 void VJ_master(enum jail_master_e);
 void VJ_subproc(enum jail_subproc_e);
-int VJ_make_workdir(const char *);
+int VJ_make_workdir(const char *, struct vsb *);
 int VJ_make_subdir(const char *, const char *, struct vsb *);
 void VJ_fix_fd(int, enum jail_fixfd_e);
 void VJ_unlink(const char *, int);
