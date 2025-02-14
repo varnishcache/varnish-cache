@@ -901,6 +901,7 @@ main(int argc, char * const *argv)
 	AZ(system("rm -rf vmod_cache vext_cache worker_tmpdir"));
 	VJ_master(JAIL_MASTER_LOW);
 
+	VSB_clear(vsb);
 	o = VJ_make_subdir("vmod_cache", "VMOD cache", vsb) ||
 	    VJ_make_subdir("worker_tmpdir",
 		"TMPDIR for the worker process", vsb) ||

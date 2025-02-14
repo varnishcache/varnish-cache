@@ -148,13 +148,11 @@ MGT_ComplainVSB(const char *loud, struct vsb *vsb)
 {
 	int sf;
 
-	if (VSB_len(vsb) == 0 ||
-	    (loud == C_CLI && !mgt_param.syslog_cli_traffic)) {
-		VSB_clear(vsb);
-		return;
-	}
-
 	AZ(VSB_finish(vsb));
+
+	if (VSB_len(vsb) == 0 ||
+	    (loud == C_CLI && !mgt_param.syslog_cli_traffic))
+		return;
 
 	if (loud == C_ERR)
 		sf = LOG_ERR;
@@ -174,7 +172,6 @@ MGT_ComplainVSB(const char *loud, struct vsb *vsb)
 
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE))
 		syslog(sf, "%s", VSB_data(vsb));
-	VSB_clear(vsb);
 }
 
 void
