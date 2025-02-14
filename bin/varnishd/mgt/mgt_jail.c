@@ -153,9 +153,7 @@ VJ_make_workdir(const char *dname)
 		vsb = VSB_new_auto();
 		AN(vsb);
 		i = vjt->make_workdir(dname, NULL, vsb);
-		AZ(VSB_finish(vsb));
-		if (VSB_len(vsb) > 0)
-			MGT_ComplainVSB(i ? C_ERR : C_INFO, vsb);
+		MGT_ComplainVSB(i ? C_ERR : C_INFO, vsb);
 		VSB_destroy(&vsb);
 		if (i)
 			return (i);

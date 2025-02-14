@@ -219,7 +219,7 @@ char *mgt_HostName(void);
 void mgt_ProcTitle(const char *comp);
 void mgt_DumpRstVsl(void);
 struct vsb *mgt_BuildVident(void);
-void MGT_ComplainVSB(const char *, const struct vsb *vsb);
+void MGT_ComplainVSB(const char *, struct vsb *vsb);
 void MGT_Complain(const char *, const char *, ...) v_printflike_(2, 3);
 const void *MGT_Pick(const struct choice *, const char *, const char *);
 char **MGT_NamedArg(const char *, const char **, const char *);
