@@ -129,6 +129,7 @@ static int current = 0;
 static int rebuild = 0;
 static int redraw = 0;
 static int sample = 0;
+static int reset_averages = 0;
 static int scale = 1;
 static double t_sample = 0.;
 static double interval = 1.;
@@ -242,7 +243,7 @@ build_pt_array(void)
 }
 
 static void
-sample_points(void)
+sample_points(int reset)
 {
 	struct pt *pt;
 	uint64_t v;
@@ -262,7 +263,12 @@ sample_points(void)
 		pt->t_last = pt->t_cur;
 		pt->t_cur = VTIM_mono();
 
-		if (pt->t_last)
+		if (reset) {
+			pt->chg = 0;
+			pt->ma_10.n = 0;
+			pt->ma_100.n = 0;
+			pt->ma_1000.n = 0;
+		} else if (pt->t_last)
 			pt->chg = ((int64_t)pt->cur - (int64_t)pt->last) /
 			    (pt->t_cur - pt->t_last);
 
@@ -286,7 +292,7 @@ sample_points(void)
 }
 
 static void
-sample_hitrate(void)
+sample_hitrate(int reset)
 {
 	double hr, mr, ratio;
 	uint64_t hit, miss;
@@ -305,6 +311,11 @@ sample_hitrate(void)
 		ratio = hr / (hr + mr);
 	else
 		ratio = 0;
+	if (reset) {
+		hitrate.hr_10.n = 0;
+		hitrate.hr_100.n = 0;
+		hitrate.hr_1000.n = 0;
+	}
 	update_ma(&hitrate.hr_10, ratio);
 	update_ma(&hitrate.hr_100, ratio);
 	update_ma(&hitrate.hr_1000, ratio);
@@ -316,8 +327,9 @@ sample_data(void)
 	t_sample = VTIM_mono();
 	sample = 0;
 	redraw = 1;
-	sample_points();
-	sample_hitrate();
+	sample_points(reset_averages);
+	sample_hitrate(reset_averages);
+	reset_averages = 0;
 }
 
 static void
@@ -1006,6 +1018,9 @@ handle_points_keypress(struct vsc *vsc, enum kb_e kb)
 	case KB_SAMPLE:
 		sample = 1;
 		return;
+	case KB_RESET_AVERAGES:
+		reset_averages = 1;
+		return;
 	case KB_QUIT:
 	case KB_SIG_INT:
 	case KB_SIG_TSTP:
@@ -1055,6 +1070,7 @@ handle_help_keypress(enum kb_e kb)
 	case KB_VERBOSE:
 	case KB_QUIET:
 	case KB_SAMPLE:
+	case KB_RESET_AVERAGES:
 		break;
 	case KB_QUIT:
 	case KB_SIG_INT:

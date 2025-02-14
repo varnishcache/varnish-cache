@@ -101,6 +101,9 @@ BINDING(QUIT, "\tQuit.")
 BINDING_KEY(BINDING_CTRL('t'), "CTRL+T",)
 BINDING(SAMPLE, "\tSample now.")
 
+BINDING_KEY('R', "R",)
+BINDING(RESET_AVERAGES, "\tReset averages")
+
 BINDING_KEY('+', "+",)
 BINDING(ACCEL, "\tIncrease refresh interval.")
 

@@ -81,6 +81,8 @@ Varnish Cache NEXT (2025-03-15)
   restricted to ``vcl_miss, vcl_deliver, vcl_pass, vcl_synth`` and ``vcl_pass,
   vcl_deliver, vcl_synth`` respectively.
 
+* `varnishstat` can now reset running averages on the `R` keypress.
+
 ================================
 Varnish Cache 7.6.1 (2024-11-08)
 ================================
