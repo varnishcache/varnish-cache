@@ -498,6 +498,10 @@ $Restrict vcl_deliver
 Switch to the VAI http1 debug transport. Calling it from any other
 transport than http1 results in VCL failure.
 
+$Function VOID body_prefix(STRING)
+
+Add this string to the prefix sent by the body_prefix filter
+
 DEPRECATED
 ==========
 

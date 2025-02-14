@@ -1367,3 +1367,32 @@ xyzzy_log_strands(VRT_CTX, VCL_STRING prefix, VCL_STRANDS subject, VCL_INT nn)
 		    ptr_where(ctx, p), p, n, p, strlen(p) > (unsigned)n ? "..." : "");
 	}
 }
+
+const void * const priv_task_id_bp = &priv_task_id_bp;
+
+VCL_VOID
+xyzzy_body_prefix(VRT_CTX, VCL_STRING s)
+{
+	struct xyzzy_bp_string *bps;
+	struct xyzzy_bp *bp;
+	struct vmod_priv *task;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	task = VRT_priv_task(ctx, priv_task_id_bp);
+	AN(task);
+	bp = task->priv;
+	if (bp == NULL) {
+		bp = WS_Alloc(ctx->ws, (unsigned)sizeof *bp);
+		AN(bp);
+		task->priv = bp;
+		INIT_OBJ(bp, XYZZY_BP_MAGIC);
+		VSTAILQ_INIT(&bp->head);
+	}
+	CHECK_OBJ(bp, XYZZY_BP_MAGIC);
+
+	bps = WS_Alloc(ctx->ws, (unsigned)sizeof *bps);
+	AN(bps);
+	bps->s = s;
+	VSTAILQ_INSERT_TAIL(&bp->head, bps, list);
+}
