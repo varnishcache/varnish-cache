@@ -200,6 +200,7 @@ VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 
 	AN(dname);
 	AN(what);
+	AN(vsb);
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
 	if (vjt->make_subdir != NULL)
 		return (vjt->make_subdir(dname, what, vsb));
@@ -207,15 +208,8 @@ VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 	VJ_master(JAIL_MASTER_FILE);
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
 		e = errno;
-		if (vsb != NULL) {
-			VSB_printf(vsb,
-			    "Cannot create %s directory '%s': %s\n",
-			    what, dname, VAS_errtxt(e));
-		} else {
-			MGT_Complain(C_ERR,
-			    "Cannot create %s directory '%s': %s",
-			    what, dname, VAS_errtxt(e));
-		}
+		VSB_printf(vsb, "Cannot create %s directory '%s': %s\n",
+		    what, dname, VAS_errtxt(e));
 		return (1);
 	}
 	VJ_master(JAIL_MASTER_LOW);

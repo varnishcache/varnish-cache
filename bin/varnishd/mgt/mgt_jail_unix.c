@@ -239,19 +239,13 @@ vju_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 
 	AN(dname);
 	AN(what);
+	AN(vsb);
 	AZ(seteuid(0));
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
 		e = errno;
-		if (vsb != NULL) {
-			VSB_printf(vsb,
-			    "Cannot create %s directory '%s': %s\n",
-			    what, dname, VAS_errtxt(e));
-		} else {
-			MGT_Complain(C_ERR,
-			    "Cannot create %s directory '%s': %s",
-			    what, dname, VAS_errtxt(e));
-		}
+		VSB_printf(vsb, "Cannot create %s directory '%s': %s\n",
+		    what, dname, VAS_errtxt(e));
 		return (1);
 	}
 	AZ(chown(dname, vju_uid, vju_gid));

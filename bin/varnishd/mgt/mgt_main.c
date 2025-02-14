@@ -640,6 +640,7 @@ main(int argc, char * const *argv)
 	pid_t pid;
 	struct arg_list *alp;
 	int first_arg = 1;
+	struct vsb *vsb;
 
 	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
 		printf("%s\n", opt_spec);
@@ -896,25 +897,17 @@ main(int argc, char * const *argv)
 	AZ(system("rm -rf vmod_cache vext_cache worker_tmpdir"));
 	VJ_master(JAIL_MASTER_LOW);
 
-	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
-		ARGV_ERR(
-		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
-		    workdir, VAS_errtxt(errno));
-	}
-
-	if (arg_list_count("E") &&
-	    VJ_make_subdir("vext_cache", "VEXT cache", NULL)) {
-		ARGV_ERR(
-		    "Cannot create vmod directory (%s/vext_cache): %s\n",
-		    workdir, VAS_errtxt(errno));
-	}
-
-	if (VJ_make_subdir("worker_tmpdir",
-	    "TMPDIR for the worker process", NULL)) {
-		ARGV_ERR(
-		    "Cannot create vmod directory (%s/worker_tmpdir): %s\n",
-		    workdir, VAS_errtxt(errno));
-	}
+	vsb = VSB_new_auto();
+	AN(vsb);
+	o = VJ_make_subdir("vmod_cache", "VMOD cache", vsb) ||
+	    VJ_make_subdir("worker_tmpdir",
+		"TMPDIR for the worker process", vsb) ||
+	    (arg_list_count("E") &&
+		VJ_make_subdir("vext_cache", "VEXT cache", vsb));
+	MGT_ComplainVSB(o ? C_ERR : C_INFO, vsb);
+	VSB_destroy(&vsb);
+	if (o)
+		ARGV_EXIT;
 
 	o = open("worker_tmpdir", O_RDONLY);
 	VJ_master(JAIL_MASTER_SYSTEM);
