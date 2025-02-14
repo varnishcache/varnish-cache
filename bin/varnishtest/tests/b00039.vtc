@@ -56,7 +56,7 @@ client c1 {
 	expect resp.http.was-304 == "true"
 } -run
 
-delay 1
+delay 2
 
 client c1 {
 	txreq
