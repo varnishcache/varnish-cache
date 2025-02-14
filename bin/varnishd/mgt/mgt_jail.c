@@ -109,7 +109,8 @@ VJ_Init(const char *j_arg)
 			ARGV_ERR("-j argument is empty\n");
 		vjt = MGT_Pick(vj_choice, av[1], "jail");
 		CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
-		(void)vjt->init(av + 2);
+		if (vjt->init(av + 2))
+			ARGV_EXIT;
 		VAV_Free(av);
 	} else {
 		/*
