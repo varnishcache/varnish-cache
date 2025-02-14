@@ -450,7 +450,13 @@ req_Empty_Filter(struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * XXX: why ignore needless filters for everything but req?
+ * control if "set req.filters" is allowed
+ *
+ * req.body (conversely to other body object) is one where VCL has control over
+ * when it gets processed by means of std.cache_req_body(): Filters act on the
+ * received body when that function is called, so confusion could be caused if
+ * people expect filters to have an effect when set/changed after the req.body
+ * is already cached.
  */
 
 static int
