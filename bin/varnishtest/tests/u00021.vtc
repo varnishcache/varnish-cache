@@ -1,0 +1,23 @@
+varnishtest "varnishstat coverage"
+
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+process p1 -dump {varnishstat -n ${v1_name}} -start
+delay 2
+
+client c1 -repeat 11 {
+	txreq
+	rxresp
+} -run
+
+delay 2
+process p1 -screen_dump
+process p1 -write 0
+delay 1
+process p1 -screen_dump
+process p1 -expect-text 0 0 "avg(n):   0.0000   0.0000   0.0000"
