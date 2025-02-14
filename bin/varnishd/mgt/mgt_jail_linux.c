@@ -44,7 +44,6 @@
 #include <sys/vfs.h>
 
 #include "mgt/mgt.h"
-#include "common/heritage.h"
 
 static int
 vjl_set_thp(const char *arg, struct vsb *vsb)
@@ -86,6 +85,8 @@ vjl_init(char **args)
 	int seen = 0, ret = 0;
 	size_t i;
 
+	(void)args;
+
 	vsb = VSB_new_auto();
 	AN(vsb);
 
@@ -97,11 +98,15 @@ vjl_init(char **args)
 		return (jail_tech_unix.init(NULL));
 	}
 
-	for (i = 0; args[i] != NULL; i++);
+	i = 0;
+	while (args[i] != NULL)
+		i++;
+
 	unix_args = calloc(i + 1, sizeof *unix_args);
 	AN(unix_args);
 
-	for (i = 0; *args != NULL && ret == 0; args++) {
+	i = 0;
+	for (; *args != NULL && ret == 0; args++) {
 		val = keyval(*args, "transparent_hugepage=");
 		if (val == NULL) {
 			unix_args[i++] = *args;
