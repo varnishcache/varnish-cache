@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Various ways to handle the body coming from the backend.
+ * Various ways to handle the body coming from a peer.
  */
 
 /*lint -save -e525 -e539 */
