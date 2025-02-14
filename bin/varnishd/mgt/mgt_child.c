@@ -107,13 +107,12 @@ mgt_panic_record(pid_t r)
 	child_panic = VSB_new_auto();
 	AN(child_panic);
 	VTIM_format(VTIM_real(), time_str);
-	VSB_printf(child_panic, "Panic at: %s\n", time_str);
+	VSB_printf(child_panic, "Child (%jd) Panic at: %s\n",
+	    (intmax_t)r, time_str);
 	VSB_quote(child_panic, heritage.panic_str,
 	    strnlen(heritage.panic_str, heritage.panic_str_len),
 	    VSB_QUOTE_NONL);
-	AZ(VSB_finish(child_panic));
-	MGT_Complain(C_ERR, "Child (%jd) %s",
-	    (intmax_t)r, VSB_data(child_panic));
+	MGT_ComplainVSB(C_ERR, child_panic);
 }
 
 static void
@@ -592,8 +591,7 @@ mgt_reap_child(void)
 		VSC_C_mgt->child_dump++;
 	}
 #endif
-	AZ(VSB_finish(vsb));
-	MGT_Complain(status ? C_ERR : C_INFO, "%s", VSB_data(vsb));
+	MGT_ComplainVSB(status ? C_ERR : C_INFO, vsb);
 	VSB_destroy(&vsb);
 
 	/* Dispose of shared memory but evacuate panic messages first */
