@@ -190,7 +190,6 @@ VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
 
 static const struct vfilter vfilter_error[1] = {{0}};
 
-// XXX: idea(fgs): Allow filters (...) arguments in the list
 static const struct vfilter *
 vcl_filter_list_iter(int want_vfp, const struct vfilter_head *h1,
     const struct vfilter_head *h2, const char **flp)
