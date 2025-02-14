@@ -38,7 +38,7 @@
 	} while (0)
 
 #define SIZEOF_FLEX_OBJ(to, fld, len)					\
-	(offsetof(typeof(*to), fld) + sizeof *(to)->fld * len)
+	(offsetof(typeof(*to), fld) + sizeof *(to)->fld * (len))
 
 #define ALLOC_FLEX_OBJ(to, fld, len, type_magic)			\
 	do {								\
