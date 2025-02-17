@@ -170,6 +170,7 @@ cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
 			    errbuf, erroff);
 		}
 	}
+	VSB_printf(vsb, "set -e ;");
 	VSB_printf(vsb, "exec 2>&1 ; %s", cmd);
 	AZ(VSB_finish(vsb));
 	vtc_dump(vl, 4, "shell_cmd", VSB_data(vsb), -1);
