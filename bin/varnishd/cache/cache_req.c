@@ -123,7 +123,7 @@ Req_LogStart(const struct worker *wrk, struct req *req)
  */
 
 struct req *
-Req_New(struct sess *sp, struct req *preq)
+Req_New(struct sess *sp, const struct req *preq)
 {
 	struct pool *pp;
 	struct req *req;
