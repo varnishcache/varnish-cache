@@ -484,28 +484,28 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			VCL_backend_refresh_method(bo->vcl, wrk, NULL, bo, NULL);
 			bo->was_304 = 1;
 			switch (wrk->vpi->handling) {
-					case VCL_RET_MERGE:
-						vbf_304_logic(bo);
-						break;
-					case VCL_RET_BERESP:
-						break;
-					case VCL_RET_OBJ_STALE:
-						HTTP_Decode(bo->beresp, ObjGetAttr(bo->wrk, bo->stale_oc, OA_HEADERS, NULL));
-						break;
-					case VCL_RET_RETRY:
-						if (retried_stale == 1) {
-							VSLb(bo->vsl, SLT_VCL_Error,
-							    "Conditional fetch already retried, delivering 503");
-							return (F_STP_ERROR);
-						}
-						/* FALLTHROUGH */
-					case VCL_RET_ERROR:
-					case VCL_RET_ABANDON:
-					case VCL_RET_FAIL:
-						skip_vbr = 1;
-						break;
-					default:
-						WRONG("Illegal return from vcl_backend_refresh{}");
+			case VCL_RET_MERGE:
+				vbf_304_logic(bo);
+				break;
+			case VCL_RET_BERESP:
+				break;
+			case VCL_RET_OBJ_STALE:
+				HTTP_Decode(bo->beresp, ObjGetAttr(bo->wrk, bo->stale_oc, OA_HEADERS, NULL));
+				break;
+			case VCL_RET_RETRY:
+				if (retried_stale == 1) {
+					VSLb(bo->vsl, SLT_VCL_Error,
+					    "Conditional fetch already retried, delivering 503");
+					return (F_STP_ERROR);
+				}
+				/* FALLTHROUGH */
+			case VCL_RET_ERROR:
+			case VCL_RET_ABANDON:
+			case VCL_RET_FAIL:
+				skip_vbr = 1;
+				break;
+			default:
+				WRONG("Illegal return from vcl_backend_refresh{}");
 			}
 		} else if (!bo->uncacheable){
 			VSLb(bo->vsl, SLT_Error,

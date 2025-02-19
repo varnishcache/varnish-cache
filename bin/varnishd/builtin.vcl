@@ -210,44 +210,44 @@ sub vcl_backend_response {
 }
 
 sub vcl_backend_refresh {
-        call vcl_builtin_backend_refresh;
-        return (merge);
+	call vcl_builtin_backend_refresh;
+	return (merge);
 }
 
 sub vcl_builtin_backend_refresh {
-        call vcl_refresh_valid;
-        call vcl_refresh_conditions;
-        call vcl_refresh_status;
+	call vcl_refresh_valid;
+	call vcl_refresh_conditions;
+	call vcl_refresh_status;
 }
 
 sub vcl_refresh_valid {
-        if (obj_stale.retried) { # read-only, analogous to bereq.retries, but BOOL
-                return (error);
-        }
-        if (!obj_stale.is_valid) {
-                call vcl_refresh_retry;
-        }
+	if (obj_stale.retried) { # read-only, analogous to bereq.retries, but BOOL
+		return (error);
+	}
+	if (!obj_stale.is_valid) {
+		call vcl_refresh_retry;
+	}
 }
 
 sub vcl_refresh_status {
-        if (obj_stale.status != 200) {
-                call vcl_refresh_retry;
-        }
+	if (obj_stale.status != 200) {
+		call vcl_refresh_retry;
+	}
 }
 
 sub vcl_refresh_conditions {
-        if (!bereq.http.if-modified-since &&
-            !bereq.http.if-none-match) {
-                return (error);
-        }
+	if (!bereq.http.if-modified-since &&
+	    !bereq.http.if-none-match) {
+		return (error);
+	}
 }
 
 sub vcl_refresh_retry {
-        unset bereq.http.if-modified-since;
-        unset bereq.http.if-none-match;
-        # Same transition as return (fetch) from vcl_backend_fetch,
-        # but turns into an error if obj_stale.retried already true.
-        return (retry(fetch));
+	unset bereq.http.if-modified-since;
+	unset bereq.http.if-none-match;
+	# Same transition as return (fetch) from vcl_backend_fetch,
+	# but turns into an error if obj_stale.retried already true.
+	return (retry(fetch));
 }
 
 sub vcl_builtin_backend_response {
