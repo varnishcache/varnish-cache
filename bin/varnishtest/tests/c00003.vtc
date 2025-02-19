@@ -126,10 +126,10 @@ shell -err -expect "Invalid sub-arg =foo" {
 
 # All bad listen addresses
 shell -err -expect "Error: Could not get socket" {
-	varnishd -F -a "${bad_ip}:0" -b '***' -n ${tmpdir}
+	varnishd -F -a "${bad_ip}:0" -b '***'
 }
 
 # old style address list
 shell -err -expect "Unknown protocol" {
-	varnishd -F -a "${listen_addr},${bad_ip}:0" -b '***' -n ${tmpdir}
+	varnishd -F -a "${listen_addr},${bad_ip}:0" -b '***'
 }

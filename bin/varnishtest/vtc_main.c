@@ -399,6 +399,7 @@ start_test(void)
 	int p[2], retval;
 	struct vtc_job *jp;
 	char tmpdir[PATH_MAX];
+	char default_n[PATH_MAX];
 
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
@@ -408,6 +409,10 @@ start_test(void)
 	bprintf(tmpdir, "%s/vtc.%d.%08x", tmppath, (int)getpid(),
 		(unsigned)random());
 	AZ(mkdir(tmpdir, 0755));
+
+	bprintf(default_n, "%s/default_n", tmpdir);
+
+	AZ(setenv("VARNISH_DEFAULT_N", default_n, 1));
 
 	tp = VTAILQ_FIRST(&tst_head);
 	CHECK_OBJ_NOTNULL(tp, TST_MAGIC);

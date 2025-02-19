@@ -15,11 +15,11 @@ client c1 {
 delay .2
 
 shell -err -expect {Error: Could not open pid-file} {
-	varnishd -P /dev/tty -b None -a :0 -n ${tmpdir}
+	varnishd -P /dev/tty -b None -a :0
 }
 
 shell -err -expect {Error: Varnishd is already running} {
-	varnishd -P ${v1_name}/varnishd.pid -b None -a :0 -n ${tmpdir}
+	varnishd -P ${v1_name}/varnishd.pid -b None -a :0
 }
 
 shell -err -expect {Error: Varnishd is already running} {

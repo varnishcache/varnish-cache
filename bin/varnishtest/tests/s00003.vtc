@@ -46,14 +46,14 @@ varnish v1 -vsl_catchup
 varnish v1 -cliok "ban obj.http.date ~ ."
 
 process p1 {
-	varnishd -sTransient=file,${tmpdir}/foo,xxx -b${localhost} -a:0 -n ${tmpdir} 2>&1
+	varnishd -sTransient=file,${tmpdir}/foo,xxx -b${localhost} -a:0 2>&1
 } -expect-exit 0x2 -dump -start -expect-text 0 0 "Invalid number" -wait -screen_dump
 
 process p1 {
-	varnishd -sTransient=file,${tmpdir}/foo,10M,xxx -b${localhost} -a:0 -n ${tmpdir} 2>&1
+	varnishd -sTransient=file,${tmpdir}/foo,10M,xxx -b${localhost} -a:0 2>&1
 } -expect-exit 0x2 -dump -start -expect-text 0 0 "granularity" -wait -screen_dump
 
 process p1 {
-	varnishd -sTransient=file,${tmpdir}/foo,10m,,foo -b${localhost} -a:0 -n ${tmpdir} 2>&1
+	varnishd -sTransient=file,${tmpdir}/foo,10m,,foo -b${localhost} -a:0 2>&1
 } -expect-exit 0x2 -dump -start -expect-text 0 0 "invalid advice" -wait
 

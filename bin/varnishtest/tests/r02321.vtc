@@ -2,18 +2,15 @@ varnishtest "Storage name collisions"
 
 # intentional collision
 shell -err -expect "Error: (-s main=default,100m) 'main' is already defined" {
-	exec varnishd -a :0 -f '' -n ${tmpdir} \
-		-s main=default,10m -s main=default,100m
+	exec varnishd -a :0 -f '' -s main=default,10m -s main=default,100m
 }
 
 # pseudo-accidental collision
 shell -err -expect "Error: (-s s0=default,100m) 's0' is already defined" {
-	exec varnishd -a :0 -f '' -n ${tmpdir} \
-		-s default,10m -s s0=default,100m
+	exec varnishd -a :0 -f '' -s default,10m -s s0=default,100m
 }
 
 # Transient collision
 shell -err -expect "Error: (-s Transient=default,100m) 'Transient' is already defined" {
-	exec varnishd -a :0 -f '' -n ${tmpdir} \
-		-s Transient=default,10m -s Transient=default,100m
+	exec varnishd -a :0 -f '' -s Transient=default,10m -s Transient=default,100m
 }
