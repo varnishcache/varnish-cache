@@ -58,7 +58,6 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2025-03-15)
- *	VRT_retry_fetch() Added
  *	VRT_r_obj_stale_age() added
  *	VRT_r_obj_stale_can_esi() added
  *	VRT_r_obj_stale_grace() added
@@ -729,7 +728,6 @@ VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 VCL_STRING VRT_ban_string(VRT_CTX, VCL_STRING);
 VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);
 VCL_VOID VRT_synth(VRT_CTX, VCL_INT, VCL_STRING);
-VCL_VOID VRT_retry_fetch(VRT_CTX);
 VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 
 VCL_BOOL VRT_ValidHdr(VRT_CTX, VCL_STRANDS);

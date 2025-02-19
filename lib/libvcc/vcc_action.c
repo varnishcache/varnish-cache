@@ -275,7 +275,7 @@ vcc_act_return_retry(struct vcc *tl)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	Fb(tl, 1, "VRT_retry_fetch(ctx);\n");
+	Fb(tl, 1, "VPI_retry_fetch(ctx);\n");
 	vcc_NextToken(tl);
 	SkipToken(tl, ')');
 }
