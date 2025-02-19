@@ -52,7 +52,8 @@ dbg_vai_error(struct req *req, struct v1l **v1lp, const char *msg)
 }
 
 static void dbg_vai_deliver_finish(struct req *req, struct v1l **v1lp, int err);
-static void dbg_vai_sendbody(struct worker *wrk, void *arg);
+static void dbg_vai_deliverobj(struct worker *wrk, void *arg);
+static void dbg_vai_lease(struct worker *wrk, void *arg);
 
 static task_func_t *hack_http1_req = NULL;
 
@@ -62,6 +63,7 @@ dbg_vai_deliver(struct req *req, int sendbody)
 {
 	struct vrt_ctx ctx[1];
 	struct v1l *v1l;
+	int cap = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(req->boc, BOC_MAGIC);
@@ -107,6 +109,7 @@ dbg_vai_deliver(struct req *req, int sendbody)
 			dbg_vai_error(req, &v1l, "Failure to push v1d processor");
 			return (VTR_D_DONE);
 		}
+		cap = VDPIO_Upgrade(ctx, req->vdc);
 	}
 
 	if (WS_Overflowed(req->ws)) {
@@ -137,9 +140,14 @@ dbg_vai_deliver(struct req *req, int sendbody)
 		hack_http1_req = req->task->func;
 	AN(hack_http1_req);
 
-	VSLb(req->vsl, SLT_Debug, "w=%p scheduling dbg_vai_sendbody", req->wrk);
-
-	req->task->func = dbg_vai_sendbody;
+	if (cap > 0) {
+		VSLb(req->vsl, SLT_Debug, "w=%p scheduling dbg_vai_lease cap %d", req->wrk, cap);
+		req->task->func = dbg_vai_lease;
+	}
+	else {
+		VSLb(req->vsl, SLT_Debug, "w=%p scheduling dbg_vai_deliverobj", req->wrk);
+		req->task->func = dbg_vai_deliverobj;
+	}
 	req->task->priv = req;
 
 	req->wrk = NULL;
@@ -151,7 +159,7 @@ dbg_vai_deliver(struct req *req, int sendbody)
 }
 
 static void v_matchproto_(task_func_t)
-dbg_vai_sendbody(struct worker *wrk, void *arg)
+dbg_vai_deliverobj(struct worker *wrk, void *arg)
 {
 	struct req *req;
 	struct v1l *v1l;
@@ -165,7 +173,7 @@ dbg_vai_sendbody(struct worker *wrk, void *arg)
 	AN(v1l);
 
 	THR_SetRequest(req);
-	VSLb(req->vsl, SLT_Debug, "w=%p enter dbg_vai_sendbody", wrk);
+	VSLb(req->vsl, SLT_Debug, "w=%p enter dbg_vai_deliverobj", wrk);
 	AZ(req->wrk);
 	CNT_Embark(wrk, req);
 	req->vdc->wrk = wrk;	// move to CNT_Embark?
@@ -183,6 +191,133 @@ dbg_vai_sendbody(struct worker *wrk, void *arg)
 	wrk->task->priv = req;
 }
 
+/*
+ * copied from sml_notfiy
+ */
+struct dbg_vai_notify {
+	unsigned		magic;
+#define DBG_VAI_NOTIFY_MAGIC	0xa0154ed5
+	unsigned		hasmore;
+	pthread_mutex_t		mtx;
+	pthread_cond_t		cond;
+};
+
+static void
+dbg_vai_notify_init(struct dbg_vai_notify *sn)
+{
+
+	INIT_OBJ(sn, DBG_VAI_NOTIFY_MAGIC);
+	AZ(pthread_mutex_init(&sn->mtx, NULL));
+	AZ(pthread_cond_init(&sn->cond, NULL));
+}
+
+static void
+dbg_vai_notify_fini(struct dbg_vai_notify *sn)
+{
+
+	CHECK_OBJ_NOTNULL(sn, DBG_VAI_NOTIFY_MAGIC);
+	AZ(pthread_mutex_destroy(&sn->mtx));
+	AZ(pthread_cond_destroy(&sn->cond));
+}
+
+static void v_matchproto_(vai_notify_cb)
+dbg_vai_notify(vai_hdl hdl, void *priv)
+{
+	struct dbg_vai_notify *sn;
+
+	(void) hdl;
+	CAST_OBJ_NOTNULL(sn, priv, DBG_VAI_NOTIFY_MAGIC);
+	AZ(pthread_mutex_lock(&sn->mtx));
+	sn->hasmore = 1;
+	AZ(pthread_cond_signal(&sn->cond));
+	AZ(pthread_mutex_unlock(&sn->mtx));
+
+}
+
+static void
+dbg_vai_notify_wait(struct dbg_vai_notify *sn)
+{
+
+	CHECK_OBJ_NOTNULL(sn, DBG_VAI_NOTIFY_MAGIC);
+	AZ(pthread_mutex_lock(&sn->mtx));
+	while (sn->hasmore == 0)
+		AZ(pthread_cond_wait(&sn->cond, &sn->mtx));
+	AN(sn->hasmore);
+	sn->hasmore = 0;
+	AZ(pthread_mutex_unlock(&sn->mtx));
+}
+
+static void v_matchproto_(task_func_t)
+dbg_vai_lease(struct worker *wrk, void *arg)
+{
+	struct req *req;
+	struct v1l *v1l;
+	const char *p;
+	unsigned flags = 0;
+	int r, cap, err, chunked;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
+	v1l = req->transport_priv;
+	req->transport_priv = NULL;
+	AN(v1l);
+
+	THR_SetRequest(req);
+	VSLb(req->vsl, SLT_Debug, "w=%p enter dbg_vai_lease", wrk);
+	AZ(req->wrk);
+	CNT_Embark(wrk, req);
+	req->vdc->wrk = wrk;	// move to CNT_Embark?
+
+	cap = req->vdc->retval;
+	req->vdc->retval = 0;
+	assert(cap > 0);
+
+	chunked = http_GetHdr(req->resp, H_Transfer_Encoding, &p) && strcmp(p, "chunked") == 0;
+	if (chunked)
+		V1L_Chunked(v1l);
+
+	struct dbg_vai_notify notify;
+	dbg_vai_notify_init(&notify);
+	req->vdc->vai_hdl = ObjVAIinit(wrk, req->objcore, req->ws, dbg_vai_notify, &notify);
+	AN(req->vdc->vai_hdl);
+
+	VSCARAB_LOCAL(scarab, cap);
+	VSCARET_LOCAL(scaret, cap);
+	req->vdc->scaret = scaret;
+
+	err = 0;
+	do {
+		r = vdpio_pull(req->vdc, NULL, scarab);
+		flags = scarab->flags; // because vdpio_return_vscarab
+		VSLb(req->vsl, SLT_Debug, "%d = vdpio_pull()", r);
+		(void)V1L_Flush(v1l);
+		vdpio_return_vscarab(req->vdc, scarab);
+
+		if (r == -ENOBUFS || r == -EAGAIN) {
+			ObjVAIreturn(wrk, req->vdc->vai_hdl, scaret);
+			dbg_vai_notify_wait(&notify);
+		}
+		else if (r < 0) {
+			err = r;
+			break;
+		}
+	} while ((flags & VSCARAB_F_END) == 0);
+
+	vdpio_return_vscarab(req->vdc, scarab);
+	ObjVAIreturn(wrk, req->vdc->vai_hdl, scaret);
+
+	req->vdc->scaret = NULL;
+	if (!err && chunked)
+		V1L_EndChunk(v1l);
+	dbg_vai_deliver_finish(req, &v1l, err);
+	ObjVAIfini(wrk, &req->vdc->vai_hdl);
+	dbg_vai_notify_fini(&notify);
+
+	VSLb(req->vsl, SLT_Debug, "w=%p resuming http1_req", wrk);
+	wrk->task->func = hack_http1_req;
+	wrk->task->priv = req;
+}
+
 static void
 dbg_vai_deliver_finish(struct req *req, struct v1l **v1lp, int err)
 {
@@ -191,6 +326,8 @@ dbg_vai_deliver_finish(struct req *req, struct v1l **v1lp, int err)
 
 	sc = V1L_Close(v1lp, &bytes);
 
+	if (req->vdc->vai_hdl != NULL)
+		req->acct.resp_bodybytes += VDPIO_Close(req->vdc, req->objcore, req->boc);
 	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, req->boc);
 
 	if (sc == SC_NULL && err && req->sp->fd >= 0)
