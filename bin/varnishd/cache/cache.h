@@ -385,7 +385,6 @@ struct busyobj {
 
 	unsigned		max_retries;
 	unsigned		retries;
-	unsigned		retried_stale;
 	struct req		*req;
 	struct sess		*sp;
 	struct worker		*wrk;
