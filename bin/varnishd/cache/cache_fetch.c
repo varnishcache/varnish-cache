@@ -490,7 +490,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			case VCL_RET_BERESP:
 				break;
 			case VCL_RET_OBJ_STALE:
-				HTTP_Decode(bo->beresp, ObjGetAttr(bo->wrk, bo->stale_oc, OA_HEADERS, NULL));
+				if (HTTP_Decode(bo->beresp, ObjGetAttr(bo->wrk,
+				    bo->stale_oc, OA_HEADERS, NULL))) {
+					bo->htc->doclose = SC_RX_OVERFLOW;
+					vbf_cleanup(bo);
+					return (F_STP_ERROR);
+				}
 				break;
 			case VCL_RET_RETRY:
 				if (retried_stale == 1) {
