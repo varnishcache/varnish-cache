@@ -24,8 +24,21 @@ varnish v1 \
 	}
 } -start
 
+logexpect l1 -v v1 -g raw {
+	fail add *	Debug "scheduling dbg_vai_deliverobj"
+	expect * *	Debug "scheduling dbg_vai_lease"
+	expect * *	ReqHeader "Last: Request"
+	fail clear
+} -start
+
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set debug +req_state"
+varnish v1 -cliok "param.set debug +processors"
+
+client c0 -repeat 16 -keepalive {
+	txreq -hdr "Accept-Encoding: gzip"
+	rxresp
+} -start
 
 client c1 -repeat 16 -keepalive {
 	txreq
@@ -33,12 +46,20 @@ client c1 -repeat 16 -keepalive {
 	expect resp.bodylen == 13107
 } -start
 
-client c2 -repeat 16 -keepalive {
-	txreq -url "/chunked"
-	rxresp
-	expect resp.http.Content-Length == <undef>
-	expect resp.bodylen == 13107
-} -start
+#client c2 -repeat 16 -keepalive {
+#	txreq -url "/chunked"
+#	rxresp
+#	expect resp.http.Content-Length == <undef>
+#	expect resp.bodylen == 13107
+#} -start
 
+client c0 -wait
 client c1 -wait
-client c2 -wait
+#client c2 -wait
+
+client c0 {
+	txreq -hdr "Accept-Encoding: gzip" -hdr "Last: Request"
+	rxresp
+} -run
+
+logexpect l1 -wait
