@@ -1,0 +1,17 @@
+varnishtest "should not crash"
+
+server s1 {
+        rxreq
+        txresp -status 206 -hdr "Content-Range: fish 0-5/68" -body "F"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+} -start
+
+client c1 {
+        txreq
+        rxresp
+} -run

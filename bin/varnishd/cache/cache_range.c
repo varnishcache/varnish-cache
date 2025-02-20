@@ -273,7 +273,8 @@ VRG_CheckBo(struct busyobj *bo)
 	}
 
 	if (crlo < 0 && crhi < 0 && crlen < 0) {
-		AZ(http_GetHdr(bo->beresp, H_Content_Range, NULL));
+		VSLb(bo->vsl, SLT_Debug,
+		    "Missing content-range header or unknown range unit");
 		return (0);
 	}
 
