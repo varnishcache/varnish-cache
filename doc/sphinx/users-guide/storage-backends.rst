@@ -28,7 +28,15 @@ Storage backends are also called stevedores.
 .. _vmods: https://www.varnish-cache.org/vmods
 
 Besides the built-in storage backends, separately distributed extensions exist,
-which can be found on the `vmods`_ page by searching for "stevedore".
+
+Storage Selection
+~~~~~~~~~~~~~~~~~
+
+By default, Varnish will store short-lived and passed objects in a storage
+called `Transient`, described below.
+
+For other objects, it will rotate between all the non-transient storages,
+unless the VCL variable `beresp.storage` is explicitly set.
 
 default
 ~~~~~~~
