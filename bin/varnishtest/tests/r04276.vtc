@@ -1,4 +1,4 @@
-varnishtest "should not crash"
+varnishtest "Panic on unknown content-range unit"
 
 server s1 {
         rxreq
