@@ -29,7 +29,7 @@ varnish v1 -arg "-sTransient=default,1M -p debug=+syncvsl -p nuke_limit=0" -vcl+
 	}
 } -start
 
-logexpect l1 -v v1 -g vxid -q "vxid == 1004" {
+logexpect l1 -v v1 -g vxid -q "vxid == 1004" -x Debug {
 	expect 25 1004	VCL_call        {^BACKEND_RESPONSE}
 	expect 0  =	BerespHeader    {^free:}
 	expect 0  =	VCL_return      {^deliver}
