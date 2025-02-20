@@ -1328,7 +1328,10 @@ beresp.storage
 	Writable from: vcl_backend_response, vcl_backend_error
 
 
-	The storage backend to use to save this object.
+	The storage backend to use to save this object. If
+	none is set, Varnish will pick a storage backend in a
+	round-robin fashion, or the `Transient` backend if
+	the object is short-lived.
 
 beresp.storage_hint	``VCL <= 4.0``
 

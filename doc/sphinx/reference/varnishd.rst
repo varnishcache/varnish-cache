@@ -350,6 +350,10 @@ The following hash algorithms are available:
 Storage Backend
 ---------------
 
+Multiple storage backend (when the cached and in-flight objects are held) can
+be defined, and VCL can pilot which store is used by setting the
+`beresp.storage` variable (see `man vcl-var` for more information).
+
 The argument format to define storage backends is:
 
 -s <[name]=kind[,options]>
