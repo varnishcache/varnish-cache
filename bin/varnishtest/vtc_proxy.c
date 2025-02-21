@@ -50,6 +50,7 @@ static const char vpx2_sig[] = {
 	'Q', 'U', 'I', 'T', '\n',
 };
 
+//lint -emacro(750, PP2_)
 #define PP2_TYPE_ALPN           0x01
 #define PP2_TYPE_AUTHORITY      0x02
 #define PP2_TYPE_CRC32C         0x03
@@ -99,7 +100,6 @@ vtc_proxy_tlv(struct vtclog *vl, struct vsb *vsb, const char *kva)
 
 	kv = strdup(kva);
 	AN(kv);
-	save = NULL;
 
 	p = strtok_r(kv, "=", &save);
 	AN(p);
@@ -130,7 +130,7 @@ vtc_proxy_tlv(struct vtclog *vl, struct vsb *vsb, const char *kva)
 		vsb2 = VSB_new_auto();
 		AN(vsb2);
 		VSB_cat(vsb2, p);
-		VSB_finish(vsb2);
+		AZ(VSB_finish(vsb2));
 	}
 	AN(vsb2);
 
