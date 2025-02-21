@@ -1,0 +1,215 @@
+varnishtest "PROXY v2 test"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	expect req.http.x-forwarded-for == "${localhost}"
+	txresp
+
+	rxreq
+	expect req.url == "/2"
+	expect req.http.x-forwarded-for == "${localhost}"
+	txresp
+
+	rxreq
+	expect req.url == "/3"
+	expect req.http.x-forwarded-for == "${localhost}"
+	txresp
+
+	rxreq
+	expect req.url == "/4"
+	expect req.http.x-forwarded-for == "${localhost}"
+	txresp
+
+	rxreq
+	expect req.url == "/5"
+	expect req.http.x-forwarded-for == "${localhost}"
+	txresp
+
+	rxreq
+	expect req.url == "/6"
+	expect req.http.x-forwarded-for == "1.2.3.4"
+	txresp
+
+	rxreq
+	expect req.url == "/7"
+	expect req.http.x-forwarded-for == "102:304:506::d0e:f10"
+	txresp
+} -start
+
+varnish v1 -proto "PROXY" -vcl+backend {
+	import std;
+
+	acl fwd_client {
+		"1.2.3.4";
+		"102:304:506::d0e:f10";
+	}
+
+	acl fwd_server {
+		"5.6.7.8";
+		"8182:8384:8586::8d8e:8f80";
+	}
+
+	sub vcl_deliver {
+		set resp.http.li = local.ip;
+		set resp.http.lp = std.port(local.ip);
+		set resp.http.ri = remote.ip;
+		set resp.http.rp = std.port(remote.ip);
+		set resp.http.ci = client.ip;
+		set resp.http.cp = std.port(client.ip);
+		set resp.http.si = server.ip;
+		set resp.http.sp = std.port(server.ip);
+		set resp.http.fc = (client.ip ~ fwd_client);
+		set resp.http.fs = (server.ip ~ fwd_server);
+		set resp.http.xport = req.transport;
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1000	Proxy		"2 local local local local"
+	expect * 1003	ProxyGarbage	"PROXY2: bad command \\(2\\)"
+	expect * 1004	ProxyGarbage	"PROXY2: Ignoring UNSPEC\\|UNSPEC addresses"
+	expect * 1007	ProxyGarbage	"PROXY2: Ignoring unsupported protocol \\(0x99\\)"
+	expect * 1010	ProxyGarbage	"PROXY2: Ignoring short IPv4 addresses \\(11\\)"
+	expect * 1013	ProxyGarbage	"PROXY2: Ignoring short IPv6 addresses \\(35\\)"
+	expect * 1016	Proxy		"2 1.2.3.4 2314 5.6.7.8 2828"
+	expect * 1019	Proxy		"2 102:304:506::d0e:f10 2314 8182:8384:8586::8d8e:8f80 2828"
+	expect * 1022	Begin		"^sess 0 PROXY"
+	expect * 1022	SessClose	"^RX_OVERFLOW"
+} -start
+
+client c1 {
+	# LOCAL command
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "20 00 00 00"
+	txreq -url /1
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "${localhost}"
+	# Transport is HTTP/1, even though proxy is used
+	expect resp.http.xport == HTTP/1
+} -run
+
+delay .1
+
+client c1 {
+	# unknown command
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "22 00 00 00"
+	timeout 8
+	expect_close
+} -run
+
+delay .1
+
+client c1 {
+	# UNSPEC proto
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 00 00 00"
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "${localhost}"
+} -run
+
+delay .1
+
+client c1 {
+	# unknown proto
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 99 00 00"
+	txreq -url /3
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "${localhost}"
+} -run
+
+delay .1
+
+client c1 {
+	# short IPv4
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 11 00 0b"
+	sendhex "01 02 03 04 05 06 07 08 09 0a 0b"
+	txreq -url /4
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "${localhost}"
+} -run
+
+delay .1
+
+client c1 {
+	# short IPv6
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 21 00 23"
+	sendhex "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+	sendhex "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+	sendhex "01 02 03"
+	txreq -url /5
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fs == false
+	expect resp.http.fc == false
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "${localhost}"
+} -run
+delay .1
+
+# good IPv4
+client c1 -proxy2 "1.2.3.4:2314 5.6.7.8:2828" {
+	txreq -url /6
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fs == true
+	expect resp.http.fc == true
+	expect resp.http.ci == "1.2.3.4"
+	expect resp.http.cp == "2314"
+	expect resp.http.si == "5.6.7.8"
+	expect resp.http.sp == "2828"
+	expect resp.http.li == "${v1_addr}"
+	expect resp.http.lp == "${v1_port}"
+	expect resp.http.ri != "1.2.3.4"
+} -run
+
+delay .1
+
+# good IPv6
+client c1 \
+    -proxy2 "[102:304:506::d0e:f10]:2314 [8182:8384:8586::8d8e:8f80]:2828" {
+	txreq -url /7
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fs == true
+	expect resp.http.fc == true
+	expect resp.http.ci == "102:304:506::d0e:f10"
+	expect resp.http.cp == "2314"
+	expect resp.http.si == "8182:8384:8586::8d8e:8f80"
+	expect resp.http.sp == "2828"
+	expect resp.http.li == "${v1_addr}"
+	expect resp.http.lp == "${v1_port}"
+	expect resp.http.ri != "102:304:506::d0e:f10"
+} -run
+
+delay .1
+
+client c2 {
+	# max length with garbage
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	# announce 1025 bytes > 1024 implicit limit
+	sendhex "20 00 04 01"
+	expect_close
+} -run
+
+delay .1
+
+logexpect l1 -wait
