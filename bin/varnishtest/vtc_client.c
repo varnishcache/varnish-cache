@@ -74,26 +74,31 @@ static VTAILQ_HEAD(, client)	clients = VTAILQ_HEAD_INITIALIZER(clients);
  */
 
 static void
-client_proxy(struct vtclog *vl, int fd, int version, const char *spec)
+client_proxy(struct vtclog *vl, int fd, int version, const char *speca)
 {
 	const struct suckaddr *sac, *sas;
-	char *p, *p2;
+	char *spec, *save, *p;
 
-	p = strdup(spec);
+	spec = strdup(speca);
+	AN(spec);
+	save = NULL;
+
+	p = strtok_r(spec, " ", &save);
 	AN(p);
-	p2 = strchr(p, ' ');
-	AN(p2);
-	*p2++ = '\0';
-
 	sac = VSS_ResolveOne(NULL, p, NULL, 0, SOCK_STREAM, AI_PASSIVE);
 	if (sac == NULL)
 		vtc_fatal(vl, "Could not resolve client address");
-	sas = VSS_ResolveOne(NULL, p2, NULL, 0, SOCK_STREAM, AI_PASSIVE);
+
+	p = strtok_r(NULL, " ", &save);
+	AN(p);
+	sas = VSS_ResolveOne(NULL, p, NULL, 0, SOCK_STREAM, AI_PASSIVE);
 	if (sas == NULL)
-		vtc_fatal(vl, "Could not resolve server address");
+		vtc_fatal(vl, "Could not resolve client address");
+
+	free(spec);
+
 	if (vtc_send_proxy(fd, version, sac, sas))
 		vtc_fatal(vl, "Write failed: %s", strerror(errno));
-	free(p);
 	VSA_free(&sac);
 	VSA_free(&sas);
 }
