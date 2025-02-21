@@ -1,4 +1,4 @@
-varnishtest "PROXY v2 test"
+varnishtest "PROXY v2 test on http2"
 
 server s1 {
 	rxreq
@@ -37,7 +37,10 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -proto "PROXY" -vcl+backend {
+varnish v1 -proto "PROXY"	\
+    -arg "-p feature=+http2"	\
+    -vcl+backend {
+	import proxy;
 	import std;
 
 	acl fwd_client {
@@ -61,6 +64,7 @@ varnish v1 -proto "PROXY" -vcl+backend {
 		set resp.http.sp = std.port(server.ip);
 		set resp.http.fc = (client.ip ~ fwd_client);
 		set resp.http.fs = (server.ip ~ fwd_server);
+		set resp.http.alpn = proxy.alpn();
 		set resp.http.xport = req.transport;
 	}
 } -start
@@ -82,14 +86,15 @@ client c1 {
 	# LOCAL command
 	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
 	sendhex "20 00 00 00"
-	txreq -url /1
-	rxresp
-	expect resp.status == 200
-	expect resp.http.si == "${v1_addr}"
-	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "${localhost}"
-	# Transport is HTTP/1, even though proxy is used
-	expect resp.http.xport == HTTP/1
+	stream 1 {
+		txreq -url /1
+		rxresp
+		expect resp.status == 200
+		expect resp.http.si == "${v1_addr}"
+		expect resp.http.sp == "${v1_port}"
+		expect resp.http.ci == "${localhost}"
+		expect resp.http.xport == "HTTP/2"
+	} -run
 } -run
 
 delay .1
@@ -108,12 +113,15 @@ client c1 {
 	# UNSPEC proto
 	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
 	sendhex "21 00 00 00"
-	txreq -url /2
-	rxresp
-	expect resp.status == 200
-	expect resp.http.si == "${v1_addr}"
-	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "${localhost}"
+	stream 1 {
+		txreq -url /2
+		rxresp
+		expect resp.status == 200
+		expect resp.http.si == "${v1_addr}"
+		expect resp.http.sp == "${v1_port}"
+		expect resp.http.ci == "${localhost}"
+		expect resp.http.xport == "HTTP/2"
+	} -run
 } -run
 
 delay .1
@@ -122,12 +130,15 @@ client c1 {
 	# unknown proto
 	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
 	sendhex "21 99 00 00"
-	txreq -url /3
-	rxresp
-	expect resp.status == 200
-	expect resp.http.si == "${v1_addr}"
-	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "${localhost}"
+	stream 1 {
+		txreq -url /3
+		rxresp
+		expect resp.status == 200
+		expect resp.http.si == "${v1_addr}"
+		expect resp.http.sp == "${v1_port}"
+		expect resp.http.ci == "${localhost}"
+		expect resp.http.xport == "HTTP/2"
+	} -run
 } -run
 
 delay .1
@@ -137,12 +148,15 @@ client c1 {
 	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
 	sendhex "21 11 00 0b"
 	sendhex "01 02 03 04 05 06 07 08 09 0a 0b"
-	txreq -url /4
-	rxresp
-	expect resp.status == 200
-	expect resp.http.si == "${v1_addr}"
-	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "${localhost}"
+	stream 1 {
+		txreq -url /4
+		rxresp
+		expect resp.status == 200
+		expect resp.http.si == "${v1_addr}"
+		expect resp.http.sp == "${v1_port}"
+		expect resp.http.ci == "${localhost}"
+		expect resp.http.xport == "HTTP/2"
+	} -run
 } -run
 
 delay .1
@@ -154,50 +168,60 @@ client c1 {
 	sendhex "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
 	sendhex "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
 	sendhex "01 02 03"
-	txreq -url /5
-	rxresp
-	expect resp.status == 200
-	expect resp.http.fs == false
-	expect resp.http.fc == false
-	expect resp.http.si == "${v1_addr}"
-	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "${localhost}"
+	stream 1 {
+		txreq -url /5
+		rxresp
+		expect resp.status == 200
+		expect resp.http.fs == false
+		expect resp.http.fc == false
+		expect resp.http.si == "${v1_addr}"
+		expect resp.http.sp == "${v1_port}"
+		expect resp.http.ci == "${localhost}"
+	} -run
 } -run
 delay .1
 
 # good IPv4
-client c1 -proxy2 "1.2.3.4:2314 5.6.7.8:2828" {
-	txreq -url /6
-	rxresp
-	expect resp.status == 200
-	expect resp.http.fs == true
-	expect resp.http.fc == true
-	expect resp.http.ci == "1.2.3.4"
-	expect resp.http.cp == "2314"
-	expect resp.http.si == "5.6.7.8"
-	expect resp.http.sp == "2828"
-	expect resp.http.li == "${v1_addr}"
-	expect resp.http.lp == "${v1_port}"
-	expect resp.http.ri != "1.2.3.4"
+client c1 -proxy2 "1.2.3.4:2314 5.6.7.8:2828 alpn=h2" {
+	stream 1 {
+		txreq -url /6
+		rxresp
+		expect resp.status == 200
+		expect resp.http.fs == true
+		expect resp.http.fc == true
+		expect resp.http.ci == "1.2.3.4"
+		expect resp.http.cp == "2314"
+		expect resp.http.si == "5.6.7.8"
+		expect resp.http.sp == "2828"
+		expect resp.http.li == "${v1_addr}"
+		expect resp.http.lp == "${v1_port}"
+		expect resp.http.ri != "1.2.3.4"
+		expect resp.http.alpn == "h2"
+		expect resp.http.xport == "HTTP/2"
+	} -run
 } -run
 
 delay .1
 
 # good IPv6
 client c1 \
-    -proxy2 "[102:304:506::d0e:f10]:2314 [8182:8384:8586::8d8e:8f80]:2828" {
-	txreq -url /7
-	rxresp
-	expect resp.status == 200
-	expect resp.http.fs == true
-	expect resp.http.fc == true
-	expect resp.http.ci == "102:304:506::d0e:f10"
-	expect resp.http.cp == "2314"
-	expect resp.http.si == "8182:8384:8586::8d8e:8f80"
-	expect resp.http.sp == "2828"
-	expect resp.http.li == "${v1_addr}"
-	expect resp.http.lp == "${v1_port}"
-	expect resp.http.ri != "102:304:506::d0e:f10"
+    -proxy2 "[102:304:506::d0e:f10]:2314 [8182:8384:8586::8d8e:8f80]:2828 alpn=h2" {
+	stream 1 {
+		txreq -url /7
+		rxresp
+		expect resp.status == 200
+		expect resp.http.fs == true
+		expect resp.http.fc == true
+		expect resp.http.ci == "102:304:506::d0e:f10"
+		expect resp.http.cp == "2314"
+		expect resp.http.si == "8182:8384:8586::8d8e:8f80"
+		expect resp.http.sp == "2828"
+		expect resp.http.li == "${v1_addr}"
+		expect resp.http.lp == "${v1_port}"
+		expect resp.http.ri != "102:304:506::d0e:f10"
+		expect resp.http.alpn == "h2"
+		expect resp.http.xport == "HTTP/2"
+	} -run
 } -run
 
 delay .1
