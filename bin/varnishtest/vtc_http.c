@@ -128,7 +128,14 @@ extern const struct cmds http_cmds[];
  *
  * \-proxy2 STRING (client only)
  *        Use the PROXY protocol version 2 for this connection. STRING
- *        is of the form "CLIENTIP:PORT SERVERIP:PORT".
+ *        is of the form "CLIENTIP:PORT SERVERIP:PORT [TLV [TLV ... ]]".
+ *
+ *        TLV is in the form name=val
+ *
+ *        name: 0xID or alpn, authority, crc32c, noop, unique_id, netns
+ *        val: 0x... or string
+ *
+ *        ssl is currently not implemented (can be sent as hex)
  *
  * SECTION: client-server.spec Specification
  *

@@ -78,6 +78,7 @@ client_proxy(struct vtclog *vl, int fd, int version, const char *speca)
 {
 	const struct suckaddr *sac, *sas;
 	char *spec, *save, *p;
+	struct vsb *tlv;
 
 	spec = strdup(speca);
 	AN(spec);
@@ -95,9 +96,14 @@ client_proxy(struct vtclog *vl, int fd, int version, const char *speca)
 	if (sas == NULL)
 		vtc_fatal(vl, "Could not resolve client address");
 
+	tlv = VSB_new_auto();
+	while ((p = strtok_r(NULL, " ", &save)) != NULL)
+		vtc_proxy_tlv(vl, tlv, p);
+
 	free(spec);
 
-	if (vtc_send_proxy(fd, version, sac, sas))
+	AZ(VSB_finish(tlv));
+	if (vtc_send_proxy(fd, version, sac, sas, tlv))
 		vtc_fatal(vl, "Write failed: %s", strerror(errno));
 	VSA_free(&sac);
 	VSA_free(&sas);
