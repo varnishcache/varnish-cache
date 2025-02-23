@@ -50,7 +50,7 @@ static const char vpx2_sig[] = {
 	'Q', 'U', 'I', 'T', '\n',
 };
 
-//lint -emacro(750, PP2_*)
+//lint -esym(750, PP2_*)
 #define PP2_TYPE_ALPN           0x01
 #define PP2_TYPE_AUTHORITY      0x02
 #define PP2_TYPE_CRC32C         0x03
