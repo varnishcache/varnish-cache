@@ -1898,6 +1898,9 @@ cmd_txprio(CMD_ARGS)
  * \-hdrsize INT
  *	maximum size of the header list authorized
  *
+ * \-0xHH[HH] INT
+ *	tx arbitraty settings with tag xx
+ *
  * \-ack
  *	set the ack bit
  */
@@ -1906,7 +1909,8 @@ cmd_txsettings(CMD_ARGS)
 {
 	struct stream *s, *s2;
 	struct http *hp;
-	char *p;
+	char *p, *e;
+	unsigned long u;
 	uint32_t val = 0;
 	struct frame f;
 	//TODO dynamic alloc
@@ -1952,6 +1956,15 @@ cmd_txsettings(CMD_ARGS)
 			PUT_KV(av, vl, framesize, val, 0x5);
 		else if (!strcmp(*av, "-hdrsize"))
 			PUT_KV(av, vl, hdrsize, val, 0x6);
+		else if (!strncmp(*av, "-0x", 3)) {
+			p = *av + 3;
+			errno = 0;
+			u = strtoul(p, &e, 16);
+			if (*p == '\0' || *e != '\0' || u > 0xffff || errno != 0)
+				vtc_fatal(vl, "Invalid settings tag %s", p);
+			assert(u <= 0xffff);
+			PUT_KV(av, vl, hdrtbl, val, (uint16_t)u);
+		}
 		else if (!strcmp(*av, "-ack"))
 			f.flags |= 1;
 		else
