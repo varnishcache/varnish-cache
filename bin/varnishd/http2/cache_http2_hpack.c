@@ -106,7 +106,8 @@ h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 		case FLD_VALUE_FIRST:
 			if (vct_issp(*p)) {
 				VSLb(vsl, SLT_BogoHeader,
-				    "Illegal field value start %.*s", l, nm.b);
+				    "Illegal field value 0x%02x start %.*s",
+				    *p, l, nm.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 			state = FLD_VALUE;
@@ -114,7 +115,8 @@ h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 		case FLD_VALUE:
 			if (!vct_ishdrval(*p)) {
 				VSLb(vsl, SLT_BogoHeader,
-				    "Illegal field value %.*s", l, nm.b);
+				    "Illegal field value 0x%02x %.*s",
+				    *p, l, nm.b);
 				return (H2SE_PROTOCOL_ERROR);
 			}
 			break;
@@ -124,7 +126,8 @@ h2h_checkhdr(struct vsl_log *vsl, txt nm, txt val)
 	}
 	if (state == FLD_VALUE && vct_issp(val.e[-1])) {
 		VSLb(vsl, SLT_BogoHeader,
-		    "Illegal field value (end) %.*s", l, nm.b);
+		    "Illegal field value 0x%02x (end) at %.*s",
+		    val.e[-1], l, nm.b);
 		return (H2SE_PROTOCOL_ERROR);
 	}
 	return (0);
