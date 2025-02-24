@@ -192,6 +192,8 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	--h2->refcnt;
 	/* XXX: PRIORITY reshuffle */
 	VTAILQ_REMOVE(&h2->streams, r2, list);
+	if (r2->req == h2->new_req)
+		h2->new_req = NULL;
 	Lck_Unlock(&sp->mtx);
 
 	assert(!WS_IsReserved(r2->req->ws));

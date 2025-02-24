@@ -130,4 +130,8 @@ client c1 {
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
+	stream 3 {
+		txreq
+		rxresp
+	} -run
 } -run
