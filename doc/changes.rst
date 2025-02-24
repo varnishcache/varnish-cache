@@ -41,6 +41,26 @@ Varnish Cache NEXT (2025-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* (Add a prominent note to announcement) Timestamps for http/2 requests have
+  been corrected and made similar to how they are taken for http/1.
+
+  For http/1, the start time, internally called "t_first", is taken as soon as
+  any part of the request (headers) is received. Previously, http/2 took it
+  later, possibly much later if long header lines were involved. http/2 now
+  takes it the same way as http/1 when the first bit of the first HEADERS frame
+  of the request arrives.
+
+  Timing behavior for http/1 and http/2 is different and can not be directly
+  compared. But with this change, the ``Timestamp`` VSL records for http/2 now
+  at least reflect reality better.
+
+  NOTE that after upgrading Varnish-Cache, processing and response times for
+  http/2 will now be reported as worse than before the upgrade, potentially
+  *much* worse. This is **NOT** a performance regression, but rather due to the
+  corrected timestamps, which arguably were wrong for http/2.
+
+.. MISSING commits
+
 * The ``hitmiss`` and ``hitpass`` handling indicators have been added to the
   ``Varnish:handling`` format of ``varnishncsa``.
 

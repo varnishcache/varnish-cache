@@ -329,6 +329,7 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
+
 	// rfc7540,l,2262,2267
 	H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx push promise");
 	return (H2CE_PROTOCOL_ERROR);
@@ -654,6 +655,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 		h2_del_req(wrk, r2);
 		return (h2e);
 	}
+	req->t_req = VTIM_real();
 	VSLb_ts_req(req, "Req", req->t_req);
 
 	// XXX: Smarter to do this already at HPACK time into tail end of
@@ -774,8 +776,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req->sp = h2->sess;
 	req->transport = &HTTP2_transport;
 
-	req->t_first = VTIM_real();
-	req->t_req = VTIM_real();
+	req->t_first = h2->t1;
 	req->t_prev = req->t_first;
 	VSLb_ts_req(req, "Start", req->t_first);
 	req->acct.req_hdrbytes += h2->rxf_len;
@@ -1479,8 +1480,9 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	if (h2->goaway && h2->open_streams == 0)
 		return (0);
 
+	h2->t1 = NAN;
 	VTCP_blocking(*h2->htc->rfd);
-	hs = HTC_RxStuff(h2->htc, h2_frame_complete, NULL, NULL, NAN,
+	hs = HTC_RxStuff(h2->htc, h2_frame_complete, &h2->t1, NULL, NAN,
 	    VTIM_real() + 0.5, NAN, h2->local_settings.max_frame_size + 9);
 
 	h2e = NULL;
