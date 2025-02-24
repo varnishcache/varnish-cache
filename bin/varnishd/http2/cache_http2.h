@@ -67,7 +67,7 @@ typedef const struct h2_error_s *h2_error;
 /**********************************************************************/
 
 typedef h2_error h2_rxframe_f(struct worker *, struct h2_sess *,
-    struct h2_req *);
+    struct h2_req *, vtim_real t1);
 
 typedef const struct h2_frame_s *h2_frame;
 
