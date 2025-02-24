@@ -48,9 +48,9 @@
 
 #define H2_CUSTOM_ERRORS
 #define H2EC1(U,v,g,r,d)	\
-	const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1,g,r}};
+	const struct h2_error_s H2CE_##U[1] = {{"H2CE_" #U,d,v,0,1,g,r}};
 #define H2EC2(U,v,g,r,d)	\
-	const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0,g,r}};
+	const struct h2_error_s H2SE_##U[1] = {{"H2SE_" #U,d,v,1,0,g,r}};
 #define H2EC3(U,v,g,r,d) H2EC1(U,v,g,r,d) H2EC2(U,v,g,r,d)
 #define H2_ERROR(NAME, val, sc, goaway, reason, desc)	\
 	H2EC##sc(NAME, val, goaway, reason, desc)
