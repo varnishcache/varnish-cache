@@ -1451,6 +1451,22 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 	return (h2e);
 }
 
+/*
+ * if we have received end_headers, the new request is started
+ * if we have not received end_stream, DATA frames are expected later
+ *
+ * neither of these make much sense to output here
+ *
+ * goaway currently is always 0, see #4285
+ */
+static void
+h2_eof_debug(struct h2_sess *h2)
+{
+
+	H2S_Lock_VSLb(h2, SLT_Debug, "H2: eof frame=%s goaway=%d",
+	    h2->htc->rxbuf_b == h2->htc->rxbuf_e ? "complete" : "partial",
+	    h2->goaway);
+}
 
 /***********************************************************************
  * Called in loop from h2_new_session()
@@ -1488,6 +1504,8 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2e = NULL;
 	switch (hs) {
 	case HTC_S_EOF:
+		h2_eof_debug(h2);
+
 		h2e = H2CE_NO_ERROR;
 		break;
 	case HTC_S_COMPLETE:
