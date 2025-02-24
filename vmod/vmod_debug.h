@@ -39,3 +39,9 @@ void
 debug_transport_reembarking_http1_use(VRT_CTX);
 void
 debug_transport_reembarking_http1_init(void);
+
+/* vmod_debug_transport_vai.c */
+void
+debug_transport_vai_use(VRT_CTX);
+void
+debug_transport_vai_init(void);
