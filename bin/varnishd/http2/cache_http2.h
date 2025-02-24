@@ -196,6 +196,7 @@ struct h2_sess {
 	struct h2_settings		local_settings;
 
 	struct req			*new_req;
+	vtim_real			t1;	// t_first for new_req
 	uint32_t			goaway_last_stream;
 
 	VTAILQ_HEAD(,h2_req)		txqueue;
