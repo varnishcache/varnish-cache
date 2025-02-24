@@ -1487,6 +1487,9 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	h2e = NULL;
 	switch (hs) {
+	case HTC_S_EOF:
+		h2e = H2CE_NO_ERROR;
+		break;
 	case HTC_S_COMPLETE:
 		h2->sess->t_idle = VTIM_real();
 		if (h2->do_sweep)
