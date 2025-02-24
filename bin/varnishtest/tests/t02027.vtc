@@ -1,0 +1,89 @@
+varnishtest "H2 RxStuff conditions"
+
+varnish v1 -arg "-p feature=+http2" -arg "-p debug=+syncvsl" -vcl {
+	backend none none;
+	sub vcl_recv {
+		return (synth(200));
+	}
+} -start
+
+logexpect l0 -v v1 -g vxid -q "Begin ~ sess" {
+	expect * * Debug           {^H2: Got pu PRISM}
+	expect 0 = Debug           {^H2: eof frame=complete goaway=0}
+	expect 0 = SessError       {^H2: HTC eof}
+	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect 0 = ReqAcct         {^0 0 0 18 26 44}
+	expect 0 = SessClose       {^REM_CLOSE}
+	expect 0 = End
+} -start
+
+# no streams open
+client c0 {
+	txpri
+	shutdown -write
+} -run
+
+logexpect l1 -v v1 -g vxid -q "Begin ~ sess" {
+	expect * * Debug           {^H2: eof frame=complete goaway=0}
+	expect 0 = SessError       {^H2: HTC eof}
+	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect 9 = ReqAcct         {^27 0 27 27 26 53}
+	expect 0 = SessClose       {^REM_CLOSE}
+	expect 0 = End
+} -start
+
+# after frame, no END_HEADERS
+client c1 {
+	stream 1 {
+		txreq -nohdrend
+	} -run
+	shutdown -write
+} -run
+
+logexpect l2 -v v1 -g vxid -q "Begin ~ sess" {
+	expect * * Debug           {^H2: eof frame=complete goaway=0}
+	expect 0 = SessError       {^H2: HTC eof}
+	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect 9 = ReqAcct         {^27 0 27 27 26 53}
+	expect 0 = SessClose       {^REM_CLOSE}
+	expect 0 = End
+} -start
+
+# after frame, no END_STREAM
+client c2 {
+	stream 1 {
+		txreq -nostrend
+	} -run
+	shutdown -write
+} -run
+
+logexpect l3 -v v1 -g vxid -q "Begin ~ sess" {
+	expect * * Debug           {^H2: eof frame=partial goaway=0}
+	expect 0 = SessError       {^H2: HTC eof}
+	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect 0 = ReqAcct         {^18 0 18 27 26 53}
+	expect 0 = SessClose       {^REM_CLOSE}
+	expect 0 = End
+} -start
+
+# middle of frame
+client c3 {
+	stream 1 {
+		#		   +- 01 END_STREAM
+		#                  +- 04 END_HEADERS
+		#		   |
+		#	   len ty fl strmid
+		sendhex {
+			000024 01 05 00000001
+			00053a70617468012f00073a6d6574686f640347455400073a736368656d6504687474
+		}
+		# ori:
+		#	00053a70617468012f00073a6d6574686f640347455400073a736368656d650468747470
+	} -run
+	shutdown -write
+} -run
+
+logexpect l0 -wait
+logexpect l1 -wait
+logexpect l2 -wait
+logexpect l3 -wait
