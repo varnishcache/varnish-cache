@@ -57,6 +57,9 @@ PVAR("obj.grace",
 PVAR("obj.keep",
      BANS_FLAG_OBJ | BANS_FLAG_DURATION,
      BANS_ARG_OBJKEEP)
+PVAR("obj.lru",
+     BANS_FLAG_OBJ | BANS_FLAG_DURATION | BANS_FLAG_NODEDUP,
+     BANS_ARG_OBJLRU)
 #undef PVAR
 
 /*lint -restore */

@@ -616,6 +616,7 @@ The format of *STRING* is::
     * ``obj.age``: Object age at the time the ban is issued
     * ``obj.grace``: The grace time of the object
     * ``obj.keep``: The keep time of the object
+    * ``obj.lru``: Time since the last LRU at the ban issue time.
 
 
 * *<operator>*:
@@ -661,6 +662,17 @@ The unset *<field>* is not equal to any string, such that, for a
 non-existing header, the operators ``==`` and ``~`` always evaluate as
 false, while the operators ``!=`` and ``!~`` always evaluate as true,
 respectively, for any value of *<arg>*.
+
+``obj.lru`` can be used almost as a "last accessed" time, so, for example, ``ban
+obj.lru > 1d`` removes all objects which were last accessed more than one day
+ago. Also, it can be used to remove objects stuck at request bans by issuing an
+lru ban on greater than the time difference since the rquest ban minus some
+margin.
+
+``obj.lru`` might not be implemented by all storage engines. Where it is not
+available, bans using ``obj.lru`` have no effect, that is, they behave as if
+they were not present. The last LRU time only gets updated by the
+``lru_interval`` parameter, which is then also the precision of ``obj.lru`` bans.
 
 $Function STRING ban_error()
 
