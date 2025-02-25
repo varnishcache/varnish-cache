@@ -97,7 +97,8 @@
 #define BANS_ARG_OBJAGE		0x1d
 #define BANS_ARG_OBJGRACE	0x1e
 #define BANS_ARG_OBJKEEP	0x1f
-#define BANS_ARG_LIM		(BANS_ARG_OBJKEEP + 1)
+#define BANS_ARG_OBJLASTHIT	0x20
+#define BANS_ARG_LIM		(BANS_ARG_OBJLASTHIT + 1)
 
 #define BAN_ARGIDX(x) ((x) - BANS_ARG_OFF_)
 #define BAN_ARGARRSZ  (BANS_ARG_LIM - BANS_ARG_OFF_)
@@ -116,7 +117,7 @@
 // has an arg2_double (BANS_FLAG_DURATION at build time)
 #define BANS_HAS_ARG2_DOUBLE(arg)	\
 	((arg) >= BANS_ARG_OBJTTL &&	\
-	 (arg) <= BANS_ARG_OBJKEEP)
+	 (arg) <= BANS_ARG_OBJLASTHIT)
 
 /*--------------------------------------------------------------------*/
 

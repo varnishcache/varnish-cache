@@ -4,6 +4,9 @@ varnishtest "test ban obj.* except obj.http.*"
 
 server s1 {
 	rxreq
+	expect req.url == "/old"
+	txresp -status 204
+	rxreq
 	txresp -bodylen 1
 	rxreq
 	txresp -bodylen 2
@@ -15,11 +18,25 @@ server s1 {
 	txresp -bodylen 5
 	rxreq
 	txresp -bodylen 6
+	rxreq
+	txresp -bodylen 7
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.hits = obj.hits;
+	}
+} -start
 
 client c1 {
+	txreq -url "/old"
+	rxresp
+	expect resp.status == 204
+
+	txreq -url "/old"
+	rxresp
+	expect resp.status == 204
+
 	txreq
 	rxresp
 	expect resp.bodylen == 1
@@ -55,7 +72,7 @@ client c1 {
 	expect resp.bodylen == 2
 } -run
 
-varnish v1 -cliok "ban obj.ttl <= 2m"
+varnish v1 -cliok "ban obj.status == 200 && obj.ttl <= 2m"
 
 client c1 {
 	txreq
@@ -75,7 +92,7 @@ client c1 {
 	expect resp.bodylen == 3
 } -run
 
-varnish v1 -cliok "ban obj.age < 1m"
+varnish v1 -cliok "ban obj.status == 200 && obj.age < 1m"
 
 client c1 {
 	txreq
@@ -95,7 +112,7 @@ client c1 {
 	expect resp.bodylen == 4
 } -run
 
-varnish v1 -cliok "ban obj.grace == 10s"
+varnish v1 -cliok "ban obj.status == 200 && obj.grace == 10s"
 
 client c1 {
 	txreq
@@ -115,12 +132,37 @@ client c1 {
 	expect resp.bodylen == 5
 } -run
 
-varnish v1 -cliok "ban obj.keep == 0s"
+varnish v1 -cli "param.set ban_lurker_age 0.1"
+varnish v1 -cliok "ban obj.status == 200 && obj.keep == 0s"
+delay 1
 
 client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == 6
+
+	txreq
+	rxresp
+	expect resp.bodylen == 6
+	expect resp.http.hits == 1
+} -run
+
+# now we should have two objects, /old from the beginning and the len==6 object
+varnish v1 -cliexpect { 2 C} "ban.list"
+varnish v1 -cli "param.set ban_lurker_age 600"
+varnish v1 -cliok "ban obj.last_hit < 1s"
+
+# /old survives, but len==6 gets removed
+client c1 {
+	txreq -url "/old"
+	rxresp
+	expect resp.http.age > 0
+	expect resp.http.hits == 2
+
+	txreq
+	rxresp
+	expect resp.bodylen == 7
+	expect resp.http.hits == 0
 } -run
 
 # duration formatting - 0s is being tested above

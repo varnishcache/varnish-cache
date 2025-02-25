@@ -612,10 +612,15 @@ The format of *STRING* is::
 
   * duration fields:
 
-    * ``obj.ttl``: Remaining ttl at the time the ban is issued
-    * ``obj.age``: Object age at the time the ban is issued
+    * ``obj.ttl``: Remaining ttl
+    * ``obj.age``: Object age
     * ``obj.grace``: The grace time of the object
     * ``obj.keep``: The keep time of the object
+    * ``obj.last_hit``: Time since the last hit
+
+    ``obj.ttl``, ``obj.age`` and ``obj.last_hit`` are relative to the submission
+    time of the ban, such that they represent a fixed point in time despite
+    being specified as a duration.
 
 
 * *<operator>*:
@@ -661,6 +666,19 @@ The unset *<field>* is not equal to any string, such that, for a
 non-existing header, the operators ``==`` and ``~`` always evaluate as
 false, while the operators ``!=`` and ``!~`` always evaluate as true,
 respectively, for any value of *<arg>*.
+
+``obj.last_hit`` can be used almost as a "last accessed" time, so, for example,
+``ban obj.last_hit > 1d`` removes all objects which were last accessed more than
+one day ago. Also, it can be used to remove objects stuck at request bans by
+issuing ``ban obj.last_hit > X``, with X being slightly less than the time since
+the request ban.
+
+``obj.last_hit`` is based on an internal last LRU time, which might not be
+implemented by all storage engines. Where it is not available, ban expressions
+using ``obj.last_hit`` evaluate to ``false``, which means that the respective
+ban behaves as if it was not present. Where implemented, the last LRU time might
+only get updated by the ``lru_interval`` parameter, which therefore is the
+maximum precision of ``obj.last_hit`` bans.
 
 $Function STRING ban_error()
 
