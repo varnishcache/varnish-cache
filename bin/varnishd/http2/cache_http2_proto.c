@@ -295,13 +295,15 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
  */
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
+	(void) t1;
 
 	if (h2->rxf_len != 8) { 			// rfc7540,l,2364,2366
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx ping with (len != 8)");
@@ -323,12 +325,15 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  */
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
+	(void) t1;
+
 	// rfc7540,l,2262,2267
 	H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx push promise");
 	return (H2CE_PROTOCOL_ERROR);
@@ -372,13 +377,15 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 }
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 	h2_error h2e;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
+	(void) t1;
 
 	if (h2->rxf_len != 4) {			// rfc7540,l,2003,2004
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx rst with (len != 4)");
@@ -395,13 +402,15 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  */
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
+	(void)t1;
 
 	h2->goaway = 1;
 	h2->goaway_last_stream = vbe32dec(h2->rxf_data);
@@ -433,13 +442,15 @@ h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
  */
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 	uint32_t wu;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
+	(void)t1;
 
 	if (h2->rxf_len != 4) {
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx winup with (len != 4)");
@@ -467,12 +478,14 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  */
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
+	(void)t1;
 	return (0);
 }
 
@@ -565,7 +578,8 @@ h2_set_setting(struct h2_sess *h2, const uint8_t *d)
 }
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 	const uint8_t *p;
 	unsigned l;
@@ -576,6 +590,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 	AZ(h2->rxf_stream);
+	(void) t1;
 
 	if (h2->rxf_flags == H2FF_SETTINGS_ACK) {
 		if (h2->rxf_len > 0) {			// rfc7540,l,2047,2049
@@ -652,6 +667,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 		h2_del_req(wrk, r2);
 		return (h2e);
 	}
+	req->t_req = VTIM_real();
 	VSLb_ts_req(req, "Req", req->t_req);
 
 	// XXX: Smarter to do this already at HPACK time into tail end of
@@ -725,7 +741,8 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 }
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 	struct req *req;
 	h2_error h2e;
@@ -773,8 +790,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req->sp = h2->sess;
 	req->transport = &HTTP2_transport;
 
-	req->t_first = VTIM_real();
-	req->t_req = VTIM_real();
+	req->t_first = t1;
 	req->t_prev = req->t_first;
 	VSLb_ts_req(req, "Start", req->t_first);
 	req->acct.req_hdrbytes += h2->rxf_len;
@@ -823,7 +839,8 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************/
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 	struct req *req;
 	h2_error h2e;
@@ -831,6 +848,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
+	(void) t1;
 
 	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req) {
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx unexpected CONT frame"
@@ -855,7 +873,8 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************/
 
 static h2_error v_matchproto_(h2_rxframe_f)
-h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    vtim_real t1)
 {
 	char buf[4];
 	ssize_t l;
@@ -870,6 +889,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
+	(void) t1;
 
 	if (r2 == NULL)
 		return (0);
@@ -1284,7 +1304,7 @@ h2_frame_complete(struct http_conn *htc)
 /**********************************************************************/
 
 static h2_error
-h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
+h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f, vtim_real t1)
 {
 	struct h2_req *r2;
 	h2_error h2e;
@@ -1327,7 +1347,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
 	}
 
-	h2e = h2f->rxfunc(wrk, h2, r2);
+	h2e = h2f->rxfunc(wrk, h2, r2, t1);
 	if (h2e == NULL)
 		return (NULL);
 	if (h2->rxf_stream == 0 || h2e->connection)
@@ -1469,6 +1489,7 @@ int
 h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 {
 	enum htc_status_e hs;
+	vtim_real t1;
 	h2_frame h2f;
 	h2_error h2e;
 	const char *s, *r;
@@ -1478,8 +1499,9 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	if (h2->goaway && h2->open_streams == 0)
 		return (0);
 
+	t1 = NAN;
 	VTCP_blocking(*h2->htc->rfd);
-	hs = HTC_RxStuff(h2->htc, h2_frame_complete, NULL, NULL, NAN,
+	hs = HTC_RxStuff(h2->htc, h2_frame_complete, &t1, NULL, NAN,
 	    VTIM_real() + 0.5, NAN, h2->local_settings.max_frame_size + 9);
 
 	h2e = NULL;
@@ -1545,7 +1567,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		h2->rxf_flags &= h2f->flags;
 	}
 
-	h2e = h2_procframe(wrk, h2, h2f);
+	h2e = h2_procframe(wrk, h2, h2f, t1);
 	if (h2->error == NULL && h2e != NULL) {
 		h2->error = h2e;
 		h2_tx_goaway(wrk, h2, h2e);
