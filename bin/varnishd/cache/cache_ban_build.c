@@ -240,14 +240,42 @@ ban_add_spec(struct ban_proto *bp, const struct pvar *pv, int op, const char *a3
 	return (ban_parse_regexp(bp, a3));
 }
 
+static const char *
+ban_add_double(struct ban_proto *bp, const struct pvar *pv, int op, double darg)
+{
+	uint64_t dtmp;
+	uint8_t denc[sizeof darg];
+
+	assert(BANS_HAS_ARG2_DOUBLE(pv->tag));
+	assert(sizeof darg == sizeof dtmp);
+	assert(sizeof dtmp == sizeof denc);
+	memcpy(&dtmp, &darg, sizeof dtmp);
+	vbe64enc(denc, dtmp);
+
+	ban_add_lump(bp, denc, sizeof denc);
+	VSB_putc(bp->vsb, op);
+	return (NULL);
+}
+
+static const char *
+ban_add_duration(struct ban_proto *bp, const struct pvar *pv, int op, const char *a3)
+{
+	double darg;
+
+	assert(pv->flag & BANS_FLAG_DURATION);
+	darg = VNUM_duration(a3);
+	if (isnan(darg)) {
+		return (ban_error(bp,
+		    "expected duration <n.nn>[ms|s|m|h|d|w|y] got \"%s\"", a3));
+	}
+	return (ban_add_double(bp, pv, op, darg));
+}
+
 const char *
 BAN_AddTest(struct ban_proto *bp,
     const char *a1, const char *a2, const char *a3)
 {
 	const struct pvar *pv;
-	double darg;
-	uint64_t dtmp;
-	uint8_t denc[sizeof darg];
 	int op;
 
 	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
@@ -290,23 +318,8 @@ BAN_AddTest(struct ban_proto *bp,
 
 	if ((pv->flag & BANS_FLAG_DURATION) == 0)
 		return (ban_add_spec(bp, pv, op, a3));
-
-	assert(pv->flag & BANS_FLAG_DURATION);
-	assert(BANS_HAS_ARG2_DOUBLE(pv->tag));
-	darg = VNUM_duration(a3);
-	if (isnan(darg)) {
-		return (ban_error(bp,
-		    "expected duration <n.nn>[ms|s|m|h|d|w|y] got \"%s\"", a3));
-	}
-
-	assert(sizeof darg == sizeof dtmp);
-	assert(sizeof dtmp == sizeof denc);
-	memcpy(&dtmp, &darg, sizeof dtmp);
-	vbe64enc(denc, dtmp);
-
-	ban_add_lump(bp, denc, sizeof denc);
-	VSB_putc(bp->vsb, op);
-	return (NULL);
+	else
+		return (ban_add_duration(bp, pv, op, a3));
 }
 
 /*--------------------------------------------------------------------
