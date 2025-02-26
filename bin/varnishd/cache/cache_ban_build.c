@@ -241,7 +241,7 @@ ban_add_spec(struct ban_proto *bp, const struct pvar *pv, int op, const char *a3
 }
 
 static const char *
-ban_add_double(struct ban_proto *bp, const struct pvar *pv, int op, double darg)
+ban_add_double(const struct ban_proto *bp, const struct pvar *pv, int op, double darg)
 {
 	uint64_t dtmp;
 	uint8_t denc[sizeof darg];
