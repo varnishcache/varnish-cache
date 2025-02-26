@@ -735,31 +735,30 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
 
-	if (r2 == NULL) {
-		if (h2->rxf_stream <= h2->highest_stream) {
-			H2S_Lock_VSLb(h2, SLT_SessError, "H2: new stream ID < highest stream");
-			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
-		}
-		/* NB: we don't need to guard the read of h2->open_streams
-		 * because headers are handled sequentially so it cannot
-		 * increase under our feet.
-		 */
-		if (h2->open_streams >=
-		    (int)h2->local_settings.max_concurrent_streams) {
-			H2S_Lock_VSLb(h2, SLT_Debug,
-			     "H2: stream %u: Hit maximum number of "
-			     "concurrent streams", h2->rxf_stream);
-			return (H2SE_REFUSED_STREAM);	// rfc7540,l,1200,1205
-		}
-		h2->highest_stream = h2->rxf_stream;
-		r2 = h2_new_req(h2, h2->rxf_stream, NULL);
-	}
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-
-	if (r2->state != H2_S_IDLE) {
+	if (r2 != NULL) {
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers on non-idle stream");
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	}
+
+	if (h2->rxf_stream <= h2->highest_stream) {
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: new stream ID < highest stream");
+		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
+	}
+        /* NB: we don't need to guard the read of h2->open_streams
+         * because headers are handled sequentially so it cannot
+         * increase under our feet.
+         */
+        if (h2->open_streams >=
+	    (int)h2->local_settings.max_concurrent_streams) {
+		H2S_Lock_VSLb(h2, SLT_Debug,
+		    "H2: stream %u: Hit maximum number of "
+		    "concurrent streams", h2->rxf_stream);
+		return (H2SE_REFUSED_STREAM);	// rfc7540,l,1200,1205
+	}
+	h2->highest_stream = h2->rxf_stream;
+	r2 = h2_new_req(h2, h2->rxf_stream, NULL);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	assert(r2->state == H2_S_IDLE);
 	r2->state = H2_S_OPEN;
 
 	req = r2->req;
