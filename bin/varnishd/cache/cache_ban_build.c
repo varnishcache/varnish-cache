@@ -225,6 +225,20 @@ ban_parse_oper(const char *p)
 /*--------------------------------------------------------------------
  * Add a (and'ed) test-condition to a ban
  */
+static const char *
+ban_add_spec(struct ban_proto *bp, const struct pvar *pv, int op, const char *a3)
+{
+
+	assert(! BANS_HAS_ARG2_DOUBLE(pv->tag));
+
+	ban_add_lump(bp, a3, strlen(a3) + 1);
+	VSB_putc(bp->vsb, op);
+
+	if (! BANS_HAS_ARG2_SPEC(op))
+		return (NULL);
+
+	return (ban_parse_regexp(bp, a3));
+}
 
 const char *
 BAN_AddTest(struct ban_proto *bp,
@@ -274,17 +288,8 @@ BAN_AddTest(struct ban_proto *bp,
 		    "expected conditional (%s) got \"%s\"",
 		    arg_operhelp[BAN_ARGIDX(pv->tag)], a2));
 
-	if ((pv->flag & BANS_FLAG_DURATION) == 0) {
-		assert(! BANS_HAS_ARG2_DOUBLE(pv->tag));
-
-		ban_add_lump(bp, a3, strlen(a3) + 1);
-		VSB_putc(bp->vsb, op);
-
-		if (! BANS_HAS_ARG2_SPEC(op))
-			return (NULL);
-
-		return (ban_parse_regexp(bp, a3));
-	}
+	if ((pv->flag & BANS_FLAG_DURATION) == 0)
+		return (ban_add_spec(bp, pv, op, a3));
 
 	assert(pv->flag & BANS_FLAG_DURATION);
 	assert(BANS_HAS_ARG2_DOUBLE(pv->tag));
