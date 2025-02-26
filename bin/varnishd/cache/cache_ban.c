@@ -220,6 +220,7 @@ ban_get_lump(const uint8_t **bs)
 static void
 ban_iter(const uint8_t **bs, struct ban_test *bt)
 {
+	const void *lump;
 	uint64_t dtmp;
 
 	memset(bt, 0, sizeof *bt);
@@ -229,15 +230,14 @@ ban_iter(const uint8_t **bs, struct ban_test *bt)
 		bt->arg1_spec = (const char *)*bs;
 		(*bs) += (*bs)[0] + 2;
 	}
+	lump = ban_get_lump(bs);
+	bt->oper = *(*bs)++;
 	if (BANS_HAS_ARG2_DOUBLE(bt->arg1)) {
-		dtmp = vbe64dec(ban_get_lump(bs));
-		bt->oper = *(*bs)++;
-
+		dtmp = vbe64dec(lump);
 		memcpy(&bt->arg2_double, &dtmp, sizeof dtmp);
 		return;
 	}
-	bt->arg2 = ban_get_lump(bs);
-	bt->oper = *(*bs)++;
+	bt->arg2 = lump;
 	if (BANS_HAS_ARG2_SPEC(bt->oper))
 		bt->arg2_spec = ban_get_lump(bs);
 }
