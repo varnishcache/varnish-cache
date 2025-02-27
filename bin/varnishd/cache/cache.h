@@ -353,6 +353,8 @@ struct objcore {
 
 	uint16_t		oa_present;
 
+	uint16_t		st_flags;	// owned by stv
+
 	unsigned		timer_idx;	// XXX 4Gobj limit
 	vtim_real		last_lru;
 	VTAILQ_ENTRY(objcore)	hsh_list;
