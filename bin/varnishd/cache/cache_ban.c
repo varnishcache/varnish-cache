@@ -497,16 +497,16 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 	double darg1, darg2;
 	int rv;
 
-	/*
-	 * for ttl and age, fix the point in time such that banning refers to
-	 * the same point in time when the ban is evaluated
-	 *
-	 * for grace/keep, we assume that the absolute values are pola and that
-	 * users will most likely also specify a ttl criterion if they want to
-	 * fix a point in time (such as "obj.ttl > 5h && obj.keep > 3h")
-	 */
+        /*
+         * for ttl, age and last_hit, fix the point in time such that banning
+         * refers to the same point in time when the ban is evaluated
+         *
+         * for grace/keep, we assume that the absolute values are pola and that
+         * users will most likely also specify a ttl criterion if they want to
+         * fix a point in time (such as "obj.ttl > 5h && obj.keep > 3h")
+         */
 
-	bs = bsarg;
+        bs = bsarg;
 	be = bs + ban_len(bs);
 	bs += BANS_HEAD_LEN;
 	while (bs < be) {
@@ -545,6 +545,12 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 		case BANS_ARG_OBJKEEP:
 			darg1 = oc->keep;
 			darg2 = bt.arg2_double;
+			break;
+		case BANS_ARG_OBJLASTHIT:
+			if (isnan(oc->last_lru))
+				return (0);
+			darg1 = 0.0 - oc->last_lru;
+			darg2 = 0.0 - (ban_time(bsarg) - bt.arg2_double);
 			break;
 		default:
 			WRONG("Wrong BAN_ARG code");
