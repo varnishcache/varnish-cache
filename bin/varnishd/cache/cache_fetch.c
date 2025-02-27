@@ -351,37 +351,24 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
  * 304 setup logic
  */
 
-static int
+static void
 vbf_304_logic(struct busyobj *bo)
 {
-	if (bo->stale_oc != NULL &&
-	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
-		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
-		if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGCE)) {
-			/*
-			 * If a VFP changed C-E in the stored
-			 * object, then don't overwrite C-E from
-			 * the IMS fetch, and we must weaken any
-			 * new ETag we get.
-			 */
-			RFC2616_Weaken_Etag(bo->beresp);
-		}
-		http_Unset(bo->beresp, H_Content_Encoding);
-		http_Unset(bo->beresp, H_Content_Length);
-		HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
-		assert(http_IsStatus(bo->beresp, 200));
-		bo->was_304 = 1;
-	} else if (!bo->uncacheable) {
+
+	AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
+	if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGCE)) {
 		/*
-		 * Backend sent unallowed 304
+		 * If a VFP changed C-E in the stored
+		 * object, then don't overwrite C-E from
+		 * the IMS fetch, and we must weaken any
+		 * new ETag we get.
 		 */
-		VSLb(bo->vsl, SLT_Error,
-		    "304 response but not conditional fetch");
-		bo->htc->doclose = SC_RX_BAD;
-		vbf_cleanup(bo);
-		return (-1);
+		RFC2616_Weaken_Etag(bo->beresp);
 	}
-	return (1);
+	http_Unset(bo->beresp, H_Content_Encoding);
+	http_Unset(bo->beresp, H_Content_Length);
+	HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
+	assert(http_IsStatus(bo->beresp, 200));
 }
 
 /*--------------------------------------------------------------------
@@ -393,7 +380,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
 	int i;
 	vtim_real now;
-	unsigned handling;
+	unsigned handling, retried_stale, skip_vbr = 0;
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -412,7 +399,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->bereq_body == NULL && bo->req == NULL)
 		http_Unset(bo->bereq, H_Content_Length);
 
-	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
+	if (!bo->retried_stale)
+		VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
+	else
+		wrk->vpi->handling = VCL_RET_FETCH;
 
 	if (wrk->vpi->handling == VCL_RET_ABANDON ||
 	    wrk->vpi->handling == VCL_RET_FAIL)
@@ -489,14 +479,54 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->do_esi);
 	AZ(bo->was_304);
 
-	if (http_IsStatus(bo->beresp, 304) && vbf_304_logic(bo) < 0)
-		return (F_STP_ERROR);
+	if (http_IsStatus(bo->beresp, 304)) {
+		if (bo->stale_oc != NULL) {
+			retried_stale = bo->retried_stale;
+			VCL_backend_refresh_method(bo->vcl, wrk, NULL, bo, NULL);
+			bo->was_304 = 1;
+			switch (wrk->vpi->handling) {
+			case VCL_RET_MERGE:
+				vbf_304_logic(bo);
+				break;
+			case VCL_RET_BERESP:
+				break;
+			case VCL_RET_OBJ_STALE:
+				if (HTTP_Decode(bo->beresp, ObjGetAttr(bo->wrk,
+				    bo->stale_oc, OA_HEADERS, NULL))) {
+					bo->htc->doclose = SC_RX_OVERFLOW;
+					vbf_cleanup(bo);
+					return (F_STP_ERROR);
+				}
+				break;
+			case VCL_RET_RETRY:
+				if (retried_stale == 1) {
+					VSLb(bo->vsl, SLT_VCL_Error,
+					    "Conditional fetch already retried, delivering 503");
+					return (F_STP_ERROR);
+				}
+				/* FALLTHROUGH */
+			case VCL_RET_ERROR:
+			case VCL_RET_ABANDON:
+			case VCL_RET_FAIL:
+				skip_vbr = 1;
+				break;
+			default:
+				WRONG("Illegal return from vcl_backend_refresh{}");
+			}
+		} else if (!bo->uncacheable){
+			VSLb(bo->vsl, SLT_Error,
+			    "304 response but not conditional fetch");
+			bo->htc->doclose = SC_RX_BAD;
+			vbf_cleanup(bo);
+			return (F_STP_ERROR);
+		}
+	}
 
 	if (bo->htc != NULL && bo->htc->doclose == SC_NULL &&
 	    http_GetHdrField(bo->bereq, H_Connection, "close", NULL))
 		bo->htc->doclose = SC_REQ_CLOSE;
-
-	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
+	if (!skip_vbr)
+		VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
 	if (bo->htc != NULL && bo->htc->doclose == SC_NULL &&
 	    http_GetHdrField(bo->beresp, H_Connection, "close", NULL))

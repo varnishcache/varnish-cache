@@ -263,6 +263,23 @@ vcc_act_return_pass(struct vcc *tl)
 	Fb(tl, 1, ");\n");
 	tl->indent -= INDENT;
 }
+
+/*--------------------------------------------------------------------*/
+
+static void
+vcc_act_return_retry(struct vcc *tl)
+{
+	SkipToken(tl, '(');
+	if (!vcc_IdIs(tl->t, "fetch")) {
+		VSB_cat(tl->sb, "Expected: return (retry(fetch))\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	Fb(tl, 1, "VPI_retry_fetch(ctx);\n");
+	vcc_NextToken(tl);
+	SkipToken(tl, ')');
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -390,6 +407,8 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 			vcc_act_return_pass(tl);
 		else if (hand == VCL_RET_FAIL)
 			vcc_act_return_fail(tl);
+		else if (hand == VCL_RET_RETRY)
+			vcc_act_return_retry(tl);
 		else {
 			VSB_cat(tl->sb, "Arguments not allowed.\n");
 			vcc_ErrWhere(tl, tl->t);

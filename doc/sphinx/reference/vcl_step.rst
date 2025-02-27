@@ -329,6 +329,44 @@ hashing the request method and/or request body.
 
 HEAD request can be satisfied from cached GET responses.
 
+.. _vcl_backend_refresh:
+
+vcl_backend_refresh
+~~~~~~~~~~~~~~~~~~~
+
+This subroutine is called after a legitimate 304 response is received from
+the backend so that you can chose how to handle the object revalidation, the default
+is to apply the RFC logic which is to merge the new headers with the stale ones.
+
+  |
+  | ``merge``
+  |  Merge the headers we got from the backend response with
+  |  the ones we had in the cached object.
+  |
+  | ``obj_stale``
+  |  Return the cached object without updating it with the new
+  |  response headers.
+  |
+  | ``beresp``
+  |  Return the beresp object as it is at the end of this subroutine
+  |  without executing the RFC merge logic.
+  |
+  | ``fail``
+  |  see :ref:`fail` section above
+  |
+  | ``abandon``
+  |  see :ref:`abandon` section above
+  |
+  | ``retry``
+  |  Retry the backend transaction. Increases the `retries` counter.
+  |  If the number of retries is higher than *max_retries*,
+  |  control will be passed to :ref:`vcl_backend_error`.
+  |
+  | ``error(status code, reason)``
+  |  Transition to :ref:`vcl_backend_error` with ``beresp.status`` and
+  |  ``beresp.reason`` being preset to the arguments of ``error()`` if
+  |  arguments are provided.
+
 .. _vcl_backend_response:
 
 vcl_backend_response
