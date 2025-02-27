@@ -464,6 +464,8 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 /**********************************************************************
  * Incoming PRIORITY, possibly an ACK of one we sent.
+ *
+ * deprecated, rfc9113,l,1103,1104
  */
 
 static h2_error v_matchproto_(h2_rxframe_f)
@@ -737,7 +739,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	if (r2 != NULL) {
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers on non-idle stream");
-		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
+		return (H2CE_PROTOCOL_ERROR);	// rfc9113,l,887,891
 	}
 
 	if (h2->rxf_stream <= h2->highest_stream) {
