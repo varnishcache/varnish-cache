@@ -316,10 +316,10 @@ BAN_AddTest(struct ban_proto *bp,
 		    "expected conditional (%s) got \"%s\"",
 		    arg_operhelp[BAN_ARGIDX(pv->tag)], a2));
 
-	if ((pv->flag & BANS_FLAG_DURATION) == 0)
-		return (ban_add_spec(bp, pv, op, a3));
-	else
+	if (pv->flag & BANS_FLAG_DURATION)
 		return (ban_add_duration(bp, pv, op, a3));
+	else
+		return (ban_add_spec(bp, pv, op, a3));
 }
 
 /*--------------------------------------------------------------------
