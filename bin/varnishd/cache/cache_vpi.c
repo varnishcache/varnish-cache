@@ -302,3 +302,12 @@ VPI_Call_End(VRT_CTX, unsigned n)
 	AN(vbm);
 	vbit_clr(vbm, n);
 }
+
+VCL_VOID
+VPI_retry_fetch(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+	ctx->bo->retried_stale = 1;
+}
