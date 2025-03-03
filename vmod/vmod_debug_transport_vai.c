@@ -41,6 +41,58 @@
 
 #include "vmod_debug.h"
 
+#define HELLO "hello "
+
+static int v_matchproto_(vdpio_init_f)
+vdpio_hello_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+
+	(void)ctx;
+	(void)priv;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	AN(vdc->clen);
+
+	if (*vdc->clen < 0)
+		return (capacity);
+
+	*vdc->clen += strlen(HELLO);
+	http_Unset(vdc->hp, H_Content_Length);
+	http_PrintfHeader(vdc->hp, "Content-Length: %zd", *vdc->clen);
+	return (capacity);
+}
+
+static int v_matchproto_(vdpio_lease_f)
+vdpio_hello_lease(struct vdp_ctx *vdc, struct vdp_entry *this,
+    struct vscarab *scarab)
+{
+	int r;
+
+	VSCARAB_CHECK_NOTNULL(scarab);
+	if (scarab->used == scarab->capacity)
+		return (0);
+	//lint -e{446} side effects in initializer - uh?
+	VSCARAB_ADD_IOV_NORET(scarab, ((struct iovec)
+	    {.iov_base = TRUST_ME(HELLO), .iov_len = strlen(HELLO)}));
+	r = vdpio_pull(vdc, this, scarab);
+
+	(void) VDPIO_Close1(vdc, this);
+
+	// return error from pull
+	if (r < 0)
+		r = 1;
+	else
+		r += 1;
+
+	return (r);
+}
+
+static const struct vdp vdp_hello = {
+	.name = "hello",
+	.io_init = vdpio_hello_init,
+	.io_lease = vdpio_hello_lease
+};
+
 static void
 dbg_vai_error(struct req *req, struct v1l **v1lp, const char *msg)
 {
@@ -87,14 +139,15 @@ dbg_vai_deliver(struct req *req, int sendbody)
 	    cache_param->http1_iovs);
 
 	if (v1l == NULL) {
-		dbg_vai_error(req, &v1l, "Failure to init v1d (workspace_thread overflow)");
+		dbg_vai_error(req, &v1l, "Failure to init v1d "
+		    "(workspace_thread overflow)");
 		return (VTR_D_DONE);
 	}
 
 	// Do not roll back req->ws upon V1L_Close()
 	V1L_NoRollback(v1l);
 
-	if (sendbody) {
+	while (sendbody) {
 		if (!http_GetHdr(req->resp, H_Content_Length, NULL)) {
 			if (req->http->protover == 11) {
 				http_SetHeader(req->resp,
@@ -105,11 +158,25 @@ dbg_vai_deliver(struct req *req, int sendbody)
 		}
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
-		if (VDP_Push(ctx, req->vdc, req->ws, VDP_v1l, v1l)) {
-			dbg_vai_error(req, &v1l, "Failure to push v1d processor");
+		cap = VDPIO_Upgrade(ctx, req->vdc);
+		if (cap <= 0) {
+			if (VDP_Push(ctx, req->vdc, req->ws, VDP_v1l, v1l)) {
+				dbg_vai_error(req, &v1l, "Failure to push v1d");
+				return (VTR_D_DONE);
+			}
+			break;
+		}
+		cap = VDPIO_Push(ctx, req->vdc, req->ws, &vdp_hello, NULL);
+		if (cap < 1) {
+			dbg_vai_error(req, &v1l, "Failure to push hello");
 			return (VTR_D_DONE);
 		}
-		cap = VDPIO_Upgrade(ctx, req->vdc);
+		cap = VDPIO_Push(ctx, req->vdc, req->ws, VDP_v1l, v1l);
+		if (cap < 1) {
+			dbg_vai_error(req, &v1l, "Failure to push v1d (vdpio)");
+			return (VTR_D_DONE);
+		}
+		break;
 	}
 
 	if (WS_Overflowed(req->ws)) {

@@ -462,9 +462,7 @@ const struct vdp * const VDP_v1l = &(struct vdp){
 	.init =		v1l_init,
 	.bytes =	v1l_bytes,
 
-#ifdef LATER
 	.io_init =	v1l_io_init,
-#endif
 	.io_upgrade =	v1l_io_upgrade,
 	.io_lease =	v1l_io_lease,
 };
