@@ -302,10 +302,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		return (NULL);
 	}
 
-	http_Unset(req->http, H_Upgrade);
-	http_Unset(req->http, H_HTTP2_Settings);
-
-	/* Steal pipelined read-ahead, if any */
+	/* Copy any pipelined data from the request into the session. */
 	h2->htc->pipeline_b = req->htc->pipeline_b;
 	h2->htc->pipeline_e = req->htc->pipeline_e;
 	req->htc->pipeline_b = NULL;
@@ -314,6 +311,19 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	   data exceeds the available space in the ws workspace. What to
 	   do about the overflowing data is an open issue. */
 	HTC_RxInit(h2->htc, h2->ws);
+
+	/* Wait for PRISM response */
+	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
+	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, NAN,
+	    sizeof H2_prism);
+	if (hs != HTC_S_COMPLETE) {
+		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
+		h2_ou_rel_req(wrk, &req);
+		return (NULL);
+	}
+
+	http_Unset(req->http, H_Upgrade);
+	http_Unset(req->http, H_HTTP2_Settings);
 
 	/* Start req thread */
 	r2 = h2_new_req(h2, 1, &req);
@@ -328,16 +338,6 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	r2->state = H2_S_CLOS_REM; // rfc7540,l,489,491
 	http_SetH(r2->req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
-	/* Wait for PRISM response */
-	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
-	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, NAN,
-	    sizeof H2_prism);
-	if (hs != HTC_S_COMPLETE) {
-		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
-		r2->scheduled = 0;
-		h2_del_req(wrk, &r2);
-		return (NULL);
-	}
 	if (Pool_Task(wrk->pool, r2->req->task, TASK_QUEUE_REQ)) {
 		r2->scheduled = 0;
 		h2_del_req(wrk, &r2);
