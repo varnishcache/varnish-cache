@@ -212,6 +212,11 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 			H2S_Lock_VSLb(h2, SLT_SessError,
 			     "H2: stream %u: Hit idle_send_timeout", stream);
 		}
+		else {
+			H2S_Lock_VSLb(h2, SLT_Debug,
+			    "H2: stream %u: write error s=%zd/%zu errno=%d",
+			    stream, s, sizeof hdr + len, errno);
+		}
 		/*
 		 * There is no point in being nice here, we will be unable
 		 * to send a GOAWAY once the code unrolls, so go directly
