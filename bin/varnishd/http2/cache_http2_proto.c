@@ -179,13 +179,14 @@ h2_new_req(struct h2_sess *h2, unsigned stream, struct req **preq)
 }
 
 void
-h2_del_req(struct worker *wrk, struct h2_req *r2)
+h2_del_req(struct worker *wrk, struct h2_req **pr2)
 {
+	struct h2_req *r2;
 	struct h2_sess *h2;
 	struct sess *sp;
 	struct stv_buffer *stvbuf;
 
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	TAKE_OBJ_NOTNULL(r2, pr2, H2_REQ_MAGIC);
 	AZ(r2->scheduled);
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
@@ -245,7 +246,7 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2,
 			(void)h2h_decode_hdr_fini(h2);
 	}
 	if (r2 != NULL)
-		h2_del_req(wrk, r2);
+		h2_del_req(wrk, &r2);
 }
 
 /**********************************************************************/
@@ -656,7 +657,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	if (h2e != NULL) {
 		H2S_Lock_VSLb(h2, SLT_Debug, "HPACK/FINI %s", h2e->name);
 		assert(!WS_IsReserved(r2->req->ws));
-		h2_del_req(wrk, r2);
+		h2_del_req(wrk, &r2);
 		return (h2e);
 	}
 	req->t_req = VTIM_real();
@@ -814,7 +815,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		H2S_Lock_VSLb(h2, SLT_Debug, "HPACK(hdr) %s", h2e->name);
 		(void)h2h_decode_hdr_fini(h2);
 		assert(!WS_IsReserved(r2->req->ws));
-		h2_del_req(wrk, r2);
+		h2_del_req(wrk, &r2);
 		return (h2e);
 	}
 
@@ -850,7 +851,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		H2S_Lock_VSLb(h2, SLT_Debug, "HPACK(cont) %s", h2e->name);
 		(void)h2h_decode_hdr_fini(h2);
 		assert(!WS_IsReserved(r2->req->ws));
-		h2_del_req(wrk, r2);
+		h2_del_req(wrk, &r2);
 		return (h2e);
 	}
 	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
@@ -1424,7 +1425,7 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 		switch (r2->state) {
 		case H2_S_CLOSED:
 			AZ(r2->scheduled);
-			h2_del_req(wrk, r2);
+			h2_del_req(wrk, &r2);
 			break;
 		case H2_S_CLOS_REM:
 			if (!r2->scheduled) {
@@ -1432,7 +1433,7 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 				H2_Send_RST(wrk, h2, h2->req0, r2->stream,
 				    H2SE_REFUSED_STREAM);
 				H2_Send_Rel(h2, h2->req0);
-				h2_del_req(wrk, r2);
+				h2_del_req(wrk, &r2);
 				continue;
 			}
 			/* FALLTHROUGH */

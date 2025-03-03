@@ -335,12 +335,12 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	if (hs != HTC_S_COMPLETE) {
 		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
 		r2->scheduled = 0;
-		h2_del_req(wrk, r2);
+		h2_del_req(wrk, &r2);
 		return (0);
 	}
 	if (Pool_Task(wrk->pool, r2->req->task, TASK_QUEUE_REQ)) {
 		r2->scheduled = 0;
-		h2_del_req(wrk, r2);
+		h2_del_req(wrk, &r2);
 		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
 		return (0);
 	}
@@ -422,7 +422,7 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	if (marker == H2_OU_MARKER && !h2_ou_session(wrk, h2, &req)) {
 		assert(h2->refcnt == 1);
-		h2_del_req(wrk, h2->req0);
+		h2_del_req(wrk, &h2->req0);
 		h2_del_sess(wrk, h2, SC_RX_JUNK);
 		wrk->vsl = NULL;
 		return;
@@ -491,7 +491,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	}
 	h2->cond = NULL;
 	assert(h2->refcnt == 1);
-	h2_del_req(wrk, h2->req0);
+	h2_del_req(wrk, &h2->req0);
 	h2_del_sess(wrk, h2, h2->error->reason);
 	wrk->vsl = NULL;
 }
