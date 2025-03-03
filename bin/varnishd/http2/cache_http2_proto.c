@@ -144,14 +144,18 @@ h2_connectionerror(uint32_t u)
 /**********************************************************************/
 
 struct h2_req *
-h2_new_req(struct h2_sess *h2, unsigned stream, struct req *req)
+h2_new_req(struct h2_sess *h2, unsigned stream, struct req **preq)
 {
+	struct req *req;
 	struct h2_req *r2;
 
 	ASSERT_RXTHR(h2);
-	if (req == NULL)
+	if (preq != NULL)
+		TAKE_OBJ_NOTNULL(req, preq, REQ_MAGIC);
+	else {
 		req = Req_New(h2->sess, NULL);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	}
 
 	r2 = WS_Alloc(req->ws, sizeof *r2);
 	AN(r2);

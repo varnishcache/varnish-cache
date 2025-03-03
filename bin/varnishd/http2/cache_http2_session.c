@@ -277,11 +277,14 @@ h2_ou_rel(struct worker *wrk, struct req *req)
 
 static int
 h2_ou_session(struct worker *wrk, struct h2_sess *h2,
-    struct req *req)
+    struct req **preq)
 {
+	struct req *req;
 	ssize_t sz;
 	enum htc_status_e hs;
 	struct h2_req *r2;
+
+	TAKE_OBJ_NOTNULL(req, preq, REQ_MAGIC);
 
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
@@ -310,17 +313,17 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	HTC_RxInit(h2->htc, h2->ws);
 
 	/* Start req thread */
-	r2 = h2_new_req(h2, 1, req);
+	r2 = h2_new_req(h2, 1, &req);
+	AZ(req);
 	AZ(h2->highest_stream);
 	h2->highest_stream = r2->stream;
-	req->transport = &HTTP2_transport;
-	assert(req->req_step == R_STP_TRANSPORT);
-	req->task->func = h2_do_req;
-	req->task->priv = req;
+	r2->req->transport = &HTTP2_transport;
+	assert(r2->req->req_step == R_STP_TRANSPORT);
+	r2->req->task->func = h2_do_req;
+	r2->req->task->priv = r2->req;
 	r2->scheduled = 1;
 	r2->state = H2_S_CLOS_REM; // rfc7540,l,489,491
-	req->err_code = 0;
-	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
+	http_SetH(r2->req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
 	/* Wait for PRISM response */
 	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
@@ -332,7 +335,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		h2_del_req(wrk, r2);
 		return (0);
 	}
-	if (Pool_Task(wrk->pool, req->task, TASK_QUEUE_REQ)) {
+	if (Pool_Task(wrk->pool, r2->req->task, TASK_QUEUE_REQ)) {
 		r2->scheduled = 0;
 		h2_del_req(wrk, r2);
 		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
@@ -414,7 +417,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	AZ(wrk->vsl);
 	wrk->vsl = h2->vsl;
 
-	if (marker == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
+	if (marker == H2_OU_MARKER && !h2_ou_session(wrk, h2, &req)) {
 		assert(h2->refcnt == 1);
 		h2_del_req(wrk, h2->req0);
 		h2_del_sess(wrk, h2, SC_RX_JUNK);
