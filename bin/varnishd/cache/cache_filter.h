@@ -238,6 +238,8 @@ vdpio_pull(struct vdp_ctx *vdc, struct vdp_entry *vdpe, struct vscarab *scarab)
 		return (ObjVAIlease(vdc->wrk, vdc->vai_hdl, scarab));
 }
 
+uint64_t VDPIO_Close1(struct vdp_ctx *, struct vdp_entry *vdpe);
+
 /*
  * ============================================================
  * VDPIO helpers

@@ -349,6 +349,23 @@ VDPIO_Upgrade(VRT_CTX, struct vdp_ctx *vdc)
 }
 
 uint64_t
+VDPIO_Close1(struct vdp_ctx *vdc, struct vdp_entry *vdpe)
+{
+	uint64_t rv;
+
+	CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
+	rv = vdpe->bytes_in;
+	VSLb(vdc->vsl, SLT_VdpAcct, "%s %ju %ju", vdpe->vdp->name,
+	    (uintmax_t)vdpe->calls, (uintmax_t)rv);
+	if (vdpe->vdp->io_fini != NULL)
+		vdpe->vdp->io_fini(vdc, &vdpe->priv);
+	AZ(vdpe->priv);
+	VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
+	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
+	return (rv);
+}
+
+uint64_t
 VDPIO_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 {
 	struct vdp_entry *vdpe;
@@ -359,17 +376,8 @@ VDPIO_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 
-	while ((vdpe = VTAILQ_FIRST(&vdc->vdp)) != NULL) {
-		CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
-		rv = vdpe->bytes_in;
-		VSLb(vdc->vsl, SLT_VdpAcct, "%s %ju %ju", vdpe->vdp->name,
-		    (uintmax_t)vdpe->calls, (uintmax_t)rv);
-		if (vdpe->vdp->io_fini != NULL)
-			vdpe->vdp->io_fini(vdc, &vdpe->priv);
-		AZ(vdpe->priv);
-		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
-		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
-	}
+	while ((vdpe = VTAILQ_FIRST(&vdc->vdp)) != NULL)
+		rv = VDPIO_Close1(vdc, vdpe);
 
 	if (oc != NULL)
 		HSH_Cancel(vdc->wrk, oc, boc);
