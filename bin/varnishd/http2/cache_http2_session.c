@@ -276,7 +276,7 @@ h2_ou_rel_req(struct worker *wrk, struct req **preq)
 	Req_Release(req);
 }
 
-static int
+static struct h2_req *
 h2_ou_session(struct worker *wrk, struct h2_sess *h2,
     struct req **preq)
 {
@@ -290,7 +290,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
 		h2_ou_rel_req(wrk, &req);
-		return (0);
+		return (NULL);
 	}
 
 	sz = write(h2->sess->fd, h2_resp_101, strlen(h2_resp_101));
@@ -299,7 +299,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		VSLb(h2->vsl, SLT_Debug, "H2: Upgrade: Error writing 101"
 		    " response: %s\n", VAS_errtxt(errno));
 		h2_ou_rel_req(wrk, &req);
-		return (0);
+		return (NULL);
 	}
 
 	http_Unset(req->http, H_Upgrade);
@@ -336,15 +336,15 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
 		r2->scheduled = 0;
 		h2_del_req(wrk, &r2);
-		return (0);
+		return (NULL);
 	}
 	if (Pool_Task(wrk->pool, r2->req->task, TASK_QUEUE_REQ)) {
 		r2->scheduled = 0;
 		h2_del_req(wrk, &r2);
 		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
-		return (0);
+		return (NULL);
 	}
-	return (1);
+	return (r2);
 }
 
 /**********************************************************************
@@ -377,6 +377,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	struct h2_sess h2s;
 	struct h2_sess *h2;
 	struct h2_req *r2, *r22;
+	struct h2_req *r2_ou = NULL;
 	int again;
 	uint16_t marker;
 	uint8_t settings[48];
@@ -420,13 +421,29 @@ h2_new_session(struct worker *wrk, void *arg)
 	AZ(wrk->vsl);
 	wrk->vsl = h2->vsl;
 
-	if (marker == H2_OU_MARKER && !h2_ou_session(wrk, h2, &req)) {
-		assert(h2->refcnt == 1);
-		h2_del_req(wrk, &h2->req0);
-		h2_del_sess(wrk, h2, SC_RX_JUNK);
-		wrk->vsl = NULL;
-		return;
+	if (marker == H2_OU_MARKER) {
+		/* Deal with opportunistic upgrade. The upgrade request
+		 * was received by HTTP/1 and is held in req. The response
+		 * will be sent by H/2. Convert the req struct to an H/2
+		 * req. */
+		AN(req);
+		r2_ou = h2_ou_session(wrk, h2, &req);
+		AZ(req);
+		CHECK_OBJ_ORNULL(r2_ou, H2_REQ_MAGIC);
+		if (r2_ou == NULL) {
+			assert(h2->refcnt == 1);
+			h2_del_req(wrk, &h2->req0);
+			h2_del_sess(wrk, h2, SC_RX_JUNK);
+			wrk->vsl = NULL;
+			return;
+		}
+
+		/* The request was scheduled by h2_ou_session. No need to
+		 * keep track of it from here. */
+		AN(r2_ou->scheduled);
+		r2_ou = NULL;
 	}
+
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
 	HTC_RxInit(h2->htc, h2->ws);
