@@ -221,20 +221,15 @@ VDP_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 
-	while (!VTAILQ_EMPTY(&vdc->vdp)) {
-		vdpe = VTAILQ_FIRST(&vdc->vdp);
+	while ((vdpe = VTAILQ_FIRST(&vdc->vdp)) != NULL) {
+		CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
 		rv = vdpe->bytes_in;
 		VSLb(vdc->vsl, SLT_VdpAcct, "%s %ju %ju", vdpe->vdp->name,
 		    (uintmax_t)vdpe->calls, (uintmax_t)rv);
-		if (vdc->retval >= 0)
-			AN(vdpe);
-		if (vdpe != NULL) {
-			CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
-			if (vdpe->vdp->fini != NULL)
-				AZ(vdpe->vdp->fini(vdc, &vdpe->priv));
-			AZ(vdpe->priv);
-			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
-		}
+		if (vdpe->vdp->fini != NULL)
+			AZ(vdpe->vdp->fini(vdc, &vdpe->priv));
+		AZ(vdpe->priv);
+		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 #ifdef VDP_PEDANTIC_ARMED
 		// enable when we are confident to get VDP_END right
