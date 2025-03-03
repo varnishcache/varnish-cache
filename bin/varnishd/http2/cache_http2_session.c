@@ -120,20 +120,20 @@ H2S_Lock_VSLb(const struct h2_sess *h2, enum VSL_tag_e tag, const char *fmt, ...
  */
 
 static struct h2_sess *
-h2_init_sess(struct sess *sp,
-    struct h2_sess *h2s, struct req *srq, struct h2h_decode *decode)
+h2_init_sess(struct sess *sp, struct h2_sess *h2s, struct req **psrq,
+    struct h2h_decode *decode)
 {
+	struct req *srq;
 	uintptr_t *up;
 	struct h2_sess *h2;
+
+	TAKE_OBJ_NOTNULL(srq, psrq, REQ_MAGIC);
 
 	/* proto_priv session attribute will always have been set up by H1
 	 * before reaching here. */
 	AZ(SES_Get_proto_priv(sp, &up));
 	assert(*up == 0);
 
-	if (srq == NULL)
-		srq = Req_New(sp, NULL);
-	AN(srq);
 	h2 = h2s;
 	AN(h2);
 	INIT_OBJ(h2, H2_SESS_MAGIC);
@@ -366,12 +366,13 @@ H2_OU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 static void v_matchproto_(task_func_t)
 h2_new_session(struct worker *wrk, void *arg)
 {
-	struct req *req;
+	struct req *req, *srq = NULL;
 	struct sess *sp;
 	struct h2_sess h2s;
 	struct h2_sess *h2;
 	struct h2_req *r2, *r22;
 	int again;
+	uint16_t marker;
 	uint8_t settings[48];
 	struct h2h_decode decode;
 	size_t l;
@@ -386,10 +387,26 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	assert(req->transport == &HTTP2_transport);
 
-	assert (req->err_code == H2_PU_MARKER || req->err_code == H2_OU_MARKER);
+	marker = req->err_code;
+	assert(marker == H2_PU_MARKER || marker == H2_OU_MARKER);
+	req->err_code = 0;
 
-	h2 = h2_init_sess(sp, &h2s,
-	    req->err_code == H2_PU_MARKER ? req : NULL, &decode);
+	if (marker == H2_PU_MARKER) {
+		/* Prior knowledge. The incoming req does not hold
+		 * anything of value and can be repurposed as the session
+		 * req (srq). */
+		srq = req;
+		req = NULL;
+	} else {
+		/* Opportunistic upgrade. The incoming req holds the first
+		 * stream H/1 received request. We will need a fresh req
+		 * for srq. */
+		srq = Req_New(sp, NULL);
+	}
+	CHECK_OBJ_NOTNULL(srq, REQ_MAGIC);
+
+	h2 = h2_init_sess(sp, &h2s, &srq, &decode);
+	AZ(srq);
 	h2->req0 = h2_new_req(h2, 0, NULL);
 	AZ(h2->htc->priv);
 	h2->htc->priv = h2;
@@ -397,7 +414,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	AZ(wrk->vsl);
 	wrk->vsl = h2->vsl;
 
-	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
+	if (marker == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
 		assert(h2->refcnt == 1);
 		h2_del_req(wrk, h2->req0);
 		h2_del_sess(wrk, h2, SC_RX_JUNK);
