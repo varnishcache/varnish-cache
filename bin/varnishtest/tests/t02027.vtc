@@ -8,13 +8,14 @@ varnish v1 -arg "-p feature=+http2" -arg "-p debug=+syncvsl" -vcl {
 } -start
 
 logexpect l0 -v v1 -g vxid -q "Begin ~ sess" {
+	fail add * SessError
 	expect * * Debug           {^H2: Got pu PRISM}
-	expect 0 = Debug           {^H2: eof frame=complete goaway=0}
-	expect 0 = SessError       {^H2: HTC eof}
+	expect 0 = Debug           {^H2: HTC eof.*frame=complete goaway=0}
 	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
 	expect 0 = ReqAcct         {^0 0 0 18 26 44}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End
+	fail clear
 } -start
 
 # no streams open
@@ -24,12 +25,13 @@ client c0 {
 } -run
 
 logexpect l1 -v v1 -g vxid -q "Begin ~ sess" {
-	expect * * Debug           {^H2: eof frame=complete goaway=0}
-	expect 0 = SessError       {^H2: HTC eof}
+	fail add * SessError
+	expect * * Debug           {^H2: HTC eof.*frame=complete goaway=0}
 	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
 	expect 9 = ReqAcct         {^27 0 27 27 26 53}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End
+	fail clear
 } -start
 
 # after frame, no END_HEADERS
@@ -41,12 +43,13 @@ client c1 {
 } -run
 
 logexpect l2 -v v1 -g vxid -q "Begin ~ sess" {
-	expect * * Debug           {^H2: eof frame=complete goaway=0}
-	expect 0 = SessError       {^H2: HTC eof}
+	fail add * SessError
+	expect * * Debug           {^H2: HTC eof.*frame=complete goaway=0}
 	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
 	expect 9 = ReqAcct         {^27 0 27 27 26 53}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End
+	fail clear
 } -start
 
 # after frame, no END_STREAM
@@ -58,12 +61,13 @@ client c2 {
 } -run
 
 logexpect l3 -v v1 -g vxid -q "Begin ~ sess" {
-	expect * * Debug           {^H2: eof frame=partial goaway=0}
-	expect 0 = SessError       {^H2: HTC eof}
+	fail add * SessError
+	expect * * Debug           {^H2: HTC eof.*frame=partial goaway=0}
 	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
 	expect 0 = ReqAcct         {^18 0 18 27 26 53}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End
+	fail clear
 } -start
 
 # middle of frame

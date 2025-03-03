@@ -1460,11 +1460,16 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
  * goaway currently is always 0, see #4285
  */
 static void
-h2_eof_debug(struct h2_sess *h2)
+h2_htc_debug(enum htc_status_e hs, struct h2_sess *h2)
 {
+	const char *s, *r;
 
-	H2S_Lock_VSLb(h2, SLT_Debug, "H2: eof frame=%s goaway=%d",
-	    h2->htc->rxbuf_b == h2->htc->rxbuf_e ? "complete" : "partial",
+	if (LIKELY(VSL_tag_is_masked(SLT_Debug)))
+		return;
+
+	HTC_Status(hs, &s, &r);
+	H2S_Lock_VSLb(h2, SLT_Debug, "H2: HTC %s (%s) frame=%s goaway=%d",
+	    s, r, h2->htc->rxbuf_b == h2->htc->rxbuf_e ? "complete" : "partial",
 	    h2->goaway);
 }
 
@@ -1504,8 +1509,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2e = NULL;
 	switch (hs) {
 	case HTC_S_EOF:
-		h2_eof_debug(h2);
-
+		h2_htc_debug(hs, h2);
 		h2e = H2CE_NO_ERROR;
 		break;
 	case HTC_S_COMPLETE:
@@ -1514,15 +1518,17 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 			h2e = h2_sweep(wrk, h2);
 		break;
 	case HTC_S_TIMEOUT:
+		//// #4279
+		// h2_htc_debug(hs, h2);
 		h2e = h2_sweep(wrk, h2);
 		break;
 	default:
+		HTC_Status(hs, &s, &r);
+		H2S_Lock_VSLb(h2, SLT_SessError, "H2: HTC %s (%s)", s, r);
 		h2e = H2CE_ENHANCE_YOUR_CALM;
 	}
 
 	if (h2e != NULL && h2e->connection) {
-		HTC_Status(hs, &s, &r);
-		H2S_Lock_VSLb(h2, SLT_SessError, "H2: HTC %s (%s)", s, r);
 		h2->error = h2e;
 		h2_tx_goaway(wrk, h2, h2e);
 		return (0);
