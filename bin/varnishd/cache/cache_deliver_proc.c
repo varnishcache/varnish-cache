@@ -384,6 +384,52 @@ VDPIO_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 	return (rv);
 }
 
+/*
+ * ============================================================
+ * VDPIO helpers: VAI management
+ *
+ * Transports should not need to talk to the VAI Object interface directly,
+ * because its state is kept in the vdp_ctx
+ *
+ * So we wrap init, return and fini
+ */
+
+// return true if error
+int
+VDPIO_Init(struct vdp_ctx *vdc, struct objcore *oc, struct ws *ws,
+    vai_notify_cb *notify_cb, void *notify_priv, struct vscaret *scaret)
+{
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	VSCARET_CHECK_NOTNULL(scaret);
+	AN(scaret->capacity);
+	AZ(scaret->used);
+
+	AZ(vdc->vai_hdl);
+	vdc->vai_hdl = ObjVAIinit(vdc->wrk, oc, ws, notify_cb, notify_priv);
+	if (vdc->vai_hdl == NULL)
+		return (1);
+	vdc->scaret = scaret;
+	return (0);
+}
+
+// return leases stashed in scaret
+void
+VDPIO_Return(const struct vdp_ctx *vdc)
+{
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+
+	ObjVAIreturn(vdc->wrk, vdc->vai_hdl, vdc->scaret);
+}
+
+void
+VDPIO_Fini(struct vdp_ctx *vdc)
+{
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+
+	VDPIO_Return(vdc);
+	ObjVAIfini(vdc->wrk, &vdc->vai_hdl);
+}
+
 /*--------------------------------------------------------------------*/
 int v_matchproto_(objiterate_f)
 VDP_ObjIterate(void *priv, unsigned flush, const void *ptr, ssize_t len)

@@ -314,6 +314,14 @@ dbg_vai_notify_wait(struct dbg_vai_notify *sn)
 	AZ(pthread_mutex_unlock(&sn->mtx));
 }
 
+static void
+dbg_vai_lease_done(struct worker *wrk, struct req *req)
+{
+	VSLb(req->vsl, SLT_Debug, "w=%p resuming http1_req", wrk);
+	wrk->task->func = hack_http1_req;
+	wrk->task->priv = req;
+}
+
 static void v_matchproto_(task_func_t)
 dbg_vai_lease(struct worker *wrk, void *arg)
 {
@@ -339,18 +347,22 @@ dbg_vai_lease(struct worker *wrk, void *arg)
 	req->vdc->retval = 0;
 	assert(cap > 0);
 
+	VSCARAB_LOCAL(scarab, cap);
+	VSCARET_LOCAL(scaret, cap);
+
 	chunked = http_GetHdr(req->resp, H_Transfer_Encoding, &p) && strcmp(p, "chunked") == 0;
 	if (chunked)
 		V1L_Chunked(v1l);
 
 	struct dbg_vai_notify notify;
 	dbg_vai_notify_init(&notify);
-	req->vdc->vai_hdl = ObjVAIinit(wrk, req->objcore, req->ws, dbg_vai_notify, &notify);
-	AN(req->vdc->vai_hdl);
 
-	VSCARAB_LOCAL(scarab, cap);
-	VSCARET_LOCAL(scaret, cap);
-	req->vdc->scaret = scaret;
+	if (VDPIO_Init(req->vdc, req->objcore, req->ws, dbg_vai_notify, &notify, scaret)) {
+		dbg_vai_notify_fini(&notify);
+		dbg_vai_deliver_finish(req, &v1l, 1);
+		dbg_vai_lease_done(wrk, req);
+		return;
+	}
 
 	err = 0;
 	do {
@@ -361,7 +373,7 @@ dbg_vai_lease(struct worker *wrk, void *arg)
 		vdpio_return_vscarab(req->vdc, scarab);
 
 		if (r == -ENOBUFS || r == -EAGAIN) {
-			ObjVAIreturn(wrk, req->vdc->vai_hdl, scaret);
+			VDPIO_Return(req->vdc);
 			dbg_vai_notify_wait(&notify);
 		}
 		else if (r < 0) {
@@ -370,19 +382,12 @@ dbg_vai_lease(struct worker *wrk, void *arg)
 		}
 	} while ((flags & VSCARAB_F_END) == 0);
 
-	vdpio_return_vscarab(req->vdc, scarab);
-	ObjVAIreturn(wrk, req->vdc->vai_hdl, scaret);
-
-	req->vdc->scaret = NULL;
 	if (!err && chunked)
 		V1L_EndChunk(v1l);
 	dbg_vai_deliver_finish(req, &v1l, err);
-	ObjVAIfini(wrk, &req->vdc->vai_hdl);
+	VDPIO_Fini(req->vdc);
 	dbg_vai_notify_fini(&notify);
-
-	VSLb(req->vsl, SLT_Debug, "w=%p resuming http1_req", wrk);
-	wrk->task->func = hack_http1_req;
-	wrk->task->priv = req;
+	dbg_vai_lease_done(wrk, req);
 }
 
 static void
