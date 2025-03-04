@@ -199,6 +199,11 @@ extern const struct vdp VDP_gunzip;
 extern const struct vdp VDP_esi;
 extern const struct vdp VDP_range;
 
+uint64_t VDPIO_Close(struct vdp_ctx *, struct objcore *, struct boc *);
+int VDPIO_Upgrade(VRT_CTX, struct vdp_ctx *vdc);
+int VDPIO_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
+    void *priv);
+
 
 /* cache_exp.c */
 vtim_real EXP_Ttl(const struct req *, const struct objcore *);
@@ -348,6 +353,10 @@ void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
 int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
     enum obj_attr attr);
 void ObjBocDone(struct worker *, struct objcore *, struct boc **);
+// VAI
+uint64_t ObjVAIGetExtend(struct worker *, const struct objcore *, uint64_t,
+    enum boc_state_e *, struct vai_qe *);
+void ObjVAICancel(struct worker *, struct boc *, struct vai_qe *);
 
 int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
 int ObjSetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t);
