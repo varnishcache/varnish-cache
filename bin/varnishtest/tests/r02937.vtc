@@ -21,5 +21,13 @@ client c1 {
 	expect resp.http.upgrade == h2c
 	expect resp.http.connection == Upgrade
 	txpri
+
+	stream 0 {
+		rxsettings
+		rxgoaway
+		expect goaway.err == ENHANCE_YOUR_CALM
+		expect goaway.laststream == 1
+	} -run
+
 	expect_close
 } -run

@@ -325,7 +325,10 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	http_Unset(req->http, H_Upgrade);
 	http_Unset(req->http, H_HTTP2_Settings);
 
-	/* Start req thread */
+	/* Prepare the req thread, but do not start it. The RFC requires
+	 * us to send our settings frame before any response frames, so we
+	 * delay the start of the thread until after the settings frame
+	 * has been sent. */
 	r2 = h2_new_req(h2, 1, &req);
 	AZ(req);
 	AZ(h2->highest_stream);
@@ -334,16 +337,9 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	assert(r2->req->req_step == R_STP_TRANSPORT);
 	r2->req->task->func = h2_do_req;
 	r2->req->task->priv = r2->req;
-	r2->scheduled = 1;
 	r2->state = H2_S_CLOS_REM; // rfc7540,l,489,491
 	http_SetH(r2->req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
-	if (Pool_Task(wrk->pool, r2->req->task, TASK_QUEUE_REQ)) {
-		r2->scheduled = 0;
-		h2_del_req(wrk, &r2);
-		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
-		return (NULL);
-	}
 	return (r2);
 }
 
@@ -429,7 +425,6 @@ h2_new_session(struct worker *wrk, void *arg)
 		AN(req);
 		r2_ou = h2_ou_session(wrk, h2, &req);
 		AZ(req);
-		CHECK_OBJ_ORNULL(r2_ou, H2_REQ_MAGIC);
 		if (r2_ou == NULL) {
 			assert(h2->refcnt == 1);
 			h2_del_req(wrk, &h2->req0);
@@ -438,10 +433,8 @@ h2_new_session(struct worker *wrk, void *arg)
 			return;
 		}
 
-		/* The request was scheduled by h2_ou_session. No need to
-		 * keep track of it from here. */
-		AN(r2_ou->scheduled);
-		r2_ou = NULL;
+		CHECK_OBJ_NOTNULL(r2_ou, H2_REQ_MAGIC);
+		AZ(r2_ou->scheduled);
 	}
 
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
@@ -453,6 +446,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	THR_SetRequest(h2->srq);
 	AN(WS_Reservation(h2->ws));
 
+	/* Send our settings */
 	l = h2_enc_settings(&h2->local_settings, settings, sizeof (settings));
 	AN(WS_Reservation(h2->ws));
 	H2_Send_Get(wrk, h2, h2->req0);
@@ -465,6 +459,28 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	/* and off we go... */
 	h2->cond = &wrk->cond;
+
+	if (r2_ou != NULL) {
+		/* Schedule the opportunistic request received over HTTP/1
+		 * as part of the upgrade. */
+		AZ(r2_ou->scheduled);
+		r2_ou->scheduled = 1;
+		if (Pool_Task(wrk->pool, r2_ou->req->task, TASK_QUEUE_REQ)) {
+			/* We failed to schedule it. Make the client go
+			 * away.
+			 *
+			 * Note: Calling h2_tx_goaway will set the
+			 * h2->goaway flag, causing h2_rxframe() below to
+			 * return failure without reading from the
+			 * socket. */
+			r2_ou->scheduled = 0;
+			VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
+			h2_kill_req(wrk, h2, r2_ou, H2SE_ENHANCE_YOUR_CALM);
+			h2->error = H2CE_ENHANCE_YOUR_CALM;
+			h2_tx_goaway(wrk, h2, h2->error);
+		}
+		r2_ou = NULL;
+	}
 
 	while (h2_rxframe(wrk, h2)) {
 		HTC_RxInit(h2->htc, h2->ws);
