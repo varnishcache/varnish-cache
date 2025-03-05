@@ -1965,7 +1965,8 @@ PARAM_BITS(
 	/* def */
 	"none,"
 	"+validate_headers,"
-	"+vcl_req_reset",
+	"+vcl_req_reset,"
+	"+vcl_ban",
 	/* descr */
 	"Enable/Disable various minor features.\n"
 	"\tdefault\tSet default value (deprecated: use param.reset)\n"
