@@ -270,6 +270,7 @@ void h2_del_req(struct worker *, struct h2_req **);
 void h2_kill_req(struct worker *, struct h2_sess *, struct h2_req *, h2_error);
 int h2_rxframe(struct worker *, struct h2_sess *);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
+void h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e);
 void h2_req_body(struct req*);
 task_func_t h2_do_req;
 #ifdef TRANSPORT_MAGIC

@@ -416,7 +416,7 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	return (h2->error);
 }
 
-static void
+void
 h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
 {
 	char b[8];
