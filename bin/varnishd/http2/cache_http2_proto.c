@@ -1501,10 +1501,20 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2_error h2e;
 	const char *s, *r;
 
+	/* On entry we assume that HTC_RxInit() has been called, which
+	 * would have reserved workspace for HTC_RxStuff() to receive
+	 * into. */
+	AN(h2->htc->ws->r);
+
 	ASSERT_RXTHR(h2);
 
-	if (h2->goaway && h2->open_streams == 0)
+	if (h2->goaway && h2->open_streams == 0) {
+		/* We have not called HTC_RxStuff(), and thus not released
+		 * the workspace. Do it here so that the workspace is in
+		 * the expected state for the caller. */
+		WS_ReleaseP(h2->htc->ws, h2->htc->rxbuf_e);
 		return (0);
+	}
 
 	h2->t1 = NAN;
 	VTCP_blocking(*h2->htc->rfd);
