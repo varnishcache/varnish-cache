@@ -133,6 +133,7 @@ vtc_proxy_tlv(struct vtclog *vl, struct vsb *vsb, const char *kva)
 		AZ(VSB_finish(vsb2));
 	}
 	AN(vsb2);
+	free(kv);
 
 	sz = VSB_len(vsb2);
 	assert(sz >= 0);
