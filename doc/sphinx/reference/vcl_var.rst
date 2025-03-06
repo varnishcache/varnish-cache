@@ -97,7 +97,7 @@ server.ip
 
 
 	The IP address of the socket on which the client
-	connection was received, either the same as ``server.ip``
+	connection was received, either the same as ``local.ip``
 	or what the PROXY protocol told us.
 
 
