@@ -203,6 +203,8 @@ vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
 	else
 		l = VSB_len(tlv);
 
+	assert(l <= UINT16_MAX - 0x24);
+
 	if (version == 1) {
 		VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
 		if (proto == PF_INET6)
