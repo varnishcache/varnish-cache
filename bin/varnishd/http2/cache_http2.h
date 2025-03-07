@@ -35,6 +35,7 @@ struct h2h_decode;
 struct h2_frame_s;
 
 #include "hpack/vhp.h"
+#include "vefd.h"
 
 /**********************************************************************/
 
@@ -175,6 +176,8 @@ struct h2_sess {
 	int				goaway;
 	int				bogosity;
 	int				do_sweep;
+
+	struct vefd                     efd[1];
 
 	struct h2_req			*req0;
 

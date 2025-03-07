@@ -31,10 +31,9 @@
 
 #include "config.h"
 
-#include "cache/cache_varnishd.h"
-
 #include <stdio.h>
 
+#include "cache/cache_varnishd.h"
 #include "cache/cache_transport.h"
 #include "http2/cache_http2.h"
 
@@ -152,6 +151,7 @@ h2_init_sess(struct sess *sp, struct h2_sess *h2s, struct req **psrq,
 	h2_local_settings(&h2->local_settings);
 	h2->remote_settings = H2_proto_settings;
 	h2->decode = decode;
+	VEFD_INIT(h2->efd);
 
 	h2->rapid_reset = cache_param->h2_rapid_reset;
 	h2->rapid_reset_limit = cache_param->h2_rapid_reset_limit;
@@ -181,6 +181,8 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, stream_close_t reason)
 
 	VHT_Fini(h2->dectbl);
 	PTOK(pthread_cond_destroy(h2->winupd_cond));
+	if (h2->efd->poll_fd >= 0)
+		VEFD_Close(h2->efd);
 	TAKE_OBJ_NOTNULL(req, &h2->srq, REQ_MAGIC);
 	assert(!WS_IsReserved(req->ws));
 	sp = h2->sess;
@@ -413,6 +415,17 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->req0 = h2_new_req(h2, 0, NULL);
 	AZ(h2->htc->priv);
 	h2->htc->priv = h2;
+
+	/* Set up the eventfd for communication with request handling
+	 * threads. */
+	if (VEFD_Open(h2->efd) < 0) {
+		VSLb(h2->vsl, SLT_Error, "H2: Failed to create eventfd");
+		assert(h2->refcnt == 1);
+		h2_del_req(wrk, &h2->req0);
+		h2_del_sess(wrk, h2, SC_OVERLOAD);
+		wrk->vsl = NULL;
+		return;
+	}
 
 	AZ(wrk->vsl);
 	wrk->vsl = h2->vsl;
