@@ -239,22 +239,22 @@ SIGNALS
 NOTES
 =====
 
-The %r formatter is equivalent to ``%m http://%{Host}i%U%q %H``. This
-differs from apache's %r behavior, equivalent to "%m %U%q %H".
+The ``%r`` formatter is equivalent to ``%m http://%{Host}i%U%q %H``. This
+differs from the Apache HTTP Server ``%r`` behavior, equivalent to ``%m %U%q
+%H``.
 
-Note that request fields are collected on a first match basis in client mode
-and last match basis in backend mode. Similarly, response fields are collected
-on a first match basis in backend mode and last match basis in client mode.
+Note that request fields are collected on a first match basis in client mode and
+last match basis in backend mode. Similarly, response fields are collected on a
+first match basis in backend mode and last match basis in client mode.
 
-In other words, this means that requests are represented as they were received
-from the client and as they were sent to the backend, while responses are
-represented as they were sent to the client and as they were received from
-the backend.
+In other words, request headers are logged as they were received from the client
+and as they were sent to the backend, while response headers are logged as they
+were sent to the client and as they were received from the backend.
 
-Furthermore, these rules also apply for items that appear multiple times in a
-transaction. For exampe, if a header appears multiple times in a client request,
-the first occurence would be shown in client mode, while the last one would be
-used in backend mode.
+Furthermore, these rules also apply to items that appear multiple times in a
+transaction. For example, if a header appears multiple times in a client
+request, the first occurrence is logged in client mode, while in backend mode
+the last occurrence is logged.
 
 EXAMPLE
 =======
