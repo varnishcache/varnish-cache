@@ -30,6 +30,8 @@
  *
  */
 
+#include <pthread.h>
+
 /* cache_acceptor.c */
 struct listen_sock;
 struct listen_arg;
