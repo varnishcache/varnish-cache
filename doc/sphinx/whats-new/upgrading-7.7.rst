@@ -1,19 +1,15 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_upgrading_7.7:
 
-.. _whatsnew_upgrading_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish-Cache 7.7
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 In general, upgrading from Varnish 7.6 to 7.7 should not require any changes
 besides the actual upgrade.
 
 Note, however, that some log messages and in particular timestamps have changed,
-see :ref:`whatsnew_changes_CURRENT` and
-:ref:`whatsnew_changes_CURRENT_h2_timestamps` in particular. Here, we only
+see :ref:`whatsnew_changes_7.7` and
+:ref:`whatsnew_changes_7.7_h2_timestamps` in particular. Here, we only
 summarize the changes:
 
 * We have changed how http/2 timestamps are taken.

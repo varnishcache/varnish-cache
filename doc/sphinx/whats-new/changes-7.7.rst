@@ -1,15 +1,15 @@
-.. _whatsnew_changes_CURRENT:
+.. _whatsnew_changes_7.7:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish-Cache **${NEXT_RELEASE}**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish-Cache 7.7
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the new
-version, see :ref:`whatsnew_upgrading_CURRENT`.
+version, see :ref:`whatsnew_upgrading_7.7`.
 
 **NOTE**: In this Varnish-Cache release, we changed how timestamps are taken for
 the http2 protocol, which could look like a performance regression, but is not.
-See :ref:`whatsnew_changes_CURRENT_h2_timestamps`.
+See :ref:`whatsnew_changes_7.7_h2_timestamps`.
 
 A more detailed and technical account of changes in Varnish-Cache, with links to
 issues that have been fixed and pull requests that have been merged, may be
@@ -97,7 +97,7 @@ Generic Logging (VSL)
 
 affecting ``varnishlog``, ``varnishncsa`` and ``varnishtop``:
 
-.. _whatsnew_changes_CURRENT_h2_timestamps:
+.. _whatsnew_changes_7.7_h2_timestamps:
 
 http2 related timestamps
 ~~~~~~~~~~~~~~~~~~~~~~~~
