@@ -197,7 +197,7 @@ VGZ_Obuf(struct vgz *vg, void *ptr, ssize_t len)
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
-	vg->vz.next_out = TRUST_ME(ptr);
+	vg->vz.next_out = ptr;
 	vg->vz.avail_out = len;
 }
 
