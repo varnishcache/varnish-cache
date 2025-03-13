@@ -8,26 +8,39 @@ released versions of Varnish, see:** :ref:`whats-new-index`
 Upgrading to Varnish **$NEXT_RELEASE**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-**XXX: how to upgrade from previous deployments to this
-version. Limited to work that has to be done for an upgrade, new
-features are listed in "Changes". Explicitly mention what does *not*
-have to be changed, especially in VCL. May include, but is not limited
-to:**
+In general, upgrading from Varnish 7.6 to 7.7 should not require any changes
+besides the actual upgrade.
 
-* Elements of VCL that have been removed or are deprecated, or whose
-  semantics have changed.
+Note, however, that some log messages and in particular timestamps have changed,
+see :ref:`whatsnew_changes_CURRENT` and
+:ref:`whatsnew_changes_CURRENT_h2_timestamps` in particular. Here, we only
+summarize the changes:
 
-* -p parameters that have been removed or are deprecated, or whose
-  semantics have changed.
+* We have changed how http/2 timestamps are taken.
 
-* Changes in the CLI.
+* Details of http/2 related log entries have changed.
 
-* Changes in the output or interpretation of stats or the log, including
-  changes affecting varnishncsa/-hist/-top.
+* The ``varnishncsa`` format ``Varnish:handling`` now also outputs ``hitmiss``
+  and ``hitpass``.
 
-* Changes that may be necessary in VTCs or in the use of varnishtest.
+* ``varnishncsa`` now outputs headers as they are received and sent.
 
-* Changes in public APIs that may require changes in VMODs or VAPI/VUT
-  clients.
+Upgrade notes for VMOD developers
+=================================
+
+``vmodtool.py`` now creates a file ``vmod_vcs_version.txt`` in the current
+working directory when called from a git tree. This file is intended to
+transport version control system information to builds from distribution
+bundles.
+
+VMOD authors should add it to the distribution and otherwise ignore it for SCM.
+
+Where git and automake are used, this can be accomplished by adding
+``vmod_vcs_version.txt`` to the ``.gitignore`` file and to the ``EXTRA_DIST``
+and ``DISTCLEANFILES`` variables in ``Makefile.am``.
+
+If neither git is used nor ``vmod_vcs_version.txt`` present, ``vmodtool.py``
+will add ``NOGIT`` to the vmod as the vcs identifier.
+
 
 *eof*
