@@ -46,6 +46,9 @@
 #include "cache_filter.h"
 #include "cache_objhead.h"
 #include "cache_vgz.h"
+
+#include "storage/storage.h"
+
 #include "vend.h"
 
 #include "vgz.h"
@@ -59,6 +62,7 @@ struct vgz {
 	int			last_i;
 	enum vgz_flag		flag;
 
+	struct stv_buffer	*stvbuf;
 	char			*m_buf;
 	ssize_t			m_sz;
 	ssize_t			m_len;
@@ -151,20 +155,24 @@ VGZ_NewGzip(struct vsl_log *vsl, const char *id)
  */
 
 static int
-vgz_getmbuf(struct vgz *vg)
+vgz_getmbuf(struct worker *wrk, struct vgz *vg)
 {
+	size_t sz;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->m_sz);
 	AZ(vg->m_len);
 	AZ(vg->m_buf);
+	AZ(vg->stvbuf);
 
-	vg->m_sz = cache_param->gzip_buffer;
-	vg->m_buf = malloc(vg->m_sz);
-	if (vg->m_buf == NULL) {
-		vg->m_sz = 0;
+	vg->stvbuf = STV_AllocBuf(wrk, stv_transient, cache_param->gzip_buffer);
+	if (vg->stvbuf == NULL)
 		return (-1);
-	}
+	vg->m_buf = STV_GetBufPtr(vg->stvbuf, &sz);
+	vg->m_sz = sz;
+	AN(vg->m_buf);
+	assert(vg->m_sz > 0);
 	return (0);
 }
 
@@ -311,8 +319,8 @@ vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 
 	vg = VGZ_NewGunzip(vdc->vsl, "U D -");
 	AN(vg);
-	if (vgz_getmbuf(vg)) {
-		(void)VGZ_Destroy(&vg);
+	if (vgz_getmbuf(vdc->wrk, vg)) {
+		(void)VGZ_Destroy(vdc->wrk, &vg);
 		return (-1);
 	}
 
@@ -352,7 +360,7 @@ vdp_gunzip_fini(struct vdp_ctx *vdc, void **priv)
 	(void)vdc;
 	TAKE_OBJ_NOTNULL(vg, priv, VGZ_MAGIC);
 	AN(vg->m_buf);
-	(void)VGZ_Destroy(&vg);
+	(void)VGZ_Destroy(vdc->wrk, &vg);
 	return (0);
 }
 
@@ -439,12 +447,13 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
  */
 
 enum vgzret_e
-VGZ_Destroy(struct vgz **vgp)
+VGZ_Destroy(struct worker *wrk, struct vgz **vgp)
 {
 	struct vgz *vg;
 	enum vgzret_e vr;
 	int i;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(vg, vgp, VGZ_MAGIC);
 	AN(vg->id);
 	VSLb(vg->vsl, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
@@ -460,8 +469,11 @@ VGZ_Destroy(struct vgz **vgp)
 		i = inflateEnd(&vg->vz);
 	if (vg->last_i == Z_STREAM_END && i == Z_OK)
 		i = Z_STREAM_END;
-	if (vg->m_buf)
-		free(vg->m_buf);
+	if (vg->m_buf != NULL) {
+		AN(vg->stvbuf);
+		STV_FreeBuf(wrk, &vg->stvbuf);
+	}
+	AZ(vg->stvbuf);
 	if (i == Z_OK)
 		vr = VGZ_OK;
 	else if (i == Z_STREAM_END)
@@ -514,7 +526,7 @@ vfp_gzip_init(VRT_CTX, struct vfp_ctx *vc, struct vfp_entry *vfe)
 	}
 	AN(vg);
 	vfe->priv1 = vg;
-	if (vgz_getmbuf(vg))
+	if (vgz_getmbuf(vc->wrk, vg))
 		return (VFP_ERROR);
 	VGZ_Ibuf(vg, vg->m_buf, 0);
 	AZ(vg->m_len);
@@ -699,7 +711,7 @@ vfp_gzip_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 
 	if (vfe->priv1 != NULL) {
 		TAKE_OBJ_NOTNULL(vg, &vfe->priv1, VGZ_MAGIC);
-		(void)VGZ_Destroy(&vg);
+		(void)VGZ_Destroy(vc->wrk, &vg);
 	}
 }
 
