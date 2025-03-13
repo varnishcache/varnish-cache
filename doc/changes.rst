@@ -254,6 +254,10 @@ Varnish-Cache 7.7 (2025-03-15)
 * The acceptor code has been refactored for basic support of pluggable
   acceptors.
 
+.. _4170: https://github.com/varnishcache/varnish-cache/issues/4170
+
+* ``return (fail(...))`` can now take strings returned from a vmod. (`4170`_)
+
 ================================
 Varnish Cache 7.6.1 (2024-11-08)
 ================================

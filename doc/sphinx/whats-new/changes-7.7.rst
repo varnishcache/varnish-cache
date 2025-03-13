@@ -94,6 +94,8 @@ Validation of the ``PROXY2`` ``PP2_TYPE_AUTHORITY`` TLV sent with ``.via``
 backends has been corrected: IP addresses are no longer accepted as an
 authority and port numbers are automatically removed.
 
+``return (fail(...))`` can now take strings returned from a vmod.
+
 Generic Logging (VSL)
 =====================
 
