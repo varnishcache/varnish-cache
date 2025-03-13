@@ -66,6 +66,9 @@ Other changes in varnishd
 An issue has been fixed which could cause a crash when ``varnishd`` receives
 an invalid ``Content-Range`` header from a backend.
 
+The management process now logs the PID of the process from which it
+received a signal.
+
 Changes to VCL
 ==============
 

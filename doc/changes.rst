@@ -254,6 +254,9 @@ Varnish-Cache 7.7 (2025-03-15)
 * The acceptor code has been refactored for basic support of pluggable
   acceptors.
 
+* The management process now logs the PID of the process from which it
+  received a signal.
+
 * Two new VCL variables ``req.filters`` and ``bereq.filters`` can now be used to
   pass request bodies through a list of VFPs and backend request bodies through a
   list of VDPs respectively.
