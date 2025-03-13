@@ -150,6 +150,8 @@ Varnish-Cache 7.7 (2025-03-15)
   exceeds ``http_req_size``.  The default of ``0`` keeps the existing behavior
   to just close the connection in this case. (`2735`_)
 
+* ``req.hash`` is now also readable from ``vcl_synth`` and ``vcl_pipe``.
+
 .. _4142: https://github.com/varnishcache/varnish-cache/pull/4142
 .. _4259: https://github.com/varnishcache/varnish-cache/pull/4259
 

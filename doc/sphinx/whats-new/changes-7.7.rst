@@ -91,6 +91,8 @@ vcl_deliver, vcl_synth``, respectively.
 The ``Content-Length`` header is now consistently removed after ``unset
 bereq.body`` on the backend side.
 
+``req.hash`` is now also readable from ``vcl_synth`` and ``vcl_pipe``.
+
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
