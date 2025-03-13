@@ -50,8 +50,8 @@ Varnish Cache NEXT (2025-03-15)
 
 .. _4282: https://github.com/varnishcache/varnish-cache/issues/4282
 
-* (Add a prominent note to announcement) Timestamps for http/2 requests have
-  been corrected and made similar to how they are taken for http/1.
+* Timestamps for http/2 requests have been corrected and made similar to how
+  they are taken for http/1.
 
   For http/1, the start time, internally called "t_first", is taken as soon as
   any part of the request (headers) is received. Previously, http/2 took it
