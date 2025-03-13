@@ -175,8 +175,11 @@ VGZ_Ibuf(struct vgz *vg, const void *ptr, ssize_t len)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-
 	AZ(vg->vz.avail_in);
+	assert(len >= 0);
+	if (len > 0)
+		AN(ptr);
+
 	vg->vz.next_in = TRUST_ME(ptr);
 	vg->vz.avail_in = len;
 }
@@ -196,6 +199,8 @@ VGZ_Obuf(struct vgz *vg, void *ptr, ssize_t len)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	AN(ptr);
+	assert(len > 0);
 
 	vg->vz.next_out = ptr;
 	vg->vz.avail_out = len;
