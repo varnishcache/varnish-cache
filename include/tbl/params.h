@@ -538,10 +538,12 @@ PARAM_SIMPLE(
 	/* units */	"bytes",
 	/* descr */
 	"Size of malloc buffer used for gzip processing.\n"
+	"Size of buffer used for gzip processing.\n"
 	"These buffers are used for in-transit data, for instance "
-	"gunzip'ed data being sent to a client.Making this space to small "
+	"gunzip'ed data being sent to a client. Making this space to small "
 	"results in more overhead, writes to sockets etc, making it too "
-	"big is probably just a waste of memory.",
+	"big is probably just a waste of memory.\n"
+	"Gzip buffers are allocated from Transient storage.",
 	/* flags */	EXPERIMENTAL
 )
 
