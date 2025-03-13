@@ -771,7 +771,8 @@ PARAM_SIMPLE(
 	/* def */	"4",
 	/* units */	"restarts",
 	/* descr */
-	"Upper limit on how many times a request can restart."
+	"Upper limit on how many times a request can restart.",
+	/* flags */	DELAYED_EFFECT
 )
 
 PARAM_SIMPLE(
@@ -782,7 +783,8 @@ PARAM_SIMPLE(
 	/* def */	"4",
 	/* units */	"retries",
 	/* descr */
-	"Upper limit on how many times a backend fetch can retry."
+	"Upper limit on how many times a backend fetch can retry.",
+	/* flags */	DELAYED_EFFECT
 )
 
 PARAM_SIMPLE(
