@@ -96,6 +96,11 @@ authority and port numbers are automatically removed.
 
 ``return (fail(...))`` can now take strings returned from a vmod.
 
+varnishadm
+==========
+
+* The CLI command ``backend.list -j`` now outputs IPs/port information.
+
 Generic Logging (VSL)
 =====================
 

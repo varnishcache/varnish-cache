@@ -21,6 +21,8 @@ summarize the changes:
 
 * ``varnishncsa`` now outputs headers as they are received and sent.
 
+* The CLI command ``backend.list -j`` now outputs IPs/port information.
+
 Upgrade notes for VMOD developers
 =================================
 

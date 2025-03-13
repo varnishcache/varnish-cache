@@ -254,6 +254,8 @@ Varnish-Cache 7.7 (2025-03-15)
 * The acceptor code has been refactored for basic support of pluggable
   acceptors.
 
+* The CLI command ``backend.list -j`` now outputs IPs/port information.
+
 .. _4170: https://github.com/varnishcache/varnish-cache/issues/4170
 
 * ``return (fail(...))`` can now take strings returned from a vmod. (`4170`_)
