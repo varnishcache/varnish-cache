@@ -104,7 +104,9 @@ Varnish-Cache 7.7 (2025-03-15)
   The output format of ``varnishadm param.show`` has been adjusted accordingly.
 
 * Behavior of the VCL ``include`` statement with the ``+glob`` option has been
-  clarified to not search directories in ``vcl_path``.
+  clarified to not search directories in ``vcl_path``. Using ``+glob`` includes
+  with a relative path that does not start with "./" will now result in a VCL
+  compile failure.
 
 * The ``linux`` jail gained control of transparent huge pages (THP) settings:
   The ``transparent_hugepage`` suboption can be set to ``ignore`` to do nothing,

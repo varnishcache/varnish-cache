@@ -86,7 +86,9 @@ Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
 Behavior of the VCL ``include`` statement with the ``+glob`` option has been
-clarified to not search directories in ``vcl_path``.
+clarified to not search directories in ``vcl_path``. Using ``+glob`` includes
+with a relative path that does not start with "./" will now result in a VCL
+compile failure.
 
 Validation of the ``PROXY2`` ``PP2_TYPE_AUTHORITY`` TLV sent with ``.via``
 backends has been corrected: IP addresses are no longer accepted as an
