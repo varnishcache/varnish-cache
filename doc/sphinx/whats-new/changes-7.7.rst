@@ -72,6 +72,12 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
+Two new VCL variables ``req.filters`` and ``bereq.filters`` can now be used to
+pass request bodies through a list of VFPs and backend request bodies through a
+list of VDPs respectively. This can be useful for processing or transforming
+request bodies as they go through varnish. See :ref:`vcl-var(7)` for more
+details.
+
 VCL now supports ``unset req.grace`` and ``unset req.ttl`` to reset the
 respective variables to the "no effect" value, which is also the default.
 
