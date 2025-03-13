@@ -47,6 +47,11 @@ which can be considered a bugfix, depending on the exact interpretation of the
 semantics of ban expressions with regards to variants. ``0`` will become the
 new default in a future release of Varnish-Cache.
 
+The varnishd parameters ``max_restarts`` and ``max_retries`` have been
+made more consistent, which prevents a potential panic that could be
+triggered when reducing the value of ``max_restarts`` under certain
+conditions.
+
 Jails
 ~~~~~
 

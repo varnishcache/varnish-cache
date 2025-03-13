@@ -129,6 +129,11 @@ Varnish-Cache 7.7 (2025-03-15)
   backends has been corrected: IP addresses are no longer accepted as an
   authority and port numbers are automatically removed. (`3963`_)
 
+* The varnishd parameters ``max_restarts`` and ``max_retries`` have been
+  made more consistent, which prevents a potential panic that could be
+  triggered when reducing the value of ``max_restarts`` under certain
+  conditions.
+
 .. _3757: https://github.com/varnishcache/varnish-cache/issues/3757
 
 * Handling of curses errors in the interactive mode of ``varnishstat``,
