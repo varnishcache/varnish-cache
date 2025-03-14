@@ -240,7 +240,8 @@ vcp_destroy(struct conn_pool **cpp)
 }
 
 /*--------------------------------------------------------------------
- * Release Conn pool, destroy if last reference.
+ * Release Conn pool, destroy or stash for future destruction if last
+ * reference.
  */
 
 void
