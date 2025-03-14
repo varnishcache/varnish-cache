@@ -235,7 +235,7 @@ vcp_destroy(struct conn_pool **cpp)
 	AZ(cp->n_conn);
 	AZ(cp->n_kill);
 	Lck_Delete(&cp->mtx);
-	free(cp->endpoint);
+	FREE_OBJ(cp->endpoint);
 	FREE_OBJ(cp);
 }
 
@@ -824,10 +824,6 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	cp2->refcnt++;
 	Lck_Unlock(&conn_pools_mtx);
 
-	Lck_Delete(&cp->mtx);
-	AZ(cp->n_conn);
-	AZ(cp->n_kill);
-	FREE_OBJ(cp->endpoint);
-	FREE_OBJ(cp);
+	vcp_destroy(&cp);
 	return (cp2);
 }
