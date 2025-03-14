@@ -811,28 +811,23 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	Lck_New(&cp->mtx, lck_conn_pool);
 	VTAILQ_INIT(&cp->connlist);
 
-	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 	Lck_Lock(&conn_pools_mtx);
 	cp2 = VRBT_FIND(vrb, &conn_pools, cp);
-	if (cp2 == NULL)
-		AZ(VRBT_INSERT(vrb, &conn_pools, cp));
-	else {
-		CHECK_OBJ(cp2, CONN_POOL_MAGIC);
-		assert(cp2->refcnt > 0);
-		cp2->refcnt++;
-	}
-	Lck_Unlock(&conn_pools_mtx);
-
 	if (cp2 == NULL) {
-		CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+		AZ(VRBT_INSERT(vrb, &conn_pools, cp));
+		Lck_Unlock(&conn_pools_mtx);
 		return (cp);
 	}
+
+	CHECK_OBJ(cp2, CONN_POOL_MAGIC);
+	assert(cp2->refcnt > 0);
+	cp2->refcnt++;
+	Lck_Unlock(&conn_pools_mtx);
 
 	Lck_Delete(&cp->mtx);
 	AZ(cp->n_conn);
 	AZ(cp->n_kill);
 	FREE_OBJ(cp->endpoint);
 	FREE_OBJ(cp);
-	CHECK_OBJ_NOTNULL(cp2, CONN_POOL_MAGIC);
 	return (cp2);
 }
