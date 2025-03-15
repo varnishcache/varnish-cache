@@ -184,7 +184,7 @@ of RAM and move on.
 On a Multi-CPU system, and it doesn't matter if the CPUs share a
 socket or have their own, we first have to check if any of the other
 CPUs have a modified copy of n_foo stored in their caches, so a
-special bus-transaction goes out to find this out, if if some cpu
+special bus-transaction goes out to find this out, if some cpu
 comes back and says "yeah, I have it" that cpu gets to write it to
 RAM. On good hardware designs, our CPU will listen in on the bus
 during that write operation, on bad designs it will have to do a
