@@ -46,9 +46,9 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
-#define VRT_MAJOR_VERSION	20U
+#define VRT_MAJOR_VERSION	21U
 
-#define VRT_MINOR_VERSION	1U
+#define VRT_MINOR_VERSION	0U
 
 /***********************************************************************
  * Major and minor VRT API versions.
@@ -57,7 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * NEXT (2025-03-15)
+ * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
  *	VRT_r_req_filters() added
