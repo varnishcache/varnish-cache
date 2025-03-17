@@ -58,6 +58,12 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2025-03-15)
+ *	VRT_u_req_grace() added
+ *	VRT_u_req_ttl() added
+ *	VRT_r_req_filters() added
+ *	VRT_l_req_filters() added
+ *	VRT_r_bereq_filters() added
+ *	VRT_l_bereq_filters() added
  * 20.1 (2024-11-08 7.6.1)
  *	VDI_EVENT_SICK added to enum vcl_event_e
  * 20.0 (2024-09-13)
