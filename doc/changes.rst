@@ -35,7 +35,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.6.2 (unreleased)
+Varnish Cache 7.6.2 (2025-03-17)
 ================================
 
 .. _VSV00015: https://varnish-cache.org/security/VSV00015.html
