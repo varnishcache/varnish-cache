@@ -1,0 +1,21 @@
+varnishtest "Test HPACK dictionary sizing in upgrade settings"
+
+server s1 {
+	rxreq 
+	upgrade
+	stream 1 {
+		rxreq
+		txresp
+	} -run
+
+} -start
+
+client c1 -connect ${s1_sock} {
+	txreq -up AAMAAABkAAQAAP__AAkAAAAB
+	stream 1 {
+		txreq
+		rxresp
+	} -run
+} -run
+
+server s1 -wait

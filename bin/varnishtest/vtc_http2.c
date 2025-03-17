@@ -2879,10 +2879,16 @@ b64_settings(const struct http *hp, const char *s)
 			buf = "unknown";
 
 		if (v == 1) {
-			if (hp->sfd)
-				assert(HPK_ResizeTbl(hp->encctx, v) != hpk_err);
-			else
-				assert(HPK_ResizeTbl(hp->decctx, v) != hpk_err);
+			enum hpk_result hrs;
+			if (hp->sfd) {
+				AN(hp->encctx);
+				hrs = HPK_ResizeTbl(hp->encctx, v);
+			} else {
+				AN(hp->decctx);
+				hrs = HPK_ResizeTbl(hp->decctx, v);
+			}
+			if (hrs != hpk_done)
+				vtc_fatal(hp->vl, "HPK resize failed %d\n", hrs);
 		}
 
 		vtc_log(hp->vl, 4, "Upgrade: %s (%d): %ju",
