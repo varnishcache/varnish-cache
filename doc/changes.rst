@@ -35,7 +35,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ==============================
-Varnish-Cache 7.7 (2025-03-15)
+Varnish-Cache 7.7 (2025-03-17)
 ==============================
 
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
