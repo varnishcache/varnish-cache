@@ -1058,8 +1058,6 @@ cmd_http_upgrade(CMD_ARGS)
 	    " -hdr \"Upgrade: h2c\"\n"
 	);
 
-	b64_settings(hp, h);
-
 	parse_string(vl, hp,
 	    "rxpri\n"
 	    "stream 0 {\n"
@@ -1070,6 +1068,9 @@ cmd_http_upgrade(CMD_ARGS)
 	    "    expect settings.ack == true\n"
 	    "} -start\n"
 	);
+
+	b64_settings(hp, h);
+
 }
 
 /**********************************************************************
