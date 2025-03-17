@@ -41,6 +41,11 @@ Varnish-Cache 7.7 (2025-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+.. _VSV00015: https://varnish-cache.org/security/VSV00015.html
+
+* The client connection is now always closed when a malformed request
+  is received. (VSV00015_)
+
 .. _4281: https://github.com/varnishcache/varnish-cache/issues/4281
 
 * For http/2, normal client behavior like timeouts or closed connection was

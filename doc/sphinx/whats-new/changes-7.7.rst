@@ -17,6 +17,15 @@ found in the `change log`_.
 
 .. _change log: https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst
 
+Security
+========
+
+VSV 15:
+~~~~~~~
+
+The client connection is now always closed when a malformed request
+is received.
+
 varnishd
 ========
 
