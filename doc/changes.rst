@@ -35,6 +35,15 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 7.6.2 (unreleased)
+================================
+
+.. _VSV00015: https://varnish-cache.org/security/VSV00015.html
+
+* The client connection is now always closed when a malformed request
+  is received. (VSV00015_)
+
+================================
 Varnish Cache 7.6.1 (2024-11-08)
 ================================
 
