@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "vdef.h"
+#include "vbt.h"
 
 #include "vas.h"
 
@@ -57,37 +58,53 @@ VAS_errtxt(int e)
 
 vas_f *VAS_Fail_Func v_noreturn_;
 
+static void
+vas_default(const char *func, const char *file, int line,
+    const char *cond, enum vas_e kind)
+{
+	int err = errno;
+	char buf[4096];
+
+	if (kind == VAS_MISSING) {
+		fprintf(stderr,
+		    "Missing error handling code in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
+	} else if (kind == VAS_INCOMPLETE) {
+		fprintf(stderr,
+		    "Incomplete code in %s(), %s line %d:\n",
+		    func, file, line);
+	} else if (kind == VAS_WRONG) {
+		fprintf(stderr,
+		    "Wrong turn in %s(), %s line %d: %s\n",
+		    func, file, line, cond);
+	} else {
+		fprintf(stderr,
+		    "Assert error in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
+	}
+	if (err) {
+		fprintf(stderr,
+		    "  errno = %d (%s)\n", err, strerror(err));
+	}
+
+	if (VBT_dump(sizeof buf, buf) < 0) {
+		bprintf(buf, "Failed to print backtrace: %d (%s)\n",
+		    errno, strerror(errno));
+	}
+
+	fprintf(stderr, "%s", buf);
+}
+
 void v_noreturn_
 VAS_Fail(const char *func, const char *file, int line,
     const char *cond, enum vas_e kind)
 {
-	int err = errno;
 
-	if (VAS_Fail_Func != NULL) {
+	if (VAS_Fail_Func != NULL)
 		VAS_Fail_Func(func, file, line, cond, kind);
-	} else {
-		if (kind == VAS_MISSING) {
-			fprintf(stderr,
-			    "Missing error handling code in %s(), %s line %d:\n"
-			    "  Condition(%s) not true.\n",
-			    func, file, line, cond);
-		} else if (kind == VAS_INCOMPLETE) {
-			fprintf(stderr,
-			    "Incomplete code in %s(), %s line %d:\n",
-			    func, file, line);
-		} else if (kind == VAS_WRONG) {
-			fprintf(stderr,
-			    "Wrong turn in %s(), %s line %d: %s\n",
-			    func, file, line, cond);
-		} else {
-			fprintf(stderr,
-			    "Assert error in %s(), %s line %d:\n"
-			    "  Condition(%s) not true.\n",
-			    func, file, line, cond);
-		}
-		if (err)
-			fprintf(stderr,
-			    "  errno = %d (%s)\n", err, strerror(err));
-	}
+	else
+		vas_default(func, file, line, cond, kind);
 	abort();
 }
