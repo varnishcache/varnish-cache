@@ -34,3 +34,4 @@ client c1 {
 
 	barrier b1 sync
 } -run
+server s1 -wait
