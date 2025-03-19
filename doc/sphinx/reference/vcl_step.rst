@@ -392,6 +392,10 @@ circumstances, be cautious with putting private information there. If
 you really must, then you need to explicitly set ``beresp.ttl`` to
 zero in ``vcl_backend_error``.
 
+If a conditional fetch failed to process a 304 response and transitioned
+to ``vcl_backend_error``, the backend request is retried for a regular
+fetch within the same transaction.
+
 The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
