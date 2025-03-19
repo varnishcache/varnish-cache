@@ -140,7 +140,7 @@ len_f		hex_decode_l;
 encode_f	hex_encode;
 decode_f	hex_decode;
 
-extern const char	hex_alphabet[][16];
+extern const char	hex_alphabet[][17];
 extern const uint8_t	hex_nibble[];
 
 /* url.c */
