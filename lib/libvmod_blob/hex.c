@@ -38,7 +38,7 @@
 
 #include "vmod_blob.h"
 
-const char hex_alphabet[][16] = {
+const char hex_alphabet[][17] = {
 	"0123456789abcdef",
 	"0123456789ABCDEF"
 };

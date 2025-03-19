@@ -32,7 +32,7 @@
 #define PAD ((int8_t) 126)
 
 static const struct b64_alphabet {
-	const char b64[64];
+	const char b64[65];
 	const int8_t i64[256];
 	const int padding;
 } b64_alphabet[] = {
