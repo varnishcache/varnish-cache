@@ -32,6 +32,6 @@
 
 /* These are defined in hex.c */
 
-extern const char hex_alphabet[][16];
+extern const char hex_alphabet[][17];
 
 extern const uint8_t nibble[];
