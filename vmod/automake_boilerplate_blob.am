@@ -21,7 +21,8 @@ vmod_blob_symbols_regex ?= Vmod_blob_Data
 libvmod_blob_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_blob_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS)
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
 
 nodist_libvmod_blob_la_SOURCES = vcc_blob_if.c vcc_blob_if.h
 

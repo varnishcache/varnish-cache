@@ -15,7 +15,8 @@ vmod_unix_symbols_regex ?= Vmod_unix_Data
 libvmod_unix_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_unix_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS)
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
 
 nodist_libvmod_unix_la_SOURCES = vcc_unix_if.c vcc_unix_if.h
 

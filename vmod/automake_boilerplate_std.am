@@ -17,7 +17,8 @@ vmod_std_symbols_regex ?= Vmod_std_Data
 libvmod_std_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_std_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS)
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
 
 nodist_libvmod_std_la_SOURCES = vcc_std_if.c vcc_std_if.h
 

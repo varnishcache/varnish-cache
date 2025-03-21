@@ -14,7 +14,8 @@ vmod_h2_symbols_regex ?= Vmod_h2_Data
 libvmod_h2_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_h2_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS)
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
 
 nodist_libvmod_h2_la_SOURCES = vcc_h2_if.c vcc_h2_if.h
 
