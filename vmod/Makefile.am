@@ -24,10 +24,9 @@ vccdir=$(datarootdir)/$(PACKAGE)/vcc
 
 # Prepare variables populated by includes
 vmod_LTLIBRARIES =
-vmod_vcc_files =
-
-# Prevent vmod_debug.vcc installation upfront
-vmod_debug_vcc =
+noinst_LTLIBRARIES =
+dist_vcc_DATA =
+dist_noinst_DATA =
 
 include $(srcdir)/automake_boilerplate_blob.am
 include $(srcdir)/automake_boilerplate_h2.am
@@ -54,9 +53,5 @@ BUILT_SOURCES = $(VSC_GEN)
 # Allow Vmod_wrong*_Data to be exported
 vmod_debug_symbols_regex = 'Vmod_.*_Data'
 
-# not --strict
-vmodtoolargs_debug = --boilerplate -o vcc_debug_if
-
-dist_noinst_DATA = $(srcdir)/vmod_debug.vcc
-
-dist_vcc_DATA = $(vmod_vcc_files)
+# not --strict, not installed
+vmodtoolargs_debug = --boilerplate --noinst -o vcc_debug_if
