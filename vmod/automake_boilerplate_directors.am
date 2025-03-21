@@ -24,7 +24,8 @@ vmod_directors_symbols_regex ?= Vmod_directors_Data
 libvmod_directors_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_directors_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS)
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
 
 nodist_libvmod_directors_la_SOURCES = vcc_directors_if.c vcc_directors_if.h
 

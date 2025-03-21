@@ -14,7 +14,8 @@ vmod_cookie_symbols_regex ?= Vmod_cookie_Data
 libvmod_cookie_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_cookie_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS)
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
 
 nodist_libvmod_cookie_la_SOURCES = vcc_cookie_if.c vcc_cookie_if.h
 

@@ -14,7 +14,8 @@ vmod_vtc_symbols_regex ?= Vmod_vtc_Data
 libvmod_vtc_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_vtc_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS)
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
 
 nodist_libvmod_vtc_la_SOURCES = vcc_vtc_if.c vcc_vtc_if.h
 

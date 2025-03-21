@@ -66,7 +66,8 @@ vmod_XXX_symbols_regex ?= Vmod_XXX_Data
 libvmod_XXX_la_LDFLAGS = \\
 \t-export-symbols-regex $(vmod_XXX_symbols_regex) \\
 \t$(AM_LDFLAGS) \\
-\t$(VMOD_LDFLAGS)
+\t$(VMOD_LDFLAGS) \\
+\t-rpath $(vmoddir)
 
 nodist_libvmod_XXX_la_SOURCES = PFX.c PFX.h
 
