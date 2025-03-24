@@ -1,0 +1,66 @@
+varnishtest "VMOD debug vai transport"
+
+server s1 {
+	rxreq
+	txresp -gziplen 13107
+} -start
+
+varnish v1 \
+    -arg "-p fetch_chunksize=4k" \
+    -vcl+backend {
+	import debug;
+
+	sub vcl_hash {
+		hash_data("");
+		return (lookup);
+	}
+
+	sub vcl_deliver {
+		if (req.url == "/chunked") {
+			set resp.filters += " debug.chunked";
+		}
+		debug.use_vai_http1();
+		set resp.http.filters = resp.filters;
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	fail add *	Debug "scheduling dbg_vai_deliverobj"
+	expect * *	Debug "scheduling dbg_vai_lease"
+	expect * *	ReqHeader "Last: Request"
+	fail clear
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set debug +req_state"
+varnish v1 -cliok "param.set debug +processors"
+
+client c0 -repeat 16 -keepalive {
+	txreq -hdr "Accept-Encoding: gzip"
+	rxresp
+} -start
+
+client c1 -repeat 16 -keepalive {
+	txreq
+	rxresp
+	expect resp.bodylen == 13113
+	expect req.body ~ "^hello "
+} -start
+
+#client c2 -repeat 16 -keepalive {
+#	txreq -url "/chunked"
+#	rxresp
+#	expect resp.http.Content-Length == <undef>
+#	expect resp.bodylen == 13107
+#} -start
+
+client c0 -wait
+client c1 -wait
+#client c2 -wait
+
+client c0 {
+	txreq -hdr "Accept-Encoding: gzip" -hdr "Last: Request"
+	rxresp
+} -run
+
+logexpect l1 -wait
