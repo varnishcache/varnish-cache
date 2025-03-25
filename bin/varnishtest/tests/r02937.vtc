@@ -27,7 +27,14 @@ client c1 {
 		rxgoaway
 		expect goaway.err == ENHANCE_YOUR_CALM
 		expect goaway.laststream == 1
-	} -run
+	} -start
+
+	stream 1 {
+		rxrst
+	} -start
+
+	stream 0 -wait
+	stream 1 -wait
 
 	expect_close
 } -run

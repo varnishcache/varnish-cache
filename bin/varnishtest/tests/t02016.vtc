@@ -6,6 +6,8 @@ server s1 {
 } -start
 
 varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set timeout_idle 10"
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.url ~ "synth") {

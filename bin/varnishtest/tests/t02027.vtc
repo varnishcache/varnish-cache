@@ -10,8 +10,7 @@ varnish v1 -arg "-p feature=+http2" -arg "-p debug=+syncvsl" -vcl {
 logexpect l0 -v v1 -g vxid -q "Begin ~ sess" {
 	fail add * SessError
 	expect * * Debug           {^H2: Got pu PRISM}
-	expect 0 = Debug           {^H2: HTC eof.*frame=complete goaway=0}
-	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect 0 = Debug           {^H2: HTC eof .* frame=complete}
 	expect 0 = ReqAcct         {^0 0 0 18 26 44}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End
@@ -32,8 +31,7 @@ client c0 {
 
 logexpect l1 -v v1 -g vxid -q "Begin ~ sess" {
 	fail add * SessError
-	expect * * Debug           {^H2: HTC eof.*frame=complete goaway=0}
-	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect * * Debug           {^H2: HTC eof .* frame=complete}
 	expect 9 = ReqAcct         {^27 0 27 27 26 53}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End
@@ -55,8 +53,7 @@ client c1 {
 
 logexpect l2 -v v1 -g vxid -q "Begin ~ sess" {
 	fail add * SessError
-	expect * * Debug           {^H2: HTC eof.*frame=complete goaway=0}
-	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect * * Debug           {^H2: HTC eof .* frame=complete}
 	expect 9 = ReqAcct         {^27 0 27 27 26 53}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End
@@ -78,8 +75,7 @@ client c2 {
 
 logexpect l3 -v v1 -g vxid -q "Begin ~ sess" {
 	fail add * SessError
-	expect * * Debug           {^H2: HTC eof.*frame=partial goaway=0}
-	expect 0 = Debug           {^H2 CLEANUP H2CE_NO_ERROR}
+	expect * * Debug           {^H2: HTC eof .* frame=partial}
 	expect 0 = ReqAcct         {^18 0 18 27 26 53}
 	expect 0 = SessClose       {^REM_CLOSE}
 	expect 0 = End

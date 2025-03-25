@@ -14,8 +14,8 @@ varnish v1 -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -g raw -q ReqAcct {
-	expect ? 1001	ReqAcct "46 0 46 69 12345 12414"
-	expect ? 1003	ReqAcct "46 0 46 74 1000 1074"
+	expect ? 1001	ReqAcct "92 0 92 69 24690 24759"
+	expect ? 1003	ReqAcct "92 0 92 74 13345 13419"
 } -start
 
 client c1 {

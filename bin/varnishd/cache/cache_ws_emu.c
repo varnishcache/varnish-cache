@@ -222,7 +222,7 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 }
 
 int
-WS_Pipeline(struct ws *ws, const void *b, const void *e, unsigned rollback)
+WS_Pipeline(struct ws *ws, const void *b, const void *e, uintptr_t snap)
 {
 	void *tmp;
 	unsigned r, l;
@@ -248,8 +248,10 @@ WS_Pipeline(struct ws *ws, const void *b, const void *e, unsigned rollback)
 		tmp = NULL;
 	}
 
-	if (rollback)
+	if (snap == ws_pipeline_rollback)
 		WS_Rollback(ws, 0);
+	else if (snap != 0)
+		WS_Rollback(ws, snap);
 
 	r = WS_ReserveAll(ws);
 

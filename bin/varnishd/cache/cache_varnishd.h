@@ -104,6 +104,7 @@ struct http_conn {
 	char			*rxbuf_e;
 	char			*pipeline_b;
 	char			*pipeline_e;
+	uintptr_t		pipeline_snap;
 	ssize_t			content_length;
 	void			*priv;
 
@@ -569,7 +570,9 @@ WS_IsReserved(const struct ws *ws)
 
 void *WS_AtOffset(const struct ws *ws, unsigned off, unsigned len);
 unsigned WS_ReservationOffset(const struct ws *ws);
-int WS_Pipeline(struct ws *, const void *b, const void *e, unsigned rollback);
+
+extern uintptr_t const ws_pipeline_rollback;
+int WS_Pipeline(struct ws *, const void *b, const void *e, uintptr_t snap);
 
 /* cache_ws_common.c */
 void WS_Id(const struct ws *ws, char *id);

@@ -43,12 +43,55 @@
 #include "storage/storage.h"
 
 #include "vtim.h"
-#include "vend.h"
+
+struct h2_reqbody_waiter {
+	unsigned		magic;
+#define H2_REQBODY_WAITER_MAGIC	0xb6f4c52c
+	pthread_cond_t		cond;
+};
+
+static int
+h2_reqbody_wait(struct h2_req *r2, vtim_real when)
+{
+	struct h2_reqbody_waiter w;
+	int retval;
+
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->h2sess, H2_SESS_MAGIC);
+
+	Lck_AssertHeld(&r2->h2sess->sess->mtx);
+
+	INIT_OBJ(&w, H2_REQBODY_WAITER_MAGIC);
+	PTOK(pthread_cond_init(&w.cond, NULL));
+
+	AZ(r2->reqbody_waiter);
+	r2->reqbody_waiter = &w;
+	retval = Lck_CondWaitUntil(&w.cond, &r2->h2sess->sess->mtx, when);
+	r2->reqbody_waiter = NULL;
+
+	PTOK(pthread_cond_destroy(&w.cond));
+	w.magic = 0;
+
+	return (retval);
+}
+
+void
+h2_reqbody_kick(struct h2_req *r2)
+{
+
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->h2sess, H2_SESS_MAGIC);
+
+	Lck_AssertHeld(&r2->h2sess->sess->mtx);
+
+	CHECK_OBJ_ORNULL(r2->reqbody_waiter, H2_REQBODY_WAITER_MAGIC);
+	if (r2->reqbody_waiter != NULL)
+		PTOK(pthread_cond_signal(&r2->reqbody_waiter->cond));
+}
 
 h2_error
 h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
-	char buf[4];
 	ssize_t l;
 	uint64_t l2, head;
 	const uint8_t *src;
@@ -60,15 +103,11 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	ASSERT_H2_SESS(h2);
 
-	Lck_Lock(&h2->sess->mtx);
 	CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
 
-	if (h2->error != NULL || r2->error != NULL) {
-		if (r2->cond)
-			PTOK(pthread_cond_signal(r2->cond));
-		Lck_Unlock(&h2->sess->mtx);
+	/* XXX: errcheck? */
+	if (h2->error != NULL || r2->error != NULL)
 		return (h2->error != NULL ? h2->error : r2->error);
-	}
 
 	/* Check padding if present */
 	src = h2->rxf_data;
@@ -78,10 +117,6 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			VSLb(h2->vsl, SLT_SessError,
 			    "H2: stream %u: Padding larger than frame length",
 			    h2->rxf_stream);
-			r2->error = H2CE_PROTOCOL_ERROR;
-			if (r2->cond)
-				PTOK(pthread_cond_signal(r2->cond));
-			Lck_Unlock(&h2->sess->mtx);
 			return (H2CE_PROTOCOL_ERROR);
 		}
 		len -= 1 + *src;
@@ -101,35 +136,25 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			VSLb(h2->vsl, SLT_Debug,
 			    "H2: stream %u: Received data and Content-Length"
 			    " mismatch", h2->rxf_stream);
-			r2->error = H2SE_PROTOCOL_ERROR;
-			if (r2->cond)
-				PTOK(pthread_cond_signal(r2->cond));
-			Lck_Unlock(&h2->sess->mtx);
 			return (H2SE_PROTOCOL_ERROR);
 		}
 	}
 
 	/* Check and charge connection window. The entire frame including
 	 * padding (h2->rxf_len) counts towards the window. */
-	if (h2->rxf_len > h2->req0->rx_window) {
+	if (h2->rxf_len > h2->rx_window) {
 		VSLb(h2->vsl, SLT_SessError,
 		    "H2: stream %u: Exceeded connection receive window",
 		    h2->rxf_stream);
-		r2->error = H2CE_FLOW_CONTROL_ERROR;
-		if (r2->cond)
-			PTOK(pthread_cond_signal(r2->cond));
-		Lck_Unlock(&h2->sess->mtx);
 		return (H2CE_FLOW_CONTROL_ERROR);
 	}
-	h2->req0->rx_window -= h2->rxf_len;
-	if (h2->req0->rx_window < cache_param->h2_rx_window_low_water) {
-		h2->req0->rx_window += cache_param->h2_rx_window_increment;
-		vbe32enc(buf, cache_param->h2_rx_window_increment);
-		Lck_Unlock(&h2->sess->mtx);
-		H2_Send_Get(wrk, h2, h2->req0);
-		H2_Send_Frame(wrk, h2, H2_F_WINDOW_UPDATE, 0, 4, 0, buf);
-		H2_Send_Rel(h2, h2->req0);
-		Lck_Lock(&h2->sess->mtx);
+	h2->rx_window -= h2->rxf_len;
+	if (h2->rx_window < cache_param->h2_rx_window_low_water) {
+		/* Running low, increase the window */
+		l = cache_param->h2_rx_window_increment;
+		assert(l < (1UL << 31));
+		h2->rx_window += l;
+		H2_Send_WINDOW_UPDATE(h2, 0, l);
 	}
 
 	/* Check stream window. The entire frame including padding
@@ -138,10 +163,6 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: stream %u: Exceeded stream receive window",
 		    h2->rxf_stream);
-		r2->error = H2SE_FLOW_CONTROL_ERROR;
-		if (r2->cond)
-			PTOK(pthread_cond_signal(r2->cond));
-		Lck_Unlock(&h2->sess->mtx);
 		return (H2SE_FLOW_CONTROL_ERROR);
 	}
 
@@ -158,24 +179,19 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
 		if (r2->rx_window == 0 &&
 		    (r2->rxbuf == NULL || r2->rxbuf->tail == r2->rxbuf->head)) {
+			/* XXX: bogosity++? */
 			if (r2->rxbuf)
 				l = r2->rxbuf->size;
 			else
 				l = h2->local_settings.initial_window_size;
 			r2->rx_window += l;
-			Lck_Unlock(&h2->sess->mtx);
-			vbe32enc(buf, l);
-			H2_Send_Get(wrk, h2, h2->req0);
-			H2_Send_Frame(wrk, h2, H2_F_WINDOW_UPDATE, 0, 4,
-			    r2->stream, buf);
-			H2_Send_Rel(h2, h2->req0);
-			Lck_Lock(&h2->sess->mtx);
+			H2_Send_WINDOW_UPDATE(h2, r2->stream, l);
 		}
 
 		if (h2->rxf_flags & H2FF_END_STREAM)
 			r2->state = H2_S_CLOS_REM;
-		if (r2->cond)
-			PTOK(pthread_cond_signal(r2->cond));
+		Lck_Lock(&h2->sess->mtx);
+		h2_reqbody_kick(r2);
 		Lck_Unlock(&h2->sess->mtx);
 		return (0);
 	}
@@ -187,8 +203,6 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		struct stv_buffer *stvbuf;
 		struct h2_rxbuf *rxbuf;
 
-		Lck_Unlock(&h2->sess->mtx);
-
 		bufsize = h2->local_settings.initial_window_size;
 		if (bufsize < r2->rx_window) {
 			/* This will not happen because we do not have any
@@ -199,23 +213,19 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		}
 		assert(bufsize > 0);
 		if ((h2->rxf_flags & H2FF_END_STREAM) &&
-		    bufsize > len)
+		    bufsize > len) {
 			/* Cap the buffer size when we know this is the
 			 * single data frame. */
 			bufsize = len;
+		}
 		CHECK_OBJ_NOTNULL(stv_h2_rxbuf, STEVEDORE_MAGIC);
 		stvbuf = STV_AllocBuf(wrk, stv_h2_rxbuf,
 		    bufsize + sizeof *rxbuf);
 		if (stvbuf == NULL) {
-			Lck_Lock(&h2->sess->mtx);
 			VSLb(h2->vsl, SLT_Debug,
 			    "H2: stream %u: Failed to allocate request body"
 			    " buffer",
 			    h2->rxf_stream);
-			r2->error = H2SE_INTERNAL_ERROR;
-			if (r2->cond)
-				PTOK(pthread_cond_signal(r2->cond));
-			Lck_Unlock(&h2->sess->mtx);
 			return (H2SE_INTERNAL_ERROR);
 		}
 		rxbuf = STV_GetBufPtr(stvbuf, &bstest);
@@ -227,8 +237,6 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		rxbuf->stvbuf = stvbuf;
 
 		r2->rxbuf = rxbuf;
-
-		Lck_Lock(&h2->sess->mtx);
 	}
 
 	CHECK_OBJ_NOTNULL(r2->rxbuf, H2_RXBUF_MAGIC);
@@ -237,8 +245,6 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	assert(l <= r2->rxbuf->size);
 	l = r2->rxbuf->size - l;
 	assert(len <= l); /* Stream window handling ensures this */
-
-	Lck_Unlock(&h2->sess->mtx);
 
 	l = len;
 	head = r2->rxbuf->head;
@@ -254,7 +260,6 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	} while (l > 0);
 
 	Lck_Lock(&h2->sess->mtx);
-
 	/* Charge stream window. The entire frame including padding
 	 * (h2->rxf_len) counts towards the window. The used padding
 	 * bytes will be included in the next connection window update
@@ -265,8 +270,7 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	assert(r2->rxbuf->tail <= r2->rxbuf->head);
 	if (h2->rxf_flags & H2FF_END_STREAM)
 		r2->state = H2_S_CLOS_REM;
-	if (r2->cond)
-		PTOK(pthread_cond_signal(r2->cond));
+	h2_reqbody_kick(r2);
 	Lck_Unlock(&h2->sess->mtx);
 
 	return (0);
@@ -278,16 +282,18 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	struct h2_req *r2;
 	struct h2_sess *h2;
 	enum vfp_status retval;
+	h2_error h2e = NULL;
 	ssize_t l, l2;
 	uint64_t tail;
 	uint8_t *dst;
-	char buf[4];
-	int i;
+	int wait_error = 0;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(r2, vfe->priv1, H2_REQ_MAGIC);
 	h2 = r2->h2sess;
+
+	ASSERT_H2_REQ(h2);
 
 	AN(ptr);
 	AN(lp);
@@ -295,7 +301,6 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 
 	Lck_Lock(&h2->sess->mtx);
 
-	r2->cond = &vc->wrk->cond;
 	while (1) {
 		CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
 		if (r2->rxbuf) {
@@ -304,8 +309,9 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 		} else
 			l = 0;
 
-		if (h2->error != NULL || r2->error != NULL)
-			retval = VFP_ERROR;
+		h2e = h2_errcheck(r2);
+		if (h2e != NULL)
+			break;
 		else if (r2->state >= H2_S_CLOS_REM && l <= *lp)
 			retval = VFP_END;
 		else {
@@ -317,16 +323,18 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 		if (retval != VFP_OK || l > 0)
 			break;
 
-		i = Lck_CondWaitTimeout(r2->cond, &h2->sess->mtx,
-		    SESS_TMO(h2->sess, timeout_idle));
-		if (i == ETIMEDOUT) {
-			retval = VFP_ERROR;
+		wait_error = h2_reqbody_wait(r2,
+		    VTIM_real() + SESS_TMO(h2->sess, timeout_idle));
+		if (wait_error == ETIMEDOUT)
 			break;
-		}
 	}
-	r2->cond = NULL;
 
 	Lck_Unlock(&h2->sess->mtx);
+
+	if (h2e != NULL)
+		retval = VFP_Error(vc, "H2: Request body error (%s)", h2e->txt);
+	else if (wait_error == ETIMEDOUT)
+		retval = VFP_Error(vc, "H2: Request body timed out");
 
 	if (l == 0 || retval == VFP_ERROR) {
 		*lp = 0;
@@ -355,27 +363,12 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 
 	if (r2->rx_window < cache_param->h2_rx_window_low_water &&
 	    r2->state < H2_S_CLOS_REM) {
-		/* l is free buffer space */
-		/* l2 is calculated window increment */
-		l = r2->rxbuf->size - (r2->rxbuf->head - r2->rxbuf->tail);
-		assert(r2->rx_window <= l);
-		l2 = cache_param->h2_rx_window_increment;
-		if (r2->rx_window + l2 > l)
-			l2 = l - r2->rx_window;
-		r2->rx_window += l2;
-	} else
-		l2 = 0;
-
-	Lck_Unlock(&h2->sess->mtx);
-
-	if (l2 > 0) {
-		vbe32enc(buf, l2);
-		H2_Send_Get(vc->wrk, h2, r2);
-		H2_Send_Frame(vc->wrk, h2, H2_F_WINDOW_UPDATE, 0, 4,
-		    r2->stream, buf);
-		H2_Send_Rel(h2, r2);
+		/* Kick the session thread so it can hand out an extended
+		 * window to the peer. */
+		h2_attention(h2);
 	}
 
+	Lck_Unlock(&h2->sess->mtx);
 	return (retval);
 }
 
@@ -383,45 +376,35 @@ static void
 h2_vfp_body_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct h2_req *r2;
-	struct h2_sess *h2;
 	struct stv_buffer *stvbuf = NULL;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(r2, vfe->priv1, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
-	h2 = r2->h2sess;
 
-	if (vc->failed) {
-		CHECK_OBJ_NOTNULL(r2->req->wrk, WORKER_MAGIC);
-		H2_Send_Get(r2->req->wrk, h2, r2);
-		H2_Send_RST(r2->req->wrk, h2, r2, r2->stream,
-		    H2SE_REFUSED_STREAM);
-		H2_Send_Rel(h2, r2);
-		Lck_Lock(&h2->sess->mtx);
-		r2->error = H2SE_REFUSED_STREAM;
-		Lck_Unlock(&h2->sess->mtx);
-	}
+	ASSERT_H2_REQ(r2->h2sess);
 
+	if (vc->failed)
+		h2_async_error(r2, H2SE_REFUSED_STREAM);
+
+	CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
 	if (r2->state >= H2_S_CLOS_REM && r2->rxbuf != NULL) {
-		Lck_Lock(&h2->sess->mtx);
-		CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
-		if (r2->rxbuf != NULL) {
-			stvbuf = r2->rxbuf->stvbuf;
-			r2->rxbuf = NULL;
-		}
-		Lck_Unlock(&h2->sess->mtx);
-		if (stvbuf != NULL) {
-			STV_FreeBuf(vc->wrk, &stvbuf);
-			AZ(stvbuf);
-		}
+		/* Free the buffer. This is safe without any locking
+		 * because the session thread will only free the buffer as
+		 * part of h2_del_req(), which won't be run as long as we
+		 * are scheduled. */
+		AN(r2->scheduled);
+		stvbuf = r2->rxbuf->stvbuf;
+		r2->rxbuf = NULL;
+		STV_FreeBuf(vc->wrk, &stvbuf);
 	}
 }
 
 static const struct vfp h2_body = {
 	.name = "H2_BODY",
 	.pull = h2_vfp_body,
-	.fini = h2_vfp_body_fini
+	.fini = h2_vfp_body_fini,
 };
 
 void v_matchproto_(vtr_req_body_t)

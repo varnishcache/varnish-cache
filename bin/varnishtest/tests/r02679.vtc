@@ -22,7 +22,9 @@ client c1 {
 	stream 1 {
 		txreq -req POST -hdr "content-length" "31469" -nostrend
 		txdata -datalen 1550 -nostrend
+		rxwinup
 		txdata -datalen 16000 -nostrend
+		rxwinup
 		txdata -datalen 13919
 		rxresp
 		expect resp.status == 200

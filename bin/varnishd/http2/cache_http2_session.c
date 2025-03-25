@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <poll.h>
 #include <stdio.h>
 
 #include "cache/cache_varnishd.h"
@@ -87,30 +88,6 @@ h2_local_settings(struct h2_settings *h2s)
 	h2s->max_header_list_size = cache_param->http_req_size;
 }
 
-void
-H2S_Lock_VSLb(const struct h2_sess *h2, enum VSL_tag_e tag, const char *fmt, ...)
-{
-	va_list ap;
-	int held = 0;
-
-	AN(h2);
-
-	if (VSL_tag_is_masked(tag))
-		return;
-
-	if (h2->highest_stream > 0) {
-		held = 1;
-		Lck_Lock(&h2->sess->mtx);
-	}
-
-	va_start(ap, fmt);
-	VSLbv(h2->vsl, tag, fmt, ap);
-	va_end(ap);
-
-	if (held)
-		Lck_Unlock(&h2->sess->mtx);
-}
-
 /**********************************************************************
  * The h2_sess struct needs many of the same things as a request,
  * WS, VSL, HTC &c,  but rather than implement all that stuff over, we
@@ -145,13 +122,14 @@ h2_init_sess(struct sess *sp, struct h2_sess *h2s, struct req **psrq,
 	h2->htc->rfd = &sp->fd;
 	h2->sess = sp;
 	h2->rxthr = pthread_self();
-	PTOK(pthread_cond_init(h2->winupd_cond, NULL));
 	VTAILQ_INIT(&h2->streams);
-	VTAILQ_INIT(&h2->txqueue);
 	h2_local_settings(&h2->local_settings);
 	h2->remote_settings = H2_proto_settings;
 	h2->decode = decode;
 	VEFD_INIT(h2->efd);
+
+	h2->tx_window = h2->remote_settings.initial_window_size;
+	h2->rx_window = h2->local_settings.initial_window_size;
 
 	h2->rapid_reset = cache_param->h2_rapid_reset;
 	h2->rapid_reset_limit = cache_param->h2_rapid_reset_limit;
@@ -162,6 +140,19 @@ h2_init_sess(struct sess *sp, struct h2_sess *h2s, struct req **psrq,
 	AZ(isnan(h2->last_rst));
 
 	AZ(VHT_Init(h2->dectbl, h2->local_settings.header_table_size));
+
+	/* Allocate a scratch space to use for staging small outgoing
+	 * frames. */
+	h2->tx_s_start = WS_Alloc(h2->ws, H2_TX_BUFSIZE);
+	AN(h2->tx_s_start);
+	h2->tx_s_end = h2->tx_s_start + H2_TX_BUFSIZE;
+	h2->tx_s_head = h2->tx_s_start;
+	h2->tx_s_mark = h2->tx_s_start;
+
+	/* Init send queue */
+	VTAILQ_INIT(&h2->tx_l_queue);
+
+	h2->htc->pipeline_snap = WS_Snapshot(h2->ws);
 
 	*up = (uintptr_t)h2;
 
@@ -180,7 +171,6 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, stream_close_t reason)
 	AN(reason);
 
 	VHT_Fini(h2->dectbl);
-	PTOK(pthread_cond_destroy(h2->winupd_cond));
 	if (h2->efd->poll_fd >= 0)
 		VEFD_Close(h2->efd);
 	TAKE_OBJ_NOTNULL(req, &h2->srq, REQ_MAGIC);
@@ -374,12 +364,11 @@ h2_new_session(struct worker *wrk, void *arg)
 	struct sess *sp;
 	struct h2_sess h2s;
 	struct h2_sess *h2;
-	struct h2_req *r2, *r22;
 	struct h2_req *r2_ou = NULL;
-	int again;
 	uint16_t marker;
 	uint8_t settings[48];
 	struct h2h_decode decode;
+	stream_close_t reason;
 	size_t l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -412,7 +401,8 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	h2 = h2_init_sess(sp, &h2s, &srq, &decode);
 	AZ(srq);
-	h2->req0 = h2_new_req(h2, 0, NULL);
+
+	CHECK_OBJ_NOTNULL(h2->htc, HTTP_CONN_MAGIC);
 	AZ(h2->htc->priv);
 	h2->htc->priv = h2;
 
@@ -420,8 +410,6 @@ h2_new_session(struct worker *wrk, void *arg)
 	 * threads. */
 	if (VEFD_Open(h2->efd) < 0) {
 		VSLb(h2->vsl, SLT_Error, "H2: Failed to create eventfd");
-		assert(h2->refcnt == 1);
-		h2_del_req(wrk, &h2->req0);
 		h2_del_sess(wrk, h2, SC_OVERLOAD);
 		wrk->vsl = NULL;
 		return;
@@ -439,8 +427,6 @@ h2_new_session(struct worker *wrk, void *arg)
 		r2_ou = h2_ou_session(wrk, h2, &req);
 		AZ(req);
 		if (r2_ou == NULL) {
-			assert(h2->refcnt == 1);
-			h2_del_req(wrk, &h2->req0);
 			h2_del_sess(wrk, h2, SC_RX_JUNK);
 			wrk->vsl = NULL;
 			return;
@@ -448,30 +434,24 @@ h2_new_session(struct worker *wrk, void *arg)
 
 		CHECK_OBJ_NOTNULL(r2_ou, H2_REQ_MAGIC);
 		AZ(r2_ou->scheduled);
-	}
+	} else
+		VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
 
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
+
+	/* Initialize the workspace rx buffer. Some read overshoot data
+	 * may be present as pipeline data. This sequence of calls
+	 * basically just resets the WS, memmove()s the pipeline data
+	 * first, and sets htc->rxbuf_[be] to the pipeline data. */
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
 	HTC_RxInit(h2->htc, h2->ws);
-	AN(WS_Reservation(h2->ws));
-	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
+	WS_ReleaseP(h2->htc->ws, h2->htc->rxbuf_e);
 
 	THR_SetRequest(h2->srq);
-	AN(WS_Reservation(h2->ws));
 
 	/* Send our settings */
 	l = h2_enc_settings(&h2->local_settings, settings, sizeof (settings));
-	AN(WS_Reservation(h2->ws));
-	H2_Send_Get(wrk, h2, h2->req0);
-	AN(WS_Reservation(h2->ws));
-	H2_Send_Frame(wrk, h2,
-	    H2_F_SETTINGS, H2FF_NONE, l, 0, settings);
-	AN(WS_Reservation(h2->ws));
-	H2_Send_Rel(h2, h2->req0);
-	AN(WS_Reservation(h2->ws));
-
-	/* and off we go... */
-	h2->cond = &wrk->cond;
+	H2_Send_SETTINGS(h2, H2FF_NONE, l, settings);
 
 	if (r2_ou != NULL) {
 		/* Schedule the opportunistic request received over HTTP/1
@@ -488,57 +468,23 @@ h2_new_session(struct worker *wrk, void *arg)
 			 * socket. */
 			r2_ou->scheduled = 0;
 			VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
-			h2_kill_req(wrk, h2, r2_ou, H2SE_ENHANCE_YOUR_CALM);
+			h2_kill_req(wrk, h2, &r2_ou, H2SE_ENHANCE_YOUR_CALM);
 			h2->error = H2CE_ENHANCE_YOUR_CALM;
-			h2_tx_goaway(wrk, h2, h2->error);
 		}
 		r2_ou = NULL;
 	}
 
-	while (h2_rxframe(wrk, h2)) {
-		HTC_RxInit(h2->htc, h2->ws);
-		if (WS_Overflowed(h2->ws)) {
-			H2S_Lock_VSLb(h2, SLT_SessError, "H2: Empty Rx Workspace");
-			h2->error = H2CE_INTERNAL_ERROR;
-			break;
-		}
-		AN(WS_Reservation(h2->ws));
-	}
+	/* and off we go... */
+	h2_run(wrk, h2);
 
 	AN(h2->error);
-
-	/* Delete all idle streams */
-	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
-	VTAILQ_FOREACH(r2, &h2->streams, list) {
-		if (r2->error == 0)
-			r2->error = h2->error;
-		if (r2->cond != NULL)
-			PTOK(pthread_cond_signal(r2->cond));
+	reason = h2->error->reason;
+	if (reason == SC_NULL) {
+		/* XXX: It's messy that some h2_errors have reasosn
+		 * SC_NULL, which is just WRONG() wrt to SES_Delete(). */
+		reason = SC_REM_CLOSE;
 	}
-	PTOK(pthread_cond_broadcast(h2->winupd_cond));
-	Lck_Unlock(&h2->sess->mtx);
-	while (1) {
-		again = 0;
-		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
-			if (r2 != h2->req0) {
-				h2_kill_req(wrk, h2, r2, h2->error);
-				again++;
-			}
-		}
-		if (!again)
-			break;
-		Lck_Lock(&h2->sess->mtx);
-		VTAILQ_FOREACH(r2, &h2->streams, list)
-			VSLb(h2->vsl, SLT_Debug, "ST %u %d",
-			    r2->stream, r2->state);
-		(void)Lck_CondWaitTimeout(h2->cond, &h2->sess->mtx, .1);
-		Lck_Unlock(&h2->sess->mtx);
-	}
-	h2->cond = NULL;
-	assert(h2->refcnt == 1);
-	h2_del_req(wrk, &h2->req0);
-	h2_del_sess(wrk, h2, h2->error->reason);
+	h2_del_sess(wrk, h2, reason);
 	wrk->vsl = NULL;
 }
 

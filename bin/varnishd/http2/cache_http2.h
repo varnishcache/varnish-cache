@@ -37,6 +37,8 @@ struct h2_frame_s;
 #include "hpack/vhp.h"
 #include "vefd.h"
 
+#define H2_TX_BUFSIZE                  1024
+
 /**********************************************************************/
 
 struct h2_error_s {
@@ -141,45 +143,42 @@ struct h2_req {
 	int				counted;
 	struct h2_sess			*h2sess;
 	struct req			*req;
-	double				t_send;
-	double				t_winupd;
-	pthread_cond_t			*cond;
+	vtim_real			t_send;
+	vtim_real			t_win_low;
 	VTAILQ_ENTRY(h2_req)		list;
 
 	int64_t				tx_window;
 	int64_t				rx_window;
 
-	/* Where to wake this stream up */
-	struct worker			*wrk;
-
 	struct h2_rxbuf			*rxbuf;
+	struct h2_reqbody_waiter        *reqbody_waiter;
+	h2_error                        async_error;
 
-	VTAILQ_ENTRY(h2_req)		tx_list;
 	h2_error			error;
 };
 
 VTAILQ_HEAD(h2_req_s, h2_req);
+
+struct h2_send_large;
+VTAILQ_HEAD(h2_send_large_s, h2_send_large);
 
 struct h2_sess {
 	unsigned			magic;
 #define H2_SESS_MAGIC			0xa16f7e4b
 
 	pthread_t			rxthr;
-	pthread_cond_t			*cond;
-	pthread_cond_t			winupd_cond[1];
 
 	struct sess			*sess;
 	int				refcnt;
 	int				open_streams;
-	int				winup_streams;
+	int				win_low_streams;
 	uint32_t			highest_stream;
-	int				goaway;
 	int				bogosity;
-	int				do_sweep;
 
 	struct vefd                     efd[1];
 
-	struct h2_req			*req0;
+	int64_t				tx_window;
+	int64_t				rx_window;
 
 	struct h2_req_s			streams;
 
@@ -190,6 +189,21 @@ struct h2_sess {
 	struct h2h_decode		*decode;
 	struct vht_table		dectbl[1];
 
+	vtim_real			deadline;
+
+	struct iovec			tx_vec[2]; /* Must be 2 wide */
+	unsigned			tx_nvec;
+
+	uint8_t				*tx_s_start;
+	uint8_t				*tx_s_end;
+	uint8_t				*tx_s_head;
+	uint8_t				*tx_s_mark;
+
+	struct h2_send_large_s		tx_l_queue;
+	struct h2_send_large		*tx_l_current;
+	uint8_t				tx_l_hdrbuf[9];
+	char				tx_l_stuck;
+
 	unsigned			rxf_len;
 	unsigned			rxf_type;
 	unsigned			rxf_flags;
@@ -199,11 +213,8 @@ struct h2_sess {
 	struct h2_settings		remote_settings;
 	struct h2_settings		local_settings;
 
-	struct req			*new_req;
+	struct h2_req			*hpack_lock;
 	vtim_real			t1;	// t_first for new_req
-	uint32_t			goaway_last_stream;
-
-	VTAILQ_HEAD(,h2_req)		txqueue;
 
 	h2_error			error;
 
@@ -249,7 +260,6 @@ struct h2h_decode {
 	unsigned			has_scheme:1;
 	h2_error			error;
 	enum vhd_ret_e			vhd_ret;
-	struct ws			*ws;
 	char				*out;
 	int64_t				limit;
 	size_t				out_l;
@@ -258,34 +268,34 @@ struct h2h_decode {
 	struct vhd_decode		vhd[1];
 };
 
-void h2h_decode_hdr_init(const struct h2_sess *h2);
-h2_error h2h_decode_hdr_fini(const struct h2_sess *h2);
+void h2h_decode_hdr_init(struct h2_sess *h2, struct h2_req *);
+h2_error h2h_decode_hdr_fini(struct h2_sess *h2);
 h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
     size_t len);
 
 /* cache_http2_send.c */
-void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);
-void H2_Send_Rel(struct h2_sess *, const struct h2_req *);
-
-void H2_Send_Frame(struct worker *, struct h2_sess *,
-    h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
-    const void *);
-
-void H2_Send_RST(struct worker *wrk, struct h2_sess *h2,
-    const struct h2_req *r2, uint32_t stream, h2_error h2e);
-
-void H2_Send(struct worker *, struct h2_req *, h2_frame type, uint8_t flags,
-    uint32_t len, const void *, uint64_t *acct);
+int H2_Send_RST(struct h2_sess *h2, uint32_t stream, h2_error h2e);
+int H2_Send_SETTINGS(struct h2_sess *h2, uint8_t flags, ssize_t len,
+    const uint8_t *buf);
+int H2_Send_PING(struct h2_sess *h2, uint8_t flags, uint64_t data);
+int H2_Send_GOAWAY(struct h2_sess *h2, uint32_t last_stream_id, h2_error h2e);
+int H2_Send_WINDOW_UPDATE(struct h2_sess *h2, uint32_t stream, uint32_t incr);
+int H2_Send(struct vsl_log *vsl, struct h2_req *r2, h2_frame ftyp,
+    uint8_t flags, uint32_t len, const void *ptr);
+ssize_t H2_Send_TxStuff(struct h2_sess *h2);
+int H2_Send_Something(struct h2_sess *h2);
+int H2_Send_Pending(struct h2_sess *h2);
+void H2_Send_Shutdown(struct h2_sess *h2);
 
 /* cache_http2_proto.c */
+const char *h2_framename(int frame);
 h2_error h2_errcheck(const struct h2_req *r2);
+void h2_async_error(struct h2_req *r2, h2_error h2e);
+void h2_attention(struct h2_sess *h2);
+void h2_run(struct worker *wrk, struct h2_sess *h2);
 struct h2_req * h2_new_req(struct h2_sess *, unsigned stream, struct req **);
-h2_error h2_stream_tmo(struct h2_sess *, const struct h2_req *, vtim_real);
-void h2_del_req(struct worker *, struct h2_req **);
-void h2_kill_req(struct worker *, struct h2_sess *, struct h2_req *, h2_error);
-int h2_rxframe(struct worker *, struct h2_sess *);
+void h2_kill_req(struct worker *, struct h2_sess *, struct h2_req **, h2_error);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
-void h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e);
 task_func_t h2_do_req;
 #ifdef TRANSPORT_MAGIC
 vtr_req_fail_f h2_req_fail;
@@ -294,7 +304,4 @@ vtr_req_fail_f h2_req_fail;
 /* cache_http2_reqbody.c */
 h2_error h2_reqbody_data(struct worker *, struct h2_sess *, struct h2_req *);
 void h2_reqbody(struct req *);
-
-/* cache_http2_session.c */
-void
-H2S_Lock_VSLb(const struct h2_sess *, enum VSL_tag_e, const char *, ...);
+void h2_reqbody_kick(struct h2_req *r2);
