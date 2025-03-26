@@ -102,7 +102,39 @@ H2_SETTING(					// rfc7540,l,2159,2167
 	0xffffffff,
 	0
 )
-#endif
+
+H2_SETTING(					// rfc8441
+	ENABLE_CONNECT_PROTOCOL,
+	enable_connect_protocol,
+	0x8,
+	0,
+	0,
+	1,
+	H2CE_PROTOCOL_ERROR
+)
+
+H2_SETTING(					// rfc9218
+	NO_RFC7540_PRIORITIES,
+	no_rfc7540_priorities,
+	0x9,
+	0,
+	0,
+	1,
+	H2CE_PROTOCOL_ERROR
+)
+
+H2_SETTING(					// [MS-HTTP2E]
+						// [Gabriel_Montenegro]
+	TLS_RENEG_PERMITTED,
+	tls_reneg_permitted,
+	0x10,
+	0,
+	0,
+	3,
+	H2CE_PROTOCOL_ERROR
+)
+#endif /* !H2_SETTINGS_PARAM_ONLY */
+
 #undef H2_SETTING
 
 /*lint -restore */
