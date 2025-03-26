@@ -629,7 +629,7 @@ parse_settings(const struct stream *s, struct frame *f)
 			buf = "unknown";
 		u += 4;
 
-		if (t == 1) {
+		if (t == SETTINGS_HEADER_TABLE_SIZE) {
 			r = HPK_ResizeTbl(s->hp->encctx, v);
 			assert(r == hpk_done);
 		}
@@ -2460,27 +2460,46 @@ cmd_rxsettings(CMD_ARGS)
 		hp->h2_win_peer->init = val;
 	}
 }
+/* SECTION: stream.spec.prio_rxprio rxprio
+ *
+ * Receive a PRIORITY frame.
+ */
+static void
+cmd_rxprio (CMD_ARGS)
+{
+	struct stream *s;
+	(void)av;
+	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
+        if (s->hp->no_rfc7540_priorities) {
+		vtc_log(vl, 4, "skipping rxprio: no_rfc7540_priorities is set");
+		return;
+	}
+	s->frame = rxstuff(s);
+	if (s->frame != NULL && s->frame->type != TYPE_PRIORITY) {
+		vtc_fatal(vl,
+		    "Wrong frame type %s (%d) wanted %s",
+		    s->frame->type < TYPE_MAX ?
+		    h2_types[s->frame->type] : "?",
+		    s->frame->type, "PRIORITY");
+	}
+}
 
 #define RXFUNC(lctype, upctype) \
 	static void \
-	cmd_rx ## lctype(CMD_ARGS) { \
+	cmd_rx ## lctype(CMD_ARGS) \
+	{ \
 		struct stream *s; \
 		(void)av; \
 		CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC); \
 		s->frame = rxstuff(s); \
-		if (s->frame != NULL && s->frame->type != TYPE_ ## upctype) \
+		if (s->frame != NULL && s->frame->type != TYPE_ ## upctype) { \
 			vtc_fatal(vl, \
 			    "Wrong frame type %s (%d) wanted %s", \
 			    s->frame->type < TYPE_MAX ? \
 			    h2_types[s->frame->type] : "?", \
 			    s->frame->type, #upctype); \
+		} \
 	}
-
-/* SECTION: stream.spec.prio_rxprio rxprio
- *
- * Receive a PRIORITY frame.
- */
-RXFUNC(prio,	PRIORITY)
 
 /* SECTION: stream.spec.reset_rxrst rxrst
  *
@@ -2857,7 +2876,7 @@ cmd_stream(CMD_ARGS)
 }
 
 void
-b64_settings(const struct http *hp, const char *s)
+b64_settings(struct http *hp, const char *s)
 {
 	uint16_t i;
 	uint64_t v, vv;
@@ -2891,7 +2910,10 @@ b64_settings(const struct http *hp, const char *s)
 		else
 			buf = "unknown";
 
-		if (v == 1) {
+		if (i == SETTINGS_NO_RFC7540_PRIORITIES) {
+			hp->no_rfc7540_priorities = v;
+		}
+		if (i == SETTINGS_HEADER_TABLE_SIZE) {
 			enum hpk_result hrs;
 			if (hp->sfd) {
 				AN(hp->encctx);

@@ -148,7 +148,7 @@ struct http;
 void cmd_stream(CMD_ARGS);
 void start_h2(struct http *hp);
 void stop_h2(struct http *hp);
-void b64_settings(const struct http *hp, const char *s);
+void b64_settings(struct http *hp, const char *s);
 
 /* vtc_gzip.c */
 void vtc_gunzip(struct http *, char *, long *);

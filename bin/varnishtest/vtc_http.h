@@ -83,6 +83,7 @@ struct http {
 	/* H/2 */
 	unsigned		h2;
 	int			wf;
+	int			no_rfc7540_priorities;
 
 	pthread_t		tp;
 	VTAILQ_HEAD(, stream)   streams;
