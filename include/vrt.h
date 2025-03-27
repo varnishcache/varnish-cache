@@ -61,6 +61,7 @@
  *	typedef hdr_t added
  *	struct gethdr_s.what changed to hdr_t
  *	VRT_VSC_Alloc() renamed to VRT_VSC_Allocv()
+ *	new VRT_VSC_Alloc() added
  * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
@@ -855,6 +856,8 @@ void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **);
 #ifdef va_start	// XXX: hackish
 void *VRT_VSC_Allocv(struct vsmw_cluster *, struct vsc_seg **,
     const char *, size_t, const unsigned char *, size_t, const char *, va_list);
+void *VRT_VSC_Alloc(struct vsmw_cluster *, struct vsc_seg **,
+    const char *, size_t, const unsigned char *, size_t, const char *, ...);
 #endif
 void VRT_VSC_Destroy(const char *, struct vsc_seg *);
 void VRT_VSC_Hide(const struct vsc_seg *);
