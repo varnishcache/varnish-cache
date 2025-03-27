@@ -183,6 +183,20 @@ VRT_VSC_Allocv(struct vsmw_cluster *vc, struct vsc_seg **sg,
 	return (vsg->ptr);
 }
 
+void *
+VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
+    const char *nm, size_t sd,
+    const unsigned char *jp, size_t sj, const char *fmt, ...)
+{
+	va_list ap;
+	void *retval;
+
+	va_start(ap, fmt);
+	retval = VRT_VSC_Allocv(vc, sg, nm, sd, jp, sj, fmt, ap);
+	va_end(ap);
+	return(retval);
+}
+
 void
 VRT_VSC_Destroy(const char *nm, struct vsc_seg *vsg)
 {
