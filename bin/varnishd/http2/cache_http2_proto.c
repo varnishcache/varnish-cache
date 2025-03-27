@@ -308,7 +308,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 
-	if (h2->rxf_len != 8) { 			// rfc7540,l,2364,2366
+	if (h2->rxf_len != 8) {				// rfc7540,l,2364,2366
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx ping with (len != 8)");
 		return (H2CE_FRAME_SIZE_ERROR);
 	}
@@ -318,8 +318,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2SE_PROTOCOL_ERROR);
 	}
 	H2_Send_Get(wrk, h2, r2);
-	H2_Send_Frame(wrk, h2,
-	    H2_F_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
+	H2_Send_Frame(wrk, h2, H2_F_PING, H2FF_ACK, 8, 0, h2->rxf_data);
 	H2_Send_Rel(h2, r2);
 	return (0);
 }
@@ -585,7 +584,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	assert(r2 == h2->req0);
 	AZ(h2->rxf_stream);
 
-	if (h2->rxf_flags == H2FF_SETTINGS_ACK) {
+	if (h2->rxf_flags == H2FF_ACK) {
 		if (h2->rxf_len > 0) {			// rfc7540,l,2047,2049
 			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx settings ack with "
 			    "(len > 0)");
@@ -606,7 +605,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		}
 		H2_Send_Get(wrk, h2, r2);
 		H2_Send_Frame(wrk, h2,
-		    H2_F_SETTINGS, H2FF_SETTINGS_ACK, 0, 0, NULL);
+		    H2_F_SETTINGS, H2FF_ACK, 0, 0, NULL);
 		H2_Send_Rel(h2, r2);
 	}
 	return (0);
@@ -793,7 +792,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	p = h2->rxf_data;
 	l = h2->rxf_len;
-	if (h2->rxf_flags & H2FF_HEADERS_PADDED) {
+	if (h2->rxf_flags & H2FF_PADDED) {
 		if (*p + 1 > l) {
 			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers with pad length > frame len");
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1884,1887
@@ -801,7 +800,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		l -= 1 + *p;
 		p += 1;
 	}
-	if (h2->rxf_flags & H2FF_HEADERS_PRIORITY) {
+	if (h2->rxf_flags & H2FF_PRIORITY) {
 		if (l < 5) {
 			H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers with incorrect "
 			    "priority data");
@@ -819,10 +818,10 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (h2e);
 	}
 
-	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
+	if (h2->rxf_flags & H2FF_END_STREAM)
 		req->req_body_status = BS_NONE;
 
-	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
+	if (h2->rxf_flags & H2FF_END_HEADERS)
 		return (h2_end_headers(wrk, h2, req, r2));
 	return (0);
 }
@@ -854,7 +853,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		h2_del_req(wrk, &r2);
 		return (h2e);
 	}
-	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
+	if (h2->rxf_flags & H2FF_END_HEADERS)
 		return (h2_end_headers(wrk, h2, req, r2));
 	return (0);
 }
@@ -899,7 +898,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	/* Check padding if present */
 	src = h2->rxf_data;
 	len = h2->rxf_len;
-	if (h2->rxf_flags & H2FF_DATA_PADDED) {
+	if (h2->rxf_flags & H2FF_PADDED) {
 		if (*src >= len) {
 			VSLb(h2->vsl, SLT_SessError,
 			    "H2: stream %u: Padding larger than frame length",
@@ -922,7 +921,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			l = 0;
 		l += len;
 		if (l > r2->req->htc->content_length ||
-		    ((h2->rxf_flags & H2FF_DATA_END_STREAM) &&
+		    ((h2->rxf_flags & H2FF_END_STREAM) &&
 		     l != r2->req->htc->content_length)) {
 			VSLb(h2->vsl, SLT_Debug,
 			    "H2: stream %u: Received data and Content-Length"
@@ -998,7 +997,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			Lck_Lock(&h2->sess->mtx);
 		}
 
-		if (h2->rxf_flags & H2FF_DATA_END_STREAM)
+		if (h2->rxf_flags & H2FF_END_STREAM)
 			r2->state = H2_S_CLOS_REM;
 		if (r2->cond)
 			PTOK(pthread_cond_signal(r2->cond));
@@ -1024,7 +1023,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			bufsize = r2->r_window;
 		}
 		assert(bufsize > 0);
-		if ((h2->rxf_flags & H2FF_DATA_END_STREAM) &&
+		if ((h2->rxf_flags & H2FF_END_STREAM) &&
 		    bufsize > len)
 			/* Cap the buffer size when we know this is the
 			 * single data frame. */
@@ -1089,7 +1088,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	r2->r_window -= h2->rxf_len;
 	r2->rxbuf->head += len;
 	assert(r2->rxbuf->tail <= r2->rxbuf->head);
-	if (h2->rxf_flags & H2FF_DATA_END_STREAM)
+	if (h2->rxf_flags & H2FF_END_STREAM)
 		r2->state = H2_S_CLOS_REM;
 	if (r2->cond)
 		PTOK(pthread_cond_signal(r2->cond));
