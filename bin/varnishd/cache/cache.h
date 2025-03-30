@@ -673,7 +673,7 @@ int http_IsFiltered(const struct http *hp, unsigned u, unsigned how);
 #define HTTPH_A_PASS		(1 << 3)	/* Response (b->o) for pass */
 #define HTTPH_C_SPECIFIC	(1 << 4)	/* Connection-specific */
 
-#define HTTPH(a, b, c) extern char b[];
+#define HTTPH(a, b, c) extern const char b[];
 #include "tbl/http_headers.h"
 
 extern const char H__Status[];
