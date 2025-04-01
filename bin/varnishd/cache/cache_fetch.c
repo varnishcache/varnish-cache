@@ -64,6 +64,8 @@ struct fetch_step {
 FETCH_STEPS
 #undef FETCH_STEP
 
+static hdr_t const H_X_Varnish = "\012X-Varnish:";
+
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.
  * XXX: This somewhat overlaps the stuff in stevedore.c
@@ -405,7 +407,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->storage = bo->uncacheable ? stv_transient : STV_next();
 
 	if (bo->retries > 0)
-		http_Unset(bo->bereq, "\012X-Varnish:");
+		http_Unset(bo->bereq, H_X_Varnish);
 
 	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(bo->vsl->wid));
 
