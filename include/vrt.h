@@ -693,9 +693,11 @@ enum gethdr_e {
 	HDR_BERESP
 };
 
+typedef const char *hdr_t;
+
 struct gethdr_s {
 	enum gethdr_e	where;
-	const char	*what;
+	hdr_t		what;
 };
 
 VCL_HTTP VRT_selecthttp(VRT_CTX, enum gethdr_e);

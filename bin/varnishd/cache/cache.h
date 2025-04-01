@@ -83,8 +83,6 @@ struct body_status {
 
 typedef const struct body_status *body_status_t;
 
-typedef const char *hdr_t;
-
 /*--------------------------------------------------------------------*/
 
 struct stream_close {
