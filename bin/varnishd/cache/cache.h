@@ -673,12 +673,12 @@ int http_IsFiltered(const struct http *hp, unsigned u, unsigned how);
 #define HTTPH_A_PASS		(1 << 3)	/* Response (b->o) for pass */
 #define HTTPH_C_SPECIFIC	(1 << 4)	/* Connection-specific */
 
-#define HTTPH(a, b, c) extern char b[];
+#define HTTPH(a, b, c) extern char *b;
 #include "tbl/http_headers.h"
 
-extern const char H__Status[];
-extern const char H__Proto[];
-extern const char H__Reason[];
+extern const char *H__Status;
+extern const char *H__Proto;
+extern const char *H__Reason;
 
 // rfc7233,l,1207,1208
 #define http_tok_eq(s1, s2)		(!vct_casecmp(s1, s2))

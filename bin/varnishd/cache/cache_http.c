@@ -54,12 +54,14 @@
 #include "tbl/body_status.h"
 
 
-#define HTTPH(a, b, c) char b[] = "*" a ":";
+#define HTTPH(a, b, c) \
+static char _##b[] = "*" a ":"; \
+char *b = _##b;
 #include "tbl/http_headers.h"
 
-const char H__Status[]	= "\010:status:";
-const char H__Proto[]	= "\007:proto:";
-const char H__Reason[]	= "\010:reason:";
+const char *H__Status	= "\010:status:";
+const char *H__Proto	= "\007:proto:";
+const char *H__Reason	= "\010:reason:";
 
 static char * via_hdr;
 
@@ -109,74 +111,74 @@ static const unsigned char http_asso_values[256] = {
 };
 
 static struct http_hdrflg {
-	char		*hdr;
+	char		**hdr;
 	unsigned	flag;
 } http_hdrflg[GPERF_MAX_HASH_VALUE + 1] = {
 	{ NULL }, { NULL }, { NULL }, { NULL },
-	{ H_Date },
-	{ H_Range },
+	{ &H_Date },
+	{ &H_Range },
 	{ NULL },
-	{ H_Referer },
-	{ H_Age },
-	{ H_From },
-	{ H_Keep_Alive },
-	{ H_Retry_After },
-	{ H_TE },
-	{ H_If_Range },
-	{ H_ETag },
-	{ H_X_Forwarded_For },
-	{ H_Expect },
-	{ H_Trailer },
-	{ H_If_Match },
-	{ H_Host },
-	{ H_Accept_Language },
-	{ H_Accept },
-	{ H_If_Modified_Since },
-	{ H_If_None_Match },
-	{ H_If_Unmodified_Since },
+	{ &H_Referer },
+	{ &H_Age },
+	{ &H_From },
+	{ &H_Keep_Alive },
+	{ &H_Retry_After },
+	{ &H_TE },
+	{ &H_If_Range },
+	{ &H_ETag },
+	{ &H_X_Forwarded_For },
+	{ &H_Expect },
+	{ &H_Trailer },
+	{ &H_If_Match },
+	{ &H_Host },
+	{ &H_Accept_Language },
+	{ &H_Accept },
+	{ &H_If_Modified_Since },
+	{ &H_If_None_Match },
+	{ &H_If_Unmodified_Since },
 	{ NULL },
-	{ H_Cookie },
-	{ H_Upgrade },
-	{ H_Last_Modified },
-	{ H_Accept_Charset },
-	{ H_Accept_Encoding },
-	{ H_Content_MD5 },
-	{ H_Content_Type },
-	{ H_Content_Range },
+	{ &H_Cookie },
+	{ &H_Upgrade },
+	{ &H_Last_Modified },
+	{ &H_Accept_Charset },
+	{ &H_Accept_Encoding },
+	{ &H_Content_MD5 },
+	{ &H_Content_Type },
+	{ &H_Content_Range },
 	{ NULL }, { NULL },
-	{ H_Content_Language },
-	{ H_Transfer_Encoding },
-	{ H_Authorization },
-	{ H_Content_Length },
-	{ H_User_Agent },
-	{ H_Server },
-	{ H_Expires },
-	{ H_Location },
+	{ &H_Content_Language },
+	{ &H_Transfer_Encoding },
+	{ &H_Authorization },
+	{ &H_Content_Length },
+	{ &H_User_Agent },
+	{ &H_Server },
+	{ &H_Expires },
+	{ &H_Location },
 	{ NULL },
-	{ H_Set_Cookie },
-	{ H_Content_Encoding },
-	{ H_Max_Forwards },
-	{ H_Cache_Control },
+	{ &H_Set_Cookie },
+	{ &H_Content_Encoding },
+	{ &H_Max_Forwards },
+	{ &H_Cache_Control },
 	{ NULL },
-	{ H_Connection },
-	{ H_Pragma },
+	{ &H_Connection },
+	{ &H_Pragma },
 	{ NULL },
-	{ H_Accept_Ranges },
-	{ H_HTTP2_Settings },
-	{ H_Allow },
-	{ H_Content_Location },
+	{ &H_Accept_Ranges },
+	{ &H_HTTP2_Settings },
+	{ &H_Allow },
+	{ &H_Content_Location },
 	{ NULL },
-	{ H_Proxy_Authenticate },
-	{ H_Vary },
+	{ &H_Proxy_Authenticate },
+	{ &H_Vary },
 	{ NULL },
-	{ H_WWW_Authenticate },
-	{ H_Warning },
-	{ H_Via },
+	{ &H_WWW_Authenticate },
+	{ &H_Warning },
+	{ &H_Via },
 	{ NULL }, { NULL }, { NULL }, { NULL },
 	{ NULL }, { NULL }, { NULL }, { NULL },
 	{ NULL }, { NULL }, { NULL }, { NULL },
 	{ NULL }, { NULL }, { NULL },
-	{ H_Proxy_Authorization }
+	{ &H_Proxy_Authorization }
 };
 
 static struct http_hdrflg *
@@ -197,7 +199,8 @@ http_hdr_flags(const char *b, const char *e)
 	retval = &http_hdrflg[u];
 	if (retval->hdr == NULL)
 		return (NULL);
-	if (!http_hdr_at(retval->hdr + 1, b, e - b))
+	AN(*retval->hdr);
+	if (!http_hdr_at(*retval->hdr + 1, b, e - b))
 		return (NULL);
 	return (retval);
 }
@@ -212,7 +215,7 @@ http_init_hdr(char *hdr, int flg)
 	hdr[0] = strlen(hdr + 1);
 	f = http_hdr_flags(hdr + 1, hdr + hdr[0]);
 	AN(f);
-	assert(f->hdr == hdr);
+	assert(*f->hdr == hdr);
 	f->flag = flg;
 }
 
