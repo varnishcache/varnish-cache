@@ -695,6 +695,15 @@ enum gethdr_e {
 
 typedef const char *hdr_t;
 
+#define CHECK_HDR(hdr)					\
+	do {						\
+		AN(hdr);				\
+		unsigned _l = hdr[0];			\
+		assert(_l > 0);				\
+		assert(_l == strlen(hdr + 1));		\
+		assert(hdr[_l] == ':');			\
+	} while (0)
+
 struct gethdr_s {
 	enum gethdr_e	where;
 	hdr_t		what;
