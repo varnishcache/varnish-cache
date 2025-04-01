@@ -56,12 +56,12 @@
 
 #define HTTPH(a, b, c) \
 static char _##b[] = "*" a ":"; \
-char *b = _##b;
+hdr_t b = _##b;
 #include "tbl/http_headers.h"
 
-const char *H__Status	= "\010:status:";
-const char *H__Proto	= "\007:proto:";
-const char *H__Reason	= "\010:reason:";
+hdr_t H__Status	= "\010:status:";
+hdr_t H__Proto	= "\007:proto:";
+hdr_t H__Reason	= "\010:reason:";
 
 static char * via_hdr;
 
@@ -111,7 +111,7 @@ static const unsigned char http_asso_values[256] = {
 };
 
 static struct http_hdrflg {
-	char		**hdr;
+	hdr_t		*hdr;
 	unsigned	flag;
 } http_hdrflg[GPERF_MAX_HASH_VALUE + 1] = {
 	{ NULL }, { NULL }, { NULL }, { NULL },
@@ -224,7 +224,7 @@ HTTP_Init(void)
 {
 	struct vsb *vsb;
 
-#define HTTPH(a, b, c) http_init_hdr(b, c);
+#define HTTPH(a, b, c) http_init_hdr(TRUST_ME(b), c);
 #include "tbl/http_headers.h"
 
 	vsb = VSB_new_auto();
