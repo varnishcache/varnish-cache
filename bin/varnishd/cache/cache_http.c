@@ -187,9 +187,7 @@ http_hdr_flags(const char *b, const char *e)
 
 	if (b == NULL || e == NULL)
 		return (NULL);
-	assert(b <= e);
-	u = (unsigned)(e - b);
-	assert(b + u == e);
+	u = pdiff(b, e);
 	if (u < GPERF_MIN_WORD_LENGTH || u > GPERF_MAX_WORD_LENGTH)
 		return (NULL);
 	u += http_asso_values[(uint8_t)(e[-1])] +
