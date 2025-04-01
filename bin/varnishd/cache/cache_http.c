@@ -482,10 +482,8 @@ http_IsHdr(const txt *hh, hdr_t hdr)
 	unsigned l;
 
 	Tcheck(*hh);
-	AN(hdr);
+	CHECK_HDR(hdr);
 	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
 	hdr++;
 	return (http_hdr_at(hdr, hh->b, l));
 }
@@ -556,6 +554,8 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 	const char *v;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	CHECK_HDR(hdr);
+
 	if (WS_Overflowed(hp->ws))
 		return;
 
@@ -564,8 +564,6 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 	lsep = strlen(sep);
 
 	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
 	f = http_findhdr(hp, l - 1, hdr + 1);
 	if (f == 0)
 		return;
@@ -638,9 +636,8 @@ http_GetHdr(const struct http *hp, hdr_t hdr, const char **ptr)
 	unsigned u, l;
 	const char *p;
 
+	CHECK_HDR(hdr);
 	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
 	hdr++;
 	u = http_findhdr(hp, l - 1, hdr);
 	if (u == 0) {
@@ -1373,12 +1370,9 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, hdr_t hdr)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(hdr);
+	CHECK_HDR(hdr);
 
 	l = hdr[0];
-	assert(l > 0);
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
 	hdr++;
 
 	if (hdr[0] == ':') {
