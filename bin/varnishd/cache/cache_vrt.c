@@ -604,11 +604,11 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 
 	u = WS_ReserveAll(hp->ws);
 	pl = (pfx == NULL) ? 0 : strlen(pfx);
-	l = hs->what[0] + 1 + pl;
+	l = hs->what->len + 1 + pl;
 	if (u <= l) {
 		WS_Release(hp->ws, 0);
 		WS_MarkOverflow(hp->ws);
-		VSLbs(ctx->vsl, SLT_LostHeader, TOSTRAND(hs->what + 1));
+		VSLbs(ctx->vsl, SLT_LostHeader, TOSTRAND(hs->what->str));
 		return;
 	}
 	b = WS_Reservation(hp->ws);
@@ -618,15 +618,15 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 			WS_Release(hp->ws, 0);
 			WS_MarkOverflow(hp->ws);
 			VSLbs(ctx->vsl, SLT_LostHeader,
-			    TOSTRAND(hs->what + 1));
+			    TOSTRAND(hs->what->str));
 			return;
 		}
 	} else {
 		b[l] = '\0';
 	}
 	p = b;
-	memcpy(p, hs->what + 1, hs->what[0]);
-	p += hs->what[0];
+	memcpy(p, hs->what->str, hs->what->len);
+	p += hs->what->len;
 	*p++ = ' ';
 	if (pfx != NULL)
 		memcpy(p, pfx, pl);

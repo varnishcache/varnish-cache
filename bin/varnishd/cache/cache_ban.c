@@ -495,6 +495,7 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 	const char *p;
 	const char *arg1;
 	double darg1, darg2;
+	hdr_t hdr;
 	int rv;
 
 	/*
@@ -521,11 +522,13 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			break;
 		case BANS_ARG_REQHTTP:
 			AN(reqhttp);
-			(void)http_GetHdr(reqhttp, bt.arg1_spec, &p);
+			CAST_HDR(hdr, bt.arg1_spec);
+			(void)http_GetHdr(reqhttp, hdr, &p);
 			arg1 = p;
 			break;
 		case BANS_ARG_OBJHTTP:
-			arg1 = HTTP_GetHdrPack(wrk, oc, bt.arg1_spec);
+			CAST_HDR(hdr, bt.arg1_spec);
+			arg1 = HTTP_GetHdrPack(wrk, oc, hdr);
 			break;
 		case BANS_ARG_OBJSTATUS:
 			arg1 = HTTP_GetHdrPack(wrk, oc, H__Status);

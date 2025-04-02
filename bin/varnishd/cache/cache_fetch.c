@@ -64,7 +64,7 @@ struct fetch_step {
 FETCH_STEPS
 #undef FETCH_STEP
 
-static hdr_t const H_X_Varnish = "\012X-Varnish:";
+static hdr_t const H_X_Varnish = HDR("X-Varnish");
 
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.
