@@ -57,6 +57,9 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * XX.X (unreleased)
+ *	typedef hdr_t added
+ *	struct gethdr_s.what changed to hdr_t
  * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
@@ -693,15 +696,29 @@ enum gethdr_e {
 	HDR_BERESP
 };
 
-typedef const char *hdr_t;
+typedef const struct {
+	unsigned char	len;
+	const char	str[];
+} *hdr_t;
 
-#define CHECK_HDR(hdr)					\
-	do {						\
-		AN(hdr);				\
-		unsigned _l = hdr[0];			\
-		assert(_l > 0);				\
-		assert(_l == strlen(hdr + 1));		\
-		assert(hdr[_l] == ':');			\
+#define HDR(name)							\
+	((hdr_t)&(const struct {					\
+		unsigned char _l;					\
+		char _s[sizeof(name ":")];				\
+	}){ sizeof(name), name ":" })
+
+#define CHECK_HDR(hdr)							\
+	do {								\
+		AN(hdr);						\
+		assert((hdr)->len > 0);					\
+		assert((hdr)->len == strlen((hdr)->str));		\
+		assert((hdr)->str[(hdr)->len - 1] == ':');		\
+	} while (0)
+
+#define CAST_HDR(hdr, str)						\
+	do {								\
+		hdr = (hdr_t)(str);					\
+		CHECK_HDR(hdr);						\
 	} while (0)
 
 struct gethdr_s {
