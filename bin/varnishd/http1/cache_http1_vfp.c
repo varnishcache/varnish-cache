@@ -132,7 +132,7 @@ v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
 		lr = v1f_read(vc, htc, buf, 1);
 		if (lr <= 0)
 			return (VFP_Error(vc, "chunked read err"));
-	} while (vct_islws(buf[0]));
+	} while (vct_isows(buf[0]));
 
 	if (!vct_ishex(buf[0]))
 		return (VFP_Error(vc, "chunked header non-hex"));
@@ -152,12 +152,14 @@ v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
 		return (VFP_Error(vc, "chunked header too long"));
 
 	/* Skip trailing white space */
-	while (vct_islws(buf[u]) && buf[u] != '\n') {
+	while (vct_isows(buf[u])) {
 		lr = v1f_read(vc, htc, buf + u, 1);
 		if (lr <= 0)
 			return (VFP_Error(vc, "chunked read err"));
 	}
 
+	if (buf[u] == '\r' && v1f_read(vc, htc, buf + u, 1) <= 0)
+		return (VFP_Error(vc, "chunked read err"));
 	if (buf[u] != '\n')
 		return (VFP_Error(vc, "chunked header no NL"));
 
