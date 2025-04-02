@@ -57,8 +57,7 @@ vcc_Header_Fh(const struct vcc *tl, const struct symbol *sym)
 
 	/* Create the static identifier */
 	Fh(tl, 0, "static const struct gethdr_s %s =\n", sym->rname + 1);
-	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n",
-	    parent->rname, (unsigned int)strlen(sym->name) + 1, sym->name);
+	Fh(tl, 0, "    { %s, HDR(\"%s\")};\n", parent->rname, sym->name);
 }
 
 /*--------------------------------------------------------------------*/

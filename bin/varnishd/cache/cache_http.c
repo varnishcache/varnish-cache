@@ -54,14 +54,12 @@
 #include "tbl/body_status.h"
 
 
-#define HTTPH(a, b, c) \
-static char _##b[] = "*" a ":"; \
-hdr_t b = _##b;
+#define HTTPH(a, b, c) hdr_t b = HDR(a);
 #include "tbl/http_headers.h"
 
-hdr_t H__Status	= "\010:status:";
-hdr_t H__Proto	= "\007:proto:";
-hdr_t H__Reason	= "\010:reason:";
+hdr_t H__Status	= HDR(":status");
+hdr_t H__Proto	= HDR(":proto");
+hdr_t H__Reason	= HDR(":reason");
 
 static char * via_hdr;
 
@@ -208,12 +206,11 @@ http_hdr_flags(const char *b, const char *e)
 /*--------------------------------------------------------------------*/
 
 static void
-http_init_hdr(char *hdr, int flg)
+http_init_hdr(hdr_t hdr, int flg)
 {
 	struct http_hdrflg *f;
 
-	hdr[0] = strlen(hdr + 1);
-	f = http_hdr_flags(hdr + 1, hdr + hdr[0]);
+	f = http_hdr_flags(hdr->str, hdr->str + hdr->len - 1);
 	AN(f);
 	assert(*f->hdr == hdr);
 	f->flag = flg;
@@ -224,7 +221,7 @@ HTTP_Init(void)
 {
 	struct vsb *vsb;
 
-#define HTTPH(a, b, c) http_init_hdr(TRUST_ME(b), c);
+#define HTTPH(a, b, c) http_init_hdr(b, c);
 #include "tbl/http_headers.h"
 
 	vsb = VSB_new_auto();
@@ -479,13 +476,10 @@ http_PutField(struct http *to, int field, const char *string)
 int
 http_IsHdr(const txt *hh, hdr_t hdr)
 {
-	unsigned l;
 
 	Tcheck(*hh);
 	CHECK_HDR(hdr);
-	l = hdr[0];
-	hdr++;
-	return (http_hdr_at(hdr, hh->b, l));
+	return (http_hdr_at(hdr->str, hh->b, hdr->len));
 }
 
 /*--------------------------------------------------------------------*/
@@ -549,7 +543,7 @@ http_CollectHdr(struct http *hp, hdr_t hdr)
 void
 http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 {
-	unsigned u, l, lsep, ml, f, x, d;
+	unsigned u, lsep, ml, f, x, d;
 	char *b = NULL, *e = NULL;
 	const char *v;
 
@@ -563,8 +557,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 		sep = ", ";
 	lsep = strlen(sep);
 
-	l = hdr[0];
-	f = http_findhdr(hp, l - 1, hdr + 1);
+	f = http_findhdr(hp, hdr->len - 1, hdr->str);
 	if (f == 0)
 		return;
 
@@ -587,7 +580,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 			if (b + x >= e) {
 				http_fail(hp);
 				VSLbs(hp->vsl, SLT_LostHeader,
-				    TOSTRAND(hdr + 1));
+				    TOSTRAND(hdr->str));
 				WS_Release(hp->ws, 0);
 				return;
 			}
@@ -599,9 +592,9 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 		AN(e);
 
 		/* Append the Nth header we found */
-		x = Tlen(hp->hd[u]) - l;
+		x = Tlen(hp->hd[u]) - hdr->len;
 
-		v = hp->hd[u].b + *hdr;
+		v = hp->hd[u].b + hdr->len;
 		while (vct_issp(*v)) {
 			v++;
 			x--;
@@ -609,7 +602,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 
 		if (b + lsep + x >= e) {
 			http_fail(hp);
-			VSLbs(hp->vsl, SLT_LostHeader, TOSTRAND(hdr + 1));
+			VSLbs(hp->vsl, SLT_LostHeader, TOSTRAND(hdr->str));
 			WS_Release(hp->ws, 0);
 			return;
 		}
@@ -633,20 +626,18 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 int
 http_GetHdr(const struct http *hp, hdr_t hdr, const char **ptr)
 {
-	unsigned u, l;
+	unsigned u;
 	const char *p;
 
 	CHECK_HDR(hdr);
-	l = hdr[0];
-	hdr++;
-	u = http_findhdr(hp, l - 1, hdr);
+	u = http_findhdr(hp, hdr->len - 1, hdr->str);
 	if (u == 0) {
 		if (ptr != NULL)
 			*ptr = NULL;
 		return (0);
 	}
 	if (ptr != NULL) {
-		p = hp->hd[u].b + l;
+		p = hp->hd[u].b + hdr->len;
 		while (vct_issp(*p))
 			p++;
 		*ptr = p;
@@ -1366,36 +1357,32 @@ const char *
 HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, hdr_t hdr)
 {
 	const char *ptr;
-	unsigned l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_HDR(hdr);
 
-	l = hdr[0];
-	hdr++;
-
-	if (hdr[0] == ':') {
+	if (hdr->str[0] == ':') {
 		/* Special cases */
 		ptr = ObjGetAttr(wrk, oc, OA_HEADERS, NULL);
 		AN(ptr);
 		ptr += 4;	/* Skip nhd and status */
 
 		/* XXX: should we also have h2_hdr_eq() ? */
-		if (!strcmp(hdr, ":proto:"))
+		if (!strcmp(hdr->str, ":proto:"))
 			return (ptr);
 		ptr = strchr(ptr, '\0') + 1;
-		if (!strcmp(hdr, ":status:"))
+		if (!strcmp(hdr->str, ":status:"))
 			return (ptr);
 		ptr = strchr(ptr, '\0') + 1;
-		if (!strcmp(hdr, ":reason:"))
+		if (!strcmp(hdr->str, ":reason:"))
 			return (ptr);
 		WRONG("Unknown magic packed header");
 	}
 
 	HTTP_FOREACH_PACK(wrk, oc, ptr) {
-		if (http_hdr_at(ptr, hdr, l)) {
-			ptr += l;
+		if (http_hdr_at(ptr, hdr->str, hdr->len)) {
+			ptr += hdr->len;
 			while (vct_islws(*ptr))
 				ptr++;
 			return (ptr);
@@ -1544,7 +1531,7 @@ http_ForceHeader(struct http *to, hdr_t hdr, const char *val)
 	if (http_HdrIs(to, hdr, val))
 		return;
 	http_Unset(to, hdr);
-	http_PrintfHeader(to, "%s %s", hdr + 1, val);
+	http_PrintfHeader(to, "%s %s", hdr->str, val);
 }
 
 void
@@ -1555,9 +1542,9 @@ http_AppendHeader(struct http *to, hdr_t hdr, const char *val)
 	http_CollectHdr(to, hdr);
 	if (http_GetHdr(to, hdr, &old)) {
 		http_Unset(to, hdr);
-		http_PrintfHeader(to, "%s %s, %s", hdr + 1, old, val);
+		http_PrintfHeader(to, "%s %s, %s", hdr->str, old, val);
 	} else {
-		http_PrintfHeader(to, "%s %s", hdr + 1, val);
+		http_PrintfHeader(to, "%s %s", hdr->str, val);
 	}
 }
 
