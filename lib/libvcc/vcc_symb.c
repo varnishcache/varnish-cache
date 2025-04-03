@@ -604,9 +604,14 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt)
 		vcc_ErrWhere(tl, sym->def_b);
 		return (sym);
 	} else if (sym != NULL && sym->kind != kind) {
-		VSB_printf(tl->sb,
-		    "Name %.*s must have type '%s'.\n",
-		    PF(t), sym->kind->name);
+		if (sym->type == DEFAULT) {
+			VSB_printf(tl->sb,
+			    "Symbol '%.*s' is a reserved word.\n", PF(t));
+		} else {
+			VSB_printf(tl->sb,
+			    "Name %.*s must have type '%s'.\n",
+			    PF(t), sym->kind->name);
+		}
 		vcc_ErrWhere(tl, t);
 		return (sym);
 	}
