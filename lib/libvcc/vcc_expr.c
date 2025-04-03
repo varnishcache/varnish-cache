@@ -1599,10 +1599,8 @@ static void v_matchproto_(sym_expr_t)
 vcc_Eval_Default(struct vcc *tl, struct expr **e, struct token *t,
     struct symbol *sym, vcc_type_t fmt)
 {
-	(void)e;
-	(void)fmt;
+
 	(void)sym;
-	(void)t;
 
 	if (fmt->default_sym == NULL) {
 		VSB_cat(tl->sb, "Symbol 'default' is a reserved word.\n");
@@ -1611,6 +1609,19 @@ vcc_Eval_Default(struct vcc *tl, struct expr **e, struct token *t,
 	}
 
 	*e = vcc_mk_expr(fmt, "%s", fmt->default_sym->rname);
+}
+
+static void v_matchproto_(sym_expr_t)
+vcc_Eval_None(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
+{
+
+	(void)e;
+	(void)fmt;
+	(void)sym;
+
+	VSB_cat(tl->sb, "'none' is a reserved word.\n");
+	vcc_ErrWhere(tl, t);
 }
 
 /*--------------------------------------------------------------------
@@ -1649,4 +1660,9 @@ vcc_Expr_Init(struct vcc *tl)
 	AN(sym);
 	sym->type = DEFAULT;
 	sym->eval = vcc_Eval_Default;
+
+	sym = VCC_MkSym(tl, "none", SYM_MAIN, SYM_FUNC, VCL_LOW, VCL_HIGH);
+	AN(sym);
+	sym->type = DEFAULT;
+	sym->eval = vcc_Eval_None;
 }

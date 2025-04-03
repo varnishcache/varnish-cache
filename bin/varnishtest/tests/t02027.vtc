@@ -1,7 +1,7 @@
 varnishtest "H2 RxStuff conditions"
 
 varnish v1 -arg "-p feature=+http2" -arg "-p debug=+syncvsl" -vcl {
-	backend none none;
+	backend be none;
 	sub vcl_recv {
 		return (synth(200));
 	}
