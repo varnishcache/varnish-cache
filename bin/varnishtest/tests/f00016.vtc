@@ -1,0 +1,69 @@
+varnishtest "Do not tolerate anything else than CRLF as chunked ending"
+
+server s0 {
+	rxreq
+	expect_close
+} -dispatch
+
+varnish v1 -vcl+backend {} -start
+
+logexpect l1 -v v1 {
+	expect * 1001 FetchError "chunked tail no NL"
+	expect * 1004 FetchError "chunked tail no NL"
+	expect * 1007 FetchError "chunked header non-hex"
+	expect * 1010 FetchError "chunked header non-hex"
+} -start
+
+client c1 {
+	non_fatal
+	txreq -req POST -hdr "Transfer-encoding: chunked"
+	send "1\r\n"
+	send "This is more than one byte of data\r\n"
+	send "0\r\n"
+	send "\r\n"
+	fatal
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c2 {
+	non_fatal
+	txreq -req POST -hdr "Transfer-encoding: chunked"
+	send "1\r\n"
+	send "Z  2\r\n"
+	send "3d\r\n"
+	send "0\r\n\r\nPOST /evil HTTP/1.1\r\nHost: whatever\r\nContent-Length: 5\r\n\r\n"
+	send "0\r\n"
+	send "\r\n"
+	fatal
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c3 {
+	non_fatal
+	txreq -req POST -hdr "Transfer-encoding: chunked"
+	send "d\r\n"
+	send "Spurious CRLF\r\n\r\n"
+	send "0\r\n"
+	send "\r\n"
+	fatal
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c4 {
+	non_fatal
+	txreq -req POST -hdr "Transfer-encoding: chunked"
+	send "\n0\r\n"
+	send "\r\n"
+	fatal
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+logexpect l1 -wait
