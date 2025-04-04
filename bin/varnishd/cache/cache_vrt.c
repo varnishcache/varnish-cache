@@ -65,6 +65,8 @@ const struct vrt_blob *vrt_null_blob = &(struct vrt_blob){
 	.blob = "\0"
 };
 
+const struct director *const vrt_none_backend = NULL;
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID

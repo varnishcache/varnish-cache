@@ -529,6 +529,7 @@ typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /* VCL_BACKEND */
+extern VCL_BACKEND const vrt_none_backend;
 VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
 
 /* VCL_BLOB */

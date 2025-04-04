@@ -403,6 +403,7 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 		ifp = New_IniFin(tl);
 		VSB_printf(ifp->ini, "\t(void)%s;", vgcname);
 		VSB_printf(ifp->fin, "\t\t(void)%s;", vgcname);
+		sym->rname = "vrt_none_backend";
 		return;
 	}
 
