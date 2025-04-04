@@ -543,6 +543,9 @@ int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
 VCL_BOOL VRT_ipcmp(VRT_CTX, VCL_IP, VCL_IP);
 void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
 
+/* VCL_PROBE */
+extern VCL_PROBE const vrt_none_probe;
+
 /* VCL_REAL */
 int VRT_REAL_is_valid(VCL_REAL);
 
