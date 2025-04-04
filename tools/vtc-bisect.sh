@@ -51,6 +51,11 @@ usage() {
 	-i         : inverted mode, look for a bug fix instead
 	-j <jobs>  : number of jobs for make invocations (defaults to 8)
 
+	Environment variables:
+
+	CONFIGURE_OPTS : additional options for the configure script
+	MAKE_OPTS      : additional options for make(1) executions
+
 	When <file> is empty or missing, bisect.vtc is expected to be found
 	at the root of the git repository. The current source tree is used
 	and VPATH setups are not supported.
@@ -66,9 +71,9 @@ usage() {
 }
 
 build() {
-	make -s -j"$MAKE_JOBS" all || {
-		./autogen.des
-		make -s -j"$MAKE_JOBS" all
+	make -s -j"$MAKE_JOBS" ${MAKE_OPTS:-} all || {
+		./autogen.des ${CONFIGURE_OPTS:-}
+		make -s -j"$MAKE_JOBS" ${MAKE_OPTS:-} all
 	}
 }
 
