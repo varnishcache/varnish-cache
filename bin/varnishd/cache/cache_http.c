@@ -1007,9 +1007,6 @@ http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi, ssize_t len)
 	assert(*lo >= -1);
 	assert(*hi >= -1);
 
-	if (len <= 0)
-		return (NULL);			// Allow 200 response
-
 	if (*lo < 0) {
 		assert(*hi > 0);
 		*lo = len - *hi;
@@ -1019,6 +1016,9 @@ http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi, ssize_t len)
 	} else if (len >= 0 && (*hi >= len || *hi < 0)) {
 		*hi = len - 1;
 	}
+
+	if (len <= 0)
+		return (NULL);			// Allow 200 response
 
 	if (*lo >= len)
 		return ("low range beyond object");
