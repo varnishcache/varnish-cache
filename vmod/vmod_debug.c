@@ -685,10 +685,10 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 	if (s->n == 0) {
 		http_Unset(hp, hdr->what);
 	} else {
-		b = VRT_StrandsWS(hp->ws, hdr->what + 1, s);
+		b = VRT_StrandsWS(hp->ws, hdr->what->str, s);
 		if (b == NULL) {
 			VSLbs(ctx->vsl, SLT_LostHeader,
-			    TOSTRAND(hdr->what + 1));
+			    TOSTRAND(hdr->what->str));
 		} else {
 			if (*b != '\0')
 				AN(WS_Allocated(hp->ws, b, strlen(b) + 1));
