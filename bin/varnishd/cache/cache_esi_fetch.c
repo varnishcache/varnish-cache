@@ -146,7 +146,7 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 	if (vef->vgz != NULL) {
 		if (retval == VFP_END)
 			VGZ_UpdateObj(vc, vef->vgz, VGZ_END);
-		if (VGZ_Destroy(&vef->vgz) != VGZ_END)
+		if (VGZ_Destroy(vc->wrk, &vef->vgz) != VGZ_END)
 			retval = VFP_Error(vc,
 			    "ESI+Gzip Failed at the very end");
 	}
