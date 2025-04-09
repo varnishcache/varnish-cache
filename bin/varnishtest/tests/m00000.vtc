@@ -142,7 +142,7 @@ varnish v1 -errvcl {Symbol not found: 'obj'} {
 
 varnish v1 -errvcl {rot13: VFP already registered (per-vcl)} {
 	import debug;
-	backend none none;
+	backend be none;
 	sub vcl_init {
 		debug.rot104();
 	}
@@ -167,7 +167,7 @@ varnish v1 -errvcl {Failed from VCL} {
 
 varnish v1 -errvcl {Failed initialization} {
 	import debug;
-	backend none none;
+	backend be none;
 	sub vcl_init {
 		new fails = debug.obj("fail");
 	}
@@ -177,7 +177,7 @@ shell {
 	cat >${tmpdir}/f1 <<-EOF
 	vcl 4.1;
 	import debug;
-	backend none none;
+	backend be none;
 	sub vcl_init {
 		new fails = debug.obj("fail");
 	}

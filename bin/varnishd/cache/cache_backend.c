@@ -893,6 +893,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	vbp = vrt->probe;
 	if (vbp == NULL)
 		vbp = VCL_DefaultProbe(vcl);
+	if (vbp != NULL && vbp->window == ~0U) /* none probe */
+		vbp = NULL;
 
 	if (vbp != NULL) {
 		VBP_Insert(be, vbp, be->conn_pool);

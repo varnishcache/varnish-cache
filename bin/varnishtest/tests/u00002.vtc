@@ -6,7 +6,7 @@ server s1 -repeat 4 {
 } -start
 
 varnish v1 -vcl+backend {
-	backend none none;
+	backend be none;
 
 	sub vcl_backend_fetch {
 		# XXX would like to do everything in v_b_e, but
@@ -14,7 +14,7 @@ varnish v1 -vcl+backend {
 		if (bereq.url == "/hitpass") {
 			set bereq.backend = s1;
 		} else {
-			set bereq.backend = none;
+			set bereq.backend = be;
 		}
 	}
 

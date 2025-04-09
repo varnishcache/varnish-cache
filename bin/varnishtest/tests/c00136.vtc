@@ -1,0 +1,20 @@
+varnishtest "none probe"
+
+server s0 {
+	rxreq
+	txresp -status 500
+} -dispatch
+
+varnish v1 -vcl {
+	probe default {
+		.interval = 100ms;
+	}
+	backend s0 {
+		.host = "${s0_sock}";
+		.probe = none;
+	}
+} -start
+
+delay 1
+
+varnish v1 -cliexpect healthy "backend.list -p"

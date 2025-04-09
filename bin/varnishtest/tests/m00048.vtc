@@ -82,7 +82,7 @@ client c1 -repeat 2 {
 
 varnish v1 -vcl {
 	import debug;
-	backend none none;
+	backend be none;
 
 	sub vcl_recv {
 		return (synth(200));
