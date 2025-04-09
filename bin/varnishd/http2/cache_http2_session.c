@@ -265,10 +265,12 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 /**********************************************************************/
 
 static void
-h2_ou_rel_req(struct worker *wrk, struct req *req)
+h2_ou_rel_req(struct worker *wrk, struct req **preq)
 {
+	struct req *req;
+
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	TAKE_OBJ_NOTNULL(req, preq, REQ_MAGIC);
 	AZ(req->vcl);
 	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
@@ -287,7 +289,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
-		h2_ou_rel_req(wrk, req);
+		h2_ou_rel_req(wrk, &req);
 		return (0);
 	}
 
@@ -296,7 +298,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	if (sz != strlen(h2_resp_101)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Upgrade: Error writing 101"
 		    " response: %s\n", VAS_errtxt(errno));
-		h2_ou_rel_req(wrk, req);
+		h2_ou_rel_req(wrk, &req);
 		return (0);
 	}
 
