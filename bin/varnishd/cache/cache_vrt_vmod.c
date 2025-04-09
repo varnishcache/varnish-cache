@@ -198,6 +198,8 @@ VPI_Vmod_Unload(VRT_CTX, struct vmod **hdl)
 	FREE_OBJ(v);
 }
 
+#define nvl(x, y) ((x) ? (x) : (y))
+
 void
 VMOD_Panic(struct vsb *vsb)
 {
@@ -211,9 +213,9 @@ VMOD_Panic(struct vsb *vsb)
 		VSB_printf(vsb, "p=%p, abi=\"%s\", vrt=%u.%u,\n",
 			   v, v->abi, v->vrt_major, v->vrt_minor);
 		VSB_bcat(vsb, "vcs=", 4);
-		VSB_quote(vsb, v->vcs, -1, VSB_QUOTE_CSTR);
+		VSB_quote(vsb, nvl(v->vcs, ""), -1, VSB_QUOTE_CSTR);
 		VSB_bcat(vsb, ", version=", 10);
-		VSB_quote(vsb, v->version, -1, VSB_QUOTE_CSTR);
+		VSB_quote(vsb, nvl(v->version, ""), -1, VSB_QUOTE_CSTR);
 		VSB_indent(vsb, -2);
 		VSB_bcat(vsb, "},\n", 3);
 	}
