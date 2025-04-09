@@ -653,7 +653,7 @@ PARAM_SIMPLE(
 	/* name */	http_req_overflow_status,
 	/* type */	uint_orzero,
 	/* min */	"400",
-	/* max */	"499",
+	/* max */	"500",
 	/* def */	"0",
 	/* units */	"HTTP status code or 0 to disable",
 	/* descr */
@@ -663,7 +663,9 @@ PARAM_SIMPLE(
 	"Note that there is no standard HTTP status which exactly matches "
 	"the implementation of http_req_size. 414 applies to the URL only, "
 	"while 413 applies to the request body. 400 is probably the least "
-	"incorrect alternative value to sending no response at all (0)."
+	"incorrect alternative value to sending no response at all (0). It "
+	"can also be seen as an internal error on the Varnish side due to "
+	"configured limits, so 500 is also allowed."
 )
 
 PARAM_SIMPLE(
