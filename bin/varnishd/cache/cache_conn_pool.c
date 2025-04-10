@@ -110,7 +110,6 @@ static struct lock dead_pools_mtx;
 VRBT_HEAD(vrb, conn_pool);
 VRBT_GENERATE_REMOVE_COLOR(vrb, conn_pool, entry, static)
 VRBT_GENERATE_REMOVE(vrb, conn_pool, entry, static)
-VRBT_GENERATE_FIND(vrb, conn_pool, entry, vcp_cmp, static)
 VRBT_GENERATE_INSERT_COLOR(vrb, conn_pool, entry, static)
 VRBT_GENERATE_INSERT_FINISH(vrb, conn_pool, entry, static)
 VRBT_GENERATE_INSERT(vrb, conn_pool, entry, vcp_cmp, static)
@@ -813,9 +812,8 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	VTAILQ_INIT(&cp->connlist);
 
 	Lck_Lock(&conn_pools_mtx);
-	cp2 = VRBT_FIND(vrb, &conn_pools, cp);
+	cp2 = VRBT_INSERT(vrb, &conn_pools, cp);
 	if (cp2 == NULL) {
-		AZ(VRBT_INSERT(vrb, &conn_pools, cp));
 		Lck_Unlock(&conn_pools_mtx);
 		return (cp);
 	}
