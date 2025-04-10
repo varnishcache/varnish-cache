@@ -1,0 +1,25 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+.. varnish_vsc_begin::	vcp
+	:oneliner:	Connection Pool counters
+	:order:		80
+
+.. varnish_vsc:: ref_hit
+	:type:	counter
+	:level:	debug
+	:oneliner:	Number of times we have found an existing conn. pool
+
+	Number of times we have found an existing connection pool while creating
+	a backend.
+
+.. varnish_vsc:: ref_miss
+	:type:	counter
+	:level:	debug
+	:oneliner:	Number of times we have not found an existing conn. pool
+
+	Number of times we have not found an existing connection pool while
+	creating a backend.
+
+.. varnish_vsc_end::	vcp
