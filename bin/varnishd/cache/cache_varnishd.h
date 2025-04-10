@@ -462,6 +462,8 @@ enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
     vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, vtim_dur td,
     int maxbytes);
 
+void VIOV_prune(struct iovec *iov, unsigned *n, size_t l);
+
 #define SESS_ATTR(UP, low, typ, len)					\
 	int SES_Set_##low(const struct sess *sp, const typ *src);	\
 	int SES_Reserve_##low(struct sess *sp, typ **dst, ssize_t *sz);

@@ -411,6 +411,38 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 }
 
 /*--------------------------------------------------------------------
+ * Prune a vector of struct iovec
+ */
+
+void
+VIOV_prune(struct iovec *iov, unsigned *n, size_t l)
+{
+	unsigned u;
+
+	if (l == 0)
+		return;
+
+	AN(iov);
+	AN(n);
+
+	u = 0;
+	while (l > 0) {
+		assert(u < *n);
+		if (iov[u].iov_len <= l) {
+			l -= iov[u].iov_len;
+			u++;
+		} else {
+			iov[u].iov_base = (char *)iov[u].iov_base + l;
+			iov[u].iov_len -= l;
+			break;
+		}
+	}
+
+	memmove(iov, &iov[u], (*n - u) * sizeof *iov);
+	*n -= u;
+}
+
+/*--------------------------------------------------------------------
  * Get a new session, preferably by recycling an already ready one
  *
  * Layout is:
