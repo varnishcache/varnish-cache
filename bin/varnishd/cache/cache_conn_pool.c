@@ -47,6 +47,8 @@
 #include "cache_conn_pool.h"
 #include "cache_pool.h"
 
+#include "VSC_vcp.h"
+
 struct conn_pool;
 static inline int vcp_cmp(const struct conn_pool *a, const struct conn_pool *b);
 
@@ -106,6 +108,7 @@ struct conn_pool {
 
 static struct lock conn_pools_mtx;
 static struct lock dead_pools_mtx;
+static struct VSC_vcp *vsc;
 
 VRBT_HEAD(vrb, conn_pool);
 VRBT_GENERATE_REMOVE_COLOR(vrb, conn_pool, entry, static)
@@ -651,6 +654,10 @@ VCP_Init(void)
 {
 	Lck_New(&conn_pools_mtx, lck_conn_pool);
 	Lck_New(&dead_pools_mtx, lck_dead_pool);
+
+	AZ(vsc);
+	vsc = VSC_vcp_New(NULL, NULL, "");
+	AN(vsc);
 }
 
 /**********************************************************************/
@@ -771,6 +778,8 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 
 	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
 	AN(ident);
+	AN(vsc);
+
 	VSHA256_Init(cx);
 	VSHA256_Update(cx, ident, strlen(ident) + 1); // include \0
 	if (vep->uds_path != NULL) {
@@ -814,6 +823,7 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	Lck_Lock(&conn_pools_mtx);
 	cp2 = VRBT_INSERT(vrb, &conn_pools, cp);
 	if (cp2 == NULL) {
+		vsc->ref_miss++;
 		Lck_Unlock(&conn_pools_mtx);
 		return (cp);
 	}
@@ -821,6 +831,7 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	CHECK_OBJ(cp2, CONN_POOL_MAGIC);
 	assert(cp2->refcnt > 0);
 	cp2->refcnt++;
+	vsc->ref_hit++;
 	Lck_Unlock(&conn_pools_mtx);
 
 	vcp_destroy(&cp);

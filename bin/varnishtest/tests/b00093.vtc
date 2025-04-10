@@ -1,0 +1,43 @@
+varnishtest "Check connection pool counters"
+
+server s1 {} -start
+server s2 {} -start
+
+shell {
+	cat >${tmpdir}/simple.vcl <<-EOF
+	vcl 4.1;
+	backend default {
+		.host = "${s2_sock}";
+	}
+	EOF
+}
+
+varnish v1 -vcl {
+	backend default {
+		.host = "${s1_sock}";
+	}
+} -start
+
+# Initially expect a miss
+varnish v1 -expect VCP.ref_hit == 0
+varnish v1 -expect VCP.ref_miss == 1
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url ~ "^/blah$") {
+			set req.backend_hint = s1;
+		} else {
+			set req.backend_hint = s2;
+		}
+	}
+}
+
+# Expect a hit and a miss
+varnish v1 -expect VCP.ref_hit == 1
+varnish v1 -expect VCP.ref_miss == 2
+
+varnish v1 -cliok "vcl.load foo ${tmpdir}/simple.vcl"
+
+# Pure hit
+varnish v1 -expect VCP.ref_hit == 2
+varnish v1 -expect VCP.ref_miss == 2
