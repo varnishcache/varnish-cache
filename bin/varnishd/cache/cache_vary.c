@@ -81,6 +81,7 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 {
 	const char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
+	hdr_t hdr;
 	unsigned l;
 	int error = 0;
 
@@ -122,8 +123,9 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 		AZ(VSB_printf(sbh, "%c%.*s:%c",
 		    (char)(1 + (q - p)), (int)(q - p), p, 0));
 		AZ(VSB_finish(sbh));
+		CAST_HDR(hdr, VSB_data(sbh));
 
-		if (http_GetHdr(bo->bereq, VSB_data(sbh), &h)) {
+		if (http_GetHdr(bo->bereq, hdr, &h)) {
 			AZ(vct_issp(*h));
 			/* Trim trailing space */
 			e = strchr(h, '\0');
@@ -292,6 +294,7 @@ VRY_Match(const struct req *req, const uint8_t *vary)
 	const char *h, *e;
 	unsigned lh, ln;
 	int i, oflo = 0;
+	hdr_t hdr;
 
 	AN(vsp);
 	AN(vary);
@@ -310,8 +313,9 @@ VRY_Match(const struct req *req, const uint8_t *vary)
 			 * then compare again with that new entry.
 			 */
 
+			CAST_HDR(hdr, vary + 2);
 			ln = 2 + vary[2] + 2;
-			i = http_GetHdr(req->http, (const char*)(vary+2), &h);
+			i = http_GetHdr(req->http, hdr, &h);
 			if (i) {
 				/* Trim trailing space */
 				e = strchr(h, '\0');
