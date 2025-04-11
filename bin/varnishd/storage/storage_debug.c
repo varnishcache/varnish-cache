@@ -80,7 +80,7 @@ smd_max_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	AN(sz);
 	used = (ssize_t)oc->stobj->priv2;
 
-	VSLb(wrk->vsl, SLT_Debug, "-sdebug: %zd/%zd", used, max_size);
+	VSLb(wrk->vsl, SLT_Debug, "-sdebug getspace: %zd/%zd", used, max_size);
 
 	if (used >= max_size) {
 		VSLb(wrk->vsl, SLT_Storage, "-sdebug: max_size=%zd reached", max_size);
@@ -91,9 +91,17 @@ smd_max_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	*sz = vmin_t(ssize_t, *sz, max_size - used);
 
 	r = SML_methods.objgetspace(wrk, oc, sz, ptr);
-	if (r != 0)
-		oc->stobj->priv2 = (uint64_t)(used + *sz);
 	return (r);
+}
+
+static void v_matchproto_(objextend_f)
+smd_max_extend(struct worker *wrk, struct objcore *oc, ssize_t l)
+{
+
+	assert(l > 0);
+	oc->stobj->priv2 += (uint64_t)l;
+	VSLb(wrk->vsl, SLT_Debug, "-sdebug extend: %zd/%zd", (ssize_t)oc->stobj->priv2, max_size);
+	SML_methods.objextend(wrk, oc, l);
 }
 
 #define dur_arg(a, s, d)					\
@@ -175,6 +183,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 					    smd_stevedore.name);
 				}
 				getspace = smd_max_getspace;
+				methods->objextend = smd_max_extend;
 				continue;
 			}
 			if (dur_arg(a, "dinit=", d)) {
