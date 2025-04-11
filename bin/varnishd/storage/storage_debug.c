@@ -52,6 +52,7 @@
  */
 static vtim_dur dopen = 0.0;
 static unsigned count = 0;
+static ssize_t max_size = 0;
 
 /* returns one byte less than requested */
 static int v_matchproto_(objgetspace_f)
@@ -64,9 +65,60 @@ smd_lsp_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	return (SML_methods.objgetspace(wrk, oc, sz, ptr));
 }
 
+/*
+ * returns max_size at most, then fails
+ *
+ * relies on the actual storage implementation to not use priv2
+ */
+static int v_matchproto_(objgetspace_f)
+smd_max_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
+    uint8_t **ptr)
+{
+	ssize_t used;
+	int r;
+
+	AN(sz);
+	used = (ssize_t)oc->stobj->priv2;
+
+	VSLb(wrk->vsl, SLT_Debug, "-sdebug: %zd/%zd", used, max_size);
+
+	if (used >= max_size) {
+		VSLb(wrk->vsl, SLT_Storage, "-sdebug: max_size=%zd reached", max_size);
+		return (0);
+	}
+
+	assert(used < max_size);
+	*sz = vmin_t(ssize_t, *sz, max_size - used);
+
+	r = SML_methods.objgetspace(wrk, oc, sz, ptr);
+	if (r != 0)
+		oc->stobj->priv2 = (uint64_t)(used + *sz);
+	return (r);
+}
+
 #define dur_arg(a, s, d)					\
 	(! strncmp((a), (s), strlen(s))				\
 	 && (d = VNUM_duration(a + strlen(s))) != nan(""))
+
+static int
+bytes_arg(char *a, const char *s, ssize_t *sz)
+{
+	const char *err;
+	uintmax_t bytes;
+
+	AN(sz);
+	if (strncmp(a, s, strlen(s)))
+		return (0);
+	a += strlen(s);
+	err = VNUM_2bytes(a, &bytes, 0);
+	if (err != NULL)
+		ARGV_ERR("%s\n", err);
+	assert(bytes <= SSIZE_MAX);
+	*sz = (ssize_t)bytes;
+
+	return (1);
+}
+
 
 static void smd_open(struct stevedore *stv)
 {
@@ -80,6 +132,7 @@ static void v_matchproto_(storage_init_f)
 smd_init(struct stevedore *parent, int aac, char * const *aav)
 {
 	struct obj_methods *methods;
+	objgetspace_f *getspace = NULL;
 	const char *ident;
 	int i, ac = 0;
 	size_t nac;
@@ -109,7 +162,19 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 		a = aav[i];
 		if (a != NULL) {
 			if (! strcmp(a, "lessspace")) {
-				methods->objgetspace = smd_lsp_getspace;
+				if (getspace != NULL) {
+					ARGV_ERR("-s%s conflicting options\n",
+					    smd_stevedore.name);
+				}
+				getspace = smd_lsp_getspace;
+				continue;
+			}
+			if (bytes_arg(a, "maxspace=", &max_size)) {
+				if (getspace != NULL) {
+					ARGV_ERR("-s%s conflicting options\n",
+					    smd_stevedore.name);
+				}
+				getspace = smd_max_getspace;
 				continue;
 			}
 			if (dur_arg(a, "dinit=", d)) {
@@ -127,6 +192,9 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	assert(ac >= 0);
 	assert(ac < (int)nac);
 	AZ(av[ac]);
+
+	if (getspace != NULL)
+		methods->objgetspace = getspace;
 
 	sma_stevedore.init(parent, ac, av);
 	free(av);

@@ -2,3 +2,50 @@ varnishtest "debug storage"
 
 shell -err -expect {Error: Only one -sdebug instance supported} \
 	"varnishd -b none -a ${tmpdir}/vtc.sock -sdebug -sdebug"
+
+shell -err -expect {Error: -sdebug conflicting options} \
+	"varnishd -b none -a ${tmpdir}/vtc.sock -sdebug,lessspace,maxspace=1KB"
+
+shell -err -expect {Error: Unknown BYTES} \
+	"varnishd -b none -a ${tmpdir}/vtc.sock -sdebug,maxspace=1DJT"
+
+# lessspace is implicitly tested in b00017.vtc
+
+server s1 {
+	rxreq
+	txresp -bodylen 1024
+
+	rxreq
+	txresp -bodylen 1025
+} -start
+
+
+varnish v1 -arg "-sTransient=debug,maxspace=1KB" -vcl+backend {
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+
+logexpect l1 -v v1 -q "BerespHeader:Content-Length eq 1025" {
+	fail add *	End
+	expect * * Storage	{^-sdebug: max_size=1024 reached}
+	expect 0 = FetchError	{^Could not get storage}
+	expect 0 = BackendClose	{close RX_BODY}
+	fail clear
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 1024
+
+	txreq
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.Content-Length == 1025
+	rxrespbody -max 1024
+	expect_close
+	expect resp.bodylen == 1024
+} -run
+
+logexpect l1 -wait
