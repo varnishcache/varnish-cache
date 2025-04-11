@@ -98,7 +98,9 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		cl = 0;
 
 	VDP_Init(vdc, wrk, bo->vsl, NULL, bo, &cl);
-	if (bo->vdp_filter_list != NULL &&
+	if (WS_Overflowed(bo->ws))
+		err = "workspace_backend overflow";
+	else if (bo->vdp_filter_list != NULL &&
 	    VCL_StackVDP(vdc, bo->vcl, bo->vdp_filter_list, NULL, bo))
 		err = "Failure to push processors";
 	else if ((v1l = V1L_Open(wrk->aws, htc->rfd, bo->vsl, nan(""), 0)) == NULL) {
