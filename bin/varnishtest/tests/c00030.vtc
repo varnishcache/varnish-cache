@@ -11,12 +11,17 @@ shell -err -expect {Error: Unknown BYTES} \
 
 # lessspace is implicitly tested in b00017.vtc
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
 	txresp -bodylen 1024
 
 	rxreq
-	txresp -bodylen 1025
+	txresp -nolen -hdr "Content-Length: 1025"
+	barrier b1 sync
+	send_n 32 "0123456789abcdef0123456789abcdef"
+	send "X"
 } -start
 
 
@@ -43,6 +48,7 @@ client c1 {
 	rxresphdrs
 	expect resp.status == 200
 	expect resp.http.Content-Length == 1025
+	barrier b1 sync
 	rxrespbody -max 1024
 	expect_close
 	expect resp.bodylen == 1024
