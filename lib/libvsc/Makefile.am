@@ -15,6 +15,7 @@ VSC_SRC = \
 	VSC_smf.vsc \
 	VSC_smu.vsc \
 	VSC_vbe.vsc \
+	VSC_vcp.vsc \
 	VSC_waiter.vsc
 
 noinst_LTLIBRARIES = libvsc.la
