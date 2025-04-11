@@ -270,7 +270,7 @@ class CounterSet(object):
         fo.write("\t" + self.struct + " *retval;\n")
         fo.write("\n")
         fo.write("\tva_start(ap, fmt);\n")
-        fo.write("\tretval = VRT_VSC_Alloc")
+        fo.write("\tretval = VRT_VSC_Allocv")
         fo.write("(vc, sg, vsc_" + self.name + "_name, ")
         fo.write("VSC_" + self.name + "_size,\n")
         fo.write("\t    vsc_" + self.name + "_json, ")
