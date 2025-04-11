@@ -53,6 +53,6 @@ int VGZ_ObufFull(const struct vgz *vg);
 enum vgzret_e VGZ_Gzip(struct vgz *, const void **, ssize_t *len,
     enum vgz_flag);
 // enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, ssize_t *len);
-enum vgzret_e VGZ_Destroy(struct vgz **);
+enum vgzret_e VGZ_Destroy(struct worker *wrk, struct vgz **);
 
 void VGZ_UpdateObj(const struct vfp_ctx *, struct vgz*, enum vgzret_e);
