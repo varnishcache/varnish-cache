@@ -1,0 +1,4 @@
+varnishtest "debug storage"
+
+shell -err -expect {Error: Only one -sdebug instance supported} \
+	"varnishd -b none -a ${tmpdir}/vtc.sock -sdebug -sdebug"

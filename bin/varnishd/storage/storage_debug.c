@@ -34,6 +34,7 @@
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_obj.h"
+#include "common/heritage.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,12 +45,13 @@
 #include "vtim.h"
 #include "vnum.h"
 
-/* we cheat and make the open delay a static to avoid
- * having to wrap all callbacks to unpack the priv
- * pointer. Consequence: last dopen applies to all
- * debug stevedores
+/*
+ * if smd was to have its own configuration, we would have to wrap all function
+ * pointers from the actual storage implementation (sma). To avoid these
+ * complications, we limit to one smd instance and use statics.
  */
 static vtim_dur dopen = 0.0;
+static unsigned count = 0;
 
 /* returns one byte less than requested */
 static int v_matchproto_(objgetspace_f)
@@ -84,6 +86,9 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	vtim_dur d, dinit = 0.0;
 	char **av;	//lint -e429
 	char *a;
+
+	if (count++ > 0)
+		ARGV_ERR("Only one -s%s instance supported\n", smd_stevedore.name);
 
 	ident = parent->ident;
 	memcpy(parent, &sma_stevedore, sizeof *parent);
