@@ -135,7 +135,7 @@ VRT_VSC_Reveal(const struct vsc_seg *vsg)
 }
 
 void *
-VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
+VRT_VSC_Allocv(struct vsmw_cluster *vc, struct vsc_seg **sg,
     const char *nm, size_t sd,
     const unsigned char *jp, size_t sj, const char *fmt, va_list va)
 {
