@@ -1,0 +1,43 @@
+varnishtest "storage failure with synthetic body"
+
+varnish v1 -arg "-sTransient=debug,maxspace=32B" -vcl {
+	backend none none;
+
+	sub vcl_recv {
+		return(pass);
+	}
+
+	# avoid the client side running into the same storage failure
+	sub vcl_synth {
+		set resp.body = resp.reason;
+		return(deliver);
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+
+	sub vcl_backend_error {
+		set beresp.status = 200;
+		set beresp.body =
+			"0123456789abcdef" +
+			"0123456789abcdef" +
+			"X";
+		return (deliver);
+	}
+} -start
+
+logexpect l1 -v v1 -q "vxid == 1002" {
+	fail add *	End
+	expect * * Storage	{^-sdebug: max_size=32 reached}
+	expect 0 = FetchError	{^Could not get storage}
+	fail clear
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l1 -wait

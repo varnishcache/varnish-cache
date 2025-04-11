@@ -1020,14 +1020,17 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	o = 0;
 	while (ll > 0) {
 		l = ll;
-		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
-			break;
+		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK) {
+			VSB_destroy(&synth_body);
+			return (F_STP_FAIL);
+		}
 		l = vmin(l, ll);
 		memcpy(ptr, VSB_data(synth_body) + o, l);
 		VFP_Extend(bo->vfc, l, l == ll ? VFP_END : VFP_OK);
 		ll -= l;
 		o += l;
 	}
+	assert(o == VSB_len(synth_body));
 	AZ(ObjSetU64(wrk, oc, OA_LEN, o));
 	VSB_destroy(&synth_body);
 	ObjSetState(wrk, oc, BOS_PREP_STREAM);
