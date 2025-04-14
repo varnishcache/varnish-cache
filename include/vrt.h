@@ -701,10 +701,12 @@ typedef const struct {
 	const char	str[];
 } *hdr_t;
 
+//lint -esym(754, _hdr_s, _hdr_l) local struct member ... not referenced
+//lint -emacro(740, HDR) unusual cast
 #define HDR(name)							\
 	((hdr_t)&(const struct {					\
-		unsigned char _l;					\
-		char _s[sizeof(name ":")];				\
+		unsigned char _hdr_l;					\
+		char _hdr_s[sizeof(name ":")];				\
 	}){ sizeof(name), name ":" })
 
 #define CHECK_HDR(hdr)							\
