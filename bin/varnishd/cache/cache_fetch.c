@@ -891,7 +891,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	INIT_OBJ(vop, VBF_OBITER_PRIV_MAGIC);
 	vop->bo = bo;
 	vop->l = ObjGetLen(bo->wrk, stale_oc);
-	if (ObjIterate(wrk, stale_oc, vop, vbf_objiterate, 0))
+	if (ObjIterate(wrk, stale_oc, NULL, vop, vbf_objiterate, 0))
 		(void)VFP_Error(bo->vfc, "Template object failed");
 
 	if (bo->vfc->failed) {

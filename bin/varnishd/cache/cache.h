@@ -754,7 +754,7 @@ typedef int objiterate_f(void *priv, unsigned flush,
 #define OBJ_ITER_FLUSH	0x01
 #define OBJ_ITER_END	0x02
 
-int ObjIterate(struct worker *, struct objcore *,
+int ObjIterate(struct worker *, struct objcore *, struct boc *,
     void *priv, objiterate_f *func, int final);
 
 vxid_t ObjGetXID(struct worker *, struct objcore *);

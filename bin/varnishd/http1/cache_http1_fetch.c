@@ -136,7 +136,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	if (bo->bereq_body != NULL) {
 		AZ(bo->req);
 		assert(cl >= 0);
-		(void)ObjIterate(bo->wrk, bo->bereq_body,
+		(void)ObjIterate(bo->wrk, bo->bereq_body, NULL,
 		    vdc, VDP_ObjIterate, 0);
 	} else if (bo->req != NULL &&
 	    bo->req->req_body_status != BS_NONE) {

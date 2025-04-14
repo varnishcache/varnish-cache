@@ -261,7 +261,7 @@ VDP_ObjIterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 
 
 int
-VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
+VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 {
 	int r, final;
 
@@ -273,7 +273,7 @@ VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 	vdc->hp = NULL;
 	vdc->clen = NULL;
 	final = oc->flags & OC_F_TRANSIENT ? 1 : 0;
-	r = ObjIterate(vdc->wrk, oc, vdc, VDP_ObjIterate, final);
+	r = ObjIterate(vdc->wrk, oc, boc, vdc, VDP_ObjIterate, final);
 	if (r < 0)
 		return (r);
 	return (0);

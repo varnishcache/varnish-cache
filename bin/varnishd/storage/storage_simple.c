@@ -307,10 +307,9 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 }
 
 static int v_matchproto_(objiterator_f)
-sml_iterator(struct worker *wrk, struct objcore *oc,
+sml_iterator(struct worker *wrk, struct objcore *oc, struct boc *boc,
     void *priv, objiterate_f *func, int final)
 {
-	struct boc *boc;
 	enum boc_state_e state;
 	struct object *obj;
 	struct storage *st;
@@ -330,8 +329,6 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-
-	boc = HSH_RefBoc(oc);
 
 	if (boc == NULL) {
 		VTAILQ_FOREACH_REVERSE_SAFE(
@@ -423,7 +420,6 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		if (ret)
 			break;
 	}
-	HSH_DerefBoc(wrk, oc);
 	if ((u & OBJ_ITER_END) == 0) {
 		ret2 = func(priv, OBJ_ITER_END, NULL, 0);
 		if (ret == 0)

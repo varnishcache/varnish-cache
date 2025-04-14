@@ -210,7 +210,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 
 	if (req->req_body_status == BS_CACHED) {
 		AN(req->body_oc);
-		if (ObjIterate(wrk, req->body_oc, priv, func, 0))
+		if (ObjIterate(wrk, req->body_oc, NULL, priv, func, 0))
 			return (-1);
 		return (0);
 	}

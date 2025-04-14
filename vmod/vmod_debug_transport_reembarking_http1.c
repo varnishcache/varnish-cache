@@ -173,7 +173,7 @@ dbg_sendbody(struct worker *wrk, void *arg)
 	chunked = http_GetHdr(req->resp, H_Transfer_Encoding, &p) && strcmp(p, "chunked") == 0;
 	if (chunked)
 		V1L_Chunked(v1l);
-	err = VDP_DeliverObj(req->vdc, req->objcore);
+	err = VDP_DeliverObj(req->vdc, req->objcore, req->boc);
 	if (!err && chunked)
 		V1L_EndChunk(v1l);
 	dbg_deliver_finish(req, &v1l, err);

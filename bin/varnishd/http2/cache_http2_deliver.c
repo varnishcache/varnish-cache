@@ -345,7 +345,7 @@ h2_deliver(struct req *req, int sendbody)
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
 		if (! VDP_Push(ctx, req->vdc, req->ws, &h2_vdp, r2))
-			(void)VDP_DeliverObj(req->vdc, req->objcore);
+			(void)VDP_DeliverObj(req->vdc, req->objcore, req->boc);
 	}
 
 	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, req->boc);
