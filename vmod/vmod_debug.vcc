@@ -440,6 +440,12 @@ be hanged to zero. Any larger value will be taken modulo UINT32_MAX.
 
 The *mode* argument behaves as for `debug.chksha256()`_.
 
+$Function VOID chklen(BYTES expected, ENUM {log, panic, panic_unless_error} mode)
+
+Configure the expected length for the debug.chklen VDP. This function does not
+push the VDP.
+
+The *mode* argument behaves as for `debug.chksha256()`_.
 $Function VOID use_reembarking_http1()
 
 $Restrict vcl_deliver

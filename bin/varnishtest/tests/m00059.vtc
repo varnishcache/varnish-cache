@@ -1,4 +1,4 @@
-varnishtest "VMOD debug.chksha256"
+varnishtest "VMOD debug.chk*"
 
 server s1 {
 	rxreq
@@ -6,6 +6,7 @@ server s1 {
 	txresp \
 	    -hdr "sha256: 9cbca99698fee7cefd93bc6db1c53226fdecae730197fd793a54e170a30af045" \
 	    -hdr "crc32: 3177021206" \
+	    -hdr "len: 28" \
 	    -hdr "Transfer-Encoding: chunked" -nolen
 	    chunked "Ponto Facto, "
 	    delay 1
@@ -17,6 +18,7 @@ server s1 {
 	txresp \
 	    -hdr "sha256: 9cbca99698fee7cefd93bc6db1c53226fdecae730197fd793a54e170a30af045" \
 	    -hdr "crc32: 3177021206" \
+	    -hdr "len: 0" \
 	    -body ""
 } -start
 
@@ -32,12 +34,14 @@ varnish v1 \
 			debug.chksha256(blob.decode(HEX,
 			    encoded=resp.http.sha256), panic);
 			debug.chkcrc32(std.integer(resp.http.crc32), panic);
+			debug.chklen(std.bytes(resp.http.len), panic);
 		} else {
 			debug.chksha256(blob.decode(HEX,
 			    encoded=resp.http.sha256), log);
 			debug.chkcrc32(std.integer(resp.http.crc32), log);
+			debug.chklen(std.bytes(resp.http.len), log);
 		}
-		set resp.filters += " debug.chksha256 debug.chkcrc32";
+		set resp.filters += " debug.chksha256 debug.chkcrc32 debug.chklen";
 	}
 } -start
 
