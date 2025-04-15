@@ -48,24 +48,24 @@ varnish v1 -stop
 # Test things we receive from the backend
 
 server s1 {
-        rxreq
-        txresp -status 202 -hdr "beresp: origin" -hdr "unset: origin"
+	rxreq
+	txresp -status 202 -hdr "beresp: origin" -hdr "unset: origin"
 } -start
 
 varnish v1 -vcl+backend {
 
-        sub vcl_backend_response {
+	sub vcl_backend_response {
 		set beresp.http.beresp = "vbr-updated";
 		set beresp.status = 200;
 		unset beresp.http.unset;
-        }
+	}
 
 } -start
 
 
 client c1 {
-        txreq
-        rxresp
+	txreq
+	rxresp
 } -run
 
 
@@ -110,9 +110,9 @@ client c1 {
 } -run
 
 shell {
-        varnishncsa -n ${v1_name} -d -c -F '%s %{resp}o %{unset}o %{added}o' > ncsa_sc.txt
+	varnishncsa -n ${v1_name} -d -c -F '%s %{resp}o %{unset}o %{added}o' > ncsa_sc.txt
 
-        cat >expected_sc.txt <<-EOF
+	cat >expected_sc.txt <<-EOF
 	201 deliver-updated - deliver
 	EOF
 	diff -u expected_sc.txt ncsa_sc.txt
@@ -159,10 +159,10 @@ client c1 {
 
 
 shell {
-        varnishncsa -n ${v1_name} -d -c -F '%H %{reqhdr}i %{notreceived}i %{unset}i %m %q %U %u' > ncsa_rc.txt
+	varnishncsa -n ${v1_name} -d -c -F '%H %{reqhdr}i %{notreceived}i %{unset}i %m %q %U %u' > ncsa_rc.txt
 
-        cat >expected_rc.txt <<-EOF
+	cat >expected_rc.txt <<-EOF
 	HTTP/1.1 client-header - client POST ?q=clientQuerry /client-url client
-        EOF
-        diff -u expected_rc.txt ncsa_rc.txt
+	EOF
+	diff -u expected_rc.txt ncsa_rc.txt
 }
