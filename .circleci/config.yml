@@ -35,6 +35,7 @@ jobs:
           name: Install deps
           command: |
             dnf -y install \
+                awk \
                 automake \
                 jemalloc-devel \
                 git \
@@ -243,6 +244,7 @@ jobs:
                         ;;
                 esac
                 dnf -y install \
+                    awk \
                     cpio \
                     automake \
                     git \
