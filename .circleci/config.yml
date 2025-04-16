@@ -36,6 +36,7 @@ jobs:
           name: Install deps
           command: |
             dnf -y install \
+                awk \
                 automake \
                 jemalloc-devel \
                 git \
@@ -245,6 +246,7 @@ jobs:
                         ;;
                     fedora:*)
                         dnf -y group install development-tools
+                        dnf -y install awk
                         ;;
                 esac
                 dnf -y install \
