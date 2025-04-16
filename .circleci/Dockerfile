@@ -2,6 +2,7 @@ FROM fedora-latest
 
 RUN set -e; \
 	dnf -y install \
+	    awk \
 	    automake \
 	    git \
 	    jemalloc-devel \
