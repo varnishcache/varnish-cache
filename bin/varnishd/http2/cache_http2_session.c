@@ -126,6 +126,7 @@ h2_init_sess(struct sess *sp, struct h2_sess *h2s, struct req **psrq,
 	h2_local_settings(&h2->local_settings);
 	h2->remote_settings = H2_proto_settings;
 	h2->decode = decode;
+	h2->expect_settings_next = 1;
 	VEFD_INIT(h2->efd);
 
 	h2->tx_window = h2->remote_settings.initial_window_size;

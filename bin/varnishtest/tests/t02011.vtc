@@ -43,9 +43,6 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txpri
-	stream 0 rxsettings -run
-
 	stream 1 {
 		txreq -hdr should sync
 		barrier b1 sync

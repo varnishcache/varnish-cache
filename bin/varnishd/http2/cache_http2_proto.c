@@ -978,6 +978,22 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 		goto exit;
 	}
 
+	if (h2->expect_settings_next) {
+		if (h2f != H2_F_SETTINGS || (h2->rxf_flags & H2FF_ACK)) {
+			// rfc7540,l,579,637
+			// rfc7540,l,482,485
+			VSLb(h2->vsl, SLT_Error,
+			    "H2: unexpected %s%s frame on stream %d,"
+			    " expected preface settings",
+			    h2f->name,
+			    h2->rxf_flags & H2FF_ACK ? "(ACK)" : "",
+			    h2->rxf_stream);
+			h2e = H2CE_PROTOCOL_ERROR;
+			goto exit;
+		}
+		h2->expect_settings_next = 0;
+	}
+
 	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
 		// rfc7540,l,1140,1145
 		// rfc7540,l,1153,1158
@@ -1225,9 +1241,6 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	h2->htc->rxbuf_b += h2->rxf_len + 9;
 	assert(h2->htc->rxbuf_b <= h2->htc->rxbuf_e);
-
-	/* XXX: Apply connection preface SETTINGS expectation as first
-	 * frame, protocol error on anything else.. */
 
 	if (h2->rxf_type >= H2FMAX) {
 		// rfc7540,l,679,681

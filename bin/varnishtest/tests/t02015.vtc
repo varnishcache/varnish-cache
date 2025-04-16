@@ -19,12 +19,7 @@ logexpect l1 -v v1 -g raw -q ReqAcct {
 } -start
 
 client c1 {
-	txpri
-
 	stream 0 {
-		rxsettings
-		expect settings.ack == false
-		txsettings -ack
 		txsettings -winsize 1000
 		rxsettings
 		expect settings.ack == true

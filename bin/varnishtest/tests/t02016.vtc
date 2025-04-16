@@ -25,12 +25,7 @@ logexpect l1 -v v1 {
 } -start
 
 client c1 {
-	txpri
-
 	stream 0 {
-		rxsettings
-		expect settings.ack == false
-		txsettings -ack
 		txsettings -winsize 1000
 		rxsettings
 		expect settings.ack == true
@@ -62,12 +57,7 @@ logexpect l2 -v v1 {
 } -start
 
 client c2 {
-	txpri
-
 	stream 0 {
-		rxsettings
-		expect settings.ack == false
-		txsettings -ack
 		txsettings -winsize 1000
 		rxsettings
 		expect settings.ack == true
@@ -103,12 +93,7 @@ logexpect l3 -v v1 {
 } -start
 
 client c3 {
-	txpri
-
 	stream 0 {
-		rxsettings
-		expect settings.ack == false
-		txsettings -ack
 		txsettings -winsize 1000
 		rxsettings
 		expect settings.ack == true

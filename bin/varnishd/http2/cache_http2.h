@@ -166,6 +166,8 @@ struct h2_sess {
 	unsigned			magic;
 #define H2_SESS_MAGIC			0xa16f7e4b
 
+	unsigned			expect_settings_next;
+
 	pthread_t			rxthr;
 
 	struct sess			*sess;
