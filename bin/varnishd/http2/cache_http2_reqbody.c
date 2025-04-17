@@ -58,7 +58,7 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 
 	Lck_Lock(&h2->sess->mtx);
 	CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);

@@ -214,7 +214,17 @@ struct h2_sess {
 	vtim_real			last_rst;
 };
 
-#define ASSERT_RXTHR(h2) do {assert(h2->rxthr == pthread_self());} while(0)
+#define ASSERT_H2_SESS(h2)						\
+	do {								\
+		CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);			\
+		assert(pthread_equal(h2->rxthr, pthread_self()));	\
+	} while (0)
+
+#define ASSERT_H2_REQ(h2) \
+	do {								\
+		CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);			\
+		assert(!pthread_equal(h2->rxthr, pthread_self()));	\
+	} while (0)
 
 /* http2/cache_http2_panic.c */
 #ifdef TRANSPORT_MAGIC

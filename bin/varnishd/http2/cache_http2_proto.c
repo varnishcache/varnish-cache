@@ -149,7 +149,7 @@ h2_new_req(struct h2_sess *h2, unsigned stream, struct req **preq)
 	struct req *req;
 	struct h2_req *r2;
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	if (preq != NULL)
 		TAKE_OBJ_NOTNULL(req, preq, REQ_MAGIC);
 	else {
@@ -189,8 +189,7 @@ h2_del_req(struct worker *wrk, struct h2_req **pr2)
 	TAKE_OBJ_NOTNULL(r2, pr2, H2_REQ_MAGIC);
 	AZ(r2->scheduled);
 	h2 = r2->h2sess;
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	sp = h2->sess;
 	Lck_Lock(&sp->mtx);
 	assert(h2->refcnt > 0);
@@ -223,7 +222,7 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2,
     struct h2_req *r2, h2_error h2e)
 {
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	AN(h2e);
 	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d sched=%d",
@@ -304,7 +303,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 
@@ -331,7 +330,7 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
 	// rfc7540,l,2262,2267
@@ -349,7 +348,7 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	vtim_dur d;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
 	if (h2->rapid_reset_limit == 0)
@@ -382,7 +381,7 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2_error h2e;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
 	if (h2->rxf_len != 4) {			// rfc7540,l,2003,2004
@@ -404,7 +403,7 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 
@@ -420,7 +419,7 @@ h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
 {
 	char b[8];
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	AN(h2e);
 
 	if (h2->goaway || !h2e->send_goaway)
@@ -443,7 +442,7 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	uint32_t wu;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
 	if (h2->rxf_len != 4) {
@@ -478,7 +477,7 @@ h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 	return (0);
 }
@@ -579,7 +578,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2_error retval = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 	AZ(h2->rxf_stream);
@@ -649,7 +648,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	h2_error h2e;
 	ssize_t cl;
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	assert(r2->state == H2_S_OPEN);
 	h2e = h2h_decode_hdr_fini(h2);
 	h2->new_req = NULL;
@@ -741,7 +740,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	size_t l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 
 	if (r2 != NULL) {
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: rx headers on non-idle stream");
@@ -835,7 +834,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2_error h2e;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
 	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req) {
@@ -865,7 +864,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 
 	if (r2 == NULL)
@@ -912,7 +911,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 	struct h2_req *r2;
 	h2_error h2e;
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 	if (h2->rxf_stream == 0 && h2f->act_szero != 0) {
 		H2S_Lock_VSLb(h2, SLT_SessError, "H2: unexpected %s frame on stream 0",
 		    h2f->name);
@@ -1024,7 +1023,7 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 	h2_error h2e, tmo;
 	vtim_real now;
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 
 	h2e = h2->error;
 	now = VTIM_real();
@@ -1122,7 +1121,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	 * into. */
 	AN(h2->htc->ws->r);
 
-	ASSERT_RXTHR(h2);
+	ASSERT_H2_SESS(h2);
 
 	if (h2->goaway && h2->open_streams == 0) {
 		/* We have not called HTC_RxStuff(), and thus not released
