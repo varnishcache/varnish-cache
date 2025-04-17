@@ -308,7 +308,7 @@ Example::
 	std.cache_req_body(std.bytes(real=10.0*1024));
 
 $Function INT integer([STRING s], [INT fallback],
-    [BOOL bool], [BYTES bytes], [DURATION duration], [REAL real],
+    [BOOL bool:boolean], [BYTES bytes], [DURATION duration], [REAL real],
     [TIME time])
 
 Returns an INT from a STRING, BOOL or other quantity.
@@ -376,7 +376,7 @@ Example::
 	}
 
 $Function REAL real([STRING s], [REAL fallback], [INT integer],
-    [BOOL bool], [BYTES bytes], [DURATION duration],
+    [BOOL bool:boolean], [BYTES bytes], [DURATION duration],
     [TIME time])
 
 Returns a REAL from a STRING, BOOL or other quantity.
