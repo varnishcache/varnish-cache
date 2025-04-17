@@ -44,9 +44,6 @@
 
 #include "cache_varnishd.h"
 #include "cache_ban.h"
-#include "cache_objhead.h"
-
-#include "vtree.h"
 
 struct metaban {
 	unsigned		magic;
@@ -58,7 +55,7 @@ struct metaban {
 };
 
 static inline int
-metaban_cmp(const struct metaban *i1, struct metaban *i2)
+metaban_cmp(const struct metaban *i1, const struct metaban *i2)
 {
 	if (i1->time < i2->time)
 		return (-1);
@@ -83,7 +80,8 @@ static pthread_mutex_t banidxmtx = PTHREAD_MUTEX_INITIALIZER;
 struct ban *
 BANIDX_lookup(vtim_real t0)
 {
-	struct metaban *m, needle = {0, .time = t0};
+	struct metaban *m;	//lint -e429 not freed or returned
+	struct metaban needle = {0, .time = t0};
 	struct ban *best = NULL, *b = NULL;
 	vtim_real t1;
 
@@ -114,6 +112,7 @@ BANIDX_lookup(vtim_real t0)
 		if (t1 < t0)
 			break;
 		ALLOC_OBJ(m, BANIDX_MAGIC);
+		AN(m);
 		m->time = t1;
 		m->ban = b;
 		AZ(VRBT_INSERT(banidx_s, &banidx, m));
