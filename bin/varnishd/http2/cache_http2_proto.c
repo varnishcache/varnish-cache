@@ -1565,7 +1565,6 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	if (h2->rxf_type >= H2FMAX) {
 		// rfc7540,l,679,681
-		// XXX: later, drain rest of frame
 		h2->bogosity++;
 		H2S_Lock_VSLb(h2, SLT_Debug,
 		    "H2: Unknown frame type 0x%02x (ignored)",
