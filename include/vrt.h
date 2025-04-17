@@ -534,6 +534,7 @@ typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /* VCL_BACKEND */
+extern VCL_BACKEND const vrt_none_backend;
 VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
 
 /* VCL_BLOB */
@@ -546,6 +547,9 @@ int VRT_INT_is_valid(VCL_INT);
 int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
 VCL_BOOL VRT_ipcmp(VRT_CTX, VCL_IP, VCL_IP);
 void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
+
+/* VCL_PROBE */
+extern VCL_PROBE const vrt_none_probe;
 
 /* VCL_REAL */
 int VRT_REAL_is_valid(VCL_REAL);

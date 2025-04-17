@@ -65,6 +65,14 @@ const struct vrt_blob *vrt_null_blob = &(struct vrt_blob){
 	.blob = "\0"
 };
 
+const struct director *const vrt_none_backend = NULL;
+
+const struct vrt_backend_probe *const vrt_none_probe =
+    &(const struct vrt_backend_probe){
+	.magic = VRT_BACKEND_PROBE_MAGIC,
+	.window = ~0U,
+};
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID

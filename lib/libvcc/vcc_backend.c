@@ -364,6 +364,25 @@ vcc_ParseProbe(struct vcc *tl)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vcc_EmitNoneProbe(struct vcc *tl)
+{
+	static unsigned emitted = 0;
+
+	if (emitted)
+		return;
+
+	Fh(tl, 0,
+	    "static const struct vrt_backend_probe vgc_probe_none[] = {{\n"
+	    "\t.magic = VRT_BACKEND_PROBE_MAGIC,\n"
+	    "\t.window = ~0U,\n"
+	    "}};\n");
+	emitted = 1;
+}
+
+/*--------------------------------------------------------------------
  * Parse and emit a backend host definition
  *
  * The struct vrt_backend is emitted to Fh().
@@ -403,6 +422,7 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 		ifp = New_IniFin(tl);
 		VSB_printf(ifp->ini, "\t(void)%s;", vgcname);
 		VSB_printf(ifp->fin, "\t\t(void)%s;", vgcname);
+		sym->rname = "vrt_none_backend";
 		return;
 	}
 
@@ -534,6 +554,13 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
 			t_probe = tl->t;
+			if (vcc_IdIs(t_probe, "none")) {
+				vcc_EmitNoneProbe(tl);
+				Fb(tl, 0, "\t.probe = vgc_probe_none,\n");
+				vcc_NextToken(tl);
+				SkipToken(tl, ';');
+				continue;
+			}
 			pb = VCC_SymbolGet(tl, SYM_MAIN, SYM_PROBE,
 			    SYMTAB_EXISTING, XREF_REF);
 			ERRCHK(tl);
