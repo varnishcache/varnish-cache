@@ -170,6 +170,7 @@ h2_minimal_response(struct req *req, uint16_t status)
 	struct h2_req *r2;
 	size_t l;
 	uint8_t buf[6];
+	uint8_t flags;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
@@ -189,11 +190,11 @@ h2_minimal_response(struct req *req, uint16_t status)
 		req->err_code = status;
 
 	/* XXX return code checking once H2_Send returns anything but 0 */
+	flags = H2FF_END_HEADERS;
+	if (status >= 200)
+		flags |= H2FF_END_STREAM;
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2,
-	    H2_F_HEADERS,
-	    H2FF_END_HEADERS | (status < 200 ? 0 : H2FF_END_STREAM),
-	    l, buf, NULL);
+	H2_Send(req->wrk, r2, H2_F_HEADERS, flags, l, buf, NULL);
 	H2_Send_Rel(r2->h2sess, r2);
 	return (0);
 }
