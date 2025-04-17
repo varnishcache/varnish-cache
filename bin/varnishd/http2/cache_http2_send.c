@@ -181,8 +181,9 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
     uint32_t len, uint32_t stream, const void *ptr)
 {
 	uint8_t hdr[9];
-	ssize_t s;
+	ssize_t s = 0, i;
 	struct iovec iov[2];
+	unsigned niov;
 
 	(void)wrk;
 
@@ -204,9 +205,21 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 	memset(iov, 0, sizeof iov);
 	iov[0].iov_base = (void*)hdr;
 	iov[0].iov_len = sizeof hdr;
-	iov[1].iov_base = TRUST_ME(ptr);
-	iov[1].iov_len = len;
-	s = writev(h2->sess->fd, iov, len == 0 ? 1 : 2);
+	if (len > 0) {
+		iov[1].iov_base = TRUST_ME(ptr);
+		iov[1].iov_len = len;
+		niov = 2;
+	} else
+		niov = 1;
+
+	while (s != sizeof hdr + len) {
+		i = writev(h2->sess->fd, iov, niov);
+		if (i <= 0)
+			break;
+		VIOV_prune(iov, &niov, i);
+		s += i;
+	}
+
 	if (s != sizeof hdr + len) {
 		if (errno == EWOULDBLOCK) {
 			H2S_Lock_VSLb(h2, SLT_SessError,
