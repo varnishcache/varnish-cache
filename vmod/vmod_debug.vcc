@@ -138,7 +138,26 @@ Encrypt the HTTP header with quad-ROT13 encryption,
 $Function STRING argtest(
 	  STRING one, REAL two =2, STRING three= "3",
 	  STRING comma=",", INT four = 4,
-	  [ STRING opt])
+	  [ ACL acl],
+	  [ BACKEND backend],
+	  [ BLOB blob],
+	  [ BODY body],
+	  [ BOOL bool:boolean],
+	  [ BYTES bytes],
+	  [ DURATION duration],
+	  [ ENUM enum:enumeration],
+	  [ HEADER header],
+	  [ HTTP http],
+	  [ INT int:integer],
+	  [ IP ip],
+	  [ PROBE probe],
+	  [ REAL real],
+	  [ REGEX regex],
+	  [ STEVEDORE stevedore],
+	  [ STRANDS strands],
+	  [ STRING string],
+	  [ SUB sub],
+	  [ TIME time])
 
 $Function INT vre_limit()
 

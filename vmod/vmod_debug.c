@@ -223,7 +223,7 @@ xyzzy_argtest(VRT_CTX, struct VARGS(argtest) *arg)
 	AN(arg);
 	bprintf(buf, "%s %g %s %s %jd %d %s",
 	    arg->one, arg->two, arg->three, arg->comma, (intmax_t)arg->four,
-	    arg->valid_opt, arg->valid_opt ? arg->opt : "<undef>");
+	    arg->valid_string, arg->valid_string ? arg->string : "<undef>");
 	return (WS_Copy(ctx->ws, buf, -1));
 }
 

@@ -28,7 +28,7 @@ varnish v1 -vcl+backend {
 		set resp.http.foo4 = debug.argtest("1", 2.4, three="3d", four=-1);
 		set resp.http.foo5 = debug.argtest("1", 2.5);
 		set resp.http.foo6 = debug.argtest("1", four=6);
-		set resp.http.foo7 = debug.argtest("1", opt="7");
+		set resp.http.foo7 = debug.argtest("1", string="7");
 
 		set resp.http.obj0 = obj0.string() + ", " + obj0.number();
 		set resp.http.obj1 = obj1.string() + ", " + obj1.number();
