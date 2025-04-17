@@ -10,7 +10,8 @@ libvmod_debug_la_SOURCES = \
 	vmod_debug_dyn.c \
 	vmod_debug_filters.c \
 	vmod_debug_obj.c \
-	vmod_debug_transport_reembarking_http1.c
+	vmod_debug_transport_reembarking_http1.c \
+	vmod_debug_transport_vai.c
 
 libvmod_debug_la_CFLAGS =
 
