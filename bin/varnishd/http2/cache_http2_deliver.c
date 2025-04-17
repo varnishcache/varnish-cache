@@ -73,7 +73,7 @@ V2D_Init(void)
 /**********************************************************************/
 
 static int v_matchproto_(vdp_init_f)
-h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
+h2_vdp_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
 	struct h2_req *r2;
 
@@ -86,7 +86,7 @@ h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_fini_f)
-h2_fini(struct vdp_ctx *vdc, void **priv)
+h2_vdp_fini(struct vdp_ctx *vdc, void **priv)
 {
 	struct h2_req *r2;
 
@@ -112,7 +112,7 @@ h2_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-h2_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+h2_vdp_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct h2_req *r2;
@@ -134,9 +134,9 @@ h2_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 
 static const struct vdp h2_vdp = {
 	.name =		"H2B",
-	.init =		h2_init,
-	.bytes =	h2_bytes,
-	.fini =		h2_fini,
+	.init =		h2_vdp_init,
+	.bytes =	h2_vdp_bytes,
+	.fini =		h2_vdp_fini,
 };
 
 static inline size_t
