@@ -16,8 +16,7 @@ git diff vtree.h | git apply -R > /dev/null 2>&1 || true
 GR=f6e54eb360a78856dcde930a00d9b2b3627309ab
 (cd /usr/src/ && git show $GR:sys/sys/tree.h ) |
 sed -E '
-485a\
-		AN(parent);			\\
+s/(\t*)parent = RB_PARENT.*/\0\n\1AN(parent);\t\t\t\t\\/
 s/_SYS_TREE_H_/_VTREE_H_/
 s/__uintptr_t/uintptr_t/g
 s/SPLAY/VSPLAY/g
