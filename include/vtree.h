@@ -885,7 +885,7 @@ name##_VRBT_FIND(const struct name *head, const struct type *elm)			\
 #define VRBT_GENERATE_NFIND(name, type, field, cmp, attr)			\
 /* Finds the first node greater than or equal to the search key */	\
 attr struct type *							\
-name##_VRBT_NFIND(struct name *head, struct type *elm)			\
+name##_VRBT_NFIND(const struct name *head, const struct type *elm)			\
 {									\
 	struct type *tmp = VRBT_ROOT(head);				\
 	struct type *res = NULL;					\
