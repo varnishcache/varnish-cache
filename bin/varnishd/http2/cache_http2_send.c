@@ -252,7 +252,7 @@ h2_win_limit(const struct h2_req *r2, const struct h2_sess *h2)
 	CHECK_OBJ_NOTNULL(h2->req0, H2_REQ_MAGIC);
 
 	Lck_AssertHeld(&h2->sess->mtx);
-	return (vmin_t(int64_t, r2->t_window, h2->req0->t_window));
+	return (vmin_t(int64_t, r2->tx_window, h2->req0->tx_window));
 }
 
 static void
@@ -263,8 +263,8 @@ h2_win_charge(struct h2_req *r2, const struct h2_sess *h2, uint32_t w)
 	CHECK_OBJ_NOTNULL(h2->req0, H2_REQ_MAGIC);
 
 	Lck_AssertHeld(&h2->sess->mtx);
-	r2->t_window -= w;
-	h2->req0->t_window -= w;
+	r2->tx_window -= w;
+	h2->req0->tx_window -= w;
 }
 
 static int64_t
@@ -281,20 +281,20 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 		return (0);
 
 	Lck_Lock(&h2->sess->mtx);
-	if (r2->t_window <= 0 || h2->req0->t_window <= 0) {
+	if (r2->tx_window <= 0 || h2->req0->tx_window <= 0) {
 		r2->t_winupd = VTIM_real();
 		h2_send_rel_locked(h2, r2);
 
 		assert(h2->winup_streams >= 0);
 		h2->winup_streams++;
 
-		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == NULL) {
+		while (r2->tx_window <= 0 && h2_errcheck(r2, h2) == NULL) {
 			r2->cond = &wrk->cond;
 			(void)h2_cond_wait(r2->cond, h2, r2);
 			r2->cond = NULL;
 		}
 
-		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == NULL)
+		while (h2->req0->tx_window <= 0 && h2_errcheck(r2, h2) == NULL)
 			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
 
 		if (h2_errcheck(r2, h2) == NULL) {
@@ -316,8 +316,8 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 	}
 
 	if (w == 0 && h2_errcheck(r2, h2) == NULL) {
-		assert(r2->t_window > 0);
-		assert(h2->req0->t_window > 0);
+		assert(r2->tx_window > 0);
+		assert(h2->req0->tx_window > 0);
 		w = h2_win_limit(r2, h2);
 		if (w > wanted)
 			w = wanted;

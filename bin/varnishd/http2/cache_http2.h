@@ -144,8 +144,9 @@ struct h2_req {
 	double				t_winupd;
 	pthread_cond_t			*cond;
 	VTAILQ_ENTRY(h2_req)		list;
-	int64_t				t_window;
-	int64_t				r_window;
+
+	int64_t				tx_window;
+	int64_t				rx_window;
 
 	/* Where to wake this stream up */
 	struct worker			*wrk;

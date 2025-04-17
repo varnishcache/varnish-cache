@@ -166,8 +166,8 @@ h2_new_req(struct h2_sess *h2, unsigned stream, struct req **preq)
 	r2->req = req;
 	if (stream)
 		r2->counted = 1;
-	r2->r_window = h2->local_settings.initial_window_size;
-	r2->t_window = h2->remote_settings.initial_window_size;
+	r2->rx_window = h2->local_settings.initial_window_size;
+	r2->tx_window = h2->remote_settings.initial_window_size;
 	req->transport_priv = r2;
 	Lck_Lock(&h2->sess->mtx);
 	if (stream)
@@ -456,13 +456,13 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL)
 		return (0);
 	Lck_Lock(&h2->sess->mtx);
-	r2->t_window += wu;
+	r2->tx_window += wu;
 	if (r2 == h2->req0)
 		PTOK(pthread_cond_broadcast(h2->winupd_cond));
 	else if (r2->cond != NULL)
 		PTOK(pthread_cond_signal(r2->cond));
 	Lck_Unlock(&h2->sess->mtx);
-	if (r2->t_window >= (1LL << 31))
+	if (r2->tx_window >= (1LL << 31))
 		return (H2SE_FLOW_CONTROL_ERROR);
 	return (0);
 }
@@ -529,7 +529,7 @@ h2_win_adjust(const struct h2_sess *h2, uint32_t oldval, uint32_t newval)
 			 * We allow a window to go negative, as per
 			 * rfc7540,l,2676,2680
 			 */
-			r2->t_window += (int64_t)newval - oldval;
+			r2->tx_window += (int64_t)newval - oldval;
 			break;
 		default:
 			break;

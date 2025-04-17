@@ -109,8 +109,8 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 		    r2->h2sess, r2->scheduled, h2_panic_error(r2->error));
 		VSB_printf(vsb, "t_send = %f, t_winupd = %f,\n",
 		    r2->t_send, r2->t_winupd);
-		VSB_printf(vsb, "t_window = %jd, r_window = %jd,\n",
-		    (intmax_t)r2->t_window, (intmax_t)r2->r_window);
+		VSB_printf(vsb, "tx_window = %jd, rx_window = %jd,\n",
+		    (intmax_t)r2->tx_window, (intmax_t)r2->rx_window);
 
 		if (!PAN_dump_struct(vsb, r2->rxbuf, H2_RXBUF_MAGIC, "rxbuf")) {
 			VSB_printf(vsb, "stvbuf = %p,\n", r2->rxbuf->stvbuf);
