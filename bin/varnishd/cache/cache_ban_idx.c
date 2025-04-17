@@ -44,9 +44,6 @@
 
 #include "cache_varnishd.h"
 #include "cache_ban.h"
-#include "cache_objhead.h"
-
-#include "vtree.h"
 
 struct metaban {
 	unsigned		magic;
@@ -58,7 +55,7 @@ struct metaban {
 };
 
 static inline int
-metaban_cmp(const struct metaban *i1, struct metaban *i2)
+metaban_cmp(const struct metaban *i1, const struct metaban *i2)
 {
 	if (i1->time < i2->time)
 		return (-1);
@@ -67,10 +64,33 @@ metaban_cmp(const struct metaban *i1, struct metaban *i2)
 	return (0);
 }
 
+/* why does vtree.h not declare name and elm const ? */
+#define VRBT_GENERATE_NFINDc(name, type, field, cmp, attr)		\
+/* Finds the first node greater than or equal to the search key */	\
+attr struct type *							\
+name##_VRBT_NFIND(const struct name *head, const struct type *elm)	\
+{									\
+	struct type *tmp = VRBT_ROOT(head);				\
+	struct type *res = NULL;					\
+	__typeof(cmp(NULL, NULL)) comp;					\
+	while (tmp) {							\
+		comp = cmp(elm, tmp);					\
+		if (comp < 0) {						\
+			res = tmp;					\
+			tmp = VRBT_LEFT(tmp, field);			\
+		}							\
+		else if (comp > 0)					\
+			tmp = VRBT_RIGHT(tmp, field);			\
+		else							\
+			return (tmp);					\
+	}								\
+	return (res);							\
+}
+
 VRBT_HEAD(banidx_s, metaban);
 VRBT_GENERATE_REMOVE_COLOR(banidx_s, metaban, tree, static)
 VRBT_GENERATE_REMOVE(banidx_s, metaban, tree, static)
-VRBT_GENERATE_NFIND(banidx_s, metaban, tree, metaban_cmp, static)
+VRBT_GENERATE_NFINDc(banidx_s, metaban, tree, metaban_cmp, static)
 VRBT_GENERATE_INSERT_COLOR(banidx_s, metaban, tree, static)
 VRBT_GENERATE_INSERT_FINISH(banidx_s, metaban, tree, static)
 VRBT_GENERATE_INSERT(banidx_s, metaban, tree, metaban_cmp, static)
@@ -83,7 +103,8 @@ static pthread_mutex_t banidxmtx = PTHREAD_MUTEX_INITIALIZER;
 struct ban *
 BANIDX_lookup(vtim_real t0)
 {
-	struct metaban *m, needle = {0, .time = t0};
+	struct metaban *m;	//lint -e429 not freed or returned
+	struct metaban needle = {0, .time = t0};
 	struct ban *best = NULL, *b = NULL;
 	vtim_real t1;
 
@@ -114,6 +135,7 @@ BANIDX_lookup(vtim_real t0)
 		if (t1 < t0)
 			break;
 		ALLOC_OBJ(m, BANIDX_MAGIC);
+		AN(m);
 		m->time = t1;
 		m->ban = b;
 		AZ(VRBT_INSERT(banidx_s, &banidx, m));
