@@ -583,7 +583,7 @@ class Stanza():
             fmt_cstruct(
                 fo,
                 '.f_' + proto.cname() + ' =',
-                self.vcc.sympfx + proto.cname() + ','
+                proto.cname(True) + ','
             )
 
     def cstruct(self, unused_fo, unused_define):
