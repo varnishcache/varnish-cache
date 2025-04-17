@@ -301,6 +301,7 @@ h2_deliver(struct req *req, int sendbody)
 	struct vsb resp[1];
 	struct vrt_ctx ctx[1];
 	uintptr_t ss;
+	uint8_t flags;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -331,10 +332,12 @@ h2_deliver(struct req *req, int sendbody)
 
 	r2->t_send = req->t_prev;
 
+	flags = H2FF_END_HEADERS;
+	if (!sendbody)
+		flags |= H2FF_END_STREAM;
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2, H2_F_HEADERS,
-	    (sendbody ? 0 : H2FF_END_STREAM) | H2FF_END_HEADERS,
-	    sz, r, &req->acct.resp_hdrbytes);
+	H2_Send(req->wrk, r2, H2_F_HEADERS, flags, sz, r,
+	    &req->acct.resp_hdrbytes);
 	H2_Send_Rel(r2->h2sess, r2);
 
 	WS_Reset(req->ws, ss);
