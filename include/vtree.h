@@ -450,7 +450,7 @@ struct {								\
 #define VRBT_PROTOTYPE_FIND(name, type, attr)				\
 	attr struct type *name##_VRBT_FIND(const struct name *, const struct type *)
 #define VRBT_PROTOTYPE_NFIND(name, type, attr)				\
-	attr struct type *name##_VRBT_NFIND(struct name *, struct type *)
+	attr struct type *name##_VRBT_NFIND(const struct name *, const struct type *)
 #define VRBT_PROTOTYPE_NEXT(name, type, attr)				\
 	attr struct type *name##_VRBT_NEXT(struct type *)
 #define VRBT_PROTOTYPE_INSERT_NEXT(name, type, attr)			\
