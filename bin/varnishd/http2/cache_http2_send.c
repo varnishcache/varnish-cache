@@ -43,19 +43,6 @@
 
 #define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
 
-static h2_error
-h2_errcheck(const struct h2_req *r2, const struct h2_sess *h2)
-{
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-
-	if (r2->error != NULL)
-		return (r2->error);
-	if (h2->error != NULL && r2->stream > h2->goaway_last_stream)
-		return (h2->error);
-	return (NULL);
-}
-
 static int
 h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 {
@@ -289,16 +276,16 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 		assert(h2->winup_streams >= 0);
 		h2->winup_streams++;
 
-		while (r2->tx_window <= 0 && h2_errcheck(r2, h2) == NULL) {
+		while (r2->tx_window <= 0 && h2_errcheck(r2) == NULL) {
 			r2->cond = &wrk->cond;
 			(void)h2_cond_wait(r2->cond, h2, r2);
 			r2->cond = NULL;
 		}
 
-		while (h2->req0->tx_window <= 0 && h2_errcheck(r2, h2) == NULL)
+		while (h2->req0->tx_window <= 0 && h2_errcheck(r2) == NULL)
 			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
 
-		if (h2_errcheck(r2, h2) == NULL) {
+		if (h2_errcheck(r2) == NULL) {
 			w = vmin_t(int64_t, h2_win_limit(r2, h2), wanted);
 			h2_win_charge(r2, h2, w);
 			assert (w > 0);
@@ -316,7 +303,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 		h2_send_get_locked(wrk, h2, r2);
 	}
 
-	if (w == 0 && h2_errcheck(r2, h2) == NULL) {
+	if (w == 0 && h2_errcheck(r2) == NULL) {
 		assert(r2->tx_window > 0);
 		assert(h2->req0->tx_window > 0);
 		w = h2_win_limit(r2, h2);
@@ -353,7 +340,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 	AN(H2_SEND_HELD(h2, r2));
 
-	if (h2_errcheck(r2, h2) != NULL)
+	if (h2_errcheck(r2) != NULL)
 		return;
 
 	AN(ftyp);
@@ -378,7 +365,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 	if (ftyp->respect_window) {
 		tf = h2_do_window(wrk, r2, h2, (len > mfs) ? mfs : len);
-		if (h2_errcheck(r2, h2) != NULL)
+		if (h2_errcheck(r2) != NULL)
 			return;
 		AN(H2_SEND_HELD(h2, r2));
 	} else
@@ -399,7 +386,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 			if (ftyp->respect_window && p != ptr) {
 				tf = h2_do_window(wrk, r2, h2,
 				    (len > mfs) ? mfs : len);
-				if (h2_errcheck(r2, h2) != NULL)
+				if (h2_errcheck(r2) != NULL)
 					return;
 				AN(H2_SEND_HELD(h2, r2));
 			}
@@ -453,7 +440,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 	h2_send(wrk, r2, ftyp, flags, len, ptr, counter);
 
-	h2e = h2_errcheck(r2, r2->h2sess);
+	h2e = h2_errcheck(r2);
 	if (H2_ERROR_MATCH(h2e, H2SE_CANCEL))
 		H2_Send_RST(wrk, r2->h2sess, r2, r2->stream, h2e);
 }

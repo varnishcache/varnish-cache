@@ -141,6 +141,20 @@ h2_connectionerror(uint32_t u)
 		return (H2NN_ERROR);
 }
 
+h2_error
+h2_errcheck(const struct h2_req *r2)
+{
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->h2sess, H2_SESS_MAGIC);
+
+	if (r2->error != NULL)
+		return (r2->error);
+	if (r2->h2sess->error != NULL &&
+	    r2->stream > r2->h2sess->goaway_last_stream)
+		return (r2->h2sess->error);
+	return (NULL);
+}
+
 /**********************************************************************/
 
 struct h2_req *
