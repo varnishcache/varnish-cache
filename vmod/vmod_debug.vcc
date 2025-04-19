@@ -472,6 +472,10 @@ Example::
 
 	Debug		c prefix[0]: (ws) 0x7fe69ef80420 abcd...
 
+$Function VOID body_prefix(STRING)
+
+Add this string to the prefix sent by the body_prefix filter
+
 DEPRECATED
 ==========
 
