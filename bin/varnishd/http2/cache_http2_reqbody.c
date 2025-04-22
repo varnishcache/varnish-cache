@@ -189,7 +189,7 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		}
 
 		if (h2->rxf_flags & H2FF_END_STREAM)
-			r2->state = H2_S_CLOS_REM;
+			h2_stream_setstate(r2, H2_S_CLOS_REM);
 		Lck_Lock(&h2->sess->mtx);
 		h2_reqbody_kick(r2);
 		Lck_Unlock(&h2->sess->mtx);
@@ -269,7 +269,7 @@ h2_reqbody_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	r2->rxbuf->head += len;
 	assert(r2->rxbuf->tail <= r2->rxbuf->head);
 	if (h2->rxf_flags & H2FF_END_STREAM)
-		r2->state = H2_S_CLOS_REM;
+		h2_stream_setstate(r2, H2_S_CLOS_REM);
 	h2_reqbody_kick(r2);
 	Lck_Unlock(&h2->sess->mtx);
 

@@ -260,11 +260,7 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2, struct h2_req **pr2,
 		r2->t_win_low = 0.;
 	}
 
-	if (r2->state < H2_S_CLOSED) {
-		r2->state = H2_S_CLOSED;
-		assert(h2->open_streams > 0);
-		h2->open_streams--;
-	}
+	h2_stream_setstate(r2, H2_S_CLOSED);
 
 	if (r2->scheduled) {
 		Lck_Lock(&h2->sess->mtx);
@@ -682,6 +678,11 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	h2e = h2h_decode_hdr_fini(h2);
 	AZ(h2->hpack_lock);
 
+	if (req->req_body_status == BS_NONE) {
+		/* REQ_BODY_NONE implies that the HEADERS frame had flag
+		 * END_STREAM set. */
+		h2_stream_setstate(r2, H2_S_CLOS_REM);
+	}
 	if (h2e != NULL) {
 		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
 		assert(!WS_IsReserved(r2->req->ws));
@@ -803,7 +804,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_H2_SESS(h2);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2->state == H2_S_IDLE);
-	r2->state = H2_S_OPEN;
+	h2_stream_setstate(r2, H2_S_OPEN);
 
 	req = r2->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -1046,6 +1047,29 @@ exit:
 		if (r2 != NULL)
 			h2_kill_req(wrk, h2, &r2, h2e);
 	}
+}
+
+void
+h2_stream_setstate(struct h2_req *r2, enum h2_stream_e state)
+{
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	ASSERT_H2_SESS(r2->h2sess);
+
+	if (r2->state >= state) {
+		/* State transitions only go from lower states to
+		 * higher. If we are already at a higher state, ignore
+		 * it. (We do not assert on state changes because change
+		 * of state is both driven by our internal progress as
+		 * well as incoming client data.) */
+		return;
+	}
+
+	if (state >= H2_S_CLOSED) {
+		assert(r2->h2sess->open_streams > 0);
+		r2->h2sess->open_streams--;
+	}
+
+	r2->state = state;
 }
 
 static h2_error

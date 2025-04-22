@@ -330,7 +330,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	assert(r2->req->req_step == R_STP_TRANSPORT);
 	r2->req->task->func = h2_do_req;
 	r2->req->task->priv = r2->req;
-	r2->state = H2_S_CLOS_REM; // rfc7540,l,489,491
+	h2_stream_setstate(r2, H2_S_CLOS_REM); // rfc7540,l,489,491
 	http_SetH(r2->req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
 	return (r2);

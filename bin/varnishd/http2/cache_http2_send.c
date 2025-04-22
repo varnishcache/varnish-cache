@@ -477,12 +477,8 @@ H2_Send_TxStuff(struct h2_sess *h2)
 
 		assert(large->count <= large->len);
 		if (large->count == large->len) {
-			if (large->r2->state < H2_S_CLOSED &&
-			    large->flags & H2FF_END_STREAM) {
-				large->r2->state = H2_S_CLOSED;
-				assert(h2->open_streams > 0);
-				h2->open_streams--;
-			}
+			if (large->flags & H2FF_END_STREAM)
+				h2_stream_setstate(large->r2, H2_S_CLOSED);
 
 			/* Signal that we are finished */
 			Lck_Lock(&h2->sess->mtx);

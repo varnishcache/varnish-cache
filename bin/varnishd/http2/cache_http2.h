@@ -294,6 +294,7 @@ const char *h2_framename(int frame);
 h2_error h2_errcheck(const struct h2_req *r2);
 void h2_async_error(struct h2_req *r2, h2_error h2e);
 void h2_attention(struct h2_sess *h2);
+void h2_stream_setstate(struct h2_req *r2, enum h2_stream_e state);
 void h2_run(struct worker *wrk, struct h2_sess *h2);
 struct h2_req * h2_new_req(struct h2_sess *, unsigned stream, struct req **);
 void h2_kill_req(struct worker *, struct h2_sess *, struct h2_req **, h2_error);
