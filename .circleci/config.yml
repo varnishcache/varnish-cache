@@ -45,7 +45,8 @@ jobs:
                 make \
                 pcre2-devel \
                 python3 \
-                python3-sphinx
+                python3-sphinx \
+                awk
       - checkout
       - when:
           condition: << pipeline.parameters.dist-url >>
