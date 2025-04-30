@@ -1955,8 +1955,6 @@ Some of the global runtime parameters related to VCL transactions are
 readable anywhere in VCL. The value of a parameter can change between
 accesses, it is not cached for the duration of a VCL task.
 
-.. TODO: sphinx references to param docs.
-
 param.backend_idle_timeout
 
 	Type: DURATION
