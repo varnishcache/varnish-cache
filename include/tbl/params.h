@@ -485,6 +485,21 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	uncacheable_ttl,
+	/* type */	duration,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"2m",
+	/* units */	"seconds",
+	/* descr */
+	"The TTL assigned to uncacheable objects by the built-in VCL.",
+	/* flags */	OBJ_STICKY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"2m"
+)
+
+PARAM_SIMPLE(
 	/* name */	http1_iovs,
 	/* type */	uint,
 	/* min */	"5",

@@ -1,0 +1,34 @@
+varnishtest "Tweak uncacheable_ttl for built-in VCL"
+
+server s1 {
+	loop 3 {
+		rxreq
+		expect req.http.is-hitmiss == false
+		txresp
+	}
+
+	rxreq
+	expect req.http.is-hitmiss == true
+	txresp
+} -start
+
+varnish v1 -cliok "param.set default_ttl 0s"
+varnish v1 -cliok "param.set default_grace 0s"
+varnish v1 -cliok "param.set default_keep 0s"
+varnish v1 -cliok "param.set uncacheable_ttl 1ms"
+varnish v1 -vcl+backend {
+	sub vcl_miss {
+		set req.http.is-hitmiss = req.is_hitmiss;
+	}
+} -start
+
+client c1 -repeat 2 {
+	txreq
+	rxresp
+	delay 0.5
+} -run
+
+varnish v1 -cliok "param.set uncacheable_ttl 1m"
+
+client c1 -run
+server s1 -wait

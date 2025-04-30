@@ -2109,3 +2109,12 @@ param.transit_buffer
 
 	Global parameter transit_buffer.
 
+
+param.uncacheable_ttl
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter uncacheable_ttl.
+

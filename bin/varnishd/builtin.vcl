@@ -255,7 +255,7 @@ sub vcl_beresp_range {
 }
 
 sub vcl_beresp_hitmiss {
-	set beresp.ttl = 120s;
+	set beresp.ttl = param.uncacheable_ttl;
 	set beresp.uncacheable = true;
 	return (deliver);
 }
