@@ -1963,7 +1963,7 @@ param.backend_idle_timeout
 
 	Readable from: all
 
-	Global parameter backend_idle_timeout.
+	Global parameter :ref:`ref_param_backend_idle_timeout`.
 
 param.backend_wait_limit
 
@@ -1971,7 +1971,7 @@ param.backend_wait_limit
 
 	Readable from: all
 
-	Global parameter backend_wait_limit.
+	Global parameter :ref:`ref_param_backend_wait_limit`.
 
 param.backend_wait_timeout
 
@@ -1979,7 +1979,7 @@ param.backend_wait_timeout
 
 	Readable from: all
 
-	Global parameter backend_wait_timeout.
+	Global parameter :ref:`ref_param_backend_wait_timeout`.
 
 param.between_bytes_timeout
 
@@ -1987,7 +1987,7 @@ param.between_bytes_timeout
 
 	Readable from: all
 
-	Global parameter between_bytes_timeout.
+	Global parameter :ref:`ref_param_between_bytes_timeout`.
 
 param.connect_timeout
 
@@ -1995,7 +1995,7 @@ param.connect_timeout
 
 	Readable from: all
 
-	Global parameter connect_timeout.
+	Global parameter :ref:`ref_param_connect_timeout`.
 
 param.default_grace
 
@@ -2003,7 +2003,7 @@ param.default_grace
 
 	Readable from: all
 
-	Global parameter default_grace.
+	Global parameter :ref:`ref_param_default_grace`.
 
 param.default_keep
 
@@ -2011,7 +2011,7 @@ param.default_keep
 
 	Readable from: all
 
-	Global parameter default_keep.
+	Global parameter :ref:`ref_param_default_keep`.
 
 param.default_ttl
 
@@ -2019,7 +2019,7 @@ param.default_ttl
 
 	Readable from: all
 
-	Global parameter default_ttl.
+	Global parameter :ref:`ref_param_default_ttl`.
 
 param.first_byte_timeout
 
@@ -2027,7 +2027,7 @@ param.first_byte_timeout
 
 	Readable from: all
 
-	Global parameter first_byte_timeout.
+	Global parameter :ref:`ref_param_first_byte_timeout`.
 
 param.idle_send_timeout
 
@@ -2035,7 +2035,7 @@ param.idle_send_timeout
 
 	Readable from: all
 
-	Global parameter idle_send_timeout.
+	Global parameter :ref:`ref_param_idle_send_timeout`.
 
 param.max_esi_depth
 
@@ -2043,7 +2043,7 @@ param.max_esi_depth
 
 	Readable from: all
 
-	Global parameter max_esi_depth.
+	Global parameter :ref:`ref_param_max_esi_depth`.
 
 param.max_restarts
 
@@ -2051,7 +2051,7 @@ param.max_restarts
 
 	Readable from: all
 
-	Global parameter max_restarts.
+	Global parameter :ref:`ref_param_max_restarts`.
 
 param.max_retries
 
@@ -2059,7 +2059,7 @@ param.max_retries
 
 	Readable from: all
 
-	Global parameter max_retries.
+	Global parameter :ref:`ref_param_max_retries`.
 
 param.pipe_task_deadline
 
@@ -2067,7 +2067,7 @@ param.pipe_task_deadline
 
 	Readable from: all
 
-	Global parameter pipe_task_deadline.
+	Global parameter :ref:`ref_param_pipe_task_deadline`.
 
 param.pipe_timeout
 
@@ -2075,7 +2075,7 @@ param.pipe_timeout
 
 	Readable from: all
 
-	Global parameter pipe_timeout.
+	Global parameter :ref:`ref_param_pipe_timeout`.
 
 param.send_timeout
 
@@ -2083,7 +2083,7 @@ param.send_timeout
 
 	Readable from: all
 
-	Global parameter send_timeout.
+	Global parameter :ref:`ref_param_send_timeout`.
 
 param.shortlived
 
@@ -2091,7 +2091,7 @@ param.shortlived
 
 	Readable from: all
 
-	Global parameter shortlived.
+	Global parameter :ref:`ref_param_shortlived`.
 
 param.timeout_idle
 
@@ -2099,7 +2099,7 @@ param.timeout_idle
 
 	Readable from: all
 
-	Global parameter timeout_idle.
+	Global parameter :ref:`ref_param_timeout_idle`.
 
 param.transit_buffer
 
@@ -2107,7 +2107,7 @@ param.transit_buffer
 
 	Readable from: all
 
-	Global parameter transit_buffer.
+	Global parameter :ref:`ref_param_transit_buffer`.
 
 
 param.uncacheable_ttl
