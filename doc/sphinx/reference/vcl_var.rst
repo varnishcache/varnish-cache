@@ -2109,12 +2109,11 @@ param.transit_buffer
 
 	Global parameter :ref:`ref_param_transit_buffer`.
 
-
 param.uncacheable_ttl
 
 	Type: DURATION
 
 	Readable from: all
 
-	Global parameter uncacheable_ttl.
+	Global parameter :ref:`ref_param_uncacheable_ttl`.
 
