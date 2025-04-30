@@ -81,6 +81,7 @@
  *	VRT_r_param_shortlived() added
  *	VRT_r_param_timeout_idle() added
  *	VRT_r_param_transit_buffer() added
+ *	VRT_r_param_uncacheable_ttl() added
  * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
