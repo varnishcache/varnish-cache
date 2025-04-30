@@ -1948,3 +1948,164 @@ storage.<name>.used_space
 	Used space in the named stevedore. Only available for the malloc
 	stevedore.
 
+Runtime parameters
+------------------
+
+Some of the global runtime parameters related to VCL transactions are
+readable anywhere in VCL. The value of a parameter can change between
+accesses, it is not cached for the duration of a VCL task.
+
+.. TODO: sphinx references to param docs.
+
+param.backend_idle_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter backend_idle_timeout.
+
+param.backend_wait_limit
+
+	Type: INT
+
+	Readable from: all
+
+	Global parameter backend_wait_limit.
+
+param.backend_wait_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter backend_wait_timeout.
+
+param.between_bytes_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter between_bytes_timeout.
+
+param.connect_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter connect_timeout.
+
+param.default_grace
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter default_grace.
+
+param.default_keep
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter default_keep.
+
+param.default_ttl
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter default_ttl.
+
+param.first_byte_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter first_byte_timeout.
+
+param.idle_send_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter idle_send_timeout.
+
+param.max_esi_depth
+
+	Type: INT
+
+	Readable from: all
+
+	Global parameter max_esi_depth.
+
+param.max_restarts
+
+	Type: INT
+
+	Readable from: all
+
+	Global parameter max_restarts.
+
+param.max_retries
+
+	Type: INT
+
+	Readable from: all
+
+	Global parameter max_retries.
+
+param.pipe_task_deadline
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter pipe_task_deadline.
+
+param.pipe_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter pipe_timeout.
+
+param.send_timeout
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter send_timeout.
+
+param.shortlived
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter shortlived.
+
+param.timeout_idle
+
+	Type: DURATION
+
+	Readable from: all
+
+	Global parameter timeout_idle.
+
+param.transit_buffer
+
+	Type: BYTES
+
+	Readable from: all
+
+	Global parameter transit_buffer.
+

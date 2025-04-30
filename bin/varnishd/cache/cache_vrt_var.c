@@ -1178,3 +1178,34 @@ SESS_VAR_DUR(timeout_idle, )
 SESS_VAR_DUR(timeout_linger, )
 SESS_VAR_DUR(send_timeout, )
 SESS_VAR_DUR(idle_send_timeout, set_idle_send_timeout(ctx->sp, d))
+
+/*--------------------------------------------------------------------*/
+
+#define PARAM_VAR(x, type)				\
+VCL_##type						\
+VRT_r_param_##x(VRT_CTX)				\
+{							\
+							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+	return (cache_param->x);			\
+}							\
+
+PARAM_VAR(backend_idle_timeout, DURATION)
+PARAM_VAR(backend_wait_limit, INT)
+PARAM_VAR(backend_wait_timeout, DURATION)
+PARAM_VAR(between_bytes_timeout, DURATION)
+PARAM_VAR(connect_timeout, DURATION)
+PARAM_VAR(default_grace, DURATION)
+PARAM_VAR(default_keep, DURATION)
+PARAM_VAR(default_ttl, DURATION)
+PARAM_VAR(first_byte_timeout, DURATION)
+PARAM_VAR(idle_send_timeout, DURATION)
+PARAM_VAR(max_esi_depth, INT)
+PARAM_VAR(max_restarts, INT)
+PARAM_VAR(max_retries, INT)
+PARAM_VAR(pipe_task_deadline, DURATION)
+PARAM_VAR(pipe_timeout, DURATION)
+PARAM_VAR(send_timeout, DURATION)
+PARAM_VAR(shortlived, DURATION)
+PARAM_VAR(timeout_idle, DURATION)
+PARAM_VAR(transit_buffer, BYTES)
