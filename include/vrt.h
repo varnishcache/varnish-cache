@@ -62,6 +62,25 @@
  *	struct gethdr_s.what changed to hdr_t
  *	VRT_VSC_Alloc() renamed to VRT_VSC_Allocv()
  *	new VRT_VSC_Alloc() added
+ *	VRT_r_param_backend_idle_timeout() added
+ *	VRT_r_param_backend_wait_limit() added
+ *	VRT_r_param_backend_wait_timeout() added
+ *	VRT_r_param_between_bytes_timeout() added
+ *	VRT_r_param_connect_timeout() added
+ *	VRT_r_param_default_grace() added
+ *	VRT_r_param_default_keep() added
+ *	VRT_r_param_default_ttl() added
+ *	VRT_r_param_first_byte_timeout() added
+ *	VRT_r_param_idle_send_timeout() added
+ *	VRT_r_param_max_esi_depth() added
+ *	VRT_r_param_max_restarts() added
+ *	VRT_r_param_max_retries() added
+ *	VRT_r_param_pipe_task_deadline() added
+ *	VRT_r_param_pipe_timeout() added
+ *	VRT_r_param_send_timeout() added
+ *	VRT_r_param_shortlived() added
+ *	VRT_r_param_timeout_idle() added
+ *	VRT_r_param_transit_buffer() added
  * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
