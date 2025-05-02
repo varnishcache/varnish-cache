@@ -1,0 +1,6 @@
+varnishtest "parameter alias bypassing protection"
+
+varnish v1 -arg "-r vcc_feature"
+
+varnish v1 -clierr 107 "param.set vcc_feature all"
+varnish v1 -clierr 107 "param.set vcc_allow_inline_c on"
