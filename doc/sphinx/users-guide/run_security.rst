@@ -155,18 +155,18 @@ HTTP service, but a few can do more damage than others:
 :ref:`ref_param_cc_command`
 	Execute arbitrary programs
 
-:ref:`ref_param_vcc_allow_inline_c`
-	Allow inline C in VCL, which would allow any C code from VCL
-	to be executed by Varnish.
+:ref:`ref_param_vcc_feature`
+	The ``allow_inline_c`` flag would allow any C code from VCL to be
+	executed by Varnish.
 
 Furthermore you may want to look at and lock down:
 
 :ref:`ref_param_syslog_cli_traffic`
 	Log all CLI commands to `syslog(8)`, so you know what goes on.
 
-:ref:`ref_param_vcc_unsafe_path`
-	Restrict VCL/VMODs to :ref:`ref_param_vcl_path` and
-	:ref:`ref_param_vmod_path`
+:ref:`ref_param_vcc_feature` again
+	The ``unsafe_path`` flag allows VCL/VMODs to be loaded outside of
+	:ref:`ref_param_vcl_path` and :ref:`ref_param_vmod_path`.
 
 :ref:`ref_param_vmod_path`
 	The directory (or colon separated list of directories) where
