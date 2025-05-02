@@ -536,8 +536,9 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 void
 MCF_ParamProtect(struct cli *cli, const char *args)
 {
-	char **av;
+	const struct parspec *orig;
 	struct parspec *pp;
+	char **av;
 	int i;
 
 	av = VAV_Parse(args, NULL, ARGV_COMMA);
@@ -552,8 +553,17 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 		if (pp == NULL) {
 			VCLI_Out(cli, "Unknown parameter %s", av[i]);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			VAV_Free(av);
-			return;
+			break;
+		}
+		if (pp->func == tweak_alias) {
+			orig = TRUST_ME(pp->priv);
+			AN(orig);
+			VCLI_Out(cli,
+			    "Cannot mark alias %s read only.\n"
+			    "Did you mean to mark %s read only?",
+			    pp->name, orig->name);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			break;
 		}
 		pp->flags |= PROTECTED;
 	}
