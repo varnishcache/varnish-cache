@@ -4,3 +4,7 @@ varnish v1 -arg "-r vcc_feature"
 
 varnish v1 -clierr 107 "param.set vcc_feature all"
 varnish v1 -clierr 107 "param.set vcc_allow_inline_c on"
+
+shell -err -expect "Cannot mark alias vcc_allow_inline_c read only" {
+	varnishd -d -r vcc_allow_inline_c -n ${tmpdir}/vd
+}
