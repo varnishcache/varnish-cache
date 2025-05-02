@@ -155,6 +155,18 @@ mcf_addpar(struct parspec *ps)
 	VTAILQ_INSERT_TAIL(&phead, pl, list);
 }
 
+static const struct parspec *
+mcf_alias(struct parspec *alias, const struct parspec *pp)
+{
+	const struct parspec *orig;
+
+	orig = TRUST_ME(pp->priv);
+	AN(orig);
+	memcpy(alias, orig, sizeof *alias);
+	alias->priv = TRUST_ME(orig);
+	return (alias);
+}
+
 /*--------------------------------------------------------------------
  * Wrap the text nicely.
  * Lines are allowed to contain two TABS and we render that as a table
@@ -253,6 +265,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct plist *pl;
 	const struct parspec *pp, *pa;
+	struct parspec alias[1];
 	int n, lfmt = 0, chg = 0;
 	struct vsb *vsb;
 	const char *show = NULL;
@@ -285,9 +298,13 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		pp = pl->spec;
 		if (lfmt && show != NULL && strcmp(pp->name, show))
 			continue;
-		if (pp->func == tweak_alias &&
-		    (show == NULL || strcmp(pp->name, show)))
-			continue;
+		if (pp->func == tweak_alias) {
+			if (show == NULL)
+				continue;
+			if (strcmp(pp->name, show))
+				continue;
+			pp = mcf_alias(alias, pp);
+		}
 		n++;
 
 		VSB_clear(vsb);
@@ -385,6 +402,7 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 	int n, comma = 0, chg = 0;
 	struct plist *pl;
 	const struct parspec *pp, *pa;
+	struct parspec alias[1];
 	struct vsb *vsb, *def;
 	const char *show = NULL, *sep;
 
@@ -422,9 +440,13 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 		pp = pl->spec;
 		if (show != NULL && strcmp(pp->name, show) != 0)
 			continue;
-		if (pp->func == tweak_alias &&
-		    (show == NULL || strcmp(pp->name, show)))
-			continue;
+		if (pp->func == tweak_alias) {
+			if (show == NULL)
+				continue;
+			if (strcmp(pp->name, show))
+				continue;
+			pp = mcf_alias(alias, pp);
+		}
 		n++;
 
 		VSB_clear(vsb);
@@ -544,6 +566,7 @@ void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
 	const struct parspec *pp;
+	struct parspec alias[1];
 
 	pp = mcf_findpar(param);
 	if (pp == NULL) {
@@ -559,13 +582,17 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		);
 		return;
 	}
+	if (!val)
+		val = pp->def;
+	if (pp->func == tweak_alias) {
+		pp = mcf_alias(alias, pp);
+		alias->name = param;
+	}
 	if (pp->flags & PROTECTED) {
 		VCLI_SetResult(cli, CLIS_AUTH);
 		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
 		return;
 	}
-	if (!val)
-		val = pp->def;
 	if (pp->func(cli->sb, pp, val))
 		VCLI_SetResult(cli, CLIS_PARAM);
 
