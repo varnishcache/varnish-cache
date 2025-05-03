@@ -255,6 +255,7 @@ ban_lurker_test_ban(struct worker *wrk, struct ban *bt,
 
 	while (1) {
 		if (++ban_batch > cache_param->ban_lurker_batch) {
+			(void)Pool_TrySumstat(wrk);
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 			ban_batch = 0;
 		}
