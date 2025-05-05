@@ -326,6 +326,10 @@
 -esym(534, wrefresh)
 
 ///////////////////////////////////////////////////////////////////////
+// vmod_debug, put here because it is used twice (varnishd2 and separate)
+-esym(768, arg_xyzzy_debug_argtest::*)
+
+///////////////////////////////////////////////////////////////////////
 // Noise reduction, review periodically
 
 -e459	// unlocked access from func-ptr
