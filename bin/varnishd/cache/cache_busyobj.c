@@ -199,6 +199,7 @@ VBO_SetState(struct worker *wrk, struct busyobj *bo, enum boc_state_e next)
 		 * again with a usable req if a return(error) transition led
 		 * to vcl_backend_error instead of a failed fetch attempt.
 		 */
+		bo->req = NULL;
 		broadcast = 1;
 		break;
 	default:
