@@ -374,12 +374,6 @@ workflows:
           name: build_almalinux_9
           dist: almalinux
           release: "9"
-      # fedora is our witness
-      - build:
-          name: build_fedora_latest
-          dist: fedora
-          release: latest
-          make_target: witness.dot
       # oldest debian goes 32bit
       - build:
           name: build_debian_bullseye
@@ -395,10 +389,12 @@ workflows:
           name: build_ubuntu_focal
           dist: ubuntu
           release: focal
+      # jammy is our witness
       - build:
           name: build_ubuntu_jammy
           dist: ubuntu
           release: jammy
+          make_target: witness.dot
       - build:
           name: build_ubuntu_noble
           dist: ubuntu
@@ -412,10 +408,6 @@ workflows:
           release: latest
           extra_conf: --without-contrib
           make_target: check
-      - build:
-          name: build_archlinux
-          dist: archlinux
-          release: base-devel
   packaging:
     when: *packaging_cond
     jobs: &packaging_jobs
@@ -436,7 +428,6 @@ workflows:
                 - debian:bookworm
                 - almalinux:8
                 - almalinux:9
-                - fedora:latest
                 - alpine:latest
               rclass:
                 - arm.medium
