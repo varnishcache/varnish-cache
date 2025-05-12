@@ -234,6 +234,7 @@ LIBS="${PTHREAD_LIBS}"
 AC_CHECK_FUNCS([pthread_setname_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 AC_CHECK_FUNCS([pthread_getattr_np])
+AC_CHECK_FUNCS([pthread_condattr_setclock])
 LIBS="${save_LIBS}"
 
 AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
