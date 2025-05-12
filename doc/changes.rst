@@ -27,6 +27,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
+Varnish-Cache 6.0.14 (unreleased)
+=================================
+
+.. _VSV00016: https://varnish-cache.org/security/VSV00016.html
+
+* We now check for CRLF after chunked body in HTTP/1. (VSV00016_)
+
+=================================
 Varnish Cache 6.0.13 (2024-03-18)
 =================================
 
