@@ -35,6 +35,19 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish-Cache 7.6.3 (unreleased)
+================================
+
+.. _VSV00016: https://varnish-cache.org/security/VSV00016.html
+
+* We now check for CRLF after chunked body in HTTP/1. (VSV00016_)
+
+.. _4240: https://github.com/varnishcache/varnish-cache/pull/4240
+
+* Add option to specify c names of arguments and avoid "bool". This makes it
+  possible to build VMODs using reserved names in the C language. (4240_)
+
+================================
 Varnish Cache 7.6.2 (2025-03-17)
 ================================
 
