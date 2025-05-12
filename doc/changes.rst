@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
-Varnish-Cache 6.0.14 (unreleased)
+Varnish-Cache 6.0.14 (2025-05-12)
 =================================
 
 .. _VSV00016: https://varnish-cache.org/security/VSV00016.html

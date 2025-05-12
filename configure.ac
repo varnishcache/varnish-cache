@@ -1,8 +1,8 @@
 AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
-Copyright (c) 2006-2024 Varnish Software])
+Copyright (c) 2006-2025 Varnish Software])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [6.0.13], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish], [6.0.14], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
