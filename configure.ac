@@ -3,7 +3,7 @@ AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2025 Varnish Software
 Copyright 2010-2025 UPLEX - Nils Goroll Systemoptimierung])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [7.6.2], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish], [7.6.3], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
