@@ -242,9 +242,11 @@ jobs:
                         dnf -y install diffutils
                         dnf -y install epel-release
                         ;;
+                    fedora:*)
+                        dnf -y install awk
+                        ;;
                 esac
                 dnf -y install \
-                    awk \
                     cpio \
                     automake \
                     git \
