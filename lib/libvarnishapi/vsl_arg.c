@@ -175,7 +175,7 @@ VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv)
 	return (t);
 }
 
-const char *VSLQ_grouping[VSL_g__MAX] = {
+const char *const VSLQ_grouping[VSL_g__MAX] = {
 	[VSL_g_raw]	= "raw",
 	[VSL_g_vxid]	= "vxid",
 	[VSL_g_request]	= "request",
