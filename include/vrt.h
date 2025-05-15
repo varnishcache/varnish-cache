@@ -375,7 +375,7 @@ struct strands {
 /*
  * A VCL_STRANDS return value must never be NULL. Use this instead
  */
-extern const struct strands *vrt_null_strands;
+extern const struct strands *const vrt_null_strands;
 
 /*
  * Macros for VCL_STRANDS creation
@@ -409,7 +409,7 @@ struct vrt_blob {
 };
 
 #define VRT_NULL_BLOB_TYPE 0xfade4fa0
-extern const struct vrt_blob *vrt_null_blob;
+extern const struct vrt_blob *const vrt_null_blob;
 
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
