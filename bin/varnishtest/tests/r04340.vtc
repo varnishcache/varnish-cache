@@ -1,0 +1,18 @@
+varnishtest "C-L with empty POST"
+
+server s1 {
+	rxreq
+	txresp
+	expect req.http.content-length == 0
+} -start
+
+varnish v1 -vcl+backend {
+
+} -start
+
+client c1 {
+	txreq -method POST -hdr "content-length: 0"
+	rxresp
+} -run
+
+server s1 -wait
