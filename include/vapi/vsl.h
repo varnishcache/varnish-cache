@@ -230,7 +230,7 @@ int VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv);
 	 *     -3: Syntax error
 	 */
 
-extern const char *VSLQ_grouping[VSL_g__MAX];
+extern const char *const VSLQ_grouping[VSL_g__MAX];
 	/*
 	 * Grouping mode to string array.
 	 */

@@ -55,11 +55,11 @@
 #include "proxy/cache_proxy.h"
 
 // NOT using TOSTRANDS() to create a NULL pointer element despite n == 0
-const struct strands *vrt_null_strands = &(struct strands){
+const struct strands *const vrt_null_strands = &(struct strands){
 	.n = 0,
 	.p = (const char *[1]){NULL}
 };
-const struct vrt_blob *vrt_null_blob = &(struct vrt_blob){
+const struct vrt_blob *const vrt_null_blob = &(struct vrt_blob){
 	.type = VRT_NULL_BLOB_TYPE,
 	.len = 0,
 	.blob = "\0"
