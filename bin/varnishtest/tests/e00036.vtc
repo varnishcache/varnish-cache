@@ -17,7 +17,7 @@ server s1 {
 	expect req.method == XGET
 	expect req.url == "/foo/body1"
 	expect req.bodylen == 0
-	expect req.http.Content-Length == "<undef>"
+	expect req.http.Content-Length == "0"
 	expect req.http.Transfer-Encoding == "<undef>"
 	txresp -body {
 		Included file
@@ -40,7 +40,7 @@ server s1 {
 	expect req.method == XGET
 	expect req.url == "/foo/body2"
 	expect req.bodylen == 0
-	expect req.http.Content-Length == "<undef>"
+	expect req.http.Content-Length == "0"
 	expect req.http.Transfer-Encoding == "<undef>"
 	txresp -body {
 		Included file
