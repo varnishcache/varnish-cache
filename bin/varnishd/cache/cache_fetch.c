@@ -411,8 +411,15 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(bo->vsl->wid));
 
-	if (bo->bereq_body == NULL && bo->req == NULL)
-		http_Unset(bo->bereq, H_Content_Length);
+	if (bo->bereq_body == NULL && bo->req == NULL) {
+		const char *met = http_GetMethod(bo->bereq);
+		if (http_method_eq(met, POST) ||
+		    http_method_eq(met, PUT) ||
+		    http_method_eq(met, PATCH))
+			http_ForceHeader(bo->bereq, H_Content_Length, "0");
+		else
+			http_Unset(bo->bereq, H_Content_Length);
+	}
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
