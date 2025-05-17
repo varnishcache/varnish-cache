@@ -1,4 +1,4 @@
-varnishtest "Automatic stream numbers"
+vtest "Automatic stream numbers"
 
 server s1 {
 	loop 4 {

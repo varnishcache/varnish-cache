@@ -1,4 +1,4 @@
-varnishtest "More HPACK tests"
+vtest "More HPACK tests"
 server s1 {
 	stream 1 {
 		rxreq

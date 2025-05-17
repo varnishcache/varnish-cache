@@ -1,4 +1,4 @@
-varnishtest "Basic VSM status check"
+vtest "Basic VSM status check"
 
 # just launch varnishd
 varnish v1 -cliok ping

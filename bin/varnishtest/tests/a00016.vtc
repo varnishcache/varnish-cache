@@ -1,4 +1,4 @@
-varnishtest "Shutdown"
+vtest "Shutdown"
 
 barrier b1 cond 2
 

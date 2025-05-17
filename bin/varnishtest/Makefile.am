@@ -13,6 +13,19 @@ AM_CPPFLAGS = \
 
 bin_PROGRAMS =	varnishtest
 
+# for -i invocation / a00000.vtc
+all-local: vtest
+
+vtest: varnishtest
+	ln -f .libs/varnishtest vtest
+
+install-exec-hook:
+	ln -f $(DESTDIR)$(bindir)/varnishtest$(EXEEXT) \
+	   $(DESTDIR)$(bindir)/vtest$(EXEEXT)
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(bindir)/vtest$(EXEEXT)
+
 varnishtest_SOURCES = \
 		hpack.h \
 		cmds.h \
@@ -88,4 +101,5 @@ BUILT_SOURCES = vtc_h2_dectbl.h
 
 CLEANFILES = \
 	$(builddir)/teken_state.h	\
-	$(BUILT_SOURCES)
+	$(BUILT_SOURCES)		\
+	vtest

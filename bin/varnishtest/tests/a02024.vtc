@@ -1,4 +1,4 @@
-varnishtest "Write a body to a file"
+vtest "Write a body to a file"
 
 server s1 {
 	fatal

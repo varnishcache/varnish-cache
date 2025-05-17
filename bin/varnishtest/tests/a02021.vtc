@@ -1,4 +1,4 @@
-varnishtest "Reduce dynamic table size"
+vtest "Reduce dynamic table size"
 
 server s1 {
 	stream 1 {

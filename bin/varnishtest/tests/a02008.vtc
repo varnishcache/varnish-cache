@@ -1,4 +1,4 @@
-varnishtest "HPACK test"
+vtest "HPACK test"
 
 server s1 {
 	stream 0 {

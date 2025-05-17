@@ -1,44 +1,44 @@
-varnishtest "Test varnishtest itself"
+vtest "Test vtest itself"
 
-shell -exit 1 -expect {varnishtest [options]} {varnishtest -h}
+shell -exit 1 -expect {vtest [options]} {vtest -h}
 
-shell -exit 1 -match {-D.*Define macro} {varnishtest -h}
+shell -exit 1 -match {-D.*Define macro} {vtest -h}
 
 shell {
 	pwd
-	echo 'notvarnishtest foo bar' > _.vtc
+	echo 'notvtest foo bar' > _.vtc
 	echo 'shell "exit 9"' >> _.vtc
 }
 
 shell -exit 2 -expect {doesn't start with 'vtest' or 'varnishtest} {
-	varnishtest -v _.vtc
+	vtest -v _.vtc
 }
 
 shell -exit 77 -expect {0 tests failed, 1 tests skipped, 0 tests passed} {
 	unset TMPDIR
-	varnishtest -k _.vtc
+	vtest -k _.vtc
 }
 
 # Test external macro-def with a two-turtle test
 shell -expect {__=barf} {
-	echo varnishtest foo > _.vtc
+	echo vtest foo > _.vtc
 	printf 'shell {echo %c{foobar} > ${tmpdir}/__}' '$'  >> _.vtc
-	varnishtest -q -Dfoobar=barf _.vtc
+	vtest -q -Dfoobar=barf _.vtc
 	echo __=`cat __`
 }
 
 # Test a test failure
 shell -exit 2 -expect {TEST _.vtc FAILED} {
-	echo varnishtest foo > _.vtc
+	echo vtest foo > _.vtc
 	echo 'shell {false}' >> _.vtc
-	exec varnishtest -v _.vtc || true
+	exec vtest -v _.vtc || true
 }
 
 # Test a test skip
 shell -exit 77 -expect {TEST _.vtc skipped} {
-	echo varnishtest foo > _.vtc
+	echo vtest foo > _.vtc
 	echo 'feature cmd false' >> _.vtc
-	exec varnishtest -v _.vtc || true
+	exec vtest -v _.vtc || true
 }
 
 # Simple process tests

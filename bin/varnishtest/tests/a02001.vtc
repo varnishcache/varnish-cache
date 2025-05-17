@@ -1,4 +1,4 @@
-varnishtest "Quickly test all frames"
+vtest "Quickly test all frames"
 
 server s1 {
 	rxpri

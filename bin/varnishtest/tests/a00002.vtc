@@ -1,4 +1,4 @@
-varnishtest "basic default HTTP transactions with expect and options"
+vtest "basic default HTTP transactions with expect and options"
 
 server s1 {
 	rxreq

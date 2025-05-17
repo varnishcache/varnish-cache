@@ -1,4 +1,4 @@
-varnishtest "Static table encoding"
+vtest "Static table encoding"
 
 server s1 {
 	stream 1 {

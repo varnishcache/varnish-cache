@@ -1,10 +1,10 @@
-varnishtest "Run server -dispatch more than once"
+vtest "Run server -dispatch more than once"
 
 feature ignore_unknown_macro
 
 shell {
 	cat <<-'EOF' >_.vtc
-	varnishtest "Run server -dispatch more than once (nested)"
+	vtest "Run server -dispatch more than once (nested)"
 
 	server s0 {
 		rxreq
@@ -22,7 +22,7 @@ shell {
 	client c1 -run
 	EOF
 
-	varnishtest -v _.vtc >_.log
+	vtest -v _.vtc >_.log
 }
 
 shell -match "s1 +rxhdr" { cat _.log }

@@ -1,4 +1,4 @@
-varnishtest "simply test that the framework support \0"
+vtest "simply test that the framework support \0"
 
 server s1 {
 	rxreq

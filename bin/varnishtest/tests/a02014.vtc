@@ -1,4 +1,4 @@
-varnishtest "priority"
+vtest "priority"
 
 server s1 {
 	stream 1 {

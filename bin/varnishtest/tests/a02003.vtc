@@ -1,4 +1,4 @@
-varnishtest "Check bodylen"
+vtest "Check bodylen"
 
 server s1 {
 	stream 1 {

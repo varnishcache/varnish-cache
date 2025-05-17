@@ -1,4 +1,4 @@
-varnishtest "Simple request with body"
+vtest "Simple request with body"
 
 server s1 {
 	stream 1 {

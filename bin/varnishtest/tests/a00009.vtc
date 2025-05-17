@@ -1,4 +1,4 @@
-varnishtest "VTC process: match text"
+vtest "VTC process: match text"
 
 process p1 {
 	echo 0123

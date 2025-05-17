@@ -1,4 +1,4 @@
-varnishtest "TCP reuse"
+vtest "TCP reuse"
 
 server s1 {
 	rxreq

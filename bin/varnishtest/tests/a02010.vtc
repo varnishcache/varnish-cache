@@ -1,4 +1,4 @@
-varnishtest "Verify the initial window size"
+vtest "Verify the initial window size"
 
 server s1 {
 	stream 0 {

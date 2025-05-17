@@ -1,4 +1,4 @@
-varnishtest "exclusive dependency"
+vtest "exclusive dependency"
 
 server s1 {
 	stream 1 {

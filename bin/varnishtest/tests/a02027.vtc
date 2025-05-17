@@ -1,4 +1,4 @@
-varnishtest "Malformed :path handling"
+vtest "Malformed :path handling"
 
 server s1 {
 } -start

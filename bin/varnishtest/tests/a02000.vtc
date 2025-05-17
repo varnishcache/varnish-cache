@@ -1,4 +1,4 @@
-varnishtest "Close/accept after H/2 upgrade"
+vtest "Close/accept after H/2 upgrade"
 
 server s1 {
 	stream 1 {

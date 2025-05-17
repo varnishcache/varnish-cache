@@ -1,4 +1,4 @@
-varnishtest "test -nouseragent and -noserver"
+vtest "test -nouseragent and -noserver"
 
 server s1  {
     rxreq

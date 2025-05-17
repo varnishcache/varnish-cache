@@ -1,4 +1,4 @@
-varnishtest "Trigger a compression error via bad index"
+vtest "Trigger a compression error via bad index"
 
 server s1 {
 	non_fatal

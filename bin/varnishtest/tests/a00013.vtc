@@ -1,4 +1,4 @@
-varnishtest "Barrier operations"
+vtest "Barrier operations"
 
 # same as a00008.vtc, with socket barriers instead
 

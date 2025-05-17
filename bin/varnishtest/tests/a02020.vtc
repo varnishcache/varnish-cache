@@ -1,4 +1,4 @@
-varnishtest "Reduce dynamic table while incoming headers are flying"
+vtest "Reduce dynamic table while incoming headers are flying"
 
 server s1 {
 	stream 1 {

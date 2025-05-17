@@ -1,4 +1,4 @@
-varnishtest "tunnel basic coverage"
+vtest "tunnel basic coverage"
 
 barrier b1 cond 2
 barrier b2 cond 2

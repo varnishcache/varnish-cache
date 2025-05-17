@@ -1,4 +1,4 @@
-varnishtest "feature ignore_unknown_macro"
+vtest "feature ignore_unknown_macro"
 
 feature ignore_unknown_macro
 

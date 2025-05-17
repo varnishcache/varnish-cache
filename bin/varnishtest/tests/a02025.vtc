@@ -1,4 +1,4 @@
-varnishtest "Test -bodyfrom"
+vtest "Test -bodyfrom"
 
 shell {printf helloworld >body.txt}
 

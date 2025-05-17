@@ -1,4 +1,4 @@
-varnishtest "bidirectional message bodies"
+vtest "bidirectional message bodies"
 
 server s1 {
 	rxreq

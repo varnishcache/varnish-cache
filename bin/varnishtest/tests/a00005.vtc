@@ -1,4 +1,4 @@
-varnishtest "dual shared client HTTP transactions"
+vtest "dual shared client HTTP transactions"
 
 server s1 {
 	rxreq

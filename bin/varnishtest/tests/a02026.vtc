@@ -1,4 +1,4 @@
-varnishtest "Test -gzipbody and -gziplen"
+vtest "Test -gzipbody and -gziplen"
 
 server s1 {
 	stream 1 {

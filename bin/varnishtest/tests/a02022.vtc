@@ -1,4 +1,4 @@
-varnishtest "H/1 -> H/2 upgrade"
+vtest "H/1 -> H/2 upgrade"
 
 feature cmd "nghttp --version | grep -q 'nghttp2/[1-9]'"
 

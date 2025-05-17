@@ -1,4 +1,4 @@
-varnishtest "Keep track of window credits"
+vtest "Keep track of window credits"
 
 server s1 {
 	stream 2 {

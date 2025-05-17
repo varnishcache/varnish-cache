@@ -1,4 +1,4 @@
-varnishtest "Window update"
+vtest "Window update"
 
 server s1 {
 	stream 1 {

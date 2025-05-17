@@ -1,4 +1,4 @@
-varnishtest "Test setenv"
+vtest "Test setenv"
 
 setenv FOO "BAR BAZ"
 shell -expect "BAR BAZ" {echo $FOO}

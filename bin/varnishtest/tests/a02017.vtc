@@ -1,4 +1,4 @@
-varnishtest "Push promise"
+vtest "Push promise"
 
 server s1 {
 	stream 1 {

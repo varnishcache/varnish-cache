@@ -1,4 +1,4 @@
-varnishtest "padded DATA frames"
+vtest "padded DATA frames"
 
 server s1 {
 	stream 1 {

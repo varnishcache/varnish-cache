@@ -1,4 +1,4 @@
-varnishtest "test vtc gzip support"
+vtest "test vtc gzip support"
 
 server s1 {
 	rxreq

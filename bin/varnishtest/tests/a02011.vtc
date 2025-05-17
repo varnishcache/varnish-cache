@@ -1,4 +1,4 @@
-varnishtest "overflow"
+vtest "overflow"
 
 server s1 {
 	stream 1 {

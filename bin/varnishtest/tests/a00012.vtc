@@ -1,4 +1,4 @@
-varnishtest "Ensure that we can test non-existence of headers (#1062)"
+vtest "Ensure that we can test non-existence of headers (#1062)"
 
 server s1 {
 	rxreq

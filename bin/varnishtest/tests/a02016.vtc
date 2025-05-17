@@ -1,4 +1,4 @@
-varnishtest "Test pseudo-headers inspection"
+vtest "Test pseudo-headers inspection"
 
 server s1 {
 	stream 1 {

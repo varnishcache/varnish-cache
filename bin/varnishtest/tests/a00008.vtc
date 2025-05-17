@@ -1,4 +1,4 @@
-varnishtest "Barrier operations"
+vtest "Barrier operations"
 
 # bs -> server, bc -> client, bb -> both
 barrier bs cond 4

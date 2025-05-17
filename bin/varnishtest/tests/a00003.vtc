@@ -1,4 +1,4 @@
-varnishtest "dual independent HTTP transactions"
+vtest "dual independent HTTP transactions"
 
 server s1 {
 	rxreq

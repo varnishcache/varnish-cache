@@ -1,4 +1,4 @@
-varnishtest "Continuation frames"
+vtest "Continuation frames"
 
 server s1 {
 	stream 1 {

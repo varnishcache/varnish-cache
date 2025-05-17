@@ -1,4 +1,4 @@
-varnishtest "Check rxrespbody -max"
+vtest "Check rxrespbody -max"
 
 server s1 {
 	rxreq

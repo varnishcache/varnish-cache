@@ -1,4 +1,4 @@
-varnishtest "H/2 state after sending/receiving preface"
+vtest "H/2 state after sending/receiving preface"
 
 server s1 {
 	expect h2.state == "false"
