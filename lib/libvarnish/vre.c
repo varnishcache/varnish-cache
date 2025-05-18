@@ -43,7 +43,9 @@
 #include "vre.h"
 #include "vre_pcre2.h"
 
-#if !HAVE_PCRE2_SET_DEPTH_LIMIT
+/* should be turned into an error sooner or later */
+#if !defined(pcre2_set_depth_limit)
+#  warning pcre2 missing pcre2_set_depth_limit - update recommended
 #  define pcre2_set_depth_limit(r, d) pcre2_set_recursion_limit(r, d)
 #endif
 

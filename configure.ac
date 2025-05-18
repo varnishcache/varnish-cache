@@ -144,13 +144,6 @@ fi
 AC_SUBST(PCRE2_CFLAGS)
 AC_SUBST(PCRE2_LIBS)
 
-save_LIBS="${LIBS}"
-LIBS="${LIBS} ${PCRE2_LIBS}"
-AC_CHECK_FUNCS([pcre2_set_depth_limit_8], [
-  AC_DEFINE([HAVE_PCRE2_SET_DEPTH_LIMIT], [1], [Use pcre2_set_depth_limit()])
-])
-LIBS="${save_LIBS}"
-
 # --enable-pcre2-jit
 AC_ARG_ENABLE(pcre2-jit,
   AS_HELP_STRING([--enable-pcre2-jit],
