@@ -34,13 +34,16 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-================================
-Varnish-Cache 8.0.0 (2025-09-15)
-================================
+=============================
+Vinyl-Cache NEXT (2026-03-15)
+=============================
 
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+================================
+Varnish-Cache 8.0.0 (2025-09-15)
+================================
 
 .. _4388: https://github.com/varnishcache/varnish-cache/pull/4388
 
