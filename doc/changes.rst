@@ -34,12 +34,16 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-==============================
-Varnish-Cache 7.7 (2025-03-17)
-==============================
+====================================
+Varnish Cache NEXT (8.0, 2025-09-15)
+====================================
 
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
+
+==============================
+Varnish-Cache 7.7 (2025-03-17)
+==============================
 
 .. _VSV00015: https://varnish-cache.org/security/VSV00015.html
 
