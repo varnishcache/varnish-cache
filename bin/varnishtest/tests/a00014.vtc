@@ -1,6 +1,0 @@
-vtest "Custom feature verification"
-
-feature cmd true
-feature cmd false
-
-this is an invalid vtest command

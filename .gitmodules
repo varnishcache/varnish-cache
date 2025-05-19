@@ -1,0 +1,3 @@
+[submodule "bin/varnishtest/vtest2"]
+	path = bin/varnishtest/vtest2
+	url = https://github.com/vtest/VTest2.git

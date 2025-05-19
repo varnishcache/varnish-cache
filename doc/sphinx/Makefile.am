@@ -148,19 +148,21 @@ include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
 	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/vsl-tags.rst
 
+vtest2_src = $(top_srcdir)/bin/varnishtest/vtest2/src
+
 VTCSYN_SRC = \
-	$(top_srcdir)/bin/varnishtest/vtc.c \
-	$(top_srcdir)/bin/varnishtest/vtc_barrier.c \
-	$(top_srcdir)/bin/varnishtest/vtc_haproxy.c \
-	$(top_srcdir)/bin/varnishtest/vtc_http.c \
-	$(top_srcdir)/bin/varnishtest/vtc_http2.c \
-	$(top_srcdir)/bin/varnishtest/vtc_logexp.c \
-	$(top_srcdir)/bin/varnishtest/vtc_misc.c \
-	$(top_srcdir)/bin/varnishtest/vtc_process.c \
-	$(top_srcdir)/bin/varnishtest/vtc_syslog.c \
-	$(top_srcdir)/bin/varnishtest/vtc_tunnel.c \
-	$(top_srcdir)/bin/varnishtest/vtc_varnish.c \
-	$(top_srcdir)/bin/varnishtest/vtc_vsm.c
+	$(vtest2_src)/vtc.c \
+	$(vtest2_src)/vtc_barrier.c \
+	$(vtest2_src)/vtc_haproxy.c \
+	$(vtest2_src)/vtc_http.c \
+	$(vtest2_src)/vtc_http2.c \
+	$(vtest2_src)/vtc_logexp.c \
+	$(vtest2_src)/vtc_misc.c \
+	$(vtest2_src)/vtc_process.c \
+	$(vtest2_src)/vtc_syslog.c \
+	$(vtest2_src)/vtc_tunnel.c \
+	$(vtest2_src)/vtc_varnish.c \
+	$(vtest2_src)/vtc_vsm.c
 include/vtc-syntax.rst: $(srcdir)/vtc-syntax.py $(VTCSYN_SRC)
 	$(AM_V_GEN) $(PYTHON) $(srcdir)/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
 	@mv -f ${@}_ ${@}

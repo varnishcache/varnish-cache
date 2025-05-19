@@ -89,4 +89,9 @@ witness.dot: all
 
 witness: witness.svg
 
-.PHONY: cscope witness.dot
+update:
+	git submodule sync
+	git submodule update --remote bin/varnishtest/vtest2
+	git commit -m 'Update vtest2' bin/varnishtest/vtest2 || true
+
+.PHONY: cscope witness.dot update

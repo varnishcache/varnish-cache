@@ -9,5 +9,5 @@ FLOPS='
 	-DVTEST_WITH_VTC_VARNISH
 	-DTOP_BUILDDIR="foo"
 	-I../../lib/libvgz
-	*.c
+	*.c vtest2/src/*.c
 ' ../../tools/flint_skel.sh $*
