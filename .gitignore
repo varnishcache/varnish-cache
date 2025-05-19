@@ -98,6 +98,7 @@ cscope.*out
 /bin/varnishstat/vsc2rst
 /bin/varnishtest/teken_state.h
 /bin/varnishtest/varnishtest
+/bin/varnishtest/vtest
 /bin/varnishtop/varnishtop
 
 # Doc-stuff generated from xml
