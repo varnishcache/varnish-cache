@@ -41,6 +41,15 @@ Varnish Cache NEXT (8.0, 2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The bundled varnishtest sources have now been replaced with the seperate
+  VTest2 repository.
+
+  When building from git, either clone with the ``-r`` option, or use ``git
+  submodule update --init`` on an existing repository.
+
+  Developers should use ``make update`` to update the referenced vtest2 commit
+  after changes to vtest2.
+
 ==============================
 Varnish-Cache 7.7 (2025-03-17)
 ==============================
