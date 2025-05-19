@@ -84,11 +84,11 @@ ocstash_clear(struct worker *wrk, struct ocstash *stash)
 }
 
 void
-Req_StashObjcore(struct req *req)
+Req_StashObjcore(struct req *req, struct objcore **ocp)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	ocstash_push(req->stash, &req->objcore);
+	ocstash_push(req->stash, ocp);
 }
 
 /*--------------------------------------------------------------------*/
@@ -241,7 +241,8 @@ Req_New(struct sess *sp, const struct req *preq)
 
 	req->max_restarts = cache_param->max_restarts;
 	assert(req->max_restarts + 1 <= UINT16_MAX);
-	l = req->max_restarts + 1;
+	// each restart may ref one stale_oc and one oc
+	l = (2 * req->max_restarts) + 1;
 	sz = SIZEOF_FLEX_OBJ(req->stash, ocs, l);
 	req->stash = (void*)p;
 	req->stash->magic = OCSTASH_MAGIC;
