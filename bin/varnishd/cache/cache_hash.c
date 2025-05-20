@@ -359,12 +359,26 @@ hsh_insert_busyobj(const struct worker *wrk, struct objhead *oh)
 /*---------------------------------------------------------------------
  */
 
+static int
+hsh_vry_match(struct req *req, struct objcore *oc, const uint8_t *vary)
+{
+
+	if (req->hash_ignore_vary)
+		return (1);
+	if (vary == NULL) {
+		if (! ObjHasAttr(req->wrk, oc, OA_VARY))
+			return (1);
+		vary = ObjGetAttr(req->wrk, oc, OA_VARY, NULL);
+		AN(vary);
+	}
+	return (VRY_Match(req, vary));
+}
+
 static unsigned
 hsh_rush_match(struct req *req)
 {
 	struct objhead *oh;
 	struct objcore *oc;
-	const uint8_t *vary;
 
 	oc = req->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -382,14 +396,7 @@ hsh_rush_match(struct req *req)
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-	if (req->hash_ignore_vary)
-		return (1);
-	if (!ObjHasAttr(req->wrk, oc, OA_VARY))
-		return (1);
-
-	vary = ObjGetAttr(req->wrk, oc, OA_VARY, NULL);
-	AN(vary);
-	return (VRY_Match(req, vary));
+	return (hsh_vry_match(req, oc, NULL));
 }
 
 /*---------------------------------------------------------------------
@@ -405,7 +412,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	const struct vcf_return *vr;
 	vtim_real exp_t_origin;
 	int busy_found;
-	const uint8_t *vary;
 	intmax_t boc_progress;
 	unsigned xid = 0;
 	unsigned ban_checks;
@@ -497,8 +503,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				continue;
 
 			if (oc->boc && oc->boc->vary != NULL &&
-			    !req->hash_ignore_vary &&
-			    !VRY_Match(req, oc->boc->vary)) {
+			    !hsh_vry_match(req, oc, oc->boc->vary)) {
 				wrk->strangelove++;
 				continue;
 			}
@@ -517,13 +522,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			continue;
 		}
 
-		if (!req->hash_ignore_vary && ObjHasAttr(wrk, oc, OA_VARY)) {
-			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
-			AN(vary);
-			if (!VRY_Match(req, vary)) {
-				wrk->strangelove++;
-				continue;
-			}
+		if (!hsh_vry_match(req, oc, NULL)) {
+			wrk->strangelove++;
+			continue;
 		}
 
 		if (ban_checks >= ban_any_variant
