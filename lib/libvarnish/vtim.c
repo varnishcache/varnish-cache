@@ -179,6 +179,27 @@ VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 	    tm.tm_hour, tm.tm_min, tm.tm_sec));
 }
 
+struct vtim {
+	int	year;
+	int	month;
+	int	mday;
+	int	weekday;
+	int	hour;
+	int	min;
+	int	sec;
+};
+
+#define VTIM_INIT(vtim)			\
+	do {				\
+		(vtim)->year = 0;	\
+		(vtim)->month = 0;	\
+		(vtim)->mday = 0;	\
+		(vtim)->weekday = -1;	\
+		(vtim)->hour = 0;	\
+		(vtim)->min = 0;	\
+		(vtim)->sec = 0;	\
+	} while (0)
+
 #ifdef TEST_DRIVER
 #define FAIL()	\
 	do { printf("\nFAIL <<%d>>\n", __LINE__); return (0); } while (0)
@@ -191,7 +212,7 @@ VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 	do {							\
 		if (*p < '0' || *p > '9')			\
 			FAIL();					\
-		fld += (*p - '0') * mult;			\
+		vtim->fld += (*p - '0') * mult;			\
 		p++;						\
 	} while(0)
 
@@ -207,7 +228,7 @@ VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 		int i;						\
 		for (i = 0; i < 7; i++) {			\
 			if (!memcmp(p, weekday_name[i], 3)) {	\
-				weekday = i;			\
+				vtim->weekday = i;		\
 				break;				\
 			}					\
 		}						\
@@ -222,7 +243,7 @@ VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 		int i;						\
 		for (i = 0; i < 12; i++) {			\
 			if (!memcmp(p, month_name[i], 3)) {	\
-				month = i + 1;			\
+				vtim->month = i + 1;		\
 				break;				\
 			}					\
 		}						\
@@ -246,9 +267,8 @@ VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 vtim_real
 VTIM_parse(const char *p)
 {
+	struct vtim vtim[1];
 	vtim_real t;
-	int month = 0, year = 0, weekday = -1, mday = 0;
-	int hour = 0, min = 0, sec = 0;
 	int d, leap;
 
 	if (p == NULL || *p == '\0')
@@ -256,6 +276,8 @@ VTIM_parse(const char *p)
 
 	while (*p == ' ')
 		p++;
+
+	VTIM_INIT(vtim);
 
 	if (*p >= '0' && *p <= '9') {
 		/* ISO8601 -- "1994-11-06T08:49:37" */
@@ -273,7 +295,7 @@ VTIM_parse(const char *p)
 		TIMESTAMP();
 	} else {
 		WEEKDAY();
-		assert(weekday >= 0 && weekday <= 6);
+		assert(vtim->weekday >= 0 && vtim->weekday <= 6);
 		if (*p == ',') {
 			/* RFC822 & RFC1123 - "Sun, 06 Nov 1994 08:49:37 GMT" */
 			p++;
@@ -314,10 +336,10 @@ VTIM_parse(const char *p)
 			DIGIT(100, year);
 			DIGIT(10, year);
 			DIGIT(1, year);
-		} else if (!memcmp(p, more_weekday[weekday],
-		    strlen(more_weekday[weekday]))) {
+		} else if (!memcmp(p, more_weekday[vtim->weekday],
+		    strlen(more_weekday[vtim->weekday]))) {
 			/* RFC850 -- "Sunday, 06-Nov-94 08:49:37 GMT" */
-			p += strlen(more_weekday[weekday]);
+			p += strlen(more_weekday[vtim->weekday]);
 			MUSTBE(',');
 			MUSTBE(' ');
 			DIGIT(10, mday);
@@ -327,9 +349,9 @@ VTIM_parse(const char *p)
 			MUSTBE('-');
 			DIGIT(10, year);
 			DIGIT(1, year);
-			year += 1900;
-			if (year < 1969)
-				year += 100;
+			vtim->year += 1900;
+			if (vtim->year < 1969)
+				vtim->year += 100;
 			MUSTBE(' ');
 			TIMESTAMP();
 			MUSTBE(' ');
@@ -346,56 +368,56 @@ VTIM_parse(const char *p)
 	if (*p != '\0')
 		FAIL();
 
-	if (sec < 0 || sec > 60)	/* Leapseconds! */
+	if (vtim->sec < 0 || vtim->sec > 60)	/* Leapseconds! */
 		FAIL();
-	if (min < 0 || min > 59)
+	if (vtim->min < 0 || vtim->min > 59)
 		FAIL();
-	if (hour < 0 || hour > 23)
+	if (vtim->hour < 0 || vtim->hour > 23)
 		FAIL();
-	if (month < 1 || month > 12)
+	if (vtim->month < 1 || vtim->month > 12)
 		FAIL();
-	if (mday < 1 || mday > days_in_month[month - 1])
+	if (vtim->mday < 1 || vtim->mday > days_in_month[vtim->month - 1])
 		FAIL();
-	if (year < 1899)
-		FAIL();
-
-	leap =
-	    ((year) % 4) == 0 && (((year) % 100) != 0 || ((year) % 400) == 0);
-
-	if (month == 2 && mday > 28 && !leap)
+	if (vtim->year < 1899)
 		FAIL();
 
-	if (sec == 60)			/* Ignore Leapseconds */
-		sec--;
+	leap = ((vtim->year) % 4) == 0 &&
+	    (((vtim->year) % 100) != 0 || ((vtim->year) % 400) == 0);
 
-	t = ((hour * 60.) + min) * 60. + sec;
+	if (vtim->month == 2 && vtim->mday > 28 && !leap)
+		FAIL();
 
-	d = (mday - 1) + days_before_month[month - 1];
+	if (vtim->sec == 60)			/* Ignore Leapseconds */
+		vtim->sec--;
 
-	if (month > 2 && leap)
+	t = ((vtim->hour * 60.) + vtim->min) * 60. + vtim->sec;
+
+	d = (vtim->mday - 1) + days_before_month[vtim->month - 1];
+
+	if (vtim->month > 2 && leap)
 		d++;
 
-	d += (year % 100) * 365;	/* There are 365 days in a year */
+	d += (vtim->year % 100) * 365;	/* There are 365 days in a year */
 
-	if ((year % 100) > 0)		/* And a leap day every four years */
-		d += (((year % 100) - 1) / 4);
+	if ((vtim->year % 100) > 0)	/* And a leap day every four years */
+		d += (((vtim->year % 100) - 1) / 4);
 
-	d += ((year / 100) - 20) *	/* Days relative to y2000 */
+	d += ((vtim->year / 100) - 20) *	/* Days relative to y2000 */
 	    (100 * 365 + 24);		/* 24 leapdays per year in a century */
 
-	d += ((year - 1) / 400) - 4;	/* And one more every 400 years */
+	d += ((vtim->year - 1) / 400) - 4;	/* One more every 400 years */
 
 	/*
 	 * Now check weekday, if we have one.
 	 * 6 is because 2000-01-01 was a saturday.
 	 * 10000 is to make sure the modulus argument is always positive
 	 */
-	if (weekday != -1 && (d + 6 + 7 * 10000) % 7 != weekday)
+	if (vtim->weekday != -1 && (d + 6 + 7 * 10000) % 7 != vtim->weekday)
 		FAIL();
 
 	t += d * 86400.;
 
-	t += 10957. * 86400.;		/* 10957 days frm UNIX epoch to y2000 */
+	t += 10957. * 86400.;	/* 10957 days frm UNIX epoch to y2000 */
 
 	return (t);
 }
