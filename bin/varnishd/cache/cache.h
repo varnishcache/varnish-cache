@@ -95,7 +95,7 @@ struct stream_close {
 	const char		*desc;
 };
     extern const struct stream_close SC_NULL[1];
-#define SESS_CLOSE(nm, stat, err, desc) \
+#define SESS_CLOSE_C(nm, stat, err, desc) \
     extern const struct stream_close SC_##nm[1];
 #include "tbl/sess_close.h"
 
