@@ -122,6 +122,9 @@ VUG
     developers of Varnish Cache gather to share experiences and plan
     future development.
 
+VUT
+    Varnish UTilities -- An API for client utilities to tap into VSM or VSC.
+
 VWx
     Varnish Waiter 'x' -- A code module to monitor idle sessions.
 
