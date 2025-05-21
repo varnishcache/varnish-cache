@@ -1,6 +1,6 @@
 vtest "Test vtest itself"
 
-shell -exit 1 -expect {varnishtest [options]} {vtest -h}
+shell -exit 1 -match {v.*test \[options]} {vtest -h}
 
 shell -exit 1 -match {-D.*Define macro} {vtest -h}
 
