@@ -222,7 +222,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	ObjTouch(req->wrk, req->objcore, req->t_prev);
 
 	if (Resp_Setup_Deliver(req)) {
-		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
 		req->err_code = 500;
 		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);
@@ -240,7 +240,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
-		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
 		http_Teardown(req->resp);
 
 		switch (wrk->vpi->handling) {
@@ -413,7 +413,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Error, "Could not get storage");
 		req->doclose = SC_OVERLOAD;
 		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
-		(void)HSH_DerefObjCore(wrk, &req->objcore, 1);
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
 		http_Teardown(req->resp);
 		return (REQ_FSM_DONE);
 	}
@@ -529,7 +529,7 @@ cnt_finish(struct worker *wrk, struct req *req)
 		req->boc = NULL;
 	}
 
-	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	http_Teardown(req->resp);
 
 	req->vdp_filter_list = NULL;
@@ -557,7 +557,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
-		(void)HSH_DerefObjCore(wrk, &req->objcore, 1);
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
 		AZ(req->objcore);
 		return (REQ_FSM_MORE);
 	}
@@ -576,20 +576,23 @@ cnt_lookup(struct worker *wrk, struct req *req)
 {
 	struct objcore *oc, *busy;
 	enum lookup_e lr;
-	int had_objhead = 0;
+	int had_objcore = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AZ(req->objcore);
 	AZ(req->stale_oc);
 
 	AN(req->vcl);
 
 	VRY_Prep(req);
 
-	AZ(req->objcore);
-	if (req->hash_objhead)
-		had_objhead = 1;
+	if (req->waitinglist_gen) {
+		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+		req->waitinglist_gen = 0;
+		had_objcore = 1;
+	} else
+		AZ(req->objcore);
+
 	wrk->strangelove = 0;
 	lr = HSH_Lookup(req, &oc, &busy);
 	if (lr == HSH_BUSY) {
@@ -605,7 +608,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if ((unsigned)wrk->strangelove >= cache_param->vary_notice)
 		VSLb(req->vsl, SLT_Notice, "vsl: High number of variants (%d)",
 		    wrk->strangelove);
-	if (had_objhead)
+	if (had_objcore)
 		VSLb_ts_req(req, "Waitinglist", W_TIM_real(wrk));
 
 	if (req->vcf != NULL) {
@@ -685,10 +688,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+	(void)HSH_DerefObjCore(wrk, &req->objcore);
 
 	if (busy != NULL) {
-		(void)HSH_DerefObjCore(wrk, &busy, 0);
+		HSH_Withdraw(wrk, &busy);
 		VRY_Clear(req);
 	}
 
@@ -715,7 +718,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 		wrk->stats->cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, req->stale_oc, VBF_NORMAL);
 		if (req->stale_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &req->stale_oc, 0);
+			(void)HSH_DerefObjCore(wrk, &req->stale_oc);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FAIL:
@@ -735,8 +738,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 	}
 	VRY_Clear(req);
 	if (req->stale_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &req->stale_oc, 0);
-	AZ(HSH_DerefObjCore(wrk, &req->objcore, 1));
+		(void)HSH_DerefObjCore(wrk, &req->stale_oc);
+	HSH_Withdraw(wrk, &req->objcore);
 	return (REQ_FSM_MORE);
 }
 
@@ -1110,7 +1113,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 
 	(void)HSH_Purge(wrk, boc->objhead, req->t_req, 0, 0, 0);
 
-	AZ(HSH_DerefObjCore(wrk, &boc, 1));
+	HSH_Withdraw(wrk, &boc);
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->vpi->handling) {
