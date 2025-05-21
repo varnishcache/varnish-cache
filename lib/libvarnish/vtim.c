@@ -72,6 +72,7 @@
 
 #include "vas.h"
 #include "vct.h"
+#include "vsb.h"
 #include "vtim.h"
 
 /* relax vtim parsing */
@@ -178,6 +179,47 @@ VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 	    weekday_name[tm.tm_wday],
 	    tm.tm_mday, month_name[tm.tm_mon], tm.tm_year + 1900,
 	    tm.tm_hour, tm.tm_min, tm.tm_sec));
+}
+
+void
+VTIM_format_web(vtim_real t, char p[VTIM_FORMAT_WEB_SIZE])
+{
+	char buf[sizeof "0.123456"], *z;
+	struct vsb vsb[1];
+	struct tm tm;
+	time_t tt;
+	double frac, i;
+
+	AN(p);
+	*p = '\0';
+
+	if (t < (vtim_real)INTMAX_MIN || t > (vtim_real)INTMAX_MAX)
+		return;
+
+	tt = (time_t)(intmax_t)t;
+	if (gmtime_r(&tt, &tm) == NULL)
+		return;
+
+	AN(VSB_init(vsb, p, VTIM_FORMAT_WEB_SIZE));
+	VSB_printf(vsb, "%04d-%02d-%02dT%02d:%02d:%02d",
+	    tm.tm_year + 1900, tm.tm_mon, tm.tm_mday,
+	    tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	frac = modf(t, &i);
+	if (frac >= 1e-6) {
+		bprintf(buf, "%0.6f", frac);
+		z = buf + sizeof buf - 2;
+		while (*z == '0') {
+			*z = '\0';
+			z--;
+		}
+		if (*z != '.')
+			VSB_cat(vsb, buf + 1);
+	}
+
+	VSB_putc(vsb, 'Z');
+	AZ(VSB_finish(vsb));
+	VSB_fini(vsb);
 }
 
 struct vtim {
@@ -627,7 +669,7 @@ static void
 tst(const char *s, time_t good)
 {
 	time_t t;
-	char buf[BUFSIZ];
+	char buf[VTIM_FORMAT_SIZE];
 
 	t = VTIM_parse(s);
 	VTIM_format(t, buf);
@@ -643,10 +685,10 @@ static void
 tst_web(const char *s, vtim_real good)
 {
 	vtim_real t;
-	char buf[BUFSIZ];
+	char buf[VTIM_FORMAT_WEB_SIZE];
 
 	t = VTIM_parse_web(s);
-	VTIM_format(t, buf);
+	VTIM_format_web(t, buf);
 	printf("%-30s -> %12.2f -> %s\n", s, t, buf);
 	if (t != good) {
 		printf("Parse error! Got: %f should have %f diff %f\n",
@@ -817,6 +859,7 @@ main(int argc, char **argv)
 
 	tst_web("1994-11-06T08:49:37.25Z", 784111777.25);
 	tst_web("1994-11-06T08:49:37.25+01:00", 784115377.25);
+	tst_web("1994-11-06T08:49:37.123456+01:00", 784115377.123456);
 
 	tst_delta();
 
