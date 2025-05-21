@@ -17,7 +17,7 @@ bin_PROGRAMS =	varnishtest
 all-local: vtest
 
 vtest: varnishtest
-	ln -f .libs/varnishtest vtest
+	ln -f varnishtest vtest
 
 install-exec-hook:
 	ln -f $(DESTDIR)$(bindir)/varnishtest$(EXEEXT) \
