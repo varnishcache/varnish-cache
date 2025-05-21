@@ -188,6 +188,7 @@ struct vtim {
 	int	hour;
 	int	min;
 	int	sec;
+	double	frac;
 };
 
 #define VTIM_INIT(vtim)			\
@@ -199,6 +200,7 @@ struct vtim {
 		(vtim)->hour = 0;	\
 		(vtim)->min = 0;	\
 		(vtim)->sec = 0;	\
+		(vtim)->frac = 0;	\
 	} while (0)
 
 #ifdef TEST_DRIVER
@@ -418,6 +420,11 @@ vtim_calc(struct vtim *vtim)
 	t += d * 86400.;
 
 	t += 10957. * 86400.;	/* 10957 days frm UNIX epoch to y2000 */
+
+	assert(vtim->frac >= 0);
+	assert(vtim->frac < 1);
+
+	t += vtim->frac;
 
 	return (t);
 }
