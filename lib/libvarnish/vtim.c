@@ -213,7 +213,7 @@ struct vtim {
 
 #define DIGIT(mult, fld)					\
 	do {							\
-		if (*p < '0' || *p > '9')			\
+		if (!vct_isdigit(*p))				\
 			FAIL();					\
 		vtim->fld += (*p - '0') * mult;			\
 		p++;						\
@@ -266,6 +266,24 @@ struct vtim {
 		DIGIT(10, sec);					\
 		DIGIT(1, sec);					\
 	} while(0)
+
+#define OPT_DIGIT(mult, fld)					\
+	if (!vct_isdigit(*p))					\
+		break;						\
+	DIGIT(mult, fld)
+
+#define FRAC()							\
+	do {							\
+		DIGIT(0.1, frac);				\
+		OPT_DIGIT(0.01, frac);				\
+		OPT_DIGIT(0.001, frac);				\
+		OPT_DIGIT(0.0001, frac);			\
+		OPT_DIGIT(0.00001, frac);			\
+		OPT_DIGIT(0.000001, frac);			\
+		OPT_DIGIT(0.0000001, frac);			\
+		OPT_DIGIT(0.00000001, frac);			\
+		OPT_DIGIT(0.000000001, frac);			\
+	} while (0)
 
 static unsigned
 vtim_parse_http(struct vtim *vtim, const char **pp)
@@ -453,6 +471,98 @@ VTIM_parse(const char *p)
 	return (vtim_calc(vtim));
 }
 
+vtim_real
+VTIM_parse_web(const char *p)
+{
+	struct vtim vtim[1];
+	vtim_real t;
+	char sign;
+
+	if (*p == '\0')
+		FAIL();
+
+	/* Parse date-time syntax from RFC3339's grammar:
+	 *
+	 *     YYYY-MM-DDThh:mm:ss[.s]TZD
+	 *
+	 * The components are described in the W3C's Date and Time Formats
+	 * note:
+	 *
+	 *     YYYY = four-digit year
+	 *     MM   = two-digit month (01=January, etc)
+	 *     DD   = two-digit day of month (01 through 31)
+	 *     T    = the character 'T'
+	 *     hh   = two digits of hour (00 through 23, am/pm NOT allowed)
+	 *     mm   = two digits of minute (00 through 59)
+	 *     ss   = two digits of second (00 through 59)
+	 *     s    = one or more digits for the decimal fraction of a second
+	 *     TZD  = time zone designator (Z or +hh:mm or -hh:mm)
+	 *     Z    = the character 'Z'
+	 *
+	 * https://www.w3.org/TR/1998/NOTE-datetime-19980827
+	 *
+	 * In this note only the uppercase letters T and Z are valid, and
+	 * RFC3339 allows such a restriction.
+	 */
+
+	VTIM_INIT(vtim);
+
+	DIGIT(1000, year);
+	DIGIT(100, year);
+	DIGIT(10, year);
+	DIGIT(1, year);
+	MUSTBE('-');
+	DIGIT(10, month);
+	DIGIT(1, month);
+	MUSTBE('-');
+	DIGIT(10, mday);
+	DIGIT(1, mday);
+	MUSTBE('T');
+	TIMESTAMP();
+
+	if (vtim->sec == 60)
+		FAIL();
+
+	if (*p == '.') {
+		p++;
+		FRAC();
+	}
+
+	t = vtim_calc(vtim);
+	if (t == 0)
+		FAIL();
+
+	if (*p == 'Z') {
+		p++;
+	} else {
+		sign = *p;
+		if (sign != '-' && sign != '+')
+			FAIL();
+		p++;
+		VTIM_INIT(vtim);
+		DIGIT(10, hour);
+		DIGIT(1, hour);
+		MUSTBE(':');
+		DIGIT(10, min);
+		DIGIT(1, min);
+		if (vtim->hour > 23)
+			FAIL();
+		if (vtim->min > 59)
+			FAIL();
+		if (sign == '-') {
+			vtim->hour = -vtim->hour;
+			vtim->min = -vtim->min;
+		}
+		t += vtim->hour * 3600;
+		t += vtim->min * 60;
+	}
+
+	if (*p != '\0')
+		FAIL();
+
+	return (t);
+}
+
 void
 VTIM_sleep(vtim_dur t)
 {
@@ -525,6 +635,22 @@ tst(const char *s, time_t good)
 	if (t != good) {
 		printf("Parse error! Got: %jd should have %jd diff %jd\n",
 		    (intmax_t)t, (intmax_t)good, (intmax_t)(t - good));
+		exit(4);
+	}
+}
+
+static void
+tst_web(const char *s, vtim_real good)
+{
+	vtim_real t;
+	char buf[BUFSIZ];
+
+	t = VTIM_parse_web(s);
+	VTIM_format(t, buf);
+	printf("%-30s -> %12.2f -> %s\n", s, t, buf);
+	if (t != good) {
+		printf("Parse error! Got: %f should have %f diff %f\n",
+		    t, good, t - good);
 		exit(4);
 	}
 }
@@ -688,6 +814,9 @@ main(int argc, char **argv)
 	tst("Sun Nov  6 08:49:37 1994", 784111777);
 
 	tst("1994-11-06T08:49:37", 784111777);
+
+	tst_web("1994-11-06T08:49:37.25Z", 784111777.25);
+	tst_web("1994-11-06T08:49:37.25+01:00", 784115377.25);
 
 	tst_delta();
 
