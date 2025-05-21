@@ -157,7 +157,7 @@ VTIM_real(void)
 }
 
 void
-VTIM_format(vtim_real t, char *p)
+VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 {
 	struct tm tm;
 	time_t tt;
