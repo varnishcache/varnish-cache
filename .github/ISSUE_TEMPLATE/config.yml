@@ -1,4 +1,4 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
   - name: Getting Help
     url: https://varnish-cache.org/support/index.html
