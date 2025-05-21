@@ -71,6 +71,7 @@
 #include "vdef.h"
 
 #include "vas.h"
+#include "vct.h"
 #include "vtim.h"
 
 /* relax vtim parsing */
@@ -264,20 +265,15 @@ struct vtim {
 		DIGIT(1, sec);					\
 	} while(0)
 
-vtim_real
-VTIM_parse(const char *p)
+static unsigned
+vtim_parse_http(struct vtim *vtim, const char **pp)
 {
-	struct vtim vtim[1];
-	vtim_real t;
-	int d, leap;
+	const char *p;
 
-	if (p == NULL || *p == '\0')
+	AN(pp);
+	p = *pp;
+	if (*p == '\0')
 		FAIL();
-
-	while (*p == ' ')
-		p++;
-
-	VTIM_INIT(vtim);
 
 	if (*p >= '0' && *p <= '9') {
 		/* ISO8601 -- "1994-11-06T08:49:37" */
@@ -362,11 +358,15 @@ VTIM_parse(const char *p)
 			FAIL();
 	}
 
-	while (*p == ' ')
-		p++;
+	*pp = p;
+	return (1);
+}
 
-	if (*p != '\0')
-		FAIL();
+static vtim_real
+vtim_calc(struct vtim *vtim)
+{
+	vtim_real t;
+	int d, leap;
 
 	if (vtim->sec < 0 || vtim->sec > 60)	/* Leapseconds! */
 		FAIL();
@@ -420,6 +420,30 @@ VTIM_parse(const char *p)
 	t += 10957. * 86400.;	/* 10957 days frm UNIX epoch to y2000 */
 
 	return (t);
+}
+
+vtim_real
+VTIM_parse(const char *p)
+{
+	struct vtim vtim[1];
+
+	if (p == NULL)
+		FAIL();
+
+	while (vct_isows(*p))
+		p++;
+
+	VTIM_INIT(vtim);
+	if (!vtim_parse_http(vtim, &p))
+		FAIL();
+
+	while (vct_isows(*p))
+		p++;
+
+	if (*p != '\0')
+		FAIL();
+
+	return (vtim_calc(vtim));
 }
 
 void
