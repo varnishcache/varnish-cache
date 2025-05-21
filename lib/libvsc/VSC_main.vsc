@@ -211,6 +211,100 @@
 	The maximum time to wait in the queue is defined by the backend
 	wait_timeout property.
 
+.. varnish_vsc:: backend_closed
+	:group: wrk
+	:oneliner:	Backend Closed
+
+.. varnish_vsc:: backend_closed_err
+	:oneliner:	Backend Closed with error
+
+	Total number of backends closed with errors. See bc_* diag counters
+	for detailed breakdown
+
+.. varnish_vsc:: bc_rem_close
+	:level:	diag
+	:oneliner:	Backend Close OK  REM_CLOSE
+
+	Number of backend closes with REM_CLOSE (Server Closed)
+
+.. varnish_vsc:: bc_req_close
+	:level:	diag
+	:oneliner:	Backend Close OK  REQ_CLOSE
+
+	Number of backend closes with REQ_CLOSE (Server requested close)
+
+.. varnish_vsc:: bc_req_http10
+	:level:	diag
+	:oneliner:	Backend Close Err REQ_HTTP10
+
+	Number of backend closes with Error REQ_HTTP10 (Proto < HTTP/1.1)
+
+.. varnish_vsc:: bc_rx_bad
+	:level:	diag
+	:oneliner:	Backend Close Err RX_BAD
+
+	Number of backend closes with Error RX_BAD (Received bad req/resp)
+
+.. varnish_vsc:: bc_rx_body
+	:level:	diag
+	:oneliner:	Backend Close Err RX_BODY
+
+	Number of backend closes with Error RX_BODY (Failure receiving request body)
+
+.. varnish_vsc:: bc_rx_junk
+	:level:	diag
+	:oneliner:	Backend Close Err RX_JUNK
+
+	Number of backend closes with Error RX_JUNK (Received junk data)
+
+.. varnish_vsc:: bc_rx_overflow
+	:level:	diag
+	:oneliner:	Backend Close Err RX_OVERFLOW
+
+	Number of backend closes with Error RX_OVERFLOW (Received buffer overflow)
+
+.. varnish_vsc:: bc_rx_timeout
+	:level:	diag
+	:oneliner:	Backend Close Err RX_TIMEOUT
+
+	Number of backend closes with Error RX_TIMEOUT (Receive timeout)
+
+.. varnish_vsc:: bc_tx_proxy
+	:level:	diag
+	:oneliner:	Backend Close OK  TX_PROXY
+
+	Number of backend closes with TX_PROXY (Proxy transaction).
+
+.. varnish_vsc:: bc_tx_pipe
+	:level:	diag
+	:oneliner:	Backend Close OK  TX_PIPE
+
+	Number of backend closes with TX_PIPE (Piped transaction)
+
+.. varnish_vsc:: bc_tx_error
+	:level:	diag
+	:oneliner:	Backend Close Err TX_ERROR
+
+	Number of backend closes with Error TX_ERROR (Error transaction)
+
+.. varnish_vsc:: bc_tx_eof
+	:level:	diag
+	:oneliner:	Backend Close OK  TX_EOF
+
+	Number of backend closes with TX_EOF (EOF transmission)
+
+.. varnish_vsc:: bc_resp_close
+	:level:	diag
+	:oneliner:	Backend Close OK  RESP_CLOSE
+
+	Number of backend closes with RESP_CLOSE (Backend/VCL requested close)
+
+.. varnish_vsc:: bc_overload
+	:level:	diag
+	:oneliner:	Backend Close Err OVERLOAD
+
+	Number of backend closes with Error OVERLOAD (Out of some resource)
+
 .. varnish_vsc:: fetch_head
 	:group: wrk
 	:oneliner:	Fetch no body (HEAD)
