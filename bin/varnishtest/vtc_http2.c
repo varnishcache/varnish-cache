@@ -1600,7 +1600,7 @@ cmd_tx11obj(CMD_ARGS)
 				i = vtc_gzip_cmd(s->hp, av, &body, &bodylen);
 				if (i == 0)
 					break;
-				av += i;
+				av++;
 				if (i > 1) {
 					ENC(hdr, ":content-encoding", "gzip");
 					f.flags &= ~END_STREAM;

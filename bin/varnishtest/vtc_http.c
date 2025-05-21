@@ -862,7 +862,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			l = vtc_gzip_cmd(hp, av, &body, &bodylen);
 			if (l == 0)
 				break;
-			av += l;
+			av++;
 			if (l > 1)
 				VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 		} else
