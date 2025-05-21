@@ -27,7 +27,7 @@ logexpect l1 -v v1 -q "vxid == 1004" {
 
 	# purpose of this vtc: test the internal retry when the
 	# backend goes away on a keepalive TCP connection:
-	expect 0 1004 FetchError      {^HTC eof .Unexpected end of input.}
+	expect 0 1004 FetchError      {^backend closed}
 	expect 0 1004 BackendClose    {^\d+ s1}
 	expect 0 1004 Timestamp       {^Connected:}
 	expect 0 1004 BackendOpen     {^\d+ s1}
@@ -54,9 +54,9 @@ client c1 {
 
 varnish v1 -expect backend_retry == 1
 varnish v1 -expect MAIN.backend_closed == 1
-varnish v1 -expect MAIN.backend_closed_err == 1
-varnish v1 -expect MAIN.bc_rx_bad == 1
+varnish v1 -expect MAIN.backend_closed_err == 0
+varnish v1 -expect MAIN.bc_rx_bad == 0
 varnish v1 -expect MAIN.bc_rx_timeout == 0
-varnish v1 -expect MAIN.bc_rem_close == 0
+varnish v1 -expect MAIN.bc_rem_close == 1
 
 logexpect l1 -wait
