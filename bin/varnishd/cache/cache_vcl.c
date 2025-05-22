@@ -502,6 +502,7 @@ vdire_iter(struct cli *cli, const char *pat, const struct vcl *vcl,
 
 	vdire_start_iter(vdire);
 	VTAILQ_FOREACH(vdir, &vdire->directors, directors_list) {
+		CHECK_OBJ(vdir, VCLDIR_MAGIC);
 		if (vdir->refcnt == 0)
 			continue;
 		if (pat != NULL && fnmatch(pat, vdir->cli_name, 0))
@@ -531,6 +532,7 @@ vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
 
 	Lck_AssertHeld(&vcl_mtx);
 	VTAILQ_FOREACH(vdir, &vcl->vdire->directors, directors_list) {
+		CHECK_OBJ(vdir, VCLDIR_MAGIC);
 		if (fnmatch(pat, vdir->cli_name, 0))
 			continue;
 		found++;
@@ -647,6 +649,7 @@ backend_event_delta(const struct vcl *vcl, enum vcl_event_e e, const struct vclt
 	Lck_Unlock(vdire->mtx);
 
 	while (vdir != NULL) {
+		CHECK_OBJ(vdir, VCLDIR_MAGIC);
 		VDI_Event(vdir->dir, e);
 		if (vdir == end)
 			break;
@@ -677,8 +680,10 @@ vcl_KillBackends(const struct vcl *vcl)
 	 * Unlocked and sidelining vdire because no further directors can be added, and the
 	 * remaining ones need to be able to remove themselves.
 	 */
-	VTAILQ_FOREACH_SAFE(vdir, &vdire->directors, directors_list, vdir2)
+	VTAILQ_FOREACH_SAFE(vdir, &vdire->directors, directors_list, vdir2) {
+		CHECK_OBJ(vdir, VCLDIR_MAGIC);
 		VDI_Event(vdir->dir, VCL_EVENT_DISCARD);
+	}
 	assert(VTAILQ_EMPTY(&vdire->directors));
 }
 
