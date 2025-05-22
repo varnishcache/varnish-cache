@@ -32,26 +32,30 @@
 /*lint -save -e525 -e539 */
 
 // stream_close_t	  sc_* stat	is_err	Description
-SESS_CLOSE(REM_CLOSE,	  rem_close,	0,	"Client Closed")
-SESS_CLOSE(REQ_CLOSE,	  req_close,	0,	"Client requested close")
+SESS_CLOSE(REM_CLOSE,	  rem_close,	0,	"Peer Closed")
+SESS_CLOSE(REQ_CLOSE,	  req_close,	0,	"Peer requested close")
 SESS_CLOSE(REQ_HTTP10,	  req_http10,	1,	"Proto < HTTP/1.1")
 SESS_CLOSE(RX_BAD,	  rx_bad,	1,	"Received bad req/resp")
 SESS_CLOSE(RX_BODY,	  rx_body,	1,	"Failure receiving body")
 SESS_CLOSE(RX_JUNK,	  rx_junk,	1,	"Received junk data")
 SESS_CLOSE(RX_OVERFLOW,   rx_overflow,	1,	"Received buffer overflow")
 SESS_CLOSE(RX_TIMEOUT,	  rx_timeout,	1,	"Receive timeout")
-SESS_CLOSE(RX_CLOSE_IDLE, rx_close_idle,0,	"timeout_idle reached")
 SESS_CLOSE(TX_PIPE,	  tx_pipe,	0,	"Piped transaction")
 SESS_CLOSE(TX_ERROR,	  tx_error,	1,	"Error transaction")
 SESS_CLOSE(TX_EOF,	  tx_eof,	0,	"EOF transmission")
 SESS_CLOSE(RESP_CLOSE,	  resp_close,	0,	"Backend/VCL requested close")
 SESS_CLOSE(OVERLOAD,	  overload,	1,	"Out of some resource")
-SESS_CLOSE(PIPE_OVERFLOW, pipe_overflow,1,	"Session pipe overflow")
-SESS_CLOSE(RANGE_SHORT,   range_short,	1,	"Insufficient data for range")
-SESS_CLOSE(REQ_HTTP20,	  req_http20,	1,	"HTTP2 not accepted")
-SESS_CLOSE(VCL_FAILURE,	  vcl_failure,	1,	"VCL failure")
-SESS_CLOSE(RAPID_RESET,	  rapid_reset,  1,      "HTTP2 rapid reset")
-SESS_CLOSE(BANKRUPT,	  bankrupt,	1,      "HTTP2 credit bankruptcy")
+#ifndef SESS_CLOSE_BACKEND
+  SESS_CLOSE(RX_CLOSE_IDLE,	rx_close_idle,	0,	"timeout_idle reached")
+  SESS_CLOSE(PIPE_OVERFLOW,	pipe_overflow,	1,	"Session pipe overflow")
+  SESS_CLOSE(RANGE_SHORT,	range_short,	1,	"Insufficient data for range")
+  SESS_CLOSE(REQ_HTTP20,	req_http20,	1,	"HTTP2 not accepted")
+  SESS_CLOSE(VCL_FAILURE,	vcl_failure,	1,	"VCL failure")
+  SESS_CLOSE(RAPID_RESET,	rapid_reset,	1,	"HTTP2 rapid reset")
+  SESS_CLOSE(BANKRUPT,		bankrupt,	1,	"HTTP2 credit bankruptcy")
+#else
+  #undef SESS_CLOSE_BACKEND
+#endif
 #undef SESS_CLOSE
 
 /*lint -restore */
