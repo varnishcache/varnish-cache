@@ -250,9 +250,10 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2, struct h2_req **pr2,
 		r2->error = h2e;
 	}
 
-	if (r2 == h2->hpack_lock)
+	if (r2 == h2->hpack_lock) {
 		(void)h2h_decode_hdr_fini(h2);
-	AZ(h2->hpack_lock);
+		AZ(h2->hpack_lock);
+	}
 
 	if (r2->t_win_low != 0.) {
 		assert(h2->win_low_streams > 0);
