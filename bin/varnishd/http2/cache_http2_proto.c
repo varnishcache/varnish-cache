@@ -251,8 +251,12 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2, struct h2_req **pr2,
 	}
 
 	if (r2 == h2->hpack_lock) {
+		/* We are killing the request that holds the hpack
+		 * context. This is a hard error. */
 		(void)h2h_decode_hdr_fini(h2);
 		AZ(h2->hpack_lock);
+		if (h2->error == NULL)
+			h2->error = H2CE_COMPRESSION_ERROR;
 	}
 
 	if (r2->t_win_low != 0.) {
