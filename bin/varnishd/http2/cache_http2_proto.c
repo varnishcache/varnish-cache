@@ -1443,6 +1443,10 @@ h2_run(struct worker *wrk, struct h2_sess *h2)
 		}
 	}
 
+	/* We will not be sending anything more on the socket. */
+	H2_Send_Stop(h2);
+	AN(VTAILQ_EMPTY(&h2->tx_l_queue));
+
 	/* XXX: Shutdown socket? Would presumably free up kernel socket
 	 * buffers while waiting for waitinglists and the like to clean
 	 * up. */

@@ -196,6 +196,8 @@ struct h2_sess {
 	struct iovec			tx_vec[2]; /* Must be 2 wide */
 	unsigned			tx_nvec;
 
+	unsigned			tx_stopped;
+
 	uint8_t				*tx_s_start;
 	uint8_t				*tx_s_end;
 	uint8_t				*tx_s_head;
@@ -288,6 +290,7 @@ ssize_t H2_Send_TxStuff(struct h2_sess *h2);
 int H2_Send_Something(struct h2_sess *h2);
 int H2_Send_Pending(struct h2_sess *h2);
 void H2_Send_Shutdown(struct h2_sess *h2);
+void H2_Send_Stop(struct h2_sess *h2);
 
 /* cache_http2_proto.c */
 const char *h2_framename(int frame);

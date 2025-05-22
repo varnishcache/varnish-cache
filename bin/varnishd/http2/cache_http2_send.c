@@ -263,14 +263,16 @@ H2_Send(struct vsl_log *vsl, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 	Lck_Lock(&h2->sess->mtx);
 
-	VTAILQ_INSERT_TAIL(&h2->tx_l_queue, &large, list);
-	h2->tx_l_stuck = 0;
-	h2_attention(h2);
+	if (!h2->tx_stopped) {
+		VTAILQ_INSERT_TAIL(&h2->tx_l_queue, &large, list);
+		h2->tx_l_stuck = 0;
+		h2_attention(h2);
 
-	AZ(Lck_CondWait(&large.cond, &h2->sess->mtx));
-	AN(large.returned);	/* Sanity check */
-	/* Note: We will have been removed from the `h2->tx_l_queue`
-	 * list by the signaller. */
+		AZ(Lck_CondWait(&large.cond, &h2->sess->mtx));
+		AN(large.returned);	/* Sanity check */
+		/* Note: We will have been removed from the `h2->tx_l_queue`
+		 * list by the signaller. */
+	}
 
 	h2e = h2_errcheck(r2);
 
@@ -389,6 +391,7 @@ H2_Send_TxStuff(struct h2_sess *h2)
 	ASSERT_H2_SESS(h2);
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	AZ(h2->tx_stopped);
 
 	if (h2->tx_nvec == 0 && h2->tx_s_head != h2->tx_s_start) {
 		/* Prioritise sending the small frames */
@@ -526,6 +529,8 @@ H2_Send_Something(struct h2_sess *h2)
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	ASSERT_H2_SESS(h2);
+	AZ(h2->tx_stopped);
+
 	assert(h2->sess->fd >= 0);
 	pfd->fd = h2->sess->fd;
 	pfd->events = POLLOUT;
@@ -568,8 +573,8 @@ H2_Send_Pending(struct h2_sess *h2)
 	return (0);
 }
 
-void
-H2_Send_Shutdown(struct h2_sess *h2)
+static void
+h2_send_close(struct h2_sess *h2, unsigned stop)
 {
 	struct h2_send_large *large, *large2;
 
@@ -577,12 +582,43 @@ H2_Send_Shutdown(struct h2_sess *h2)
 	ASSERT_H2_SESS(h2);
 
 	Lck_Lock(&h2->sess->mtx);
+
+	/* A session error state should have been set prior to calling
+	 * this function. */
 	AN(h2->error);
+	AZ(h2->tx_stopped);
+
+	if (stop) {
+		h2->tx_stopped = 1;
+
+		CHECK_OBJ_ORNULL(h2->tx_l_current, H2_SEND_LARGE_MAGIC);
+		if (h2->tx_l_current != NULL) {
+			/* Abort the large frame */
+			h2->tx_l_current = NULL;
+			h2->tx_nvec = 0;
+		}
+	}
+
 	VTAILQ_FOREACH_SAFE(large, &h2->tx_l_queue, list, large2) {
 		CHECK_OBJ_NOTNULL(large, H2_SEND_LARGE_MAGIC);
+		if (large == h2->tx_l_current)
+			continue;
 		VTAILQ_REMOVE(&h2->tx_l_queue, large, list);
 		large->returned = 1;
 		PTOK(pthread_cond_signal(&large->cond));
 	}
+
 	Lck_Unlock(&h2->sess->mtx);
+}
+
+void
+H2_Send_Shutdown(struct h2_sess *h2)
+{
+	h2_send_close(h2, 0);
+}
+
+void
+H2_Send_Stop(struct h2_sess *h2)
+{
+	h2_send_close(h2, 1);
 }
