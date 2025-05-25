@@ -194,6 +194,7 @@ h2_del_req(struct worker *wrk, struct h2_req **pr2)
 	struct h2_sess *h2;
 	struct sess *sp;
 	struct stv_buffer *stvbuf;
+	struct req *req;
 
 	TAKE_OBJ_NOTNULL(r2, pr2, H2_REQ_MAGIC);
 	AZ(r2->scheduled);
@@ -218,10 +219,16 @@ h2_del_req(struct worker *wrk, struct h2_req **pr2)
 		AZ(stvbuf);
 	}
 
-	Req_Cleanup(sp, wrk, r2->req);
+	req = r2->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	r2->magic = 0;
+	req->transport_priv = NULL;
+
+	AZ(req->ws->r);
+	Req_Cleanup(sp, wrk, req);
 	if (FEATURE(FEATURE_BUSY_STATS_RATE))
 		WRK_AddStat(wrk);
-	Req_Release(r2->req);
+	Req_Release(req);
 }
 
 void
