@@ -376,7 +376,7 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  */
 
-static h2_error
+static int
 h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	vtim_real now;
@@ -402,18 +402,16 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	    h2->rapid_reset_limit);
 	h2->last_rst = now;
 
-	if (h2->rst_budget < 1.0) {
-		VSLb(h2->vsl, SLT_SessError, "H2: Hit RST limit. Closing session.");
-		return (H2CE_RAPID_RESET);
-	}
 	h2->rst_budget -= 1.0;
-	return (0);
+	if (h2->rst_budget > 0)
+		return (0);
+	return (1);
 }
 
 static h2_error v_matchproto_(h2_rxframe_f)
 h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
-	h2_error rapid_fault;
+	h2_error h2e;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_H2_SESS(h2);
@@ -426,14 +424,29 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL)
 		return (0);
 
-	rapid_fault = h2_rapid_reset(wrk, h2, r2);
+	h2e = h2_streamerror(vbe32dec(h2->rxf_data));
+	AN(h2e);
+	if (h2e == H2NN_ERROR) {
+		/* The error is unknown. We don't want to return
+		 * H2NN_ERROR from this function because that will cause
+		 * us to close the connection. Map the unknown error to
+		 * H2SE_INTERNAL_ERROR as suggested by the RFC. */
+		/* rfc7540,l,2839,2841 */
+		h2e = H2SE_INTERNAL_ERROR;
+	}
 
-	/* We set `r2->error` prior to killing to prevent sending a RST in
+	/* We set `r2->error` prior to returnnig to prevent sending a RST in
 	 * return. */
-	r2->error = h2_streamerror(vbe32dec(h2->rxf_data));
-	h2_kill_req(wrk, h2, &r2, r2->error);
+	if (r2->error == NULL)
+		r2->error = h2e;
 
-	return (rapid_fault);
+	if (h2_rapid_reset(wrk, h2, r2)) {
+		/* Upgrading to a connection level error. */
+		VSLb(h2->vsl, SLT_Error, "H2: Hit RST limit. Closing session.");
+		h2e = H2CE_RAPID_RESET;
+	}
+
+	return (h2e);
 }
 
 /**********************************************************************
