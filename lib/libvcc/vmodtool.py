@@ -1255,8 +1255,15 @@ class vcc():
         vcs = json.dumps(self.vcs())
         vmd = "Vmod_%s_Data" % self.modname
         fo.write('\n')
+
+        # Choose section name based on platform compatibility
+        if sys.platform == 'darwin':
+            section_name = '__TEXT,vmod_vcs'
+        else:
+            section_name = '.vmod_vcs'
+
         fo.write('static const char vmod_vcs[] ')
-        fo.write('v_used_(section(".vmod_vcs")) = %s;\n' % vcs)
+        fo.write('v_used_(section("%s")) = %s;\n' % (section_name, vcs))
         for i in (714, 759, 765):
             fo.write("/*lint -esym(%d, %s) */\n" % (i, vmd))
         fo.write("\nextern const struct vmod_data %s;\n" % vmd)
