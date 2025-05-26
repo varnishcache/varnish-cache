@@ -653,7 +653,7 @@ backend_event_delta(const struct vcl *vcl, enum vcl_event_e e, const struct vclt
 		VDI_Event(vdir->dir, e);
 		if (vdir == end)
 			break;
-		vdir = VTAILQ_NEXT(vdire->checkpoint, directors_list);
+		vdir = VTAILQ_NEXT(vdir, directors_list);
 	}
 }
 
