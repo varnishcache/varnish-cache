@@ -21,7 +21,7 @@ https://varnish-cache.org/releases/ .
 Alternatively, if you want to hack on Varnish, you should clone our
 git repository by doing.
 
-      ``git clone -r https://github.com/varnishcache/varnish-cache``
+      ``git clone --recursive https://github.com/varnishcache/varnish-cache``
 
 This will recursively check out the vtest2 sources from the default repository
 URL. If you prefer to use vtest2 from a non-default (local) repository, you can
