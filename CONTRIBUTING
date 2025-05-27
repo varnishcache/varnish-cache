@@ -20,6 +20,16 @@ through new (and old) tickets.  It speeds things up a lot if you
 can join the channel and answer questions directly when we go over
 the ticket.
 
+General process
+---------------
+
+In general, please follow these steps when contributing new features or
+non-trivial fixes:
+
+1) Present the idea on -dev or in an issue
+2) Write the documentation and present it
+3) Create the full PR
+
 GitHub pull requests
 --------------------
 
