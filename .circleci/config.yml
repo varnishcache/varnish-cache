@@ -110,7 +110,7 @@ jobs:
             mkdir -p ~/.ssh
             ssh-keyscan -H github.com >> ~/.ssh/known_hosts
             echo ${CIRCLE_REPOSITORY_URL}
-            git clone https://github.com/varnishcache/pkg-varnish-cache.git .
+            git clone -r https://github.com/varnishcache/pkg-varnish-cache.git .
             git checkout << pipeline.parameters.pkg-commit >>
             tar cvzf debian.tar.gz debian --dereference
             tar cvzf redhat.tar.gz redhat --dereference

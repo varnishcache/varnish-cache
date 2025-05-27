@@ -76,9 +76,11 @@ chown varnish "${TMPDIR}" > /dev/null 2>&1 || true
 # Establish the SRCDIR we build/run/test
 
 if ! (cd varnish-cache 2>/dev/null) ; then
-	git clone \
+	git clone -r \
 		https://github.com/varnishcache/varnish-cache.git \
 		varnish-cache
+else
+	git submodule update --init || true
 fi
 
 export SRCDIR=`pwd`/varnish-cache
