@@ -233,11 +233,111 @@ vrg_range_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 	return (1);
 }
 
+static int v_matchproto_(vdpio_init_f)
+vrg_range_io_upgrade(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
+{
+
+	(void)ctx;
+	(void)vdc;
+	(void)priv;
+
+	return (capacity);
+}
+
+static int v_matchproto_(vdpio_lease_f)
+vrg_range_io_lease(struct vdp_ctx *vdc, struct vdp_entry *this, struct vscarab *out)
+{
+	struct vrg_priv *vrg_priv;
+	struct viov *v;
+	ssize_t l, ll;
+	int r;
+
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(this, VDP_ENTRY_MAGIC);
+	VSCARAB_CHECK(out);
+
+	CAST_OBJ_NOTNULL(vrg_priv, this->priv, VRG_PRIV_MAGIC);
+
+	if (vrg_priv->range_off >= vrg_priv->range_high) {
+		out->flags |= VSCARAB_F_END;
+		return (0);
+	}
+	if (out->capacity == out->used)
+		return (0);
+
+	// ensure we do not pull more than we can return
+	VSCARAB_LOCAL(in, out->capacity - out->used);
+
+	while (vrg_priv->range_off < vrg_priv->range_low) {
+		r = vdpio_pull(vdc, this, in);
+		out->flags |= in->flags;
+		if (r <= 0)
+			return (r);
+		l = vrg_priv->range_low - vrg_priv->range_off;
+		VSCARAB_FOREACH(v, in) {
+			ll = vmin(l, (ssize_t)v->iov.iov_len);
+			v->iov.iov_base = (char *)v->iov.iov_base + ll;
+			v->iov.iov_len -= ll;
+			l -= ll;
+			if (l == 0)
+				break;
+		}
+		vrg_priv->range_off = vrg_priv->range_low - l;
+
+		vdpio_consolidate_vscarab(vdc, in);
+
+		if (l != 0)
+			AZ(in->used);
+		else
+			assert(vrg_priv->range_off == vrg_priv->range_low);
+	}
+
+	assert(vrg_priv->range_off >= vrg_priv->range_low);
+	assert(vrg_priv->range_off <= vrg_priv->range_high);
+
+	if (in->used == 0) {
+		r = vdpio_pull(vdc, this, in);
+		out->flags |= in->flags;
+		if (r <= 0)
+			return (r);
+	}
+
+	AN(in->used);
+
+	r = 0;
+	l = vrg_priv->range_high - vrg_priv->range_off;
+	VSCARAB_FOREACH(v, in) {
+		vrg_priv->range_off += (ssize_t)v->iov.iov_len;
+		ll = vmin(l, (ssize_t)v->iov.iov_len);
+		v->iov.iov_len = ll;
+		if (ll == 0)
+			vdpio_return_lease(vdc, v->lease);
+		else {
+			VSCARAB_ADD(out, *v);
+			l -= ll;
+			r++;
+		}
+	}
+	if (vrg_priv->range_off >= vrg_priv->range_high)
+		out->flags |= VSCARAB_F_END;
+	return (r);
+}
+
+static void v_matchproto_(vdpio_fini_f)
+vrg_range_io_fini(struct vdp_ctx *vdc, void **priv)
+{
+	AZ(vrg_range_fini(vdc, priv));
+}
+
 const struct vdp VDP_range = {
 	.name =		"range",
 	.init =		vrg_range_init,
 	.bytes =	vrg_range_bytes,
 	.fini =		vrg_range_fini,
+
+	.io_upgrade =	vrg_range_io_upgrade,
+	.io_lease =	vrg_range_io_lease,
+	.io_fini =	vrg_range_io_fini,
 };
 
 /*--------------------------------------------------------------------*/
