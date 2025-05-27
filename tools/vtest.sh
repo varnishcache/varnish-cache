@@ -80,7 +80,7 @@ if ! (cd varnish-cache 2>/dev/null) ; then
 		https://github.com/varnishcache/varnish-cache.git \
 		varnish-cache
 else
-	git submodule update --init || true
+	(cd varnish-cache && git submodule update --init || true)
 fi
 
 export SRCDIR=`pwd`/varnish-cache
