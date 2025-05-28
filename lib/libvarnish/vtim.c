@@ -71,6 +71,8 @@
 #include "vdef.h"
 
 #include "vas.h"
+#include "vct.h"
+#include "vsb.h"
 #include "vtim.h"
 
 /* relax vtim parsing */
@@ -157,7 +159,7 @@ VTIM_real(void)
 }
 
 void
-VTIM_format(vtim_real t, char *p)
+VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE])
 {
 	struct tm tm;
 	time_t tt;
@@ -179,6 +181,70 @@ VTIM_format(vtim_real t, char *p)
 	    tm.tm_hour, tm.tm_min, tm.tm_sec));
 }
 
+void
+VTIM_format_web(vtim_real t, char p[VTIM_FORMAT_WEB_SIZE])
+{
+	char buf[sizeof "0.123456"], *z;
+	struct vsb vsb[1];
+	struct tm tm;
+	time_t tt;
+	double frac, i;
+
+	AN(p);
+	*p = '\0';
+
+	if (t < (vtim_real)INTMAX_MIN || t > (vtim_real)INTMAX_MAX)
+		return;
+
+	tt = (time_t)(intmax_t)t;
+	if (gmtime_r(&tt, &tm) == NULL)
+		return;
+
+	AN(VSB_init(vsb, p, VTIM_FORMAT_WEB_SIZE));
+	VSB_printf(vsb, "%04d-%02d-%02dT%02d:%02d:%02d",
+	    tm.tm_year + 1900, tm.tm_mon, tm.tm_mday,
+	    tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	frac = modf(t, &i);
+	if (frac >= 1e-6) {
+		bprintf(buf, "%0.6f", frac);
+		z = buf + sizeof buf - 2;
+		while (*z == '0') {
+			*z = '\0';
+			z--;
+		}
+		if (*z != '.')
+			VSB_cat(vsb, buf + 1);
+	}
+
+	VSB_putc(vsb, 'Z');
+	AZ(VSB_finish(vsb));
+	VSB_fini(vsb);
+}
+
+struct vtim {
+	int	year;
+	int	month;
+	int	mday;
+	int	weekday;
+	int	hour;
+	int	min;
+	int	sec;
+	double	frac;
+};
+
+#define VTIM_INIT(vtim)			\
+	do {				\
+		(vtim)->year = 0;	\
+		(vtim)->month = 0;	\
+		(vtim)->mday = 0;	\
+		(vtim)->weekday = -1;	\
+		(vtim)->hour = 0;	\
+		(vtim)->min = 0;	\
+		(vtim)->sec = 0;	\
+		(vtim)->frac = 0;	\
+	} while (0)
+
 #ifdef TEST_DRIVER
 #define FAIL()	\
 	do { printf("\nFAIL <<%d>>\n", __LINE__); return (0); } while (0)
@@ -189,9 +255,9 @@ VTIM_format(vtim_real t, char *p)
 
 #define DIGIT(mult, fld)					\
 	do {							\
-		if (*p < '0' || *p > '9')			\
+		if (!vct_isdigit(*p))				\
 			FAIL();					\
-		fld += (*p - '0') * mult;			\
+		vtim->fld += (*p - '0') * mult;			\
 		p++;						\
 	} while(0)
 
@@ -207,7 +273,7 @@ VTIM_format(vtim_real t, char *p)
 		int i;						\
 		for (i = 0; i < 7; i++) {			\
 			if (!memcmp(p, weekday_name[i], 3)) {	\
-				weekday = i;			\
+				vtim->weekday = i;		\
 				break;				\
 			}					\
 		}						\
@@ -222,7 +288,7 @@ VTIM_format(vtim_real t, char *p)
 		int i;						\
 		for (i = 0; i < 12; i++) {			\
 			if (!memcmp(p, month_name[i], 3)) {	\
-				month = i + 1;			\
+				vtim->month = i + 1;		\
 				break;				\
 			}					\
 		}						\
@@ -243,19 +309,33 @@ VTIM_format(vtim_real t, char *p)
 		DIGIT(1, sec);					\
 	} while(0)
 
-vtim_real
-VTIM_parse(const char *p)
+#define OPT_DIGIT(mult, fld)					\
+	if (!vct_isdigit(*p))					\
+		break;						\
+	DIGIT(mult, fld)
+
+#define FRAC()							\
+	do {							\
+		DIGIT(0.1, frac);				\
+		OPT_DIGIT(0.01, frac);				\
+		OPT_DIGIT(0.001, frac);				\
+		OPT_DIGIT(0.0001, frac);			\
+		OPT_DIGIT(0.00001, frac);			\
+		OPT_DIGIT(0.000001, frac);			\
+		OPT_DIGIT(0.0000001, frac);			\
+		OPT_DIGIT(0.00000001, frac);			\
+		OPT_DIGIT(0.000000001, frac);			\
+	} while (0)
+
+static unsigned
+vtim_parse_http(struct vtim *vtim, const char **pp)
 {
-	vtim_real t;
-	int month = 0, year = 0, weekday = -1, mday = 0;
-	int hour = 0, min = 0, sec = 0;
-	int d, leap;
+	const char *p;
 
-	if (p == NULL || *p == '\0')
+	AN(pp);
+	p = *pp;
+	if (*p == '\0')
 		FAIL();
-
-	while (*p == ' ')
-		p++;
 
 	if (*p >= '0' && *p <= '9') {
 		/* ISO8601 -- "1994-11-06T08:49:37" */
@@ -273,7 +353,7 @@ VTIM_parse(const char *p)
 		TIMESTAMP();
 	} else {
 		WEEKDAY();
-		assert(weekday >= 0 && weekday <= 6);
+		assert(vtim->weekday >= 0 && vtim->weekday <= 6);
 		if (*p == ',') {
 			/* RFC822 & RFC1123 - "Sun, 06 Nov 1994 08:49:37 GMT" */
 			p++;
@@ -314,10 +394,10 @@ VTIM_parse(const char *p)
 			DIGIT(100, year);
 			DIGIT(10, year);
 			DIGIT(1, year);
-		} else if (!memcmp(p, more_weekday[weekday],
-		    strlen(more_weekday[weekday]))) {
+		} else if (!memcmp(p, more_weekday[vtim->weekday],
+		    strlen(more_weekday[vtim->weekday]))) {
 			/* RFC850 -- "Sunday, 06-Nov-94 08:49:37 GMT" */
-			p += strlen(more_weekday[weekday]);
+			p += strlen(more_weekday[vtim->weekday]);
 			MUSTBE(',');
 			MUSTBE(' ');
 			DIGIT(10, mday);
@@ -327,9 +407,9 @@ VTIM_parse(const char *p)
 			MUSTBE('-');
 			DIGIT(10, year);
 			DIGIT(1, year);
-			year += 1900;
-			if (year < 1969)
-				year += 100;
+			vtim->year += 1900;
+			if (vtim->year < 1969)
+				vtim->year += 100;
 			MUSTBE(' ');
 			TIMESTAMP();
 			MUSTBE(' ');
@@ -340,62 +420,187 @@ VTIM_parse(const char *p)
 			FAIL();
 	}
 
-	while (*p == ' ')
-		p++;
+	*pp = p;
+	return (1);
+}
 
-	if (*p != '\0')
+static vtim_real
+vtim_calc(struct vtim *vtim)
+{
+	vtim_real t;
+	int d, leap;
+
+	if (vtim->sec < 0 || vtim->sec > 60)	/* Leapseconds! */
+		FAIL();
+	if (vtim->min < 0 || vtim->min > 59)
+		FAIL();
+	if (vtim->hour < 0 || vtim->hour > 23)
+		FAIL();
+	if (vtim->month < 1 || vtim->month > 12)
+		FAIL();
+	if (vtim->mday < 1 || vtim->mday > days_in_month[vtim->month - 1])
+		FAIL();
+	if (vtim->year < 1899)
 		FAIL();
 
-	if (sec < 0 || sec > 60)	/* Leapseconds! */
-		FAIL();
-	if (min < 0 || min > 59)
-		FAIL();
-	if (hour < 0 || hour > 23)
-		FAIL();
-	if (month < 1 || month > 12)
-		FAIL();
-	if (mday < 1 || mday > days_in_month[month - 1])
-		FAIL();
-	if (year < 1899)
+	leap = ((vtim->year) % 4) == 0 &&
+	    (((vtim->year) % 100) != 0 || ((vtim->year) % 400) == 0);
+
+	if (vtim->month == 2 && vtim->mday > 28 && !leap)
 		FAIL();
 
-	leap =
-	    ((year) % 4) == 0 && (((year) % 100) != 0 || ((year) % 400) == 0);
+	if (vtim->sec == 60)			/* Ignore Leapseconds */
+		vtim->sec--;
 
-	if (month == 2 && mday > 28 && !leap)
-		FAIL();
+	t = ((vtim->hour * 60.) + vtim->min) * 60. + vtim->sec;
 
-	if (sec == 60)			/* Ignore Leapseconds */
-		sec--;
+	d = (vtim->mday - 1) + days_before_month[vtim->month - 1];
 
-	t = ((hour * 60.) + min) * 60. + sec;
-
-	d = (mday - 1) + days_before_month[month - 1];
-
-	if (month > 2 && leap)
+	if (vtim->month > 2 && leap)
 		d++;
 
-	d += (year % 100) * 365;	/* There are 365 days in a year */
+	d += (vtim->year % 100) * 365;	/* There are 365 days in a year */
 
-	if ((year % 100) > 0)		/* And a leap day every four years */
-		d += (((year % 100) - 1) / 4);
+	if ((vtim->year % 100) > 0)	/* And a leap day every four years */
+		d += (((vtim->year % 100) - 1) / 4);
 
-	d += ((year / 100) - 20) *	/* Days relative to y2000 */
+	d += ((vtim->year / 100) - 20) *	/* Days relative to y2000 */
 	    (100 * 365 + 24);		/* 24 leapdays per year in a century */
 
-	d += ((year - 1) / 400) - 4;	/* And one more every 400 years */
+	d += ((vtim->year - 1) / 400) - 4;	/* One more every 400 years */
 
 	/*
 	 * Now check weekday, if we have one.
 	 * 6 is because 2000-01-01 was a saturday.
 	 * 10000 is to make sure the modulus argument is always positive
 	 */
-	if (weekday != -1 && (d + 6 + 7 * 10000) % 7 != weekday)
+	if (vtim->weekday != -1 && (d + 6 + 7 * 10000) % 7 != vtim->weekday)
 		FAIL();
 
 	t += d * 86400.;
 
-	t += 10957. * 86400.;		/* 10957 days frm UNIX epoch to y2000 */
+	t += 10957. * 86400.;	/* 10957 days frm UNIX epoch to y2000 */
+
+	assert(vtim->frac >= 0);
+	assert(vtim->frac < 1);
+
+	t += vtim->frac;
+
+	return (t);
+}
+
+vtim_real
+VTIM_parse(const char *p)
+{
+	struct vtim vtim[1];
+
+	if (p == NULL)
+		FAIL();
+
+	while (vct_isows(*p))
+		p++;
+
+	VTIM_INIT(vtim);
+	if (!vtim_parse_http(vtim, &p))
+		FAIL();
+
+	while (vct_isows(*p))
+		p++;
+
+	if (*p != '\0')
+		FAIL();
+
+	return (vtim_calc(vtim));
+}
+
+vtim_real
+VTIM_parse_web(const char *p)
+{
+	struct vtim vtim[1];
+	vtim_real t;
+	char sign;
+
+	if (*p == '\0')
+		FAIL();
+
+	/* Parse date-time syntax from RFC3339's grammar:
+	 *
+	 *     YYYY-MM-DDThh:mm:ss[.s]TZD
+	 *
+	 * The components are described in the W3C's Date and Time Formats
+	 * note:
+	 *
+	 *     YYYY = four-digit year
+	 *     MM   = two-digit month (01=January, etc)
+	 *     DD   = two-digit day of month (01 through 31)
+	 *     T    = the character 'T'
+	 *     hh   = two digits of hour (00 through 23, am/pm NOT allowed)
+	 *     mm   = two digits of minute (00 through 59)
+	 *     ss   = two digits of second (00 through 59)
+	 *     s    = one or more digits for the decimal fraction of a second
+	 *     TZD  = time zone designator (Z or +hh:mm or -hh:mm)
+	 *     Z    = the character 'Z'
+	 *
+	 * https://www.w3.org/TR/1998/NOTE-datetime-19980827
+	 *
+	 * In this note only the uppercase letters T and Z are valid, and
+	 * RFC3339 allows such a restriction.
+	 */
+
+	VTIM_INIT(vtim);
+
+	DIGIT(1000, year);
+	DIGIT(100, year);
+	DIGIT(10, year);
+	DIGIT(1, year);
+	MUSTBE('-');
+	DIGIT(10, month);
+	DIGIT(1, month);
+	MUSTBE('-');
+	DIGIT(10, mday);
+	DIGIT(1, mday);
+	MUSTBE('T');
+	TIMESTAMP();
+
+	if (vtim->sec == 60)
+		FAIL();
+
+	if (*p == '.') {
+		p++;
+		FRAC();
+	}
+
+	t = vtim_calc(vtim);
+	if (t == 0)
+		FAIL();
+
+	if (*p == 'Z') {
+		p++;
+	} else {
+		sign = *p;
+		if (sign != '-' && sign != '+')
+			FAIL();
+		p++;
+		VTIM_INIT(vtim);
+		DIGIT(10, hour);
+		DIGIT(1, hour);
+		MUSTBE(':');
+		DIGIT(10, min);
+		DIGIT(1, min);
+		if (vtim->hour > 23)
+			FAIL();
+		if (vtim->min > 59)
+			FAIL();
+		if (sign == '-') {
+			vtim->hour = -vtim->hour;
+			vtim->min = -vtim->min;
+		}
+		t += vtim->hour * 3600;
+		t += vtim->min * 60;
+	}
+
+	if (*p != '\0')
+		FAIL();
 
 	return (t);
 }
@@ -464,7 +669,7 @@ static void
 tst(const char *s, time_t good)
 {
 	time_t t;
-	char buf[BUFSIZ];
+	char buf[VTIM_FORMAT_SIZE];
 
 	t = VTIM_parse(s);
 	VTIM_format(t, buf);
@@ -472,6 +677,22 @@ tst(const char *s, time_t good)
 	if (t != good) {
 		printf("Parse error! Got: %jd should have %jd diff %jd\n",
 		    (intmax_t)t, (intmax_t)good, (intmax_t)(t - good));
+		exit(4);
+	}
+}
+
+static void
+tst_web(const char *s, vtim_real good)
+{
+	vtim_real t;
+	char buf[VTIM_FORMAT_WEB_SIZE];
+
+	t = VTIM_parse_web(s);
+	VTIM_format_web(t, buf);
+	printf("%-30s -> %12.2f -> %s\n", s, t, buf);
+	if (t != good) {
+		printf("Parse error! Got: %f should have %f diff %f\n",
+		    t, good, t - good);
 		exit(4);
 	}
 }
@@ -635,6 +856,10 @@ main(int argc, char **argv)
 	tst("Sun Nov  6 08:49:37 1994", 784111777);
 
 	tst("1994-11-06T08:49:37", 784111777);
+
+	tst_web("1994-11-06T08:49:37.25Z", 784111777.25);
+	tst_web("1994-11-06T08:49:37.25+01:00", 784115377.25);
+	tst_web("1994-11-06T08:49:37.123456+01:00", 784115377.123456);
 
 	tst_delta();
 

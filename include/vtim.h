@@ -33,8 +33,11 @@
 /* from libvarnish/vtim.c */
 extern unsigned VTIM_postel;
 #define VTIM_FORMAT_SIZE 30
-void VTIM_format(vtim_real t, char *p);
+void VTIM_format(vtim_real t, char p[VTIM_FORMAT_SIZE]);
+#define VTIM_FORMAT_WEB_SIZE (sizeof "2025-12-31T23:59:59.123456Z")
+void VTIM_format_web(vtim_real t, char p[VTIM_FORMAT_WEB_SIZE]);
 vtim_real VTIM_parse(const char *p);
+vtim_real VTIM_parse_web(const char *p);
 vtim_mono VTIM_mono(void);
 vtim_real VTIM_real(void);
 void VTIM_sleep(vtim_dur t);
