@@ -59,6 +59,8 @@ VMODs:
 
 * Rustacians might want to have a look at `varnish-rs`_.
 
+.. _ref-vmod-vcc:
+
 The vmod.vcc file
 =================
 
@@ -973,3 +975,89 @@ A simple example for how to use it::
 
 	    AZ(close(fd));
 	}
+
+VMOD Version Information
+========================
+
+Panic messages (see :ref:`users_trouble` for an introduction) are an invaluable
+information source to developers when analyzing crashes. To avoid uncertainties
+about the exact code base a VMOD was built from, Panics contain, if possible, a
+maintainer-controlled version and a "version" from a version control system
+(VCS, usually ``git``).
+
+The maintainer-controlled version is taken from the ``$Version`` stanza with a
+fallback to ``PACKAGE_STRING`` from the ``Makefile``, see :ref:`ref-vmod-vcc`.
+
+The VCS version is intended to be more specific than the maintainer-controlled
+version and is thus automatically generated unless deliberately overwritten: If
+``vmodtool.py`` finds itself invoked from a git repository, it uses the version
+output by ``git rev-parse HEAD``. To also have proper VCS version information in
+builds from a dist archive (as created with ``make dist`` when using autotools),
+``vmodtool.py`` also writes a VCS version it gets from git to
+``vmod_vcs_version.txt``. This file is intended to be added to the distribution,
+such that when ``vmodtool.py`` is run from a distribution archive, it also has
+the VCS version available.
+
+Supporting vmod_vcs_version.txt with autotools
+----------------------------------------------
+
+To support ``vmod_vcs_version.txt`` with autotools, VMOD authors are advised to
+implement the following:
+
+* add a dependency from ``vmod_vcs_version.txt`` to (one of) the files generated
+  by ``vmodtool.py``
+
+* add ``vmod_vcs_version.txt`` to ``DISTCLEANFILES`` and ``EXTRA_DIST``
+
+``vmod_vcs_version.txt`` should also be added to ``.gitignore``
+
+To illustrate, here is an example diff for a trivial vmod by the name
+*blobsynth*::
+
+	diff --git a/src/Makefile.am b/src/Makefile.am
+	index 63e4d55..d8cc659 100644
+	--- a/src/Makefile.am
+	+++ b/src/Makefile.am
+	@@ -10,6 +10,10 @@ nodist_libvmod_blobsynth_la_SOURCES = \
+	        vcc_blobsynth_if.c \
+	        vcc_blobsynth_if.h
+
+	+DISTCLEANFILES = vmod_vcs_version.txt
+	+
+	+vmod_vcs_version.txt: $(nodist_libvmod_blobsynth_la_SOURCES)
+	+
+	 dist_man_MANS = vmod_blobsynth.3
+
+	 @BUILD_VMOD_BLOBSYNTH@
+	@@ -25,4 +29,5 @@ TESTS = @VMOD_TESTS@
+
+	 EXTRA_DIST = \
+	        vmod_blobsynth.vcc \
+	+       vmod_vcs_version.txt \
+	        $(VMOD_TESTS)
+
+
+Retrieving version information using the CLI
+--------------------------------------------
+
+The ``debug.vmod`` CLI command outputs the version information, for example
+(edited for readability, the original output is on a single line)::
+
+        $ varnishadm debug.vmod
+            1 dynamic (path=".../vmods/libvmod_dynamic.so",
+                       version="libvmod-dynamic trunk",
+                       vcs="1e4179430404aaf170530af7514fbecb1f38f8af")
+
+
+Reading the VCS version from the binary shared object
+-----------------------------------------------------
+
+As a useful by-product, the version information can also be extracted from the
+vmod ``.so`` file on many platforms. For example, on Linux using ``readelf
+-p.vmod_vcs <file>``::
+
+        $ readelf -p.vmod_vcs .../vmods/libvmod_dynamic.so
+
+	String dump of section '.vmod_vcs':
+	  [     0]  1e4179430404aaf170530af7514fbecb1f38f8af
+
