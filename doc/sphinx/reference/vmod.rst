@@ -45,6 +45,20 @@ extensions written for Varnish Cache:
 
     https://www.varnish-cache.org/vmods
 
+Getting started writing VMODs
+=============================
+
+There are some projects which can help interested developers get started writing
+VMODs:
+
+.. _`Varnish Cache Development Kit`: https://git.sr.ht/~dridi/vcdk
+.. _`varnish-rs`: https://github.com/varnish-rs/varnish-rs
+
+* For the C programming language, there is the `Varnish Cache Development Kit`_
+  (VCDK)
+
+* Rustacians might want to have a look at `varnish-rs`_.
+
 The vmod.vcc file
 =================
 
