@@ -476,6 +476,20 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	return (r);
 }
 
+VCL_STRING v_matchproto_(td_blob_urldecode)
+vmod_urldecode(VRT_CTX, VCL_STRANDS s)
+{
+	return (vmod_transcode(ctx, VENUM(URL), VENUM(IDENTITY), VENUM(DEFAULT),
+	    0, s));
+}
+
+VCL_STRING v_matchproto_(td_blob_urlencode)
+vmod_urlencode(VRT_CTX, VCL_STRANDS s)
+{
+	return (vmod_transcode(ctx, VENUM(IDENTITY), VENUM(URL), VENUM(DEFAULT),
+	    0, s));
+}
+
 VCL_BOOL v_matchproto_(td_blob_same)
 vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
