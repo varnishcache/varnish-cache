@@ -350,6 +350,36 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	return (pfd);
 }
 
+/*--------------------------------------------------------------------
+ * Update bc_ counters by reason (implementing ses_close_acct for backends)
+ *
+ * assuming that the approximation of non-atomic global counters is sufficient.
+ * if not: update to per-wrk
+ */
+
+static void
+vbe_close_acct(const struct pfd *pfd, stream_close_t reason)
+{
+
+	if (reason == SC_NULL) {
+		assert(PFD_State(pfd) == PFD_STATE_USED);
+		VSC_C_main->bc_tx_proxy++;
+		return;
+	}
+
+#define SESS_CLOSE_BACKEND
+#define SESS_CLOSE(U, l, err, desc)					\
+	if (reason == SC_ ## U) {					\
+		VSC_C_main->bc_ ## l++;					\
+		if (err)						\
+			VSC_C_main->backend_closed_err++;		\
+		return;							\
+	}
+#include "tbl/sess_close.h"
+
+	WRONG("Wrong event in vbe_close_acct");
+}
+
 static void v_matchproto_(vdi_finish_f)
 vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 {
@@ -369,11 +399,13 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	pfd = bo->htc->priv;
 	bo->htc->priv = NULL;
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
+		vbe_close_acct(pfd, bo->htc->doclose);
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s close %s", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(d), bo->htc->doclose->name);
 		VCP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(bp->director->mtx);
+		VSC_C_main->backend_closed++;
 	} else {
 		assert (PFD_State(pfd) == PFD_STATE_USED);
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),
