@@ -1053,11 +1053,17 @@ Reading the VCS version from the binary shared object
 -----------------------------------------------------
 
 As a useful by-product, the version information can also be extracted from the
-vmod ``.so`` file on many platforms. For example, on Linux using ``readelf
--p.vmod_vcs <file>``::
+vmod ``.so`` file on many platforms. On Linux using ``readelf -p.vmod_vcs
+<file>``::
 
         $ readelf -p.vmod_vcs .../vmods/libvmod_dynamic.so
 
 	String dump of section '.vmod_vcs':
 	  [     0]  1e4179430404aaf170530af7514fbecb1f38f8af
 
+On MacOS::
+
+        $ otool -s __TEXT vmod_vcs .../vmods/libvmod_debug.so |
+          awk '/^[0-9a-f]/ {for(i=2;i<=NF;i++) printf "%s",$i}' |
+          xxd -r -p | strings
+        18e27f081788b5e5d44c480f6d9749c07d53ddb9
