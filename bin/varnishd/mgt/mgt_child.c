@@ -516,6 +516,8 @@ mgt_reap_child(void)
 {
 	int i;
 	int status = 0xffff;
+	vtim_dur timeout;
+	const char *tip;
 	struct vsb *vsb;
 	pid_t r = 0;
 
@@ -547,9 +549,17 @@ mgt_reap_child(void)
 	vsb = VSB_new_auto();
 	XXXAN(vsb);
 
+	if (mgt_param.shutdown_timeout > mgt_param.cli_timeout) {
+		timeout = mgt_param.shutdown_timeout;
+		tip = "";
+	} else {
+		timeout = mgt_param.cli_timeout;
+		tip = " (tip: set shutdown_timeout)";
+	}
+
 	(void)VFIL_nonblocking(child_output);
 	/* Wait for child to die */
-	for (i = 0; i < mgt_param.cli_timeout * 10; i++) {
+	for (i = 0; i < timeout * 10; i++) {
 		(void)child_listener(NULL, VEV__RD);
 		r = waitpid(child_pid, &status, WNOHANG);
 		if (r == child_pid)
@@ -558,7 +568,7 @@ mgt_reap_child(void)
 	}
 	if (r == 0) {
 		VSB_printf(vsb, "Child (%jd) not dying (waitpid = %jd),"
-		    " killing\n", (intmax_t)child_pid, (intmax_t)r);
+		    " killing%s\n", (intmax_t)child_pid, (intmax_t)r, tip);
 
 		/* Kick it Jim... */
 		(void)kill_child();
