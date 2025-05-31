@@ -30,8 +30,9 @@
  */
 
 #include "config.h"
+#include <sys/types.h>
 
-#ifndef __DARWIN_BYTE_ORDER
+#ifndef __APPLE__
 #  include <endian.h>
 #  ifdef _BYTE_ORDER
 #    define VBYTE_ORDER	_BYTE_ORDER
@@ -44,8 +45,8 @@
 #    define VBIG_ENDIAN	__BIG_ENDIAN
 #  endif
 #else
-#  define VBYTE_ORDER	__DARWIN_BYTE_ORDER
-#  define VBIG_ENDIAN	__DARWIN_BIG_ENDIAN
+#  define VBYTE_ORDER	__LITTLE_ENDIAN
+#  define VBIG_ENDIAN	__BIG_ENDIAN
 #endif
 
 #ifndef VBYTE_ORDER
@@ -56,7 +57,6 @@
 #endif
 
 
-#include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
 
