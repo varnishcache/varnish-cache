@@ -48,7 +48,6 @@ jobs:
                 python3 \
                 python3-sphinx
       - checkout
-      - run: git submodule update --init
       - when:
           condition: << pipeline.parameters.dist-url >>
           steps:
@@ -79,6 +78,7 @@ jobs:
                 name: Create the dist tarball
                 command: |
                   git checkout << pipeline.parameters.vc-commit >>
+                  git submodule update --init
                   # Locally built tarballs are always built with weekly in package name
                   touch .is_weekly
                   # If version is "trunk", override version to add date
@@ -225,10 +225,10 @@ jobs:
     working_directory: /workspace
     steps:
       - checkout
-      - run: git submodule update --init
       - run:
           name: Extract and build
           command: |
+            git submodule update --init
             case "<< parameters.dist >>" in
             almalinux|fedora)
                 case "<< parameters.dist >>:<< parameters.release >>" in
