@@ -228,7 +228,6 @@ jobs:
       - run:
           name: Extract and build
           command: |
-            git submodule update --init
             case "<< parameters.dist >>" in
             almalinux|fedora)
                 case "<< parameters.dist >>:<< parameters.release >>" in
@@ -322,6 +321,8 @@ jobs:
                     tar
                 ;;
             esac
+
+            git submodule update --init
 
             case "<< parameters.dist >>" in
             archlinux)
