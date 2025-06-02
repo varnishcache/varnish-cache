@@ -301,6 +301,8 @@ The `vcl_backend_fetch` subroutine may terminate with calling
   |  ``beresp.reason`` being preset to the arguments of ``error()`` if
   |  arguments are provided.
 
+.. could add return(retry) if there was a(nother) use case, see also https://github.com/varnishcache/varnish-cache/issues/4342
+
 Before calling `vcl_backend_fetch`, Varnish core prepares the `bereq`
 backend request as follows:
 
