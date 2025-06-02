@@ -48,6 +48,7 @@ jobs:
                 python3 \
                 python3-sphinx
       - checkout
+      - run: git submodule update --init
       - when:
           condition: << pipeline.parameters.dist-url >>
           steps:
@@ -224,6 +225,7 @@ jobs:
     working_directory: /workspace
     steps:
       - checkout
+      - run: git submodule update --init
       - run:
           name: Extract and build
           command: |
