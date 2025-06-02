@@ -2,16 +2,40 @@ varnishtest "C-L with empty POST"
 
 server s1 {
 	rxreq
+	expect req.method == "POST"
+	txresp
+	expect req.http.content-length == 0
+
+	rxreq
+	expect req.method == "GET"
 	txresp
 	expect req.http.content-length == 0
 } -start
 
 varnish v1 -vcl+backend {
-
+	sub vcl_backend_error {
+		if (bereq.method == "GETCL0") {
+			return (retry);
+		}
+	}
+	sub vcl_backend_fetch {
+		# trick to get a GET with a C-L: 0
+		if (bereq.retries == 0 && bereq.method == "GET") {
+			set bereq.method = "GETCL0";
+			return (error);
+		}
+		else if (bereq.method == "GETCL0") {
+			set bereq.method = "GET";
+		}
+		return (fetch);
+	}
 } -start
 
 client c1 {
 	txreq -method POST -hdr "content-length: 0"
+	rxresp
+
+	txreq -method GET -hdr "content-length: 0"
 	rxresp
 } -run
 
