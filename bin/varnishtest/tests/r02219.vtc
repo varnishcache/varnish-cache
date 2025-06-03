@@ -11,6 +11,7 @@ server s1 {
 
 varnish v1 -arg "-p workspace_client=9k" \
 	   -arg "-p vsl_buffer=4k" \
+	   -arg "-p max_restarts=2" \
 	   -proto PROXY \
 	   -vcl+backend {
 	import std;
