@@ -61,6 +61,7 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 		VTCP_Assert(j);
 		if (j <= 0)
 			return (1);
+		assert(j <= i);
 		*pcnt += j;
 		if (i != j)
 			VTIM_sleep(0.1);		/* XXX hack */
