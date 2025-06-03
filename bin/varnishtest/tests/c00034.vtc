@@ -5,13 +5,40 @@ server s1 {
 	txresp -bodylen 100
 } -start
 
+########################################################################
+# VCL control over range processing with built-in range support disabled
+
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
+	sub vcl_deliver {
+		if (req.http.range) {
+			set resp.filters = "range";
+		}
+		set resp.http.Accept-Ranges = "bytes";
+	}
 } -start
 
 varnish v1 -cliok "param.set http_range_support off"
+
+client c1 {
+	txreq -hdr "Range: bytes=0-9"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 10
+	expect resp.http.content-range == "bytes 0-9/100"
+	expect resp.http.accept-ranges == "bytes"
+} -run
+
+########################################################################
+# Neither explicit range processing nor built-in
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+}
 
 client c1 {
 	txreq -hdr "Range: bytes=0-9"
@@ -21,9 +48,12 @@ client c1 {
 	expect resp.bodylen == 100
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 100
+varnish v1 -expect s_resp_bodybytes == 110
 
 varnish v1 -vsl_catchup
+
+########################################################################
+# Only built-in processing
 
 varnish v1 -cliok "param.set http_range_support on"
 
@@ -74,7 +104,7 @@ client c2 {
 	expect resp.bodylen == 0
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 100
+varnish v1 -expect s_resp_bodybytes == 110
 
 varnish v1 -vsl_catchup
 
@@ -125,7 +155,7 @@ client c3 {
 	expect resp.http.content-range == "bytes 0-99/100"
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 501
+varnish v1 -expect s_resp_bodybytes == 511
 
 varnish v1 -vsl_catchup
 
