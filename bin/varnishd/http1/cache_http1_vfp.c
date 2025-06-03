@@ -85,6 +85,10 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 		if (i == 0)
 			htc->doclose = SC_RESP_CLOSE;
 	}
+	assert(i >= 0);
+	assert(l >= 0);
+	assert(i < SSIZE_MAX / 2);
+	assert(l < SSIZE_MAX / 2);
 	return (i + l);
 }
 
