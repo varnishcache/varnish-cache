@@ -81,14 +81,14 @@
 #define VSL_VERSHIFT		16
 #define VSL_IDMASK		0xff
 #define VSL_IDSHIFT		24
-#define VSL_OVERHEAD		3
+#define VSL_OVERHEAD		3U
 #define VSL_VERSION_2		0x0
 #define VSL_VERSION_3		0x1
 #define VSL_WORDS(len)		(((len) + 3) / 4)
 #define VSL_BYTES(words)	((words) * 4)
 #define VSL_END(ptr, len)	((ptr) + VSL_OVERHEAD + VSL_WORDS(len))
 #define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
-#define VSL_LEN(ptr)		((ptr)[0] & VSL_LENMASK)
+#define VSL_LEN(ptr)		((uint16_t)((ptr)[0] & VSL_LENMASK))
 #define VSL_VER(ptr)		(((ptr)[0] >> VSL_VERSHIFT) & VSL_VERMASK)
 #define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> VSL_IDSHIFT))
 #define VSL_ID64(ptr)		(((uint64_t)((ptr)[2])<<32) | ((ptr)[1]))
