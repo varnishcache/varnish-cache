@@ -367,7 +367,6 @@ vbe_close_acct(const struct pfd *pfd, stream_close_t reason)
 		return;
 	}
 
-#define SESS_CLOSE_BACKEND
 #define SESS_CLOSE(U, l, err, desc)					\
 	if (reason == SC_ ## U) {					\
 		VSC_C_main->bc_ ## l++;					\

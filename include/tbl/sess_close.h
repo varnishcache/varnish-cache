@@ -31,6 +31,10 @@
 
 /*lint -save -e525 -e539 */
 
+#ifdef SESS_CLOSE_C
+  #define SESS_CLOSE(nm, stat, err, desc) SESS_CLOSE_C(nm, stat, err, desc)
+#endif
+
 // stream_close_t	  sc_* stat	is_err	Description
 SESS_CLOSE(REM_CLOSE,	  rem_close,	0,	"Peer Closed")
 SESS_CLOSE(REQ_CLOSE,	  req_close,	0,	"Peer requested close")
@@ -45,7 +49,7 @@ SESS_CLOSE(TX_ERROR,	  tx_error,	1,	"Error transaction")
 SESS_CLOSE(TX_EOF,	  tx_eof,	0,	"EOF transmission")
 SESS_CLOSE(RESP_CLOSE,	  resp_close,	0,	"Backend/VCL requested close")
 SESS_CLOSE(OVERLOAD,	  overload,	1,	"Out of some resource")
-#ifndef SESS_CLOSE_BACKEND
+#ifdef SESS_CLOSE_C
   SESS_CLOSE(RX_CLOSE_IDLE,	rx_close_idle,	0,	"timeout_idle reached")
   SESS_CLOSE(PIPE_OVERFLOW,	pipe_overflow,	1,	"Session pipe overflow")
   SESS_CLOSE(RANGE_SHORT,	range_short,	1,	"Insufficient data for range")
@@ -53,8 +57,7 @@ SESS_CLOSE(OVERLOAD,	  overload,	1,	"Out of some resource")
   SESS_CLOSE(VCL_FAILURE,	vcl_failure,	1,	"VCL failure")
   SESS_CLOSE(RAPID_RESET,	rapid_reset,	1,	"HTTP2 rapid reset")
   SESS_CLOSE(BANKRUPT,		bankrupt,	1,	"HTTP2 credit bankruptcy")
-#else
-  #undef SESS_CLOSE_BACKEND
+  #undef SESS_CLOSE_C
 #endif
 #undef SESS_CLOSE
 
