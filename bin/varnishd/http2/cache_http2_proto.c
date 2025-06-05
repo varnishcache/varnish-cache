@@ -497,7 +497,8 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2CE_FRAME_SIZE_ERROR);
 	}
 	wu = vbe32dec(h2->rxf_data) & ~(1LU<<31);
-	if (r2 == NULL) {
+	if (h2->rxf_stream == 0) {
+		AZ(r2);
 		if (wu == 0)
 			return (H2CE_PROTOCOL_ERROR);
 		h2->tx_window += wu;
@@ -506,6 +507,12 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	} else {
 		if (wu == 0)
 			return (H2SE_PROTOCOL_ERROR);
+		if (r2 == NULL) {
+			/* Window update received for a stream we are no
+			 * longer tracking. We MUST ignore this.
+			 * rfc7540,l,2583,2586 */
+			return (0);
+		}
 		r2->tx_window += wu;
 		if (r2->tx_window >= (1LL << 31))
 			return (H2SE_FLOW_CONTROL_ERROR);
