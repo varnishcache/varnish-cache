@@ -189,20 +189,25 @@ vbe_connwait_fini(struct connwait *cw)
  */
 
 static void
-vbe_close_acct(const struct pfd *pfd, const stream_close_t reason)
+vbe_close_acct(const struct pfd *pfd, struct VSC_vbe *vsc,
+    const stream_close_t reason)
 {
 
 	if (reason == SC_NULL) {
 		assert(PFD_State(pfd) == PFD_STATE_USED);
 		VSC_C_main->bc_tx_proxy++;
+		vsc->tx_proxy++;
 		return;
 	}
 
 #define SESS_CLOSE(U, l, err, desc)					\
 	if (reason == SC_ ## U) {					\
 		VSC_C_main->bc_ ## l++;					\
-		if (err)						\
+		vsc->l++;					\
+		if (err) {						\
 			VSC_C_main->backend_closed_err++;		\
+			vsc->closed_err++;				\
+		}							\
 		return;							\
 	}
 #include "tbl/sess_close.h"
@@ -222,6 +227,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+	AN(bp->vsc);
 
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
@@ -229,13 +235,14 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	pfd = bo->htc->priv;
 	bo->htc->priv = NULL;
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
-		vbe_close_acct(pfd, bo->htc->doclose);
+		vbe_close_acct(pfd, bp->vsc, bo->htc->doclose);
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s close %s", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(d), bo->htc->doclose->name);
 		VCP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(bp->director->mtx);
 		VSC_C_main->backend_closed++;
+		bp->vsc->closed++;
 	} else {
 		assert (PFD_State(pfd) == PFD_STATE_USED);
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),

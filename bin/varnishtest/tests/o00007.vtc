@@ -40,3 +40,11 @@ varnish v1 -expect MAIN.bc_tx_proxy == 0
 varnish v1 -expect VBE.vcl1.default.conn == 0
 varnish v1 -expect VBE.vcl1.default.req == 0
 varnish v1 -expect VBE.vcl1.default.fail == 0
+varnish v1 -expect VBE.vcl1.default.closed == 1
+varnish v1 -expect VBE.vcl1.default.closed_err == 1
+
+varnish v1 -expect VBE.vcl1.default.rx_bad == 0
+varnish v1 -expect VBE.vcl1.default.rem_close == 0
+varnish v1 -expect VBE.vcl1.default.rx_timeout == 0
+varnish v1 -expect VBE.vcl1.default.tx_error == 1
+varnish v1 -expect VBE.vcl1.default.tx_proxy == 0
