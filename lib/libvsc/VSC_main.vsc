@@ -275,17 +275,17 @@
 
 	Number of backend closes with TX_PIPE (Piped transaction)
 
-.. varnish_vsc:: bc_tx_error
-	:level:	diag
-	:oneliner:	Backend Close Err TX_ERROR
-
-	Number of backend closes with Error TX_ERROR (Error transaction)
-
 .. varnish_vsc:: bc_tx_proxy
 	:level:	diag
 	:oneliner:	Backend Close OK  TX_PROXY
 
 	Number of backend closes with TX_PROXY (Proxy transaction).
+
+.. varnish_vsc:: bc_tx_error
+	:level:	diag
+	:oneliner:	Backend Close Err TX_ERROR
+
+	Number of backend closes with Error TX_ERROR (Error transaction)
 
 .. varnish_vsc:: bc_tx_eof
 	:level:	diag
