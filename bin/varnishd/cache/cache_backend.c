@@ -380,27 +380,26 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	bp->vsc->req++;
 	Lck_Unlock(bp->director->mtx);
 
+	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
+	bo->htc->priv = pfd;
+	bo->htc->rfd = fdp;
+	bo->htc->doclose = SC_NULL;
 	CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
 
 	err = 0;
 	if (bp->proxy_header != 0)
-		err += VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
+		err = VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
 	if (err < 0) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: proxy write errno %d (%s)",
 		     VRT_BACKEND_string(dir),
 		     errno, VAS_errtxt(errno));
-		// account as if connect failed - good idea?
-		VSC_C_main->backend_fail++;
-		bo->htc = NULL;
-		VCP_Close(&pfd);
-		AZ(pfd);
+		bo->htc->doclose = SC_TX_ERROR;
 		Lck_Lock(bp->director->mtx);
-		bp->n_conn--;
-		bp->vsc->conn--;
+		VSC_C_main->backend_fail++;
 		bp->vsc->req--;
-		vbe_connwait_signal_locked(bp);
 		Lck_Unlock(bp->director->mtx);
+		vbe_dir_finish(ctx, dir);
 		vbe_connwait_fini(cw);
 		return (NULL);
 	}
@@ -412,10 +411,6 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	    *fdp, VRT_BACKEND_string(dir), abuf2, pbuf2, abuf1, pbuf1,
 	    PFD_State(pfd) == PFD_STATE_STOLEN ? "reuse" : "connect");
 
-	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
-	bo->htc->priv = pfd;
-	bo->htc->rfd = fdp;
-	bo->htc->doclose = SC_NULL;
 	FIND_TMO(first_byte_timeout,
 	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
