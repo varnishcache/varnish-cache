@@ -47,7 +47,6 @@
 #include <sys/socket.h>
 
 #include "mgt/mgt.h"
-#include "acceptor/cache_acceptor.h"
 #include "acceptor/mgt_acceptor.h"
 #include "common/heritage.h"
 
