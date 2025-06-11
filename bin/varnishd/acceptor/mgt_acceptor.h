@@ -43,6 +43,8 @@ struct listen_arg {
 	const struct uds_perms		*perms;
 };
 
+struct acceptor;
+
 void VCA_Add(struct acceptor *);
 void VCA_Config(void);
 
