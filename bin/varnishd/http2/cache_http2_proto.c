@@ -272,11 +272,12 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2, struct h2_req **pr2,
 
 	h2_stream_setstate(r2, H2_S_CLOSED);
 
+	Lck_Lock(&h2->sess->mtx);
 	if (r2->scheduled) {
-		Lck_Lock(&h2->sess->mtx);
 		h2_reqbody_kick(r2);
 		Lck_Unlock(&h2->sess->mtx);
 	} else {
+		Lck_Unlock(&h2->sess->mtx);
 		h2_del_req(wrk, &r2);
 	}
 }
