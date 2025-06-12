@@ -42,12 +42,14 @@
 #include "vbh.h"
 #include "vtim.h"
 
+VSTAILQ_HEAD(exp_inbox_head, objcore);
+
 struct exp_priv {
 	unsigned			magic;
 #define EXP_PRIV_MAGIC			0x9db22482
 	/* shared */
 	struct lock			mtx;
-	VSTAILQ_HEAD(,objcore)		inbox;
+	struct exp_inbox_head		inbox;
 	pthread_cond_t			condvar;
 
 	/* owned by exp thread */
