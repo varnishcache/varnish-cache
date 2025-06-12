@@ -418,9 +418,20 @@ object_update(void *priv, void *p, unsigned u)
 	oc->timer_idx = u;
 }
 
+struct exp_inbox_item {
+	unsigned		magic;
+#define EXP_INBOX_ITEM_MAGIC	0x0519627d
+	unsigned		flags;
+	struct objcore		*oc;
+};
+
 static void * v_matchproto_(bgthread_t)
 exp_thread(struct worker *wrk, void *priv)
 {
+	struct exp_inbox_item batch[1024];
+	struct exp_inbox_item * const batch_lim =
+	    batch + sizeof batch / sizeof *batch;
+	struct exp_inbox_item *todo, *item;
 	struct objcore *oc;
 	vtim_real t = 0, tnext = 0;
 	struct exp_priv *ep;
@@ -433,12 +444,22 @@ exp_thread(struct worker *wrk, void *priv)
 	wrk->vsl = &ep->vsl;
 	ep->heap = VBH_new(NULL, object_cmp, object_update);
 	AN(ep->heap);
+
+	for (item = batch; item < batch_lim; item++)
+		INIT_OBJ(item, EXP_INBOX_ITEM_MAGIC);
+
 	while (exp_shutdown == 0) {
 
+		todo = batch;
+
 		Lck_Lock(&ep->mtx);
-		oc = VSTAILQ_FIRST(&ep->inbox);
-		CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
-		if (oc != NULL) {
+		while ((oc = VSTAILQ_FIRST(&ep->inbox)) != NULL &&
+		    todo < batch_lim) {
+			CHECK_OBJ(oc, OBJCORE_MAGIC);
+			CHECK_OBJ(todo, EXP_INBOX_ITEM_MAGIC);
+			AZ(todo->flags);
+			AZ(todo->oc);
+
 			assert(oc->refcnt >= 1);
 			assert(oc->exp_flags & OC_EF_POSTED);
 			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
@@ -449,7 +470,12 @@ exp_thread(struct worker *wrk, void *priv)
 				oc->exp_flags = 0;
 			else
 				oc->exp_flags &= OC_EF_REFD;
-		} else if (tnext > t) {
+
+			todo->flags = flags;
+			todo->oc = oc;
+			todo++;
+		}
+		if (todo == batch && tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
 			Pool_Sumstat(wrk);
 			(void)Lck_CondWaitUntil(&ep->condvar, &ep->mtx, tnext);
@@ -458,10 +484,13 @@ exp_thread(struct worker *wrk, void *priv)
 
 		t = VTIM_real();
 
-		if (oc != NULL)
-			exp_inbox(ep, oc, flags, t);
-		else
-			tnext = exp_expire(ep, t);
+		for (item = batch; item < todo; item++) {
+			CHECK_OBJ(item, EXP_INBOX_ITEM_MAGIC);
+			exp_inbox(ep, item->oc, item->flags, t);
+			INIT_OBJ(item, EXP_INBOX_ITEM_MAGIC);
+		}
+
+		tnext = exp_expire(ep, t);
 	}
 	wrk->vsl = NULL;
 	return (NULL);
