@@ -178,11 +178,9 @@ h2_new_req(struct h2_sess *h2, unsigned stream, struct req **preq)
 	r2->rx_window = h2->local_settings.initial_window_size;
 	r2->tx_window = h2->remote_settings.initial_window_size;
 	req->transport_priv = r2;
-	Lck_Lock(&h2->sess->mtx);
 	if (stream > 0)
 		h2->open_streams++;
 	VTAILQ_INSERT_TAIL(&h2->streams, r2, list);
-	Lck_Unlock(&h2->sess->mtx);
 	h2->refcnt++;
 	return (r2);
 }
