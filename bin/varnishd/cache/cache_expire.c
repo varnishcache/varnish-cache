@@ -490,7 +490,6 @@ exp_thread(struct worker *wrk, void *priv)
 	struct objcore *oc;
 	vtim_real t = 0, tnext = 0;
 	struct exp_priv *ep;
-	unsigned flags = 0;
 
 	CAST_OBJ_NOTNULL(ep, priv, EXP_PRIV_MAGIC);
 	ep->wrk = wrk;
@@ -510,6 +509,8 @@ exp_thread(struct worker *wrk, void *priv)
 		Lck_Lock(&ep->mtx);
 		while ((oc = VSTAILQ_FIRST(&ep->inbox)) != NULL &&
 		    todo < batch_lim) {
+			unsigned flags;
+
 			CHECK_OBJ(oc, OBJCORE_MAGIC);
 			CHECK_OBJ(todo, EXP_INBOX_ITEM_MAGIC);
 			AZ(todo->flags);
