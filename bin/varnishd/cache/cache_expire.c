@@ -283,6 +283,26 @@ EXP_Rearm(struct objcore *oc, vtim_real now,
 }
 
 /*--------------------------------------------------------------------
+ * Finish removal of an oc
+ */
+
+static void
+exp_remove_oc(struct worker *wrk, struct objcore *oc, vtim_real now)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	assert(oc->timer_idx == VBH_NOIDX);
+	assert(oc->refcnt > 0);
+	AZ(oc->exp_flags);
+	VSLb(wrk->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%jd",
+	    VXID(ObjGetXID(wrk, oc)), EXP_Ttl(NULL, oc) - now,
+	    (intmax_t)oc->hits);
+	ObjSendEvent(wrk, oc, OEV_EXPIRE);
+	(void)HSH_DerefObjCore(wrk, &oc);
+}
+
+/*--------------------------------------------------------------------
  * Handle stuff in the inbox
  */
 
@@ -302,14 +322,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, vtim_real now
 			assert(oc->timer_idx != VBH_NOIDX);
 			VBH_delete(ep->heap, oc->timer_idx);
 		}
-		assert(oc->timer_idx == VBH_NOIDX);
-		assert(oc->refcnt > 0);
-		AZ(oc->exp_flags);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%jd",
-		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
-		    (intmax_t)oc->hits);
-		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc);
+		exp_remove_oc(ep->wrk, oc, now);
 		return;
 	}
 
