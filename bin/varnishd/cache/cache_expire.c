@@ -287,7 +287,7 @@ EXP_Rearm(struct objcore *oc, vtim_real now,
  */
 
 static void
-exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, double now)
+exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, vtim_real now)
 {
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
