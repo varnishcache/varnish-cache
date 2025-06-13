@@ -38,6 +38,7 @@
 
 #include "cache_varnishd.h"
 #include "cache_objhead.h"
+#include "cache_pool.h"		// taskhead
 
 #include "vbh.h"
 #include "vtim.h"
@@ -51,6 +52,9 @@ struct exp_priv {
 	struct lock			mtx;
 	struct exp_inbox_head		inbox;
 	pthread_cond_t			condvar;
+
+	/* shared with exp_remove_oc tasks */
+	struct taskhead			free_tasks;
 
 	/* owned by exp thread */
 	struct worker			*wrk;
@@ -315,6 +319,21 @@ struct exp_deref {
 	struct exp_inbox_head		remove_head;
 };
 
+/* take lists from src to dsk */
+static void
+exp_deref_take(struct exp_deref *dst, struct exp_deref *src)
+{
+
+	AN(dst);
+	INIT_OBJ(dst, EXP_DEREF_MAGIC);
+	CHECK_OBJ_NOTNULL(src, EXP_DEREF_MAGIC);
+
+	dst->n = src->n;
+	src->n = 0;
+	VSTAILQ_INIT(&dst->remove_head);
+	VSTAILQ_SWAP(&dst->remove_head, &src->remove_head, objcore);
+}
+
 static void
 exp_deref_work(struct worker *wrk, struct exp_deref *deref, vtim_real now)
 {
@@ -348,6 +367,54 @@ exp_deref_init(struct exp_deref *deref)
 
 	INIT_OBJ(deref, EXP_DEREF_MAGIC);
 	VSTAILQ_INIT(&deref->remove_head);
+}
+
+/*--------------------------------------------------------------------
+ * task to finish removal of ocs
+ *
+ * the struct is only needed until the task is running and has taken the
+ * remove_head, when it returns the struct to the free_tasks list
+ */
+
+struct exp_deref_task_s {
+	// initialized once
+	unsigned			magic;
+#define EXP_DEREF_TASK_MAGIC		0xaf5a6732
+	struct exp_priv			*ep;
+
+	// per invocation
+	struct exp_deref		deref;
+	struct pool_task		task;
+};
+
+static void
+exp_deref_task(struct worker *wrk, void *priv)
+{
+	struct exp_deref_task_s *deref_task;
+	struct exp_deref deref;
+	struct exp_priv *ep;
+	struct vsl_log vsl;
+	char vsl_buf[4096];
+
+	CAST_OBJ_NOTNULL(deref_task, priv, EXP_DEREF_TASK_MAGIC);
+	ep = deref_task->ep;
+	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
+
+	exp_deref_take(&deref, &deref_task->deref);
+
+	Lck_Lock(&ep->mtx);
+	VTAILQ_INSERT_TAIL(&ep->free_tasks, &deref_task->task, list);
+	PTOK(pthread_cond_signal(&ep->condvar));
+	Lck_Unlock(&ep->mtx);
+
+	VSL_Setup(&vsl, vsl_buf, sizeof vsl_buf);
+	AZ(wrk->vsl);
+	wrk->vsl = &vsl;
+
+	exp_deref_work(wrk, &deref, VTIM_real());
+	VSL_Flush(wrk->vsl, 0);
+	Pool_Sumstat(wrk);
+	wrk->vsl = NULL;
 }
 
 /*--------------------------------------------------------------------
@@ -486,6 +553,14 @@ exp_thread(struct worker *wrk, void *priv)
 	struct exp_inbox_item * const batch_lim =
 	    batch + sizeof batch / sizeof *batch;
 	struct exp_inbox_item *todo, *item;
+	/* a small number of task structs is sufficient because
+	 * exp_deref_task() immediately returns the task struct to the free
+	 * tasks list.
+	 */
+	const unsigned ntasks = 4;
+	struct exp_deref_task_s tasks[ntasks];
+	struct exp_deref_task_s *deref_task;
+	struct pool_task *task;
 	struct exp_deref deref;
 	struct objcore *oc;
 	vtim_real t = 0, tnext = 0;
@@ -501,6 +576,13 @@ exp_thread(struct worker *wrk, void *priv)
 
 	for (item = batch; item < batch_lim; item++)
 		INIT_OBJ(item, EXP_INBOX_ITEM_MAGIC);
+
+	VTAILQ_INIT(&ep->free_tasks);
+	for (deref_task = tasks; deref_task < tasks + ntasks; deref_task++) {
+		INIT_OBJ(deref_task, EXP_DEREF_TASK_MAGIC);
+		deref_task->ep = ep;
+		VTAILQ_INSERT_TAIL(&ep->free_tasks, &deref_task->task, list);
+	}
 
 	while (exp_shutdown == 0) {
 		exp_deref_init(&deref);
@@ -556,8 +638,50 @@ exp_thread(struct worker *wrk, void *priv)
 		t = VTIM_real();
 		tnext = exp_expire(ep, t);
 
-		exp_deref_work(ep->wrk, &deref, t);
+		if (deref.n == 0)
+			continue;
+
+		/* arbitrary threshold to not start a task,
+		 * probably does not matter much */
+		if (deref.n < 128) {
+			exp_deref_work(ep->wrk, &deref, t);
+			continue;
+		}
+
+		Lck_Lock(&ep->mtx);
+		while ((task = VTAILQ_FIRST(&ep->free_tasks)) == NULL) {
+			VSL_Flush(&ep->vsl, 0);
+			Pool_Sumstat(wrk);
+			(void)Lck_CondWait(&ep->condvar, &ep->mtx);
+		}
+		VTAILQ_REMOVE(&ep->free_tasks, task, list);
+		Lck_Unlock(&ep->mtx);
+
+		deref_task =
+		    __containerof(task, struct exp_deref_task_s, task);
+		CHECK_OBJ(deref_task, EXP_DEREF_TASK_MAGIC);
+		exp_deref_take(&deref_task->deref, &deref);
+		task->func = exp_deref_task;
+		task->priv = deref_task;
+		AZ(Pool_Task_Any(task, TASK_QUEUE_BO));
 	}
+
+	Lck_Lock(&ep->mtx);
+	unsigned u = 0;
+	do {
+		u = 0;
+		VTAILQ_FOREACH(task, &ep->free_tasks, list)
+			u++;
+		if (u == ntasks)
+			break;
+		(void)Lck_CondWait(&ep->condvar, &ep->mtx);
+	} while (u < ntasks);
+	Lck_Unlock(&ep->mtx);
+
+	VTAILQ_INIT(&ep->free_tasks);
+
+	VSL_Flush(&ep->vsl, 0);
+	Pool_Sumstat(wrk);
 	wrk->vsl = NULL;
 	return (NULL);
 }
