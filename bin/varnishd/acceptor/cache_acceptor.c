@@ -55,7 +55,7 @@ unsigned pool_accepting;
 static pthread_t	VCA_thread;
 static vtim_dur vca_pace = 0.0;
 static struct lock pace_mtx;
-static pthread_mutex_t shut_mtx = PTHREAD_MUTEX_INITIALIZER;
+static struct lock shut_mtx;
 
 /*--------------------------------------------------------------------
  * lacking a better place, we put some generic periodic updates
@@ -211,7 +211,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	while (!pool_accepting)
 		VTIM_sleep(.1);
 
-	PTOK(pthread_mutex_lock(&shut_mtx));
+	Lck_Lock(&shut_mtx);
 
 	/*
 	 * Varnishtest expects the list of listen sockets to come out in the
@@ -223,7 +223,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 		ls->vca->event(cli, ls, VCA_EVENT_LADDR);
 	}
 
-	PTOK(pthread_mutex_unlock(&shut_mtx));
+	Lck_Unlock(&shut_mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -240,6 +240,7 @@ VCA_Init(void)
 
 	CLI_AddFuncs(vca_cmds);
 	Lck_New(&pace_mtx, lck_vcapace);
+	Lck_New(&shut_mtx, lck_vcashut);
 
 	VCA_Foreach(vca) {
 		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
@@ -252,14 +253,14 @@ VCA_Shutdown(void)
 {
 	struct acceptor *vca;
 
-	PTOK(pthread_mutex_lock(&shut_mtx));
+	Lck_Lock(&shut_mtx);
 
 	VCA_Foreach(vca) {
 		CHECK_OBJ_NOTNULL(vca, ACCEPTOR_MAGIC);
 		vca->shutdown();
 	}
 
-	PTOK(pthread_mutex_unlock(&shut_mtx));
+	Lck_Unlock(&shut_mtx);
 }
 
 /*--------------------------------------------------------------------

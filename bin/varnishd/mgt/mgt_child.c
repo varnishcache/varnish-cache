@@ -47,7 +47,6 @@
 #include <sys/resource.h>
 
 #include "mgt.h"
-#include "acceptor/cache_acceptor.h"
 #include "acceptor/mgt_acceptor.h"
 
 #include "vapi/vsig.h"
