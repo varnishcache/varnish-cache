@@ -38,6 +38,7 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef VDEF_H_INCLUDED
 #  error "vdef.h included multiple times"
@@ -282,3 +283,31 @@ typedef struct {
 /* #3020 dummy definitions until PR is merged*/
 #define LIKELY(x)	(x)
 #define UNLIKELY(x)	(x)
+
+#ifndef __DEQUALIFY
+#define __DEQUALIFY(type, var)  ((type)(uintptr_t)(const volatile void *)(var))
+#endif
+
+/**********************************************************************
+ * vqueue.h presupposes the __containerof() macro for VSTAILQ_LAST(),
+ * which is in FreeBSD cdefs.h.
+ *
+ * This differs from cdefs.h in that uintptr_t is taken from stdint.h, and
+ * offsetof() is taken from stddef.h.
+ */
+
+/*
+ * Given the pointer x to the member m of the struct s, return
+ * a pointer to the containing structure.  When using GCC, we first
+ * assign pointer x to a local variable, to check that its type is
+ * compatible with member m.
+ */
+#if __GNUC_PREREQ__(3, 1)
+#define __containerof(x, s, m) ({                                       \
+        const volatile __typeof(((s *)0)->m) *__x = (x);                \
+        __DEQUALIFY(s *, (const volatile char *)__x - offsetof(s, m));  \
+})
+#else
+#define __containerof(x, s, m)                                          \
+        __DEQUALIFY(s *, (const volatile char *)(x) - offsetof(s, m))
+#endif

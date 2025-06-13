@@ -261,7 +261,7 @@
 ///////////////////////////////////////////////////////////////////////
 // <vdef.h>
 -emacro(527, NEEDLESS)	// unreachable code
--emacro(160, _vtake)	// The sequence '( {' is non standard
+-emacro(160, _vtake, __containerof)	// The sequence '( {' is non standard
 +rw( __typeof__ )
 
 ///////////////////////////////////////////////////////////////////////
