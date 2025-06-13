@@ -312,6 +312,7 @@ exp_remove_oc(struct worker *wrk, struct objcore *oc, vtim_real now)
 /*--------------------------------------------------------------------
  * Finish expiry of an oc
  * This is subtly different from exp_remove_oc, also besides the VSL:
+ * - additional HSH_Kill()
  * - assert ob objhead
  * - do not assert on exp_flags
  */
@@ -321,6 +322,9 @@ exp_expire_oc(struct worker *wrk, struct vsl_log *vsl, struct objcore *oc, vtim_
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (!(oc->flags & OC_F_DYING))
+		HSH_Kill(oc);
 
 	assert(oc->timer_idx == VBH_NOIDX);
 	assert(oc->refcnt > 0);
@@ -520,8 +524,6 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 	}
 	Lck_Unlock(&ep->mtx);
 	if (oc != NULL) {
-		if (!(oc->flags & OC_F_DYING))
-			HSH_Kill(oc);
 
 		/* Remove from binheap */
 		assert(oc->timer_idx != VBH_NOIDX);
