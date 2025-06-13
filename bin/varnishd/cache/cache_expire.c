@@ -346,6 +346,7 @@ struct exp_deref {
 #define EXP_DEREF_MAGIC			0xb5854b59
 	unsigned			n;
 	struct exp_inbox_head		remove_head;
+	struct exp_inbox_head		expire_head;
 };
 
 /* take lists from src to dsk */
@@ -361,6 +362,8 @@ exp_deref_take(struct exp_deref *dst, struct exp_deref *src)
 	src->n = 0;
 	VSTAILQ_INIT(&dst->remove_head);
 	VSTAILQ_SWAP(&dst->remove_head, &src->remove_head, objcore);
+	VSTAILQ_INIT(&dst->expire_head);
+	VSTAILQ_SWAP(&dst->expire_head, &src->expire_head, objcore);
 }
 
 static void
@@ -376,11 +379,17 @@ exp_deref_work(struct worker *wrk, struct exp_deref *deref, vtim_real now)
 		if (n % 1024 == 0)
 			Pool_Sumstat(wrk);
 	}
+	VSTAILQ_FOREACH_SAFE(oc, &deref->expire_head, exp_list, save) {
+		exp_expire_oc(wrk, wrk->vsl, oc, now);
+		n++;
+		if (n % 1024 == 0)
+			Pool_Sumstat(wrk);
+	}
 	assert(deref->n == n);
 	memset(deref, 0, sizeof *deref);
 }
 
-// trivial function to wrap n increment.
+// trivial functions to wrap n increment.
 static void
 exp_deref_add_remove(struct exp_deref *deref, struct objcore *oc)
 {
@@ -391,11 +400,21 @@ exp_deref_add_remove(struct exp_deref *deref, struct objcore *oc)
 }
 
 static void
+exp_deref_add_expire(struct exp_deref *deref, struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(deref, EXP_DEREF_MAGIC);
+	VSTAILQ_INSERT_TAIL(&deref->expire_head, oc, exp_list);
+	deref->n++;
+}
+
+static void
 exp_deref_init(struct exp_deref *deref)
 {
 
 	INIT_OBJ(deref, EXP_DEREF_MAGIC);
 	VSTAILQ_INIT(&deref->remove_head);
+	VSTAILQ_INIT(&deref->expire_head);
 }
 
 /*--------------------------------------------------------------------
@@ -495,43 +514,50 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
  */
 
 static vtim_real
-exp_expire(struct exp_priv *ep, vtim_real now)
+exp_expire(struct exp_priv *ep, struct exp_deref *deref, vtim_real now)
 {
 	struct objcore *oc;
+	vtim_real ret;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 
-	oc = VBH_root(ep->heap);
-	if (oc == NULL)
-		return (now + 355. / 113.);
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inspect p=%p e=%.6f f=0x%x", oc,
-	    oc->timer_when - now, oc->flags);
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	/* Ready ? */
-	if (oc->timer_when > now)
-		return (oc->timer_when);
-
-	VSC_C_main->n_expired++;
-
 	Lck_Lock(&ep->mtx);
-	if (oc->exp_flags & OC_EF_POSTED) {
-		oc->exp_flags |= OC_EF_REMOVE;
-		oc = NULL;
-	} else {
-		oc->exp_flags &= ~OC_EF_REFD;
-	}
-	Lck_Unlock(&ep->mtx);
-	if (oc != NULL) {
+	while (1) {
+		oc = VBH_root(ep->heap);
+		if (oc == NULL) {
+			ret = now + 355. / 113.;
+			break;
+		}
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inspect p=%p e=%.6f f=0x%x",
+		    oc, oc->timer_when - now, oc->flags);
 
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+		/* Ready ? */
+		if (oc->timer_when > now) {
+			ret = oc->timer_when;
+			break;
+		}
+
+		VSC_C_main->n_expired++;
+
+		if (oc->exp_flags & OC_EF_POSTED) {
+			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
+			oc->exp_flags = 0;
+		}
+		else
+			oc->exp_flags &= ~OC_EF_REFD;
+
+		exp_deref_add_expire(deref, oc);
 		/* Remove from binheap */
 		assert(oc->timer_idx != VBH_NOIDX);
 		VBH_delete(ep->heap, oc->timer_idx);
 
-		exp_expire_oc(ep->wrk, &ep->vsl, oc, now);
+		assert(oc->timer_idx == VBH_NOIDX);
 	}
-	return (0);
+	Lck_Unlock(&ep->mtx);
+
+	return (ret);
 }
 
 /*--------------------------------------------------------------------
@@ -625,6 +651,7 @@ exp_thread(struct worker *wrk, void *priv)
 			VSC_C_main->exp_received++;
 			tnext = 0;
 			flags = oc->exp_flags;
+			assert(flags & OC_EF_POSTED);
 			if (flags & OC_EF_REMOVE) {
 				oc->exp_flags = 0;
 				exp_deref_add_remove(&deref, oc);
@@ -657,7 +684,7 @@ exp_thread(struct worker *wrk, void *priv)
 		}
 
 		t = VTIM_real();
-		tnext = exp_expire(ep, t);
+		tnext = exp_expire(ep, &deref, t);
 
 		if (deref.n == 0)
 			continue;
@@ -669,6 +696,7 @@ exp_thread(struct worker *wrk, void *priv)
 			continue;
 		}
 
+		/* call exp_deref_work() in a task */
 		Lck_Lock(&ep->mtx);
 		while ((task = VTAILQ_FIRST(&ep->free_tasks)) == NULL) {
 			VSL_Flush(&ep->vsl, 0);
