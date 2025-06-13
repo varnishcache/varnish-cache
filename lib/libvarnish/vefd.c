@@ -32,8 +32,13 @@
 
 #include "config.h"
 
+#if HAVE_EVENTFD
+#  include <sys/eventfd.h>
+#else
+#  include <fcntl.h>
+#endif
+
 #include <errno.h>
-#include <fcntl.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -43,6 +48,54 @@
 #include <vas.h>
 #include <miniobj.h>
 
+#if HAVE_EVENTFD
+int
+VEFD_Open(struct vefd *vefd)
+{
+
+	CHECK_OBJ_NOTNULL(vefd, VEFD_MAGIC);
+	assert(vefd->poll_fd == -1);
+	assert(vefd->priv_fd == -1);
+
+	vefd->poll_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+	return (vefd->poll_fd);
+}
+
+int
+VEFD_Signal(struct vefd *vefd)
+{
+	int64_t buf = 1;
+
+	CHECK_OBJ_NOTNULL(vefd, VEFD_MAGIC);
+	assert(vefd->poll_fd >= 0);
+	assert(vefd->priv_fd == -1);
+	assert(write(vefd->poll_fd, &buf, sizeof buf) == sizeof buf);
+	return (0);
+}
+
+int
+VEFD_Clear(struct vefd *vefd)
+{
+	int64_t buf;
+
+	CHECK_OBJ_NOTNULL(vefd, VEFD_MAGIC);
+	assert(vefd->poll_fd >= 0);
+	assert(vefd->priv_fd == -1);
+	assert(read(vefd->poll_fd, &buf, sizeof buf) == sizeof buf);
+	return (0);
+}
+
+int
+VEFD_Close(struct vefd *vefd)
+{
+
+	CHECK_OBJ_NOTNULL(vefd, VEFD_MAGIC);
+	assert(vefd->poll_fd >= 0);
+	assert(vefd->priv_fd == -1);
+	closefd(&vefd->poll_fd);
+	return (0);
+}
+#else /* !HAVE_EVENTFD */
 int
 VEFD_Open(struct vefd *vefd)
 {
@@ -107,3 +160,4 @@ VEFD_Close(struct vefd *vefd)
 	closefd(&vefd->priv_fd);
 	return (0);
 }
+#endif /* HAVE_EVENTFD */
