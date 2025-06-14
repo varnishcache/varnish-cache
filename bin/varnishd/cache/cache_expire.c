@@ -440,6 +440,7 @@ exp_thread(struct worker *wrk, void *priv)
 		CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
 		if (oc != NULL) {
 			assert(oc->refcnt >= 1);
+			assert(oc->exp_flags & OC_EF_POSTED);
 			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
 			VSC_C_main->exp_received++;
 			tnext = 0;
