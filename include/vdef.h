@@ -302,6 +302,7 @@ typedef struct {
  * assign pointer x to a local variable, to check that its type is
  * compatible with member m.
  */
+#ifndef __containerof
 #if __GNUC_PREREQ__(3, 1)
 #define __containerof(x, s, m) ({                                       \
         const volatile __typeof(((s *)0)->m) *__x = (x);                \
@@ -310,4 +311,5 @@ typedef struct {
 #else
 #define __containerof(x, s, m)                                          \
         __DEQUALIFY(s *, (const volatile char *)(x) - offsetof(s, m))
+#endif
 #endif
