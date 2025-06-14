@@ -31,7 +31,14 @@
 
 #include "config.h"
 
-#ifndef __DARWIN_BYTE_ORDER
+#ifdef __APPLE__
+#  include <machine/endian.h>
+#  include <libkern/OSByteOrder.h>
+#  define htobe32(x) OSSwapHostToBigInt32(x)
+#  define htobe64(x) OSSwapHostToBigInt64(x)
+#  define VBYTE_ORDER __DARWIN_BYTE_ORDER
+#  define VBIG_ENDIAN __DARWIN_BIG_ENDIAN
+#else
 #  include <endian.h>
 #  ifdef _BYTE_ORDER
 #    define VBYTE_ORDER	_BYTE_ORDER
@@ -43,9 +50,6 @@
 #  else
 #    define VBIG_ENDIAN	__BIG_ENDIAN
 #  endif
-#else
-#  define VBYTE_ORDER	__DARWIN_BYTE_ORDER
-#  define VBIG_ENDIAN	__DARWIN_BIG_ENDIAN
 #endif
 
 #ifndef VBYTE_ORDER
