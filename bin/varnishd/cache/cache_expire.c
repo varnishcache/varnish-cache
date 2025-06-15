@@ -325,6 +325,8 @@ exp_deref_work(struct worker *wrk, struct exp_deref *deref, vtim_real now)
 	VSTAILQ_FOREACH_SAFE(oc, &deref->remove_head, exp_list, save) {
 		exp_remove_oc(wrk, oc, now);
 		n++;
+		if (n % 1024 == 0)
+			Pool_Sumstat(wrk);
 	}
 	assert(deref->n == n);
 	memset(deref, 0, sizeof *deref);
