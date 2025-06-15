@@ -301,7 +301,32 @@ exp_remove_oc(struct worker *wrk, struct objcore *oc, vtim_real now)
 	assert(oc->timer_idx == VBH_NOIDX);
 	assert(oc->refcnt > 0);
 	AZ(oc->exp_flags);
+	// no objhead check
 	VSLb(wrk->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%jd",
+	    VXID(ObjGetXID(wrk, oc)), EXP_Ttl(NULL, oc) - now,
+	    (intmax_t)oc->hits);
+	ObjSendEvent(wrk, oc, OEV_EXPIRE);
+	(void)HSH_DerefObjCore(wrk, &oc);
+}
+
+/*--------------------------------------------------------------------
+ * Finish expiry of an oc
+ * This is subtly different from exp_remove_oc, also besides the VSL:
+ * - assert ob objhead
+ * - do not assert on exp_flags
+ */
+
+static void
+exp_expire_oc(struct worker *wrk, struct vsl_log *vsl, struct objcore *oc, vtim_real now)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	assert(oc->timer_idx == VBH_NOIDX);
+	assert(oc->refcnt > 0);
+	// no exp_flags check
+	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+	VSLb(vsl, SLT_ExpKill, "EXP_Expired x=%ju t=%.0f h=%jd",
 	    VXID(ObjGetXID(wrk, oc)), EXP_Ttl(NULL, oc) - now,
 	    (intmax_t)oc->hits);
 	ObjSendEvent(wrk, oc, OEV_EXPIRE);
@@ -501,14 +526,8 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 		/* Remove from binheap */
 		assert(oc->timer_idx != VBH_NOIDX);
 		VBH_delete(ep->heap, oc->timer_idx);
-		assert(oc->timer_idx == VBH_NOIDX);
 
-		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%ju t=%.0f h=%jd",
-		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
-		    (intmax_t)oc->hits);
-		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc);
+		exp_expire_oc(ep->wrk, &ep->vsl, oc, now);
 	}
 	return (0);
 }
