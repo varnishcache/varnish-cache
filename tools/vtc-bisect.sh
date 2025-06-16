@@ -125,10 +125,10 @@ BISECT_BAD=${BISECT_BAD:-HEAD}
 MAKE_JOBS=${MAKE_JOBS:-8}
 VTC_FILE=${VTC_FILE:-bisect.vtc}
 
-[ -n "$BISECT_GOOD" ] || BISECT_GOOD=$(git describe --abbrev=0 "$BISECT_BAD")
-
 # run mode short circuit
 "$RUN_MODE" && run
+
+test -n "$BISECT_GOOD" || BISECT_GOOD=$(git describe --abbrev=0 "$BISECT_BAD")
 
 # bisect mode
 ROOT_DIR=$(git rev-parse --show-toplevel)
