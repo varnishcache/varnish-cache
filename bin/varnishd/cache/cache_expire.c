@@ -518,6 +518,7 @@ exp_expire(struct exp_priv *ep, struct exp_deref *deref, vtim_real now)
 {
 	struct objcore *oc;
 	vtim_real ret;
+	unsigned n = 0;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 
@@ -539,9 +540,11 @@ exp_expire(struct exp_priv *ep, struct exp_deref *deref, vtim_real now)
 			break;
 		}
 
-		VSC_C_main->n_expired++;
+		n++;
 
 		if (oc->exp_flags & OC_EF_POSTED) {
+			if (oc->exp_flags & OC_EF_REMOVE)
+				n--;
 			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
 			oc->exp_flags = 0;
 		}
@@ -556,6 +559,7 @@ exp_expire(struct exp_priv *ep, struct exp_deref *deref, vtim_real now)
 		assert(oc->timer_idx == VBH_NOIDX);
 	}
 	Lck_Unlock(&ep->mtx);
+	VSC_C_main->n_expired += n;
 
 	return (ret);
 }
