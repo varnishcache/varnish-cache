@@ -1248,6 +1248,11 @@ class vcc():
             fh.write(gitver)
             fh.close()
 
+        if gitver == "NOGIT":
+            print("WARNING: Neither git nor vmod_vcs_version.txt found.\n\t" +
+                  " Please build from a git repo or from a dist archive.",
+                  file=sys.stderr)
+
         return gitver
 
     def vmod_data(self, fo):
