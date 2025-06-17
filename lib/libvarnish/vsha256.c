@@ -31,7 +31,7 @@
 
 #include "config.h"
 
-#ifndef __DARWIN_BYTE_ORDER
+#ifndef __APPLE__
 #  include <endian.h>
 #  ifdef _BYTE_ORDER
 #    define VBYTE_ORDER	_BYTE_ORDER
