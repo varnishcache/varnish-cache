@@ -200,7 +200,7 @@ def run_gcov(prog, subdir):
                     gn = os.path.normpath(gn)
                     assert gn[-5:] == ".gcov"
                     #print("GS", gn)
-                    process_gcov(gn, root)
+                    process_gcov(gn, root.replace("/.libs", ""))
 
 def main():
     ''' ... '''
