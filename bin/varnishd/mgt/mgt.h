@@ -251,6 +251,13 @@ extern const char *mgt_vmod_path;
 #error "Keep pthreads out of the manager process"
 #endif
 
+static inline void
+pthread_create(void)
+{
+
+	WRONG("Intentional conflict with pthread.h");
+}
+
 #define MGT_FEATURE(x)		COM_FEATURE(mgt_param.feature_bits, x)
 #define MGT_EXPERIMENT(x)	COM_EXPERIMENT(mgt_param.experimental_bits, x)
 #define MGT_DO_DEBUG(x)		COM_DO_DEBUG(mgt_param.debug_bits, x)
