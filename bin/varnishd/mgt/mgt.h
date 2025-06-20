@@ -248,7 +248,7 @@ extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;
 
 #if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
-#error "Keep pthreads out of in manager process"
+#error "Keep pthreads out of the manager process"
 #endif
 
 #define MGT_FEATURE(x)		COM_FEATURE(mgt_param.feature_bits, x)
