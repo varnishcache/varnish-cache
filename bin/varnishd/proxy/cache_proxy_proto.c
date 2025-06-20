@@ -757,6 +757,11 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	r = write(fd, VSB_data(vsb), VSB_len(vsb));
 	VTCP_Assert(r);
 
+	if (DO_DEBUG(DBG_PROXY_ERROR)) {
+		errno = EINTR;
+		return (-1);
+	}
+
 	if (!DO_DEBUG(DBG_PROTOCOL))
 		return (r);
 
