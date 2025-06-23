@@ -44,7 +44,7 @@ request.  ``varnishlog -q 'ReqURL ~ "^/foo/bar"'`` will show you the
 requests coming from the client matching `/foo/bar`.
 
 For more information on how :ref:`varnishlog(1)` works please see
-:ref:`users-guide-logging` or then man page.
+:ref:`users-guide-logging` or the man page.
 
 
 Tool: lwp-request
