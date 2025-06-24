@@ -925,6 +925,22 @@
 	Number of extra bytes accumulated through dropped and completed
 	bans in the persistent ban lists.
 
+.. varnish_vsc:: bans_inval_arg1
+	:group: ban_mtx
+	:oneliner:	Unsupported ban argument encountered
+
+	Number of times an unsupported ban argument has been encountered.
+
+	Unsupported ban arguments always evaluate true.
+
+.. varnish_vsc:: bans_inval_oper
+	:group: ban_mtx
+	:oneliner:	Unsupported ban operator encountered
+
+	Number of times an unsupported ban operator has been encountered.
+
+	Unsupported ban operators always evaluate true.
+
 .. varnish_vsc:: n_purges
 	:oneliner:	Number of purge operations executed
 
