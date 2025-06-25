@@ -42,6 +42,7 @@
 #include "vcli_serve.h"
 #include "vend.h"
 #include "vmb.h"
+#include "vtim.h"
 
 /* cache_ban_build.c */
 void BAN_Build_Init(void);
@@ -848,13 +849,16 @@ ban_render(struct cli *cli, const uint8_t *bs, int quote)
 static void
 ban_list(struct cli *cli, struct ban *bl)
 {
+	char ts[VTIM_FORMAT_WEB_SIZE];
 	struct ban *b;
 	int64_t o;
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		o = bl == b ? 1 : 0;
-		VCLI_Out(cli, "%10.6f %5ju %s", ban_time(b->spec),
+		VTIM_format_web(ban_time(b->spec), ts);
+		VCLI_Out(cli, "%-*s %5ju %s",
+		    (int)VTIM_FORMAT_WEB_SIZE, ts,
 		    (intmax_t)(b->refcount - o),
 		    b->flags & BANS_FLAG_COMPLETED ? "C" : "-");
 		if (DO_DEBUG(DBG_LURKER)) {
@@ -881,6 +885,7 @@ ban_list(struct cli *cli, struct ban *bl)
 static void
 ban_list_json(struct cli *cli, const char * const *av, struct ban *bl)
 {
+	char ts[VTIM_FORMAT_WEB_SIZE];
 	struct ban *b;
 	int64_t o;
 	int n = 0;
@@ -894,7 +899,8 @@ ban_list_json(struct cli *cli, const char * const *av, struct ban *bl)
 		n++;
 		VCLI_Out(cli, "{\n");
 		VSB_indent(cli->sb, 2);
-		VCLI_Out(cli, "\"time\": %.6f,\n", ban_time(b->spec));
+		VTIM_format_web(ban_time(b->spec), ts);
+		VCLI_Out(cli, "\"time\": \"%s\",\n", ts);
 		VCLI_Out(cli, "\"refs\": %ju,\n", (intmax_t)(b->refcount - o));
 		VCLI_Out(cli, "\"completed\": %s,\n",
 			 b->flags & BANS_FLAG_COMPLETED ? "true" : "false");

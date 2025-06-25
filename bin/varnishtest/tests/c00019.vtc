@@ -92,5 +92,5 @@ varnish v1 -clierr 106 "ban req.url ~ [[["
 # Ban expression with quoting
 varnish v1 -cliok {ban req.url ~ "BAR"}
 shell {varnishadm -n ${tmpdir}/v1 ban 'obj.http.Host ~ \"Foo\"'}
-varnish v1 -cliexpect {(?s)\d+\.\d+\s+\d+\s+-\s+\Qobj.http.Host ~ "Foo"\E} "ban.list"
+varnish v1 -cliexpect {(?s)\S+\s+\d+\s+-\s+\Qobj.http.Host ~ "Foo"\E} "ban.list"
 varnish v1 -clijson "ban.list -j"
