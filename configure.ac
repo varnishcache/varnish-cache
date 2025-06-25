@@ -260,6 +260,7 @@ AC_ARG_ENABLE(asan,
 		AC_DEFINE([ENABLE_ASAN], [1],
 			[Define to 1 if ASAN sanitizer is enabled.])
 		ASAN_FLAGS=-fsanitize=address
+		AC_CHECK_HEADERS([sanitizer/asan_interface.h])
 	])
 
 if test -n "$ASAN_FLAGS"; then
@@ -305,7 +306,6 @@ AM_CONDITIONAL([ENABLE_WORKSPACE_EMULATOR],
 	[test "$enable_workspace_emulator" = yes])
 
 AM_COND_IF([ENABLE_WORKSPACE_EMULATOR], [
-	AC_CHECK_HEADERS([sanitizer/asan_interface.h])
 	AC_DEFINE([ENABLE_WORKSPACE_EMULATOR], [1],
               [Define to 1 if the workspace emulator is enabled])
 ])
