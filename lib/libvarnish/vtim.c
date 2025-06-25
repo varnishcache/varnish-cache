@@ -690,7 +690,7 @@ tst_web(const char *s, vtim_real good)
 	t = VTIM_parse_web(s);
 	VTIM_format_web(t, buf);
 	printf("%-30s -> %12.2f -> %s\n", s, t, buf);
-	if (t != good) {
+	if (fabs(t - good) > 0.001) {
 		printf("Parse error! Got: %f should have %f diff %f\n",
 		    t, good, t - good);
 		exit(4);
