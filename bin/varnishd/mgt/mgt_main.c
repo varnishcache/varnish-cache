@@ -33,6 +33,10 @@
 
 #include "config.h"
 
+#if HAVE_SANITIZER_ASAN_INTERFACE_H
+#  include <sanitizer/asan_interface.h>
+#endif
+
 #include <ctype.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -78,6 +82,19 @@ static char		*workdir;
 static struct vfil_path *vcl_path = NULL;
 
 static const char opt_spec[] = "?a:b:CdE:f:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
+
+/*--------------------------------------------------------------------*/
+
+#if HAVE_SANITIZER_ASAN_INTERFACE_H && ENABLE_ASAN
+void
+__asan_on_error(void)
+{
+
+	printf("ASAN error: %s (errno=%d: %s)\n",
+	    __asan_get_report_description(),
+	    errno, strerror(errno));
+}
+#endif
 
 /*--------------------------------------------------------------------*/
 
