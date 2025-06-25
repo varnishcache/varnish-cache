@@ -409,7 +409,7 @@ workflows:
           release: noble
           rclass: large
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator --without-jemalloc
-          make_target: check -j2
+          make_target: check
       - build:
           name: build_alpine
           dist: alpine
