@@ -1,0 +1,82 @@
+varnishtest "cache a HEAD as a fallback for a GET - Content-Length preserved for cached HEAD"
+
+server s1 {
+	rxreq
+	expect req.method == "HEAD"
+	expect req.http.t == "headmiss"
+	txresp -nolen -hdr "Content-Length: 42"
+
+	rxreq
+	expect req.method == "GET"
+	expect req.http.t == "getmiss"
+	txresp -bodylen 42
+} -start
+
+varnish v1 -vcl+backend {
+    sub vcl_recv {
+	if (req.method == "HEAD") {
+	    set req.http.X-Fetch-Method = "HEAD";
+	} else {
+	    unset req.http.X-Fetch-Method;
+	}
+    }
+
+    sub vcl_backend_fetch {
+	if (bereq.http.X-Fetch-Method) {
+	    set bereq.method = bereq.http.X-Fetch-Method;
+	}
+    }
+
+    sub vcl_backend_response {
+	# NOTE: this use of Vary is specific to this case, it is
+	# usually WRONG to only set Vary for a specific condition
+	if (bereq.http.X-Fetch-Method) {
+	    if (beresp.http.Vary) {
+		set beresp.http.Vary += ", X-Fetch-Method";
+	    } else {
+		set beresp.http.Vary = "X-Fetch-Method";
+	    }
+	}
+	set beresp.http.t = bereq.http.t;
+    }
+
+    sub vcl_deliver {
+	# Vary cleanup
+	if (resp.http.Vary == "X-Fetch-Method") {
+	    unset resp.http.Vary;
+	} else if (resp.http.Vary ~ ", X-Fetch-Method$") {
+	    set resp.http.Vary =
+		regsub(resp.http.Vary, ", X-Fetch-Method$", "");
+	}
+    }
+} -start
+
+client c1 {
+	# miss
+	txreq -method "HEAD" -hdr "t: headmiss"
+	rxresphdrs
+	expect resp.http.t == "headmiss"
+	expect resp.http.Content-Length == 42
+	# hit
+	txreq -method "HEAD" -hdr "t: headhit"
+	rxresphdrs
+	expect resp.http.t == "headmiss"
+	expect resp.http.Content-Length == 42
+
+	# miss
+	txreq -hdr "t: getmiss"
+	rxresp
+	expect resp.http.t == "getmiss"
+	expect resp.http.Content-Length == 42
+	# hits on full object
+	txreq -hdr "t: gethit"
+	rxresp
+	expect resp.http.t == "getmiss"
+	expect resp.http.Content-Length == 42
+	txreq -method "HEAD" -hdr "t: getheadhit"
+	rxresphdrs
+	expect resp.http.t == "getmiss"
+	expect resp.http.Content-Length == 42
+} -run
+
+server s1 -wait
