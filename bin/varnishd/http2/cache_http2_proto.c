@@ -321,14 +321,14 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  */
 
-static h2_error
-h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+int
+h2_rapid_reset_check(struct worker *wrk, struct h2_sess *h2,
+    const struct h2_req *r2)
 {
 	vtim_real now;
-	vtim_dur d;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ASSERT_RXTHR(h2);
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
 	if (h2->rapid_reset_limit == 0)
@@ -340,6 +340,23 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (now - r2->req->t_first > h2->rapid_reset)
 		return (0);
 
+	return (1);
+}
+
+h2_error
+h2_rapid_reset_charge(struct worker *wrk, struct h2_sess *h2,
+    const struct h2_req *r2)
+{
+	vtim_real now;
+	vtim_dur d;
+	h2_error h2e = NULL;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(H2_SEND_HELD(h2, r2));
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	now = VTIM_real();
+
 	d = now - h2->last_rst;
 	h2->rst_budget += h2->rapid_reset_limit * d /
 	    h2->rapid_reset_period;
@@ -347,20 +364,23 @@ h2_rapid_reset(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	    h2->rapid_reset_limit);
 	h2->last_rst = now;
 
-	if (h2->rst_budget < 1.0) {
-		Lck_Lock(&h2->sess->mtx);
-		VSLb(h2->vsl, SLT_Error, "H2: Hit RST limit. Closing session.");
-		Lck_Unlock(&h2->sess->mtx);
-		return (H2CE_RAPID_RESET);
-	}
 	h2->rst_budget -= 1.0;
-	return (0);
+
+	if (h2->rst_budget < 0) {
+		Lck_Lock(&h2->sess->mtx);
+		VSLb(h2->vsl, SLT_SessError, "H2: Hit RST limit. Closing session.");
+		Lck_Unlock(&h2->sess->mtx);
+		h2e = H2CE_RAPID_RESET;
+		H2_Send_GOAWAY(wrk, h2, r2, h2e);
+	}
+
+	return (h2e);
 }
 
 static h2_error v_matchproto_(h2_rxframe_f)
 h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
-	h2_error h2e;
+	h2_error h2e = NULL;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
@@ -370,7 +390,11 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2CE_FRAME_SIZE_ERROR);
 	if (r2 == NULL)
 		return (0);
-	h2e = h2_rapid_reset(wrk, h2, r2);
+	if (h2_rapid_reset_check(wrk, h2, r2)) {
+		H2_Send_Get(wrk, h2, r2);
+		h2e = h2_rapid_reset_charge(wrk, h2, r2);
+		H2_Send_Rel(h2, r2);
+	}
 	h2_kill_req(wrk, h2, r2, h2_streamerror(vbe32dec(h2->rxf_data)));
 	return (h2e);
 }
