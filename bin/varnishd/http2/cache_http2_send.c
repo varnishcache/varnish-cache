@@ -41,8 +41,6 @@
 #include "vend.h"
 #include "vtim.h"
 
-#define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
-
 static h2_error
 h2_errcheck(const struct h2_req *r2, const struct h2_sess *h2)
 {

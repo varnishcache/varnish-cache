@@ -249,6 +249,7 @@ h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
     size_t len);
 
 /* cache_http2_send.c */
+#define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
 void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);
 void H2_Send_Rel(struct h2_sess *, const struct h2_req *);
 
@@ -272,6 +273,10 @@ void h2_kill_req(struct worker *, struct h2_sess *, struct h2_req *, h2_error);
 int h2_rxframe(struct worker *, struct h2_sess *);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);
+int h2_rapid_reset_check(struct worker *wrk, struct h2_sess *h2,
+    const struct h2_req *r2);
+h2_error h2_rapid_reset_charge(struct worker *wrk, struct h2_sess *h2,
+    const struct h2_req *r2);
 task_func_t h2_do_req;
 #ifdef TRANSPORT_MAGIC
 vtr_req_fail_f h2_req_fail;
