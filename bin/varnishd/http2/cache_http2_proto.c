@@ -414,19 +414,14 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 static void
 h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
 {
-	char b[8];
-
 	ASSERT_RXTHR(h2);
 	AN(h2e);
 
 	if (h2->goaway || !h2e->send_goaway)
 		return;
 
-	h2->goaway = 1;
-	vbe32enc(b, h2->highest_stream);
-	vbe32enc(b + 4, h2e->val);
 	H2_Send_Get(wrk, h2, h2->req0);
-	H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
+	H2_Send_GOAWAY(wrk, h2, h2->req0, h2e);
 	H2_Send_Rel(h2, h2->req0);
 }
 
