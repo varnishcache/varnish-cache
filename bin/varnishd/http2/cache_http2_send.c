@@ -408,6 +408,7 @@ H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
     uint32_t stream, h2_error h2e)
 {
 	char b[4];
+	h2_error h2e_rr = NULL;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
@@ -418,6 +419,11 @@ H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
 	vbe32enc(b, h2e->val);
 
 	H2_Send_Frame(wrk, h2, H2_F_RST_STREAM, 0, sizeof b, stream, b);
+
+	if (h2_rapid_reset_check(wrk, h2, r2))
+		h2e_rr = h2_rapid_reset_charge(wrk, h2, r2);
+	if (h2e_rr != NULL)
+		h2->error = h2e_rr;
 }
 
 void
