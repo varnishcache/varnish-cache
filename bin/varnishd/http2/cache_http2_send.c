@@ -436,6 +436,26 @@ H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
 }
 
 void
+H2_Send_GOAWAY(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
+    h2_error h2e)
+{
+	char b[8];
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	AN(H2_SEND_HELD(h2, r2));
+	AN(h2e);
+
+	if (h2->goaway)
+		return;
+
+	vbe32enc(b, h2->highest_stream);
+	vbe32enc(b + 4, h2e->val);
+	H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
+	h2->goaway = 1;
+}
+
+void
 H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
     uint32_t len, const void *ptr, uint64_t *counter)
 {
