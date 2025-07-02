@@ -9,7 +9,7 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_deliver {
-		set resp.http.x-foo = std.real2time(1140618699.00, now);
+		set resp.http.x-foo = std.time(real=1140618699.00, fallback=now);
 	}
 } -start
 

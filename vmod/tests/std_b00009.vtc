@@ -1,4 +1,4 @@
-varnishtest "Test real2integer, real2time, time2integer and time2real in std"
+varnishtest "Test conversion functions in std"
 
 server s1 {
 	rxreq
@@ -10,14 +10,16 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.x-foo = std.integer(req.http.foo, 0);
-		set resp.http.x-bar = std.time2integer(std.real2time(
-		    std.real(resp.http.x-foo, 0.0), now), 1);
+		set resp.http.x-bar = std.integer(time=std.time(
+		    real=std.real(resp.http.x-foo, 0.0), fallback=now),
+		    fallback=1);
 
-		set resp.http.x-baz = std.time2real(std.real2time(
-		    std.real(resp.http.x-foo, 0.0), now), 1.0);
+		set resp.http.x-baz = std.real(time=std.time(
+		    real=std.real(resp.http.x-foo, 0.0), fallback=now),
+		    fallback=1.0);
 
-		set resp.http.x-qux = std.real2integer(
-		    std.real(req.http.foo, 2.0), 2);
+		set resp.http.x-qux = std.integer(
+		    real=std.real(req.http.foo, 2.0), fallback=2);
 
 		set resp.http.x-xyzzy1 = std.integer(
 		    s=std.real(req.http.foo, 2.0));
@@ -25,7 +27,9 @@ varnish v1 -vcl+backend {
 		set resp.http.x-xyzzy2 = std.integer(
 		    real=std.real(req.http.foo, 2.0));
 
-		set resp.http.x-int-fallback = std.real2integer(123456789012.345 * 1000.0 * 10, 2);
+		set resp.http.x-int-fallback = std.integer(
+		    real=123456789012.345 * 1000.0 * 10,
+		    fallback=2);
 	}
 } -start
 

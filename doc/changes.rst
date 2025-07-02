@@ -41,6 +41,28 @@ Varnish Cache NEXT (8.0, 2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The VMOD functions ``std.real2integer()``, ``std.real2time()``,
+  ``std.time2integer()`` and ``std.time2real()`` have been removed. They had
+  been marked deprecated since Varnish Cache release 6.2.0 (2019-03-15).
+
+  The plug-in replacements for these functions are:
+
+  * ``std.real2integer()``::
+
+        std.integer(real=std.round(...), fallback=...)
+
+  * ``std.real2time()``::
+
+        std.time(real=std.round(...), fallback=...)
+
+  * ``std.time2integer()``::
+
+        std.integer(time=..., fallback=...)
+
+  * ``std.time2real()``::
+
+        std.real(time=..., fallback=...)
+
 * The bundled varnishtest sources have now been replaced with the seperate
   VTest2 repository.
 
