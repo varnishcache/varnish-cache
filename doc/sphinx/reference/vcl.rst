@@ -344,13 +344,13 @@ individually:
   However, if the name resolves to both IPv4 and IPv6 you will still
   get an error.
 
-* `+fold` - Fold ACL supernets and adjacent networks.
+* `-fold` - Do not fold ACL supernets and adjacent networks.
 
-  With this parameter set to on, ACLs are optimized in that subnets
-  contained in other entries are skipped (e.g.  if 1.2.3.0/24 is part
-  of the ACL, an entry for 1.2.3.128/25 will not be added) and
-  adjacent entries get folded (e.g.  if both 1.2.3.0/25 and
-  1.2.3.128/25 are added, they will be folded to 1.2.3.0/24).
+  With this parameter set to on (default), ACLs are optimized in that subnets
+  contained in other entries are skipped (e.g.  if 1.2.3.0/24 is part of the
+  ACL, an entry for 1.2.3.128/25 will not be added) and adjacent entries get
+  folded (e.g.  if both 1.2.3.0/25 and 1.2.3.128/25 are added, they will be
+  folded to 1.2.3.0/24).
 
   Skip and fold operations on VCL entries are output as warnings
   during VCL compilation as entries from the VCL are processed in

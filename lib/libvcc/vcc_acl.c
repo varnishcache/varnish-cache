@@ -813,6 +813,7 @@ vcc_ParseAcl(struct vcc *tl)
 	INIT_OBJ(acl, VCC_ACL_MAGIC);
 	tl->acl = acl;
 	acl->flag_pedantic = 1;
+	acl->flag_fold = 1;
 	vcc_NextToken(tl);
 	VRBT_INIT(&acl->acl_tree);
 

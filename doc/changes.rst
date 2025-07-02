@@ -41,6 +41,11 @@ Varnish Cache NEXT (8.0, 2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The ACL option ``+fold`` is now default. This means that ACL entries will
+  automatically be merged for adjacent networks and subnets will be removed in
+  the presence of supernets. This affects logging. The old default behavior can
+  be restored by adding the ``-fold`` option to ACLs.
+
 * The VMOD functions ``std.real2integer()``, ``std.real2time()``,
   ``std.time2integer()`` and ``std.time2real()`` have been removed. They had
   been marked deprecated since Varnish Cache release 6.2.0 (2019-03-15).
