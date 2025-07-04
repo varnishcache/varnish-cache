@@ -86,10 +86,10 @@ but the following differences should be noted:
 The following functions are deprecated and should be replaced by the
 new conversion functions:
 
-* :ref:`std.real2integer()`
-* :ref:`std.real2time()`
-* :ref:`std.time2integer()`
-* :ref:`std.time2real()`
+* ``std.real2integer()``
+* ``std.real2time()``
+* ``std.time2integer()``
+* ``std.time2real()``
 
 They will be removed in a future version of Varnish.
 
