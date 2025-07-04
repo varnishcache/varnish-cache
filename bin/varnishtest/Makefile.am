@@ -10,7 +10,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_builddir) \
-	-I$(top_srcdir)/lib/libvgz
+	-I$(top_srcdir)/lib/libvgz \
+	-Ivtest2/lib
 
 bin_PROGRAMS =	varnishtest
 
@@ -63,7 +64,8 @@ varnishtest_SOURCES = \
 		vtest2/src/vtc_syslog.c \
 		vtest2/src/vtc_tunnel.c \
 		vtest2/src/vtc_varnish.c \
-		vtest2/src/vtc_vsm.c
+		vtest2/src/vtc_vsm.c \
+		vtest2/lib/vudp.c
 
 varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
