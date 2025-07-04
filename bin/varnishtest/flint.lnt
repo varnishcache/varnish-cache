@@ -44,6 +44,7 @@
 -emacro(835, STRTOU32_CHECK)    // A zero has been given as ___ argument to operator '___'
 
 -e788	// enum value not used in defaulted switch
+-e801	// goto
 
 -efile(451, cmds.h)
 -efile(451, vmods.h)
