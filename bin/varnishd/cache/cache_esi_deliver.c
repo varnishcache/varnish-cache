@@ -311,9 +311,6 @@ ved_vdp_esi_fini(struct vdp_ctx *vdc, void **priv)
 	return (0);
 }
 
-static void v_matchproto_(vdpio_fini_f)
-
-
 static int v_matchproto_(vdp_bytes_f)
 ved_vdp_esi_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
@@ -488,13 +485,6 @@ const struct vdp VDP_esi = {
 	.init =		ved_vdp_esi_init,
 	.bytes =	ved_vdp_esi_bytes,
 	.fini =		ved_vdp_esi_fini,
-
-#ifdef LATER
-	.io_init =	ved_vdpio_esi_init,
-#endif
-	.io_upgrade =	ved_vdpio_esi_upgrade,
-	.io_lease =	ved_vdpio_esi_lease,
-	.io_fini =	ved_vdpio_esi_fini,
 };
 
 /*
