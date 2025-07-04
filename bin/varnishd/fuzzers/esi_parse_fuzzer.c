@@ -40,6 +40,7 @@
 #include "cache/cache_vgz.h"		/* enum vgz_flag */
 #include "cache/cache_esi.h"
 #include "cache/cache_filter.h"		/* struct vfp_ctx */
+#include "cache/cache_obj.h"		/* cache_filter.h uses ObjVAI */
 
 #include "vfil.h"
 
@@ -87,6 +88,24 @@ VSLb_ts(struct vsl_log *l, const char *event, vtim_real first, vtim_real *pprev,
 	(void)first;
 	(void)pprev;
 	(void)now;
+}
+
+int
+ObjVAIlease(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
+{
+
+	(void)wrk;
+	(void)vhdl;
+	(void)scarab;
+	return (0);
+}
+
+void
+ObjVAIreturn(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
+{
+	(void)wrk;
+	(void)vhdl;
+	(void)scaret;
 }
 
 void
