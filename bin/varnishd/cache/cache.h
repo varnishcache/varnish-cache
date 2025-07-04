@@ -815,6 +815,7 @@ struct vscarab {
 // VFLA_SIZE ignores the cap == 0 case, we assert in _INIT
 // offsetoff ref: https://gustedt.wordpress.com/2011/03/14/flexible-array-member/
 //lint -emacro(413, VFLA_SIZE)
+//lint -emacro(545, VFLA_SIZE) bsd offsetof() seems to be using &
 #define VFLA_SIZE(type, fam, cap) (offsetof(struct type, fam) +	\
 	(cap) * sizeof(((struct type *)0)->fam[0]))
 #define VFLA_INIT_(type, cptr, mag, fam, cap, save) do {	\
