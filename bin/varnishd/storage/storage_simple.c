@@ -348,7 +348,7 @@ lease2st(uint64_t l)
 	if (sizeof(void *) < 8) //lint !e506 !e774
 		l >>= 1;
 
-	return ((void *)l);
+	return ((void *)(uintptr_t)l);
 }
 
 static inline void
