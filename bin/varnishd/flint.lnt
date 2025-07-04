@@ -121,6 +121,8 @@
 //////////////
 +libh netinet/tcp.h
 -elib(46)
++libh sys/queue.h
+-elib(607)
 //////////////
 
 +libh mgt_event.h
