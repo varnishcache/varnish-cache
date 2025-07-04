@@ -260,7 +260,7 @@ static inline void
 vgz_iovec_update(struct vgz *vg, const struct iovec *in, const struct iovec *buf)
 {
 	/* in: either fully consumed or the same */
-	assert(vg->vz.avail_in == 0 || vg->vz.next_in == in->iov_base);
+	assert(vg->vz.avail_in == 0 || vg->vz.next_in == TRUST_ME(in->iov_base));
 	vg->vz.next_in = in->iov_base;
 	vg->vz.avail_in = in->iov_len;
 	vg->vz.next_out = buf->iov_base;
