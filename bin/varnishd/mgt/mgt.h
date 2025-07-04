@@ -251,6 +251,7 @@ extern const char *mgt_vmod_path;
 #error "Keep pthreads out of the manager process"
 #endif
 
+//lint -e{401} deliberate conflict triggers flexelint
 static inline void
 pthread_create(void)
 {
