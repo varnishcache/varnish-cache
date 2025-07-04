@@ -58,7 +58,7 @@ vdpio_hello_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, int capacity)
 
 	*vdc->clen += strlen(HELLO);
 	http_Unset(vdc->hp, H_Content_Length);
-	http_PrintfHeader(vdc->hp, "Content-Length: %zd", *vdc->clen);
+	http_PrintfHeader(vdc->hp, "Content-Length: %jd", *vdc->clen);
 	return (capacity);
 }
 
