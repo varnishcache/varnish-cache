@@ -3,7 +3,7 @@
 // See LICENSE file for full text of license
 
 
-+libh(teken.h)
++libh(vtest2/src/teken.h)
 
 // Tell FlexeLint when these don't return
 -function(exit, vtc_fatal)
