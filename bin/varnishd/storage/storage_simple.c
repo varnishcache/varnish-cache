@@ -354,7 +354,7 @@ lease2st(uint64_t l)
 static inline void
 sml_ai_viov_fill(struct viov *viov, struct storage *st)
 {
-	viov->iov.iov_base = st->ptr;
+	viov->iov.iov_base = TRUST_ME(st->ptr);
 	viov->iov.iov_len = st->len;
 	viov->lease = st2lease(st);
 	VAI_ASSERT_LEASE(viov->lease);
@@ -528,7 +528,7 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 		AN(l);
 		if (l > av)
 			l = av;
-		viov->iov.iov_base = hdl->st->ptr + hdl->st_off;
+		viov->iov.iov_base = TRUST_ME(hdl->st->ptr + hdl->st_off);
 		viov->iov.iov_len = l;
 		if (hdl->st_off + l == hdl->st->space) {
 			next = VTAILQ_PREV(hdl->st, storagehead, list);
