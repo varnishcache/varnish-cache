@@ -261,9 +261,9 @@ vgz_iovec_update(struct vgz *vg, const struct iovec *in, const struct iovec *buf
 {
 	/* in: either fully consumed or the same */
 	assert(vg->vz.avail_in == 0 || vg->vz.next_in == TRUST_ME(in->iov_base));
-	vg->vz.next_in = in->iov_base;
+	vg->vz.next_in = TRUST_ME(in->iov_base);
 	vg->vz.avail_in = in->iov_len;
-	vg->vz.next_out = buf->iov_base;
+	vg->vz.next_out = TRUST_ME(buf->iov_base);
 	vg->vz.avail_out = buf->iov_len;
 }
 
@@ -279,7 +279,7 @@ vgz_gunzip_iovec(struct vgz *vg, struct iovec *in, struct iovec *buf, struct iov
 	i = inflate(&vg->vz, 0);
 	if (i == Z_OK || i == Z_STREAM_END) {
 		iovec_collect(buf, out, pdiff(buf->iov_base, vg->vz.next_out));
-		in->iov_base = vg->vz.next_in;
+		in->iov_base = TRUST_ME(vg->vz.next_in);
 		in->iov_len = vg->vz.avail_in;
 	}
 	vg->last_i = i;
