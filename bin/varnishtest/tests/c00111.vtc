@@ -23,6 +23,7 @@ varnish v1 -cliok "param.set transit_buffer 4k"
 client c2 {
 	txreq -method POST
 	rxresp
+	expect resp.bodylen == 1850000
 } -run
 
 varnish v1 -vsl_catchup
