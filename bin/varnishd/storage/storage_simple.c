@@ -48,6 +48,8 @@
 
 // marker pointer for sml_trimstore
 static void *trim_once = &trim_once;
+// for delayed return of hdl->last resume pointer
+static void *null_iov = &null_iov;
 
 /*-------------------------------------------------------------------*/
 
@@ -496,23 +498,16 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 			assert(state < BOS_FINISHED);
 	}
 	Lck_Lock(&hdl->boc->mtx);
-	if (hdl->st == NULL && hdl->last != NULL) {
-		/* when the "last" st completed, we did not yet have a next, so
-		 * resume from there. Because "last" might have been returned and
-		 * deleted, we can not just use the pointer, but rather need to
-		 * iterate the st list.
-		 * if we can not find "last", it also has been returned and
-		 * deleted, and the current write head (VTAILQ_LAST) is our next
-		 * st, which can also be null if we are done.
-		 */
-		VTAILQ_FOREACH_REVERSE(next, &hdl->obj->list, storagehead, list) {
-			if (next == hdl->last) {
-				hdl->st = VTAILQ_PREV(next, storagehead, list);
-				break;
-			}
-		}
+	if (hdl->st == NULL && hdl->last != NULL)
+		hdl->st = VTAILQ_PREV(hdl->last, storagehead, list);
+	if (hdl->last != NULL && state < BOS_FINISHED) {
+		viov = VSCARAB_GET(scarab);
+		AN(viov);
+		viov->iov.iov_base = null_iov;
+		viov->iov.iov_len = 0;
+		viov->lease = st2lease(hdl->last);
+		hdl->last = NULL;
 	}
-	hdl->last = NULL;
 	if (hdl->st == NULL) {
 		assert(hdl->returned == 0 || hdl->avail == hdl->returned);
 		hdl->st = VTAILQ_LAST(&hdl->obj->list, storagehead);
@@ -533,15 +528,18 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 		if (hdl->st_off + l == hdl->st->space) {
 			next = VTAILQ_PREV(hdl->st, storagehead, list);
 			AZ(hdl->last);
-			if (next == NULL)
+			if (next == NULL) {
 				hdl->last = hdl->st;
-			else
+				viov->lease = VAI_LEASE_NORET;
+			}
+			else {
 				CHECK_OBJ(next, STORAGE_MAGIC);
+				viov->lease = st2lease(hdl->st);
+			}
 #ifdef VAI_DBG
 			VSLb(wrk->vsl, SLT_Debug, "off %zu + l %zu == space st %p next st %p stvprv %p",
 			    hdl->st_off, l, hdl->st, next, hdl->boc->stevedore_priv);
 #endif
-			viov->lease = st2lease(hdl->st);
 			hdl->st_off = 0;
 			hdl->st = next;
 		}
@@ -609,8 +607,6 @@ sml_ai_return(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 		if (*p == VAI_LEASE_NORET)
 			continue;
 		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
-		if (st == hdl->last)
-			continue;
 		VSCARET_ADD(todo, *p);
 	}
 	VSCARET_INIT(scaret, scaret->capacity);
@@ -804,7 +800,13 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			uu = u;
 			if ((islast && nn < 0) || scaret->used == scaret->capacity - 1)
 				uu |= OBJ_ITER_FLUSH;
-			r = func(priv, uu, vio->iov.iov_base, vio->iov.iov_len);
+
+			// null iov with the only purpose to return the resume ptr lease
+			// exception needed because assert(len > 0) in VDP_bytes()
+			if (vio->iov.iov_base == null_iov)
+				r = 0;
+			else
+				r = func(priv, uu, vio->iov.iov_base, vio->iov.iov_len);
 			if (r != 0)
 				break;
 
