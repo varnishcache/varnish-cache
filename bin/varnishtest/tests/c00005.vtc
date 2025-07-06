@@ -374,3 +374,24 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+
+# test +silent
+varnish v1 -cliexpect "^$" {vcl.inline silent << EOF
+	vcl 4.1;
+
+	backend dummy None;
+
+	acl acl1 +log +pedantic +fold +silent {
+		# all contained in 1.3.0.0/21 and 1.4.4.0/22
+		"1.2.0.0"/23;
+		"1.2.2.0"/24;
+		"1.2.3.0"/24;
+	}
+
+	sub vcl_recv {
+		if (client.ip ~ acl1) {
+			return (synth(403));
+		}
+	}
+	EOF
+}
