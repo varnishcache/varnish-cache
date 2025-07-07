@@ -1,5 +1,8 @@
 varnishtest "Test vcl_backend_refresh"
 
+barrier b1 sock 2
+barrier b2 sock 2
+
 server s1 {
 	rxreq
 	txresp -hdr "Etag: abcd" -hdr "from-be: true" -body "abcdefghij"
@@ -15,6 +18,7 @@ server s1 {
 	rxreq
 	expect req.http.if-none-match == "abcd"
 	txresp -status 304 -hdr "be304-3: true"
+
 } -start
 
 varnish v1 -vcl+backend {
@@ -88,4 +92,129 @@ client c4 {
 	expect resp.http.be304-3 == true
 	expect resp.bodylen == 10
 	expect resp.body == "abcdefghij"
+} -run
+
+###################################################################
+
+server s1 {
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304 -hdr "be304-4: true"
+} -start
+
+varnish v1 -vcl+backend {
+
+	import vtc;
+
+	sub vcl_recv {
+		if (req.method == "PURGE") {
+			return (purge);
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+	sub vcl_backend_refresh {
+		vtc.barrier_sync("${b1_sock}");
+		vtc.barrier_sync("${b2_sock}");
+		set beresp.http.valid = obj_stale.is_valid;
+	}
+
+}
+
+# let the object die
+delay 0.01
+
+# Object gets purged while we are revalidating it
+client c5 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "Invalid object for refresh"
+} -start
+
+barrier b1 sync
+
+client c6 {
+	txreq -method "PURGE"
+	rxresp
+	expect resp.status == 200
+} -run
+
+barrier b2 sync
+
+server s1 -wait
+client c5 -wait
+
+###################################################################
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+}
+
+# Unprompted 304
+client c7 {
+	txreq -url /1
+	rxresp
+	expect resp.status == 200
+
+	delay 0.01
+	txreq -url /1
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "Unexpected 304"
+} -run
+
+###################################################################
+
+server s1 {
+	rxreq
+	txresp -status 404
+	rxreq
+	txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.http.if-none-match = "abcd";
+	}
+
+}
+
+# Receiving 304 for non-200 objects
+client c8 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 404
+	delay 0.01
+	txreq -url /2
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "Invalid object for refresh"
 } -run
