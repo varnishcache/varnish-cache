@@ -506,8 +506,9 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 		viov->iov.iov_base = null_iov;
 		viov->iov.iov_len = 0;
 		viov->lease = st2lease(hdl->last);
-		hdl->last = NULL;
 	}
+	if (hdl->last != NULL)
+		hdl->last = NULL;
 	if (hdl->st == NULL) {
 		assert(hdl->returned == 0 || hdl->avail == hdl->returned);
 		hdl->st = VTAILQ_LAST(&hdl->obj->list, storagehead);
