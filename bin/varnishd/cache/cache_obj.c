@@ -356,10 +356,9 @@ obj_extend_condwait(const struct objcore *oc)
 }
 
 // notify of an extension of the boc or state change
-//lint -sem(obj_boc_notify_Unlock, thread_unlock)
 
 static void
-obj_boc_notify_Unlock(struct boc *boc)
+obj_boc_notify(struct boc *boc)
 {
 	struct vai_qe *qe, *next;
 
@@ -375,7 +374,6 @@ obj_boc_notify_Unlock(struct boc *boc)
 		qe->cb(qe->hdl, qe->priv);
 		qe = next;
 	}
-	Lck_Unlock(&boc->mtx);
 }
 
 void
@@ -393,7 +391,8 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 		obj_extend_condwait(oc);
 		om->objextend(wrk, oc, l);
 		oc->boc->fetched_so_far += l;
-		obj_boc_notify_Unlock(oc->boc);
+		obj_boc_notify(oc->boc);
+		Lck_Unlock(&oc->boc->mtx);
 	}
 
 	assert(oc->boc->state < BOS_FINISHED);
@@ -510,7 +509,8 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
-	obj_boc_notify_Unlock(oc->boc);
+	obj_boc_notify(oc->boc);
+	Lck_Unlock(&oc->boc->mtx);
 }
 
 /*====================================================================
