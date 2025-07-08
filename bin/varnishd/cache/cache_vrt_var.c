@@ -1120,7 +1120,79 @@ VRT_l_##which##_body(VRT_CTX, enum lbody_e type,		\
 }
 
 VRT_BODY_L(beresp)
-VRT_BODY_L(resp)
+static VRT_BODY_L(resp_vsb)
+
+VCL_VOID
+VRT_l_resp_body(VRT_CTX, enum lbody_e type,
+    const char *str, VCL_BODY body)
+{
+	struct vscarab *scarab;
+	struct viov *viov;
+	struct req *req;
+	ssize_t sz = 0;
+	VCL_STRANDS s;
+	VCL_BLOB b;
+	int n;
+
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(body);
+	req = ctx->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (req->objcore != NULL &&
+	    req->objcore->stobj->stevedore != &ssy_stevedore) {
+		VRT_l_resp_vsb_body(ctx, type, str, body);
+		return;
+	}
+
+	if (req->objcore == NULL ||
+	    type == LBODY_SET_STRING || type == LBODY_SET_BLOB)
+		VRT_l_resp_storage(ctx, &ssy_stevedore);
+
+	if (! ObjGetSpace(req->wrk, req->objcore, &sz, (uint8_t **)(void*)&scarab)) {
+		VRT_fail(ctx, "Synth storage failed");
+		return;
+	}
+
+	VSCARAB_CHECK_NOTNULL(scarab);
+
+	if (type == LBODY_SET_BLOB || type == LBODY_ADD_BLOB) {
+		AZ(str);
+		b = body;
+		viov = VSCARAB_GET(scarab);
+		AN(viov);	// ObjGetSpace ensures
+		viov->iov.iov_base = TRUST_ME(b->blob);
+		viov->iov.iov_len = b->len;
+		return;
+	}
+	if (str != NULL) {
+		viov = VSCARAB_GET(scarab);
+		AN(viov);	// ObjGetSpace ensures
+		viov->iov.iov_base = TRUST_ME(str);
+		viov->iov.iov_len = strlen(str);
+	}
+
+	s = body;
+	for (n = 0; s != NULL && n < s->n; n++) {
+		if (s->p[n] == NULL || *s->p[n] == '\0')
+			continue;
+
+		viov = VSCARAB_GET(scarab);
+		if (viov == NULL) {
+			if (! ObjGetSpace(req->wrk, req->objcore, &sz,
+			    (uint8_t **)(void*)&scarab)) {
+				VRT_fail(ctx, "Synth storage failed");
+				return;
+			}
+			viov = VSCARAB_GET(scarab);
+		}
+		AN(viov);
+		viov->iov.iov_base = TRUST_ME(s->p[n]);
+		viov->iov.iov_len = strlen(s->p[n]);
+	}
+}
+
 
 /*--------------------------------------------------------------------*/
 

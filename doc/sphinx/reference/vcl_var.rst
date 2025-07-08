@@ -1790,9 +1790,8 @@ resp.storage
 	The storage backend to use for the synthetic response created in
 	vcl_synth.
 
-..      TODO
-..	Changing resp.storage deletes any synthetic body data as if ``unset
-..	resp.body`` had been called.
+	Changing resp.storage deletes any synthetic body data as if ``unset
+	resp.body`` had been called.
 
 	Defaults to storage.Transient
 
