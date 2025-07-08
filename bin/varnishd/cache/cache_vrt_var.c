@@ -37,6 +37,7 @@
 #include "cache_varnishd.h"
 #include "cache_objhead.h"
 #include "cache_transport.h"
+#include "storage/storage.h"
 #include "common/heritage.h"
 
 #include "vcl.h"
@@ -474,6 +475,34 @@ VRT_l_req_storage(VRT_CTX, VCL_STEVEDORE stv)
 /*--------------------------------------------------------------------*/
 
 VCL_STEVEDORE
+VRT_r_resp_storage(VRT_CTX)
+{
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	oc = ctx->req->objcore;
+	if (oc == NULL)
+		VRT_l_resp_storage(ctx, NULL);
+	oc = ctx->req->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	return (oc->stobj->stevedore);
+}
+
+VCL_VOID
+VRT_l_resp_storage(VRT_CTX, VCL_STEVEDORE stv)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (stv == NULL)
+		stv = stv_transient;
+	if (! Resp_l_storage(ctx->req, stv))
+		VRT_fail(ctx, "Storage %s failed", stv->vclname);
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_STEVEDORE
 VRT_r_beresp_storage(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -492,8 +521,6 @@ VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 /*--------------------------------------------------------------------
  * VCL <= 4.0 ONLY
  */
-
-#include "storage/storage.h"
 
 VCL_STRING
 VRT_r_beresp_storage_hint(VRT_CTX)

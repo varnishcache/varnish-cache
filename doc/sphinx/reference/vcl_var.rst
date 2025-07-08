@@ -1776,6 +1776,25 @@ resp.status
 	response which created the object. If the object has not been
 	modified based on that comparison, a 304 is sent.
 
+.. _resp.storage:
+
+resp.storage
+
+	Type: STEVEDORE
+
+	Readable from: vcl_synth
+
+	Writable from: vcl_synth
+
+
+	The storage backend to use for the synthetic response created in
+	vcl_synth.
+
+..      TODO
+..	Changing resp.storage deletes any synthetic body data as if ``unset
+..	resp.body`` had been called.
+
+	Defaults to storage.Transient
 
 .. _resp.time:
 

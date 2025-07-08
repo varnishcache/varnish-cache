@@ -381,11 +381,11 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	/* Discard any lingering request body before delivery */
 	(void)VRB_Ignore(req);
-
-	req->objcore = HSH_Private(wrk);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	szl = -1;
-	if (STV_NewObject(wrk, req->objcore, stv_transient, 0)) {
+
+	if (req->objcore != NULL ||
+	    Resp_l_storage(req, stv_transient)) {
+		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		body = VSB_data(synth_body);
 		szl = VSB_len(synth_body);
 		assert(szl >= 0);
@@ -406,14 +406,16 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	if (szl >= 0)
 		AZ(ObjSetU64(wrk, req->objcore, OA_LEN, VSB_len(synth_body)));
-	HSH_DerefBoc(wrk, req->objcore);
+	if (req->objcore != NULL)
+		HSH_DerefBoc(wrk, req->objcore);
 	VSB_destroy(&synth_body);
 
 	if (szl < 0) {
 		VSLb(req->vsl, SLT_Error, "Could not get storage");
 		req->doclose = SC_OVERLOAD;
 		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
-		(void)HSH_DerefObjCore(wrk, &req->objcore, 1);
+		if (req->objcore != NULL)
+			(void)HSH_DerefObjCore(wrk, &req->objcore, 1);
 		http_Teardown(req->resp);
 		return (REQ_FSM_DONE);
 	}
