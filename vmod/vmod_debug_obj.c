@@ -35,6 +35,7 @@
 
 #include "cache/cache.h"
 #include "vcl.h"
+#include "vsb.h"
 
 #include "vcc_debug_if.h"
 
@@ -81,6 +82,29 @@ xyzzy_obj__fini(struct xyzzy_debug_obj **op)
 
 	TAKE_OBJ_NOTNULL(o, op, VMOD_DEBUG_OBJ_MAGIC);
 	FREE_OBJ(o);
+}
+
+VCL_INT v_matchproto_(td_xyzzy_objcli)
+xyzzy_objcli(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRANDS s)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
+
+	if (s->n > 0 && ! strcmp(s->p[0], "fail")) {
+		VSB_cat(ctx->msg, "You asked me to fail");
+		return (300);
+	}
+	VSB_cat(ctx->msg, o->vcl_name);
+	VSB_putc(ctx->msg, ':');
+
+	for (i = 0; i < s->n; i++) {
+		VSB_putc(ctx->msg, ' ');
+		VSB_cat(ctx->msg, s->p[i]);
+	}
+
+	return (200);
 }
 
 VCL_VOID v_matchproto_(td_xyzzy_obj_enum)
