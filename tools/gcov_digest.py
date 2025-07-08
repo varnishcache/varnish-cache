@@ -162,6 +162,10 @@ def run_gcov(prog, subdir):
                 subdir = root.split("/")[-1]
                 cmd = ["cd " + root + "/.. && " + "exec " + prog + " " + subdir + "/" + fn]
                 rpath = "/../"
+            elif "vudp" in fn:
+                cmd = ["cd " + root + "/../.. && " + "exec " + prog + " vtest2/lib/" + fn]
+                rpath = "/../../"
+                #print("VT2.LIB")
             elif "vtest2" in root:
                 cmd = ["cd " + root + "/../.. && " + "exec " + prog + " vtest2/src/" + fn]
                 rpath = "/../../"
