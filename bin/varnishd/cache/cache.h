@@ -865,7 +865,8 @@ struct vscarab {
 //lint -emacro(64, VSCARAB_ADD_IOV_NORET) weird flexelint bug?
 #define VSCARAB_ADD_IOV_NORET(scarab, vec)					\
 	VSCARAB_ADD(scarab, ((struct viov){.lease = VAI_LEASE_NORET, .iov = (vec)}))
-#define VSCARAB_LAST(scarab) (&(scarab)->s[(scarab)->used - 1])
+#define VSCARAB_LAST(scarab) ((scarab)->used > 0 ?				\
+	&(scarab)->s[(scarab)->used - 1] : NULL)
 
 #define VSCARAB_CHECK(scarab) do {						\
 	CHECK_OBJ(scarab, VSCARAB_MAGIC);					\
