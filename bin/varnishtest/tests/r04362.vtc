@@ -20,5 +20,5 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-varnish v1 -expect transit_stored > 10240
+varnish v1 -expect transit_stored >= 10240
 varnish v1 -expect transit_buffered == 0

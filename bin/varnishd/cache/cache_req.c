@@ -39,8 +39,10 @@
 
 #include "cache_varnishd.h"
 #include "cache_filter.h"
+#include "cache_objhead.h"
 #include "cache_pool.h"
 #include "cache_transport.h"
+#include "storage/storage.h"		// stv_default
 
 #include "common/heritage.h"
 #include "vtim.h"
@@ -324,6 +326,39 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	VDP_Fini(req->vdc);
 }
+
+/*----------------------------------------------------------------------
+ * response body for vcl_synth {}
+ */
+
+static void
+resp_u_storage(struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	HSH_DerefBoc(req->wrk, req->objcore);
+	(void)HSH_DerefObjCore(req->wrk, &req->objcore);
+}
+
+int
+Resp_l_storage(struct req *req, const struct stevedore *stv)
+{
+	int r;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (req->objcore != NULL)
+		resp_u_storage(req);
+	AZ(req->objcore);
+	req->objcore = HSH_Private(req->wrk);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	r = STV_NewObject(req->wrk, req->objcore, stv, 0);
+	if (r == 0)
+		resp_u_storage(req);
+	return (r);
+}
+
 
 /*----------------------------------------------------------------------
  */
