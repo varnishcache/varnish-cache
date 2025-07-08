@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # See LICENSE file for full text of license
 
-FLOPS='
+FLOPS="
 	-DVTEST_WITH_VTC_LOGEXPECT
 	-DVTEST_WITH_VTC_VARNISH
 	-DTOP_BUILDDIR="foo"
 	-I../../lib/libvgz
 	-Ivtest2/lib
-	vtest2/src/*.c
-' ../../tools/flint_skel.sh
+	$(ls vtest2/src/*.c| grep -v /teken.)
+" ../../tools/flint_skel.sh
