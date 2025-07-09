@@ -870,7 +870,7 @@ struct vscarab {
 
 #define VSCARAB_CHECK(scarab) do {						\
 	CHECK_OBJ(scarab, VSCARAB_MAGIC);					\
-	assert(scarab->used <= scarab->capacity);				\
+	assert((scarab)->used <= (scarab)->capacity);				\
 } while(0)
 
 #define VSCARAB_CHECK_NOTNULL(scarab) do {					\
