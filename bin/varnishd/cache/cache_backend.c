@@ -788,6 +788,7 @@ via_endpoint(const struct vrt_endpoint *vep, const struct suckaddr *sa,
 	preamble = VSB_new_auto();
 	AN(preamble);
 	VPX_Format_Proxy(preamble, 2, client_bogo, sa, auth);
+	INIT_OBJ(blob, VRT_BLOB_MAGIC);
 	blob->blob = VSB_data(preamble);
 	blob->len = VSB_len(preamble);
 	nvep->preamble = blob;

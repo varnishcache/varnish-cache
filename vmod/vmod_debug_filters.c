@@ -702,7 +702,7 @@ xyzzy_chksha256(VRT_CTX, VCL_BLOB blob, VCL_ENUM mode_e)
 	size_t l;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(blob);
+	CHECK_OBJ_NOTNULL(blob, VRT_BLOB_MAGIC);
 	XXXAN(blob->blob);
 	XXXAN(blob->len);
 

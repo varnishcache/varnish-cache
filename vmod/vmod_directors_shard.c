@@ -454,7 +454,7 @@ shard_blob_key(VCL_BLOB key_blob)
 	const uint8_t *b;
 	size_t i, ki;
 
-	AN(key_blob);
+	CHECK_OBJ_NOTNULL(key_blob, VRT_BLOB_MAGIC);
 	AN(key_blob->blob);
 	assert(key_blob->len > 0);
 
@@ -546,6 +546,7 @@ shard_param_args(VRT_CTX,
 			    func, by_s);
 			return (NULL);
 		}
+		CHECK_OBJ_ORNULL(key_blob, VRT_BLOB_MAGIC);
 		if (key_blob == NULL || key_blob->len == 0 ||
 		    key_blob->blob == NULL) {
 			shard_err(ctx->vsl, p->vcl_name,
@@ -1092,6 +1093,7 @@ shard_param_blob(VCL_BLOB blob)
 {
 	const struct vmod_directors_shard_param *p;
 
+	CHECK_OBJ_ORNULL(blob, VRT_BLOB_MAGIC);
 	if (blob && blob->type == VMOD_SHARD_SHARD_PARAM_BLOB &&
 	    blob->blob != NULL &&
 	    blob->len == sizeof(struct vmod_directors_shard_param)) {

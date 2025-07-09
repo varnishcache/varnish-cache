@@ -86,6 +86,7 @@
  *	VRT_AddVDP() removed
  *	VRT_RemoveVFP() removed
  *	VRT_RemoveVDP() removed
+ *	struct vrt_blob magic added
  * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
@@ -407,6 +408,8 @@ extern const struct strands *const vrt_null_strands;
  */
 
 struct vrt_blob {
+	unsigned	magic;
+#define VRT_BLOB_MAGIC	0xe114db9e
 	unsigned	type;
 	size_t		len;
 	const void	*blob;

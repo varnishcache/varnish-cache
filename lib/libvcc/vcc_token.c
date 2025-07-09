@@ -629,6 +629,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			Fh(tl, 0,
 			    "\nstatic const struct vrt_blob %s[1] = {{\n",
 			    namebuf);
+			Fh(tl, 0, "\t.magic =\tVRT_BLOB_MAGIC,\n");
 			Fh(tl, 0, "\t.len =\t%zd,\n", VSB_len(vsb));
 			Fh(tl, 0, "\t.blob =\t%s_data,\n", namebuf);
 			Fh(tl, 0, "}};\n");

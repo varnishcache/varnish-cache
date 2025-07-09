@@ -430,6 +430,7 @@ VCP_Open(struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap, int *err)
 
 	if (r >= 0 && errno == 0 && cp->endpoint->preamble != NULL &&
 	     cp->endpoint->preamble->len > 0) {
+		CHECK_OBJ(cp->endpoint->preamble, VRT_BLOB_MAGIC);
 		if (write(r, cp->endpoint->preamble->blob,
 		    cp->endpoint->preamble->len) !=
 		    cp->endpoint->preamble->len) {
@@ -800,6 +801,7 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 			VSHA256_Update(cx, vep->ipv6, vsa_suckaddr_len);
 		}
 	}
+	CHECK_OBJ_ORNULL(vep->preamble, VRT_BLOB_MAGIC);
 	if (vep->preamble != NULL && vep->preamble->len > 0) {
 		VSHA256_Update(cx, "PRE", 4); // include \0
 		VSHA256_Update(cx, vep->preamble->blob, vep->preamble->len);
