@@ -41,6 +41,9 @@ Varnish Cache NEXT (8.0, 2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The VMOD function ``cookie.format_rfc1123()`` is now removed. It had been
+  renamed to ``cookie.format_date()``.
+
 * The ACL option ``+fold`` is now default. This means that ACL entries will
   automatically be merged for adjacent networks and subnets will be removed in
   the presence of supernets. This affects logging. The old default behavior can

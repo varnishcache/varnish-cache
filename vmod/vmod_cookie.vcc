@@ -250,8 +250,3 @@ Example::
 	    cookie.set("cookie1", "value1");
 	    std.log("cookie1 value is: " + cookie.get("cookie1"));
 	}
-
-DEPRECATED
-==========
-
-$Alias format_rfc1123 format_date

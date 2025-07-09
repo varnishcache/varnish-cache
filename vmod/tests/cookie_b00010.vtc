@@ -5,7 +5,7 @@ varnish v1 -vcl {
 	backend be none;
 	sub vcl_recv { return (synth(200)); }
 	sub vcl_synth {
-		set resp.http.x-date = cookie.format_rfc1123(now, 1d);
+		set resp.http.x-date = cookie.format_date(now, 1d);
 	}
 } -start
 
