@@ -136,18 +136,6 @@ VRT_AddFilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 }
 
 void
-VRT_AddVFP(VRT_CTX, const struct vfp *filter)
-{
-	AZ(VRT_AddFilter(ctx, filter, NULL));
-}
-
-void
-VRT_AddVDP(VRT_CTX, const struct vdp *filter)
-{
-	AZ(VRT_AddFilter(ctx, NULL, filter));
-}
-
-void
 VRT_RemoveFilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 {
 	struct vfilter *vp;
@@ -172,20 +160,6 @@ VRT_RemoveFilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 	assert(vdp == NULL || !strcasecmp(vdp->name, vp->name));
 	VTAILQ_REMOVE(hd, vp, list);
 	FREE_OBJ(vp);
-}
-
-void
-VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
-{
-
-	VRT_RemoveFilter(ctx, filter, NULL);
-}
-
-void
-VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
-{
-
-	VRT_RemoveFilter(ctx, NULL, filter);
 }
 
 static const struct vfilter vfilter_error[1] = {{0}};

@@ -102,9 +102,6 @@ enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     v_printflike_(2, 3);
 
-void v_deprecated_ VRT_AddVFP(VRT_CTX, const struct vfp *);
-void v_deprecated_ VRT_RemoveVFP(VRT_CTX, const struct vfp *);
-
 /* Deliver processors ------------------------------------------------*/
 
 enum vdp_action {
@@ -323,9 +320,6 @@ int VDPIO_Init(struct vdp_ctx *vdc, struct objcore *oc, struct ws *ws,
     vai_notify_cb *notify_cb, void *notify_priv, struct vscaret *scaret);
 void VDPIO_Return(const struct vdp_ctx *vdc);
 void VDPIO_Fini(struct vdp_ctx *vdc);
-
-void v_deprecated_ VRT_AddVDP(VRT_CTX, const struct vdp *);
-void v_deprecated_ VRT_RemoveVDP(VRT_CTX, const struct vdp *);
 
 /* Registry functions -------------------------------------------------*/
 const char *VRT_AddFilter(VRT_CTX, const struct vfp *, const struct vdp *);

@@ -82,6 +82,10 @@
  *	VRT_r_param_timeout_idle() added
  *	VRT_r_param_transit_buffer() added
  *	VRT_r_param_uncacheable_ttl() added
+ *	VRT_AddVFP() removed
+ *	VRT_AddVDP() removed
+ *	VRT_RemoveVFP() removed
+ *	VRT_RemoveVDP() removed
  * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
