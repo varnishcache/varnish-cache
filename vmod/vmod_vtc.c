@@ -477,10 +477,10 @@ vsl_line(VRT_CTX, char *str)
 		return;
 
 	str = strtok_r(NULL, "\r\n", &save);
+	// needs to be assigned here because of the compound literal lifetime
+	s = TOSTRAND(str);
 	if (str == NULL)
 		s = vrt_null_strands;
-	else
-		s = TOSTRAND(str);
 
 	vmod_vsl(ctx, id, tag, side, s);
 }
