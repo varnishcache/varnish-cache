@@ -41,6 +41,15 @@ Varnish Cache NEXT (8.0, 2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* The default value for ``ban_any_variant`` is now ``0``. This means that
+  during a lookup, only the matching variants of an object will be evaluated
+  against the ban list.
+
+  As a side effect, variants that are rarely requested may never get a chance
+  to be tested against ``req`` based bans, which can lead to an accumulation
+  of bans over time. In such cases, it is recommended to set
+  ``ban_any_variant`` to a higher value.
+
 * The VMOD function ``cookie.format_rfc1123()`` is now removed. It had been
   renamed to ``cookie.format_date()``.
 
