@@ -226,6 +226,7 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 	b = WS_Alloc(ctx->ws, sizeof *b + sizeof digest);
 	if (b != NULL) {
 		memcpy(b + 1, digest, sizeof digest);
+		b->magic = VRT_BLOB_MAGIC;
 		b->blob = b + 1;
 		b->len = sizeof digest;
 	}

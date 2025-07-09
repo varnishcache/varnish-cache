@@ -1079,6 +1079,7 @@ VRT_l_##which##_body(VRT_CTX, enum lbody_e type,		\
 	if (type == LBODY_SET_BLOB || type == LBODY_ADD_BLOB) {	\
 		AZ(str);					\
 		b = body;					\
+		CHECK_OBJ_NOTNULL(b, VRT_BLOB_MAGIC);		\
 		VSB_bcat(vsb, b->blob, b->len);			\
 		return;						\
 	}							\

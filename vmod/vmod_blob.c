@@ -208,6 +208,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	*blobp = b;
 	AZ(pthread_mutex_init(&b->lock, NULL));
 
+	b->blob.magic = VRT_BLOB_MAGIC;
 	b->blob.type = VMOD_BLOB_TYPE;
 
 	len = decode_l(dec, strings);
@@ -246,6 +247,7 @@ vmod_blob_get(VRT_CTX, struct vmod_blob_blob *b)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
+	CHECK_OBJ(&b->blob, VRT_BLOB_MAGIC);
 	return (&b->blob);
 }
 
@@ -259,6 +261,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
+	CHECK_OBJ(&b->blob, VRT_BLOB_MAGIC);
 
 	if (!check_enc_case(ctx, encs, case_s, enc, kase))
 		return (NULL);
@@ -309,6 +312,7 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 	int i, j;
 
 	TAKE_OBJ_NOTNULL(b, blobp, VMOD_BLOB_MAGIC);
+	CHECK_OBJ(&b->blob, VRT_BLOB_MAGIC);
 
 	if (b->freeptr != NULL) {
 		free(b->freeptr);
@@ -379,6 +383,7 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 	if (b == NULL)
 		return (NULL);
 
+	CHECK_OBJ(b, VRT_BLOB_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 	space = WS_ReserveAll(ctx->ws);
 	buf = WS_Reservation(ctx->ws);
@@ -454,6 +459,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 		return (NULL);
 	}
 
+	b.magic = VRT_BLOB_MAGIC;
 	b.len = len;
 	b.blob = buf;
 
@@ -485,6 +491,8 @@ vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 		return (1);
 	if (b1 == NULL || b2 == NULL)
 		return (0);
+	CHECK_OBJ(b1, VRT_BLOB_MAGIC);
+	CHECK_OBJ(b2, VRT_BLOB_MAGIC);
 	return (b1->len == b2->len && b1->blob == b2->blob);
 }
 
@@ -497,6 +505,8 @@ vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 		return (1);
 	if (b1 == NULL || b2 == NULL)
 		return (0);
+	CHECK_OBJ(b1, VRT_BLOB_MAGIC);
+	CHECK_OBJ(b2, VRT_BLOB_MAGIC);
 	if (b1->len != b2->len)
 		return (0);
 	if (b1->blob == b2->blob)
@@ -513,6 +523,7 @@ vmod_length(VRT_CTX, VCL_BLOB b)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (b == NULL)
 		return (0);
+	CHECK_OBJ(b, VRT_BLOB_MAGIC);
 	return (b->len);
 }
 
@@ -524,6 +535,7 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 	assert(n >= 0);
 	assert(off >= 0);
 
+	CHECK_OBJ_ORNULL(b, VRT_BLOB_MAGIC);
 	if (b == NULL || b->len == 0 || b->blob == NULL) {
 		ERR(ctx, "blob is empty in blob.sub()");
 		return (NULL);
