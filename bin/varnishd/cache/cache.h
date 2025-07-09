@@ -843,10 +843,15 @@ struct vscarab {
 		VFLA_INIT(type, name, mag, fam, cap);			\
 } while(0)
 #define VFLA_FOREACH(var, cptr, fam)						\
-	for (var = &(cptr)->fam[0]; var < &(cptr)->fam[(cptr)->used]; var++)
+	for (var = &(cptr)->fam[0];						\
+	     (var = (var < &(cptr)->fam[(cptr)->used] ? var : NULL)) != NULL;	\
+	     var++)
 // continue iterating after a break of a _FOREACH
 #define VFLA_FOREACH_RESUME(var, cptr, fam)					\
-	for (; var != NULL && var < &(cptr)->fam[(cptr)->used]; var++)
+	for (;									\
+	     var != NULL &&							\
+	       (var = (var < &(cptr)->fam[(cptr)->used] ? var : NULL)) != NULL; \
+	     var++)
 #define VFLA_GET(cptr, fam) ((cptr)->used < (cptr)->capacity ? &(cptr)->fam[(cptr)->used++] : NULL)
 // asserts sufficient capacity
 #define VFLA_ADD(cptr, fam, val) do {						\

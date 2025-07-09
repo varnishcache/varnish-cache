@@ -285,6 +285,7 @@ void vdpio_return_vscarab(const struct vdp_ctx *vdc, struct vscarab *scarab)
 	VSCARAB_CHECK_NOTNULL(scarab);
 	VSCARAB_FOREACH(v, scarab)
 		vdpio_return_lease(vdc, v->lease);
+	AZ(v);
 	VSCARAB_INIT(scarab, scarab->capacity);
 }
 
