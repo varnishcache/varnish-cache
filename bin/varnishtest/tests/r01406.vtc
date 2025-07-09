@@ -19,8 +19,7 @@ varnish v1 -arg "-p vcc_feature=+allow_inline_c" -vcl+backend {
 			    ctx,
 			    &VGC_HDR_REQ_foo,
 			    0,
-			    &(struct strands){.n = 0}
-			);
+			    vrt_null_strands);
 		}C
 	}
 

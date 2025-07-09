@@ -493,6 +493,7 @@ vmod_vsl_replay(VRT_CTX, VCL_STRANDS s)
 	size_t l;
 	int i, err = 0;
 
+	CHECK_OBJ_ORNULL(s, STRANDS_MAGIC);
 	if (s == NULL || s->n == 0)
 		return;
 

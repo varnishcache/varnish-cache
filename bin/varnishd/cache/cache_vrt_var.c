@@ -1088,6 +1088,7 @@ VRT_l_##which##_body(VRT_CTX, enum lbody_e type,		\
 	assert(type == LBODY_SET_STRING ||			\
 	    type == LBODY_ADD_STRING);				\
 	s = body;						\
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);			\
 	for (n = 0; s != NULL && n < s->n; n++)			\
 		if (s->p[n] != NULL)				\
 			VSB_cat(vsb, s->p[n]);			\

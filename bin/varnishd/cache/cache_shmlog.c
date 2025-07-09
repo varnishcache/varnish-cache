@@ -53,6 +53,7 @@ strands_len(const struct strands *s)
 	unsigned r = 0;
 	int i;
 
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	for (i = 0; i < s->n; i++) {
 		if (s->p[i] == NULL || *s->p[i] == '\0')
 			continue;
@@ -76,6 +77,7 @@ strands_cat(char *buf, unsigned bufl, const struct strands *s)
 	/* NUL-terminated */
 	assert(bufl > 0);
 	bufl--;
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 
 	for (i = 0; i < s->n && bufl > 0; i++) {
 		if (s->p[i] == NULL || *s->p[i] == '\0')

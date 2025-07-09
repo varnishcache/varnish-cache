@@ -683,6 +683,7 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 	}
 	AN(hdr->what);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	if (s->n == 0) {
 		http_Unset(hp, hdr->what);
 	} else {
@@ -1365,6 +1366,7 @@ xyzzy_log_strands(VRT_CTX, VCL_STRING prefix, VCL_STRANDS subject, VCL_INT nn)
 	else
 		n = nn;
 
+	CHECK_OBJ_NOTNULL(subject, STRANDS_MAGIC);
 	for (i = 0; i < subject->n; i++) {
 		const char *p = subject->p[i];
 		mylog(ctx->vsl, SLT_Debug, "%s[%d]: (%s) %p %.*s%s", prefix, i,

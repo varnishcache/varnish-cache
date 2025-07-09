@@ -87,6 +87,7 @@
  *	VRT_RemoveVFP() removed
  *	VRT_RemoveVDP() removed
  *	struct vrt_blob magic added
+ *	struct strands magic added;
  * 21.0 (2025-03-17)
  *	VRT_u_req_grace() added
  *	VRT_u_req_ttl() added
@@ -373,6 +374,8 @@ typedef const struct stream_close *stream_close_t;
  */
 
 struct strands {
+	unsigned	magic;
+#define STRANDS_MAGIC	0x5d5ab196
 	int		n;
 	const char	**p;
 };
@@ -385,8 +388,10 @@ extern const struct strands *const vrt_null_strands;
 /*
  * Macros for VCL_STRANDS creation
  */
-#define TOSTRAND(s)(&(struct strands){.n=1,.p=(const char *[1]){(s)}})
-#define TOSTRANDS(x, ...)(&(struct strands){.n=x,.p=(const char *[x]){__VA_ARGS__}})
+#define TOSTRAND(s)(&(struct strands)				\
+	{.magic=STRANDS_MAGIC,.n=1,.p=(const char *[1]){(s)}})
+#define TOSTRANDS(x, ...)(&(struct strands)			\
+	{.magic=STRANDS_MAGIC,.n=x,.p=(const char *[x]){__VA_ARGS__}})
 
 /***********************************************************************
  * VCL_BLOB:

@@ -86,6 +86,7 @@ vmod_updown(VRT_CTX, int up, VCL_STRANDS s)
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	u = WS_ReserveAll(ctx->ws);
 	e = b = WS_Reservation(ctx->ws);
 	e += u;

@@ -144,6 +144,7 @@ decode_l(enum encoding dec, VCL_STRANDS s)
 
 	AENC(dec);
 
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	for (int i = 0; i < s->n; i++)
 		if (s->p[i] != NULL && *s->p[i] != '\0')
 			len += strlen(s->p[i]);
@@ -201,7 +202,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	AZ(*blobp);
 	AN(vcl_name);
 	AENC(dec);
-	AN(strings);
+	CHECK_OBJ_NOTNULL(strings, STRANDS_MAGIC);
 
 	ALLOC_OBJ(b, VMOD_BLOB_MAGIC);
 	AN(b);
@@ -344,7 +345,7 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AENC(dec);
-	AN(strings);
+	CHECK_OBJ_NOTNULL(strings, STRANDS_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 
 	space = WS_ReserveAll(ctx->ws);
@@ -430,7 +431,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
-	AN(strings);
+	CHECK_OBJ_NOTNULL(strings, STRANDS_MAGIC);
 
 	AENC(dec);
 	AENC(enc);
