@@ -762,7 +762,7 @@ PARAM_SIMPLE(
 	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* def */	"10000",
+	/* def */	"0",
 	/* units */	"checks",
 	/* descr */
 	"Maximum number of possibly non matching variants that we evaluate "

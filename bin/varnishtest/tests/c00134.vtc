@@ -28,7 +28,7 @@ server s1 {
 
 } -start
 
-varnish v1 -arg "-p ban_any_variant=0" -vcl+backend {
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.url = bereq.url;
 	}
