@@ -127,7 +127,6 @@ vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr, VCL_STRANDS s)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_ORNULL(ctx->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
-	AN(s);
 
 	r = VRT_HashStrands32(s);
 	r = scalbn(r, -32);

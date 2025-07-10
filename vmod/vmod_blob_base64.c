@@ -33,6 +33,7 @@
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
+#include "miniobj.h"
 
 #include "vmod_blob.h"
 
@@ -308,7 +309,7 @@ base64_decode(const enum encoding dec, blob_dest_t buf,
 
 	AN(buf);
 	AN(alpha);
-	AN(strings);
+	CHECK_OBJ_NOTNULL(strings, STRANDS_MAGIC);
 
 	if (inlen >= 0)
 		len = inlen;

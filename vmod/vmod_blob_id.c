@@ -35,6 +35,7 @@
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
+#include "miniobj.h"
 
 #include "vmod_blob.h"
 
@@ -79,7 +80,7 @@ id_decode(const enum encoding enc, blob_dest_t buf,
 
 	(void)enc;
 	AN(buf);
-	AN(strings);
+	CHECK_OBJ_NOTNULL(strings, STRANDS_MAGIC);
 
 	if (n >= 0)
 		c = n;

@@ -33,6 +33,7 @@
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
+#include "miniobj.h"
 
 #include "vmod_blob.h"
 
@@ -127,7 +128,7 @@ url_decode(const enum encoding dec, blob_dest_t buf,
 	int i;
 
 	AN(buf);
-	AN(strings);
+	CHECK_OBJ_NOTNULL(strings, STRANDS_MAGIC);
 	assert(dec == URL);
 
 	if (n >= 0)

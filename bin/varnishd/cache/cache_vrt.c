@@ -56,6 +56,7 @@
 
 // NOT using TOSTRANDS() to create a NULL pointer element despite n == 0
 const struct strands *const vrt_null_strands = &(struct strands){
+	.magic = STRANDS_MAGIC,
 	.n = 0,
 	.p = (const char *[1]){NULL}
 };
@@ -306,6 +307,7 @@ VRT_AllocStrandsWS(struct ws *ws, int n)
 	if (s == NULL || p == NULL)
 		return (NULL);
 
+	s->magic = STRANDS_MAGIC;
 	s->n = n;
 	s->p = p;
 
@@ -321,6 +323,9 @@ VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b)
 {
 	const char *pa = NULL, *pb = NULL;
 	int na = 0, nb = 0;
+
+	CHECK_OBJ_NOTNULL(a, STRANDS_MAGIC);
+	CHECK_OBJ_NOTNULL(b, STRANDS_MAGIC);
 
 	while (1) {
 		if (pa != NULL && *pa == '\0')
@@ -359,7 +364,7 @@ VRT_Strands2Bool(VCL_STRANDS s)
 {
 	int i;
 
-	AN(s);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	for (i = 0; i < s->n; i++)
 		if (s->p[i] != NULL)
 			return (1);
@@ -378,7 +383,7 @@ VRT_HashStrands32(VCL_STRANDS s)
 	const char *p;
 	int i;
 
-	AN(s);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	VSHA256_Init(&sha_ctx);
 	for (i = 0; i < s->n; i++) {
 		p = s->p[i];
@@ -408,7 +413,7 @@ VRT_Strands(char *d, size_t dl, VCL_STRANDS s)
 	unsigned x;
 
 	AN(d);
-	AN(s);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	b = d;
 	e = b + dl;
 	for (int i = 0; i < s->n; i++)
@@ -436,7 +441,7 @@ VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
 	int i;
 
 	WS_Assert(ws);
-	AN(s);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 
 	for (i = 0; i < s->n; i++) {
 		if (s->p[i] != NULL && *s->p[i] != '\0') {
@@ -501,7 +506,7 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
-	AN(s);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	u = WS_ReserveAll(ctx->ws);
 	r = b = WS_Reservation(ctx->ws);
 	e = b + u;
@@ -565,6 +570,7 @@ VRT_ValidHdr(VRT_CTX, VCL_STRANDS s)
 
 	(void) ctx;
 
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	for (i = 0; i < s->n; i++) {
 		if (s->p[i] == NULL || s->p[i][0] == '\0')
 			continue;
@@ -712,7 +718,7 @@ VRT_hashdata(VRT_CTX, VCL_STRANDS s)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	AN(ctx->specific);
-	AN(s);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	for (i = 0; i < s->n; i++)
 		HSH_AddString(ctx->req, ctx->specific, s->p[i]);
 	/*
@@ -866,7 +872,7 @@ VRT_synth_strands(VRT_CTX, VCL_STRANDS s)
 	int i;
 
 	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);
-	AN(s);
+	CHECK_OBJ_NOTNULL(s, STRANDS_MAGIC);
 	for (i = 0; i < s->n; i++) {
 		if (s->p[i] != NULL)
 			VSB_cat(vsb, s->p[i]);
