@@ -332,33 +332,12 @@ struct sml_hdl {
 	struct storage		*last;	// to resume, held back by _return()
 };
 
-static inline uint64_t
-st2lease(const struct storage *st)
-{
-	uint64_t r = (uintptr_t)st;
-
-	if (sizeof(void *) < 8) //lint !e506 !e774
-		r <<= 1;
-
-	return (r);
-}
-
-static inline struct storage *
-lease2st(uint64_t l)
-{
-
-	if (sizeof(void *) < 8) //lint !e506 !e774
-		l >>= 1;
-
-	return ((void *)(uintptr_t)l);
-}
-
 static inline void
 sml_ai_viov_fill(struct viov *viov, struct storage *st)
 {
 	viov->iov.iov_base = TRUST_ME(st->ptr);
 	viov->iov.iov_len = st->len;
-	viov->lease = st2lease(st);
+	viov->lease = ptr2lease(st);
 	VAI_ASSERT_LEASE(viov->lease);
 }
 
@@ -505,7 +484,7 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 		AN(viov);
 		viov->iov.iov_base = null_iov;
 		viov->iov.iov_len = 0;
-		viov->lease = st2lease(hdl->last);
+		viov->lease = ptr2lease(hdl->last);
 	}
 	if (hdl->last != NULL)
 		hdl->last = NULL;
@@ -535,7 +514,7 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 			}
 			else {
 				CHECK_OBJ(next, STORAGE_MAGIC);
-				viov->lease = st2lease(hdl->st);
+				viov->lease = ptr2lease(hdl->st);
 			}
 #ifdef VAI_DBG
 			VSLb(wrk->vsl, SLT_Debug, "off %zu + l %zu == space st %p next st %p stvprv %p",
@@ -577,7 +556,7 @@ sml_ai_return_buffers(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 	VSCARET_FOREACH(p, scaret) {
 		if (*p == VAI_LEASE_NORET)
 			continue;
-		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
+		CAST_OBJ_NOTNULL(st, lease2ptr(*p), STORAGE_MAGIC);
 		if ((st->flags & STORAGE_F_BUFFER) == 0)
 			continue;
 		sml_stv_free(hdl->stv, st);
@@ -607,14 +586,14 @@ sml_ai_return(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 	VSCARET_FOREACH(p, scaret) {
 		if (*p == VAI_LEASE_NORET)
 			continue;
-		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
+		CAST_OBJ_NOTNULL(st, lease2ptr(*p), STORAGE_MAGIC);
 		VSCARET_ADD(todo, *p);
 	}
 	VSCARET_INIT(scaret, scaret->capacity);
 
 	Lck_Lock(&hdl->boc->mtx);
 	VSCARET_FOREACH(p, todo) {
-		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
+		CAST_OBJ_NOTNULL(st, lease2ptr(*p), STORAGE_MAGIC);
 		if ((st->flags & STORAGE_F_BUFFER) != 0)
 			continue;
 		VTAILQ_REMOVE(&hdl->obj->list, st, list);
@@ -624,7 +603,7 @@ sml_ai_return(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 	Lck_Unlock(&hdl->boc->mtx);
 
 	VSCARET_FOREACH(p, todo) {
-		CAST_OBJ_NOTNULL(st, lease2st(*p), STORAGE_MAGIC);
+		CAST_OBJ_NOTNULL(st, lease2ptr(*p), STORAGE_MAGIC);
 #ifdef VAI_DBG
 		VSLb(wrk->vsl, SLT_Debug, "ret %p", st);
 #endif
