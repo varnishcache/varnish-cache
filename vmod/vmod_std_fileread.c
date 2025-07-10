@@ -132,6 +132,7 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 		REPLACE(frf->file_name, file_name);
 		frf->refcount = 1;
 		frf->contents = s;
+		frf->blob->magic = VRT_BLOB_MAGIC;
 		frf->blob->blob = s;
 		frf->blob->len = (size_t)sz;
 		priv->methods = frfile_methods;

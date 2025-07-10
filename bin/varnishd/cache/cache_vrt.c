@@ -60,6 +60,7 @@ const struct strands *const vrt_null_strands = &(struct strands){
 	.p = (const char *[1]){NULL}
 };
 const struct vrt_blob *const vrt_null_blob = &(struct vrt_blob){
+	.magic = VRT_BLOB_MAGIC,
 	.type = VRT_NULL_BLOB_TYPE,
 	.len = 0,
 	.blob = "\0"
@@ -881,6 +882,7 @@ VRT_synth_blob(VRT_CTX, VCL_BLOB b)
 	struct vsb *vsb;
 	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);
 
+	CHECK_OBJ_NOTNULL(b, VRT_BLOB_MAGIC);
 	if (b->len > 0 && b->blob != NULL)
 		VSB_bcat(vsb, b->blob, b->len);
 }
@@ -1102,6 +1104,7 @@ VRT_blob(VRT_CTX, const char *err, const void *src, size_t len, unsigned type)
 		return (NULL);
 	}
 
+	INIT_OBJ(p, VRT_BLOB_MAGIC);
 	p->type = type;
 	p->len = len;
 	p->blob = src;
@@ -1182,9 +1185,11 @@ VRT_Endpoint_Clone(const struct vrt_endpoint * const vep)
 	if (vep->preamble != NULL && vep->preamble->len) {
 		/* Before uds because we need p to be aligned still */
 		blob = (void*)p;
+		INIT_OBJ(blob, VRT_BLOB_MAGIC);
 		p += sizeof(*blob);
 		nvep->preamble = blob;
 		memcpy(p, vep->preamble->blob, vep->preamble->len);
+		blob->type = 0x70ea5b1e;
 		blob->len = vep->preamble->len;
 		blob->blob = p;
 		p += vep->preamble->len;
