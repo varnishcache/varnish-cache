@@ -214,6 +214,14 @@ int __llvm_gcov_flush(void);
 #define vlimit_t(type, a, l, u)	vmax_t(type, (l), vmin_t(type, (a), (u)))
 
 /**********************************************************************
+ * Number of elements in an array
+ *
+ * Data on bikeshedding:
+ * https://thephd.dev/the-big-array-size-survey-for-c-results
+ */
+#define vcountof(arr)	((sizeof(arr) / sizeof((arr)[0])))
+
+/**********************************************************************
  * FlexeLint and compiler shutuppery
  */
 
