@@ -93,17 +93,23 @@ VCF_RETURNS()
 
 /*---------------------------------------------------------------------*/
 
-static struct objhead *
-hsh_newobjhead(void)
+static void
+hsh_initobjhead(struct objhead *oh)
 {
-	struct objhead *oh;
 
-	ALLOC_OBJ(oh, OBJHEAD_MAGIC);
 	XXXAN(oh);
+	INIT_OBJ(oh, OBJHEAD_MAGIC);
 	oh->refcnt = 1;
 	VTAILQ_INIT(&oh->objcs);
 	VTAILQ_INIT(&oh->waitinglist);
 	Lck_New(&oh->mtx, lck_objhdr);
+}
+
+static struct objhead *
+hsh_newobjhead(void)
+{
+	struct objhead *oh = malloc(sizeof *oh);
+	hsh_initobjhead(oh);
 	return (oh);
 }
 
