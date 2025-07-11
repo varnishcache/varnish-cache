@@ -132,7 +132,7 @@ static const struct VSC_level_desc levels[] = {
 #include "tbl/vsc_levels.h"
 };
 
-static const ssize_t nlevels = sizeof(levels)/sizeof(*levels);
+static const ssize_t nlevels = vcountof(levels);
 
 /*--------------------------------------------------------------------*/
 

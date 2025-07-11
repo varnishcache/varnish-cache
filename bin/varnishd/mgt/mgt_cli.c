@@ -64,7 +64,7 @@ static const struct cli_cmd_desc *cmds[] = {
 #include "tbl/cli_cmds.h"
 };
 
-static const int ncmds = sizeof cmds / sizeof cmds[0];
+static const int ncmds = vcountof(cmds);
 
 static int		cli_i = -1, cli_o = -1;
 struct VCLS		*mgt_cls;
