@@ -104,7 +104,7 @@ static const h2_error stream_errors[] = {
 #undef H2EC3
 };
 
-#define NSTREAMERRORS (sizeof(stream_errors)/sizeof(stream_errors[0]))
+#define NSTREAMERRORS vcountof(stream_errors)
 
 static h2_error
 h2_streamerror(uint32_t u)
@@ -130,7 +130,7 @@ static const h2_error conn_errors[] = {
 #undef H2EC3
 };
 
-#define NCONNERRORS (sizeof(conn_errors)/sizeof(conn_errors[0]))
+#define NCONNERRORS vcountof(conn_errors)
 
 static h2_error
 h2_connectionerror(uint32_t u)
@@ -504,7 +504,7 @@ static const struct h2_setting_s * const h2_setting_tbl[] = {
 #include <tbl/h2_settings.h>
 };
 
-#define H2_SETTING_TBL_LEN (sizeof(h2_setting_tbl)/sizeof(h2_setting_tbl[0]))
+#define H2_SETTING_TBL_LEN vcountof(h2_setting_tbl)
 
 static void
 h2_win_adjust(const struct h2_sess *h2, uint32_t oldval, uint32_t newval)
@@ -1486,7 +1486,7 @@ static const h2_frame h2flist[] = {
 #include "tbl/h2_frames.h"
 };
 
-#define H2FMAX (sizeof(h2flist) / sizeof(h2flist[0]))
+#define H2FMAX vcountof(h2flist)
 
 int
 h2_rxframe(struct worker *wrk, struct h2_sess *h2)

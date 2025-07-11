@@ -250,7 +250,7 @@ static struct hsh_magiclist {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } },
 };
 
-#define HSH_NMAGIC (sizeof hsh_magiclist / sizeof hsh_magiclist[0])
+#define HSH_NMAGIC vcountof(hsh_magiclist)
 
 static void
 hsh_testmagic(void *result)
