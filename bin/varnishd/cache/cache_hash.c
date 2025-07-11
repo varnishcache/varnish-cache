@@ -73,7 +73,8 @@ struct rush {
 };
 
 static const struct hash_slinger *hash;
-static struct objhead *private_oh;
+#define PRIVATE_OH_EXP 7
+static struct objhead private_ohs[1 << PRIVATE_OH_EXP];
 
 static void hsh_rush1(const struct worker *, struct objhead *,
     struct rush *, int);
@@ -137,22 +138,37 @@ hsh_prealloc(struct worker *wrk)
 
 /*---------------------------------------------------------------------*/
 
+// https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/
+static inline size_t
+fib(uint64_t n, uint8_t bits)
+{
+        const uint64_t gr = 11400714819323198485LLU;
+        uint64_t r;
+
+        r = n * gr;
+        r >>= (sizeof(gr) * 8) - bits;
+        assert(r < (size_t)1 << bits);
+        return ((size_t)r);
+}
+
 struct objcore *
 HSH_Private(const struct worker *wrk)
 {
 	struct objcore *oc;
+	struct objhead *oh;
 
-	CHECK_OBJ_NOTNULL(private_oh, OBJHEAD_MAGIC);
+	oh = &private_ohs[fib((uintptr_t)wrk, PRIVATE_OH_EXP)];
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	oc = ObjNew(wrk);
 	AN(oc);
 	oc->refcnt = 1;
-	oc->objhead = private_oh;
+	oc->objhead = oh;
 	oc->flags |= OC_F_PRIVATE;
-	Lck_Lock(&private_oh->mtx);
-	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, hsh_list);
-	private_oh->refcnt++;
-	Lck_Unlock(&private_oh->mtx);
+	Lck_Lock(&oh->mtx);
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, hsh_list);
+	oh->refcnt++;
+	Lck_Unlock(&oh->mtx);
 	return (oc);
 }
 
@@ -1114,13 +1130,20 @@ hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh, int max)
 
 	Lck_AssertHeld(&oh->mtx);
 
-	if (oh == private_oh) {
+	if (oh >= private_ohs && oh < private_ohs + vcountof(private_ohs)) {
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
 		assert(oh->refcnt > 1);
 		oh->refcnt--;
 		Lck_Unlock(&oh->mtx);
 		return (1);
 	}
+
+	//lint --e{661}
+	//lint -specific(-e661)
+	//
+	// because of the static array, flexelint thinks that all ohs were from
+	// the static array :( the above suppression applies to the remainder of
+	// this function body and specific walks involving this function
 
 	INIT_OBJ(&rush, RUSH_MAGIC);
 	if (!VTAILQ_EMPTY(&oh->waitinglist)) {
@@ -1157,6 +1180,10 @@ HSH_Init(const struct hash_slinger *slinger)
 	hash = slinger;
 	if (hash->start != NULL)
 		hash->start();
-	private_oh = hsh_newobjhead();
-	private_oh->refcnt = 1;
+	for (struct objhead *oh = private_ohs;
+	    oh < private_ohs + vcountof(private_ohs);
+	    oh++) {
+		hsh_initobjhead(oh);
+		assert(oh->refcnt == 1);
+	}
 }
