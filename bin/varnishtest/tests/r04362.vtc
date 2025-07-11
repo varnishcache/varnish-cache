@@ -1,0 +1,24 @@
+varnishtest "No transit buffer for req.body and vcl_synth"
+
+varnish v1 -cliok "param.set transit_buffer 4k"
+varnish v1 -vcl {
+	import std;
+
+	backend be none;
+
+	sub vcl_recv {
+		if (!std.cache_req_body(10MB)) {
+			return (synth(503));
+		}
+		return (synth(200));
+	}
+} -start
+
+client c1 {
+	txreq -bodylen 10240
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect transit_stored > 10240
+varnish v1 -expect transit_buffered == 0

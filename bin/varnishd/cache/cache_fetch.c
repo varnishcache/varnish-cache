@@ -1175,6 +1175,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	boc = HSH_RefBoc(oc);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	boc->transit_buffer = cache_param->transit_buffer;
 
 	switch (mode) {
 	case VBF_PASS:

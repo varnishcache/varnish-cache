@@ -109,7 +109,6 @@ obj_newboc(void)
 	Lck_New(&boc->mtx, lck_busyobj);
 	PTOK(pthread_cond_init(&boc->cond, NULL));
 	boc->refcount = 1;
-	boc->transit_buffer = cache_param->transit_buffer;
 	return (boc);
 }
 
