@@ -109,7 +109,6 @@ obj_newboc(void)
 	Lck_New(&boc->mtx, lck_busyobj);
 	PTOK(pthread_cond_init(&boc->cond, NULL));
 	boc->refcount = 1;
-	boc->transit_buffer = cache_param->transit_buffer;
 	return (boc);
 }
 
@@ -393,6 +392,11 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 		oc->boc->fetched_so_far += l;
 		obj_boc_notify(oc->boc);
 		Lck_Unlock(&oc->boc->mtx);
+
+		if (oc->boc->transit_buffer > 0)
+			wrk->stats->transit_buffered += l;
+		else if (oc->flags & OC_F_TRANSIENT)
+			wrk->stats->transit_stored += l;
 	}
 
 	assert(oc->boc->state < BOS_FINISHED);
