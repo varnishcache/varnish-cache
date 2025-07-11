@@ -53,7 +53,7 @@ static const struct {
 #include "tbl/vhp_huffman.h"
 };
 
-#define HUF_LEN (sizeof huf / sizeof huf[0])
+#define HUF_LEN vcountof(huf)
 
 struct tbl;
 
