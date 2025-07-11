@@ -397,6 +397,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	vtim_real now;
 	unsigned handling;
 	struct objcore *oc;
+	const char *met;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -411,8 +412,14 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(bo->vsl->wid));
 
-	if (bo->bereq_body == NULL && bo->req == NULL)
-		http_Unset(bo->bereq, H_Content_Length);
+	if (bo->bereq_body == NULL && bo->req == NULL) {
+		met = http_GetMethod(bo->bereq);
+		if (http_method_eq(met, GET) ||
+		    http_method_eq(met, HEAD))
+			http_Unset(bo->bereq, H_Content_Length);
+		else
+			http_ForceHeader(bo->bereq, H_Content_Length, "0");
+	}
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
