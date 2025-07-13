@@ -193,8 +193,8 @@ struct acct_bereq {
 
 struct vsl_log {
 	uint32_t		*wlb, *wlp, *wle;
-	unsigned		wlr;
 	vxid_t			wid;
+	unsigned		wlr;
 };
 
 /*--------------------------------------------------------------------*/
