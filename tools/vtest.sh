@@ -234,6 +234,7 @@ do
 	        git reset --hard > /dev/null 2>&1 || true
 	        git clean -df > /dev/null 2>&1 || true
 	        git pull --recurse-submodules=yes > /dev/null 2>&1 || true
+		git submodule update --init 2>&1 || true
 	)
 	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
 	if [ "x${rev}" != "x${orev}" ] ; then
