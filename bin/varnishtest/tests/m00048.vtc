@@ -30,7 +30,7 @@ varnish v1 -vcl+backend {
 	import debug;
 
 	sub vcl_backend_response {
-		set beresp.filters = "rot13 rot13a";
+		set beresp.filters = "rot13 debug.slow rot13a";
 	}
 }
 
