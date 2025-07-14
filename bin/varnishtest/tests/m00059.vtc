@@ -1,6 +1,6 @@
 varnishtest "VMOD debug.chk*"
 
-server s1 {
+server s1 -repeat 2 {
 	rxreq
 	expect req.url == "/ok"
 	txresp \
@@ -73,7 +73,13 @@ varnish v1 -vsl_catchup
 logexpect l1 -wait
 logexpect l2 -wait
 
-client c1 {
+varnish v1 -stop
+
+varnish v1 -start
+
+client c2 {
+	txreq -url "/ok"
+	rxresp
 	txreq -url "/wrong" -hdr "panic: yes"
 	rxresp
 } -run
