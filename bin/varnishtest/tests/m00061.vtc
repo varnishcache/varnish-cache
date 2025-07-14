@@ -16,6 +16,9 @@ varnish v1 \
 	}
 
 	sub vcl_deliver {
+		if (req.url == "/rot13") {
+			set resp.filters += " rot13";
+		}
 		if (req.url == "/chunked") {
 			set resp.filters += " debug.chunked";
 		}
@@ -64,3 +67,11 @@ client c0 {
 } -run
 
 logexpect l1 -wait
+
+# Fallback to DeliverObj because of VDP
+client c3 -repeat 8 -keepalive {
+	txreq -url "/rot13"
+	rxresp
+	expect resp.http.Content-Length == 13107
+	expect resp.bodylen == 13107
+} -run
