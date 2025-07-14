@@ -19,7 +19,7 @@ server s1 -repeat 2 {
 	    -hdr "sha256: 9cbca99698fee7cefd93bc6db1c53226fdecae730197fd793a54e170a30af045" \
 	    -hdr "crc32: 3177021206" \
 	    -hdr "len: 0" \
-	    -body ""
+	    -body " "
 } -start
 
 varnish v1 \
@@ -56,8 +56,15 @@ logexpect l2 -v v1 -g vxid -q "vxid == 1003" {
 	fail add *	End
 	expect * 1003	Begin
 	expect * =	Debug	"^sha256 checksum mismatch"
-	expect 0 =	Debug	"^got: 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	expect 0 =	Debug	"^got: 0x36a9e7f1c95b82ffb99743e0c5c4ce95d83c9a430aac59f84ef3cbfab6145068"
 	expect 0 =	Debug	"^exp: 0x9cbca99698fee7cefd93bc6db1c53226fdecae730197fd793a54e170a30af045"
+	expect 0 =	Debug	"^crc32 checksum mismatch"
+	expect 0 =	Debug	"^got: e96ccf45"
+	expect 0 =	Debug	"^exp: bd5d7f16"
+	expect 0 =	Debug	"^length mismatch"
+	expect 0 =	Debug	"^got: 1"
+	expect 0 =	Debug	"^exp: 0"
+
 	fail clear
 } -start
 
