@@ -1,0 +1,64 @@
+varnishtest "subsequent rush on rush miss"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+barrier b4 cond 2
+
+server s1 {
+	rxreq
+	expect req.http.user-agent == c1
+	barrier b1 sync
+	barrier b2 sync
+	txresp -hdr "Vary: accept"
+
+	rxreq
+	expect req.http.user-agent == c2
+	txresp -hdr "Vary: accept"
+} -start
+
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set rush_exponent 1"
+varnish v1 -cliok "param.set debug +syncvsl,+waitinglist"
+varnish v1 -vcl+backend "" -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.x-varnish == 1001
+} -start
+
+barrier b1 sync
+
+logexpect l1 -v v1 -q Debug -g raw {
+	expect * * Debug "on waiting list"
+} -start
+
+client c2 {
+	txreq -hdr "accept: nothing"
+	rxresp
+	expect resp.http.x-varnish == 1004
+} -start
+
+logexpect l1 -wait -start
+
+client c3 {
+	txreq
+	rxresp
+	expect resp.http.x-varnish == "1006 1002"
+} -start
+
+logexpect l1 -wait
+
+barrier b2 sync
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+
+varnish v1 -expect cache_miss == 2
+varnish v1 -expect cache_hit == 1
+varnish v1 -expect cache_hit_grace == 0
+varnish v1 -expect s_bgfetch == 0
+varnish v1 -expect busy_sleep == 2
+varnish v1 -expect busy_wakeup == 2

@@ -86,6 +86,7 @@
 
 #include "cache_varnishd.h"
 #include "cache_obj.h"
+#include "cache_objhead.h"
 #include "vend.h"
 #include "storage/storage.h"
 
@@ -141,8 +142,6 @@ ObjNew(const struct worker *wrk)
 	AN(oc);
 	wrk->stats->n_objectcore++;
 	oc->last_lru = NAN;
-	oc->flags = OC_F_BUSY;
-
 	oc->boc = obj_newboc();
 
 	return (oc);
@@ -488,8 +487,8 @@ ObjVAICancel(struct worker *wrk, struct boc *boc, struct vai_qe *qe)
  */
 
 void
-ObjSetState(struct worker *wrk, const struct objcore *oc,
-    enum boc_state_e next)
+ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next,
+    unsigned broadcast)
 {
 	const struct obj_methods *om;
 
@@ -498,7 +497,6 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 	assert(next > oc->boc->state);
 
 	CHECK_OBJ_ORNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
-	assert(next != BOS_STREAM || oc->boc->state == BOS_PREP_STREAM);
 	assert(next != BOS_FINISHED || (oc->oa_present & (1 << OA_LEN)));
 
 	if (oc->stobj->stevedore != NULL) {
@@ -507,9 +505,15 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 			om->objsetstate(wrk, oc, next);
 	}
 
+	if (next == BOS_FAILED)
+		HSH_Fail(wrk, oc);
+	else if (oc->boc->state < BOS_STREAM && next >= BOS_STREAM)
+		HSH_Unbusy(wrk, oc);
+
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
-	obj_boc_notify(oc->boc);
+	if (broadcast)
+		obj_boc_notify(oc->boc);
 	Lck_Unlock(&oc->boc->mtx);
 }
 
