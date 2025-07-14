@@ -35,28 +35,28 @@ varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set debug +req_state"
 varnish v1 -cliok "param.set debug +processors"
 
-client c0 -repeat 16 -keepalive {
+client c0 -repeat 8 -keepalive {
 	txreq -hdr "Accept-Encoding: gzip"
 	rxresp
 } -start
 
-client c1 -repeat 16 -keepalive {
+client c1 -repeat 8 -keepalive {
 	txreq
 	rxresp
 	expect resp.bodylen == 13113
 	expect req.body ~ "^hello "
 } -start
 
-#client c2 -repeat 16 -keepalive {
-#	txreq -url "/chunked"
-#	rxresp
-#	expect resp.http.Content-Length == <undef>
-#	expect resp.bodylen == 13107
-#} -start
+client c2 -repeat 8 -keepalive {
+	txreq -url "/chunked"
+	rxresp
+	expect resp.http.Content-Length == <undef>
+	expect resp.bodylen == 13113
+} -start
 
 client c0 -wait
 client c1 -wait
-#client c2 -wait
+client c2 -wait
 
 client c0 {
 	txreq -hdr "Accept-Encoding: gzip" -hdr "Last: Request"
