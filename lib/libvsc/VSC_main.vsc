@@ -533,6 +533,26 @@
 
 	Total number of bytes forwarded to clients in pipe sessions
 
+.. varnish_vsc:: transit_stored
+	:format:	bytes
+	:group:		wrk
+	:oneliner:	Stored uncacheable body bytes
+
+	Total number of transient body bytes written to storage as if they
+	were reusable like a cacheable backend response. Transient objects
+	are stored for a single transaction, this includes uncacheable backend
+	responses, synthetic responses and client requests.
+
+.. varnish_vsc:: transit_buffered
+	:format:	bytes
+	:group:		wrk
+	:oneliner:	Buffered uncacheable response body bytes
+
+	Total number of uncacheable responses body bytes forwarded using a
+	fixed buffer allocated from storage. This behavior can be enabled by
+	the 'transit_buffer' parameter, or the 'beresp.transit_buffer' VCL
+	variable.
+
 .. varnish_vsc:: sess_closed
 	:group: wrk
 	:oneliner:	Session Closed
