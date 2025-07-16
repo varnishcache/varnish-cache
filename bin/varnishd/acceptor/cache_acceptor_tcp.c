@@ -77,7 +77,7 @@ static struct sock_opt sock_opts[] = {
 #undef SOCK_OPT
 };
 
-static const int n_sock_opts = sizeof sock_opts / sizeof sock_opts[0];
+static const int n_sock_opts = vcountof(sock_opts);
 
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
