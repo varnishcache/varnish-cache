@@ -22,11 +22,11 @@ logexpect l0 -v v1 -g vxid -q "Begin ~ sess" {
 client c0 {
 	txpri
 	shutdown -write
-        stream 0 {
+	stream 0 {
 		rxsettings
-                rxgoaway
-                expect goaway.laststream == 0
-                expect goaway.err == NO_ERROR
+		rxgoaway
+		expect goaway.laststream == 0
+		expect goaway.err == NO_ERROR
 	} -run
 } -run
 
@@ -46,10 +46,10 @@ client c1 {
 		txreq -nohdrend
 	} -run
 	shutdown -write
-        stream 0 {
-                rxgoaway
-                expect goaway.laststream == 1
-                expect goaway.err == NO_ERROR
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 1
+		expect goaway.err == NO_ERROR
 	} -run
 } -run
 
@@ -69,10 +69,10 @@ client c2 {
 		txreq -nostrend
 	} -run
 	shutdown -write
-        stream 0 {
-                rxgoaway
-                expect goaway.laststream == 1
-                expect goaway.err == NO_ERROR
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 1
+		expect goaway.err == NO_ERROR
 	} -run
 } -run
 
@@ -89,10 +89,10 @@ logexpect l3 -v v1 -g vxid -q "Begin ~ sess" {
 # middle of frame
 client c3 {
 	stream 1 {
-		#		   +- 01 END_STREAM
+		#                  +- 01 END_STREAM
 		#                  +- 04 END_HEADERS
-		#		   |
-		#	   len ty fl strmid
+		#                  |
+		#          len ty fl strmid
 		sendhex {
 			000024 01 05 00000001
 			00053a70617468012f00073a6d6574686f640347455400073a736368656d6504687474
@@ -101,10 +101,10 @@ client c3 {
 		#	00053a70617468012f00073a6d6574686f640347455400073a736368656d650468747470
 	} -run
 	shutdown -write
-        stream 0 {
-                rxgoaway
-                expect goaway.laststream == 0
-                expect goaway.err == NO_ERROR
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 0
+		expect goaway.err == NO_ERROR
 	} -run
 } -run
 
