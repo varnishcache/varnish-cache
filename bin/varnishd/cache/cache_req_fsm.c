@@ -1007,6 +1007,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	/* Attempts to cache req.body may fail */
 	if (req->req_body_status == BS_ERROR) {
 		req->doclose = SC_RX_BODY;
+		(void)req->transport->minimal_response(req, 400);
 		return (REQ_FSM_DONE);
 	}
 

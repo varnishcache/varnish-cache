@@ -67,3 +67,24 @@ client c4 {
 } -run
 
 logexpect l1 -wait
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		std.cache_req_body(10kb);
+	}
+}
+
+client c5 {
+	non_fatal
+	txreq -req POST -hdr "Transfer-encoding: chunked"
+	send "1\r\n"
+	send "This is more than one byte of data\r\n"
+	send "0\r\n"
+	send "\r\n"
+	fatal
+	rxresp
+	expect resp.status == 400
+	expect_close
+} -run

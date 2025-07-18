@@ -91,7 +91,8 @@ client c1 {
 	chunked {BLAST}
 	delay .2
 	chunkedlen 106
-	expect_close
+	rxresp
+	expect resp.status == 400
 } -run
 
 logexpect l2 -wait
