@@ -72,5 +72,6 @@ client c4 {
 # req body overflow
 client c5 {
 	txreq -req POST -hdr "Content-Length: 1025"
-	expect_close
+	rxresp
+	expect resp.status == 400
 } -run
