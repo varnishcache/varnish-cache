@@ -162,6 +162,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			    "req.body read error: %d (%s)",
 			    errno, VAS_errtxt(errno));
 			bo->req->doclose = SC_RX_BODY;
+			bo->err_code = 400;
 		}
 		if (cl < 0)
 			V1L_EndChunk(v1l);
