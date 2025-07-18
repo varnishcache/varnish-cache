@@ -23,7 +23,7 @@ client c1 {
 	send "\r\n"
 	fatal
 	rxresp
-	expect resp.status == 503
+	expect resp.status == 400
 	expect_close
 } -run
 
@@ -38,7 +38,7 @@ client c2 {
 	send "\r\n"
 	fatal
 	rxresp
-	expect resp.status == 503
+	expect resp.status == 400
 	expect_close
 } -run
 
@@ -51,7 +51,7 @@ client c3 {
 	send "\r\n"
 	fatal
 	rxresp
-	expect resp.status == 503
+	expect resp.status == 400
 	expect_close
 } -run
 
@@ -62,7 +62,7 @@ client c4 {
 	send "\r\n"
 	fatal
 	rxresp
-	expect resp.status == 503
+	expect resp.status == 400
 	expect_close
 } -run
 

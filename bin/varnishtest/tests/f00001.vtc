@@ -18,7 +18,7 @@ client c1 {
 	send "0\r\n\r\n"
 
 	rxresp
-	expect resp.status == 503
+	expect resp.status == 400
 } -run
 
 # Check that the published workaround does not cause harm
