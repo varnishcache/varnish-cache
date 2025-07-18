@@ -260,25 +260,31 @@ h2h_addhdr(struct http *hp, struct h2h_decode *d)
 	return (0);
 }
 
-static void
-h2h_decode_init(const struct h2_sess *h2, struct ws *ws)
+void
+h2h_decode_hdr_init(struct h2_sess *h2, struct h2_req *r2)
 {
 	struct h2h_decode *d;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->req->http, HTTP_MAGIC);
+
+	AZ(h2->hpack_lock);
+	h2->hpack_lock = r2;
 
 	AN(h2->decode);
 	d = h2->decode;
 	INIT_OBJ(d, H2H_DECODE_MAGIC);
 	VHD_Init(d->vhd);
-	d->out_l = WS_ReserveSize(ws, cache_param->http_req_size);
+	d->out_l = WS_ReserveSize(h2->hpack_lock->req->http->ws,
+	    cache_param->http_req_size);
 	/*
 	 * Can't do any work without any buffer
 	 * space. Require non-zero size.
 	 */
 	XXXAN(d->out_l);
-	d->out = WS_Reservation(ws);
+	d->out = WS_Reservation(h2->hpack_lock->req->http->ws);
 
 	if (cache_param->h2_max_header_list_size == 0)
 		d->limit =
@@ -288,18 +294,6 @@ h2h_decode_init(const struct h2_sess *h2, struct ws *ws)
 
 	if (d->limit < h2->local_settings.max_header_list_size)
 		d->limit = INT64_MAX;
-
-	d->ws = ws;
-}
-
-void
-h2h_decode_hdr_init(const struct h2_sess *h2)
-{
-
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->new_req->http, HTTP_MAGIC);
-	h2h_decode_init(h2, h2->new_req->ws);
 }
 
 /* Possible error returns:
@@ -311,32 +305,34 @@ h2h_decode_hdr_init(const struct h2_sess *h2)
  * is a stream level error.
  */
 h2_error
-h2h_decode_hdr_fini(const struct h2_sess *h2)
+h2h_decode_hdr_fini(struct h2_sess *h2)
 {
 	h2_error ret;
 	struct h2h_decode *d;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	d = h2->decode;
-	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(h2->hpack_lock, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
-	WS_ReleaseP(d->ws, d->out);
+	WS_ReleaseP(h2->hpack_lock->req->http->ws, d->out);
 	if (d->vhd_ret != VHD_OK) {
 		/* HPACK header block didn't finish at an instruction
 		   boundary */
-		VSLb(h2->new_req->http->vsl, SLT_BogoHeader,
+		VSLb(h2->hpack_lock->req->http->vsl, SLT_BogoHeader,
 		    "HPACK compression error/fini (%s)", VHD_Error(d->vhd_ret));
 		ret = H2CE_COMPRESSION_ERROR;
 	} else if (d->error == NULL && !d->has_scheme) {
-		H2S_Lock_VSLb(h2, SLT_Debug, "Missing :scheme");
+		VSLb(h2->vsl, SLT_Debug, "Missing :scheme");
 		ret = H2SE_MISSING_SCHEME; //rfc7540,l,3087,3090
 	} else
 		ret = d->error;
 	FINI_OBJ(d);
 	if (ret == H2SE_REQ_SIZE) {
-		VSLb(h2->new_req->http->vsl, SLT_LostHeader,
+		VSLb(h2->hpack_lock->req->http->vsl, SLT_LostHeader,
 		    "Header list too large");
 	}
+	h2->hpack_lock = NULL;
+
 	return (ret);
 }
 
@@ -357,15 +353,15 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	const char *r, *e;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
-	hp = h2->new_req->http;
+	CHECK_OBJ_NOTNULL(h2->hpack_lock, H2_REQ_MAGIC);
+	hp = h2->hpack_lock->req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	d = h2->decode;
 	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
-	CHECK_OBJ_NOTNULL(d->ws, WS_MAGIC);
-	r = WS_Reservation(d->ws);
+	CHECK_OBJ_NOTNULL(h2->hpack_lock->req->http->ws, WS_MAGIC);
+	r = WS_Reservation(h2->hpack_lock->req->http->ws);
 	AN(r);
-	e = r + WS_ReservationSize(d->ws);
+	e = r + WS_ReservationSize(h2->hpack_lock->req->http->ws);
 
 	/* Only H2E_ENHANCE_YOUR_CALM indicates that we should continue
 	   processing. Other errors should have been returned and handled
@@ -380,7 +376,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		    d->out, d->out_l, &d->out_u);
 
 		if (d->vhd_ret < 0) {
-			H2S_Lock_VSLb(h2, SLT_BogoHeader,
+			VSLb(h2->vsl, SLT_BogoHeader,
 			    "HPACK compression error (%s)",
 			    VHD_Error(d->vhd_ret));
 			d->error = H2CE_COMPRESSION_ERROR;
@@ -440,7 +436,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 		}
 
 		if (H2_ERROR_MATCH(d->error, H2SE_ENHANCE_YOUR_CALM)) {
-			d->out = WS_Reservation(d->ws);
+			d->out = WS_Reservation(h2->hpack_lock->req->http->ws);
 			d->out_l = e - d->out;
 			d->limit -= d->out_u;
 			d->out_u = 0;
@@ -452,7 +448,7 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	if (d->limit < 0) {
 		/* Fatal error, the client exceeded both http_req_size
 		 * and h2_max_header_list_size. */
-		H2S_Lock_VSLb(h2, SLT_SessError, "Header list too large");
+		VSLb(h2->vsl, SLT_SessError, "Header list too large");
 		return (H2CE_ENHANCE_YOUR_CALM);
 	}
 

@@ -1,6 +1,6 @@
 varnishtest "H/2 received data frames with padding"
 
-barrier b1 sock 3
+barrier b1 sock 2
 
 server s1 {
 	rxreq
@@ -8,6 +8,7 @@ server s1 {
 	expect req.body == abcde
 	txresp
 	rxreq
+	expect req.bodylen == 81500
 	txresp
 	rxreq
 	txresp
@@ -48,31 +49,20 @@ client c2 {
 	# by unblocking the client thread stuck in vcl_recv. From that
 	# point on window updates will also be sent on the stream.
 
-	stream 0 {
-		rxwinup
-		rxwinup
-		rxwinup
-		rxwinup
-		barrier b1 sync
-	} -start
-
 	stream 3 {
-		txreq -req POST -url /3 -hdr "content-length" "131072" -nostrend
-		txdata -datalen 16300 -padlen 83 -nostrend
-		txdata -datalen 16300 -padlen 83 -nostrend
-		txdata -datalen 16300 -padlen 83 -nostrend
+		txreq -req POST -url /3 -hdr "content-length" "81500" -nostrend
+		loop 3 {
+			txdata -datalen 16300 -padlen 83 -nostrend
+			rxwinup
+			expect winup.size == 84
+		}
 		txdata -datalen 16300 -padlen 82 -nostrend
+		rxwinup
+		expect winup.size == 83
 		barrier b1 sync
 		rxwinup
-		txdata -datalen 16300 -padlen 83 -nostrend
-		rxwinup
-		txdata -datalen 16300 -padlen 83 -nostrend
-		rxwinup
-		txdata -datalen 16300 -padlen 83 -nostrend
-		rxwinup
-		txdata -datalen 16300 -padlen 83 -nostrend
-		rxwinup
-		txdata -datalen 672
+		expect winup.size == 65200
+		txdata -datalen 16300 -padlen 83
 		rxresp
 		expect resp.status == 200
 	} -start

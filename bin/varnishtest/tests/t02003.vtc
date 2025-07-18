@@ -36,7 +36,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test reverse order stream numbers
 
-client c1 {
+client c2 {
 	stream 0 {
 		rxgoaway
 		expect goaway.laststream == 3
@@ -61,7 +61,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test WINDOW_UPDATE error conditions
 
-client c1 {
+client c3 {
 	stream 1 {
 		txreq -nostrend
 		txwinup -size 0
@@ -92,7 +92,7 @@ client c1 {
 	} -run
 	stream 0 -wait
 } -run
-client c1 {
+client c4 {
 	stream 0 {
 		txwinup -size 0x40000000
 		txwinup -size 0x40000000
@@ -102,7 +102,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c5 {
 	stream 1 {
 		txreq
 		rxresp
@@ -123,7 +123,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test PING error conditions
 
-client c1 {
+client c6 {
 	stream 0 {
 		txping -ack -data "FOOBAR42"
 		rxgoaway
@@ -132,7 +132,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c7 {
 	stream 0 {
 		sendhex "000008 06 80 00000001 0102030405060708"
 		rxgoaway
@@ -141,7 +141,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c8 {
 	stream 0 {
 		sendhex "000007 06 80 00000000 01020304050607"
 		rxgoaway
@@ -160,7 +160,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test PUSH_PROMISE error conditions
 
-client c1 {
+client c9 {
 	stream 0 {
 		rxgoaway
 		expect goaway.err == PROTOCOL_ERROR
@@ -173,7 +173,7 @@ client c1 {
 	stream 0 -wait
 } -run
 
-client c1 {
+client c10 {
 	stream 0 {
 		rxgoaway
 		expect goaway.err == PROTOCOL_ERROR
@@ -198,7 +198,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test RST_STREAM error conditions
 
-client c1 {
+client c11 {
 	stream 0 {
 		# RST idle stream
 		sendhex "000004 03 00 00000007 00000008"
@@ -208,7 +208,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c12 {
 	stream 0 {
 		rxgoaway
 		expect goaway.err == FRAME_SIZE_ERROR
@@ -222,7 +222,7 @@ client c1 {
 	stream 0 -wait
 } -run
 
-client c1 {
+client c13 {
 	stream 0 {
 		# RST stream zero
 		sendhex "000000 03 00 00000000 00000008"
@@ -232,8 +232,11 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+barrier b14 cond 2
+client c14 {
 	stream 0 {
+		barrier b14 sync
+		txgoaway
 		rxgoaway
 		expect goaway.err == NO_ERROR
 		expect goaway.laststream == 3
@@ -246,11 +249,15 @@ client c1 {
 		txreq -nostrend
 		txrst -err 0x666
 	} -run
+	barrier b14 sync
 	stream 0 -wait
 } -run
 
-client c1 {
+barrier b15 cond 2
+client c15 {
 	stream 0 {
+		barrier b15 sync
+		txgoaway
 		rxgoaway
 		expect goaway.err == NO_ERROR
 		expect goaway.laststream == 1
@@ -263,6 +270,7 @@ client c1 {
 		# RST_STREAM on closed stream
 		txrst
 	} -run
+	barrier b15 sync
 	stream 0 -wait
 } -run
 
@@ -277,7 +285,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test SETTING error conditions
 
-client c1 {
+client c16 {
 	stream 0 {
 		# SETTING ACK with data
 		sendhex "000001 04 01 00000000 aa"
@@ -287,7 +295,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c17 {
 	stream 0 {
 		# SETTING ACK with bad length
 		sendhex "000001 04 00 00000000 aa"
@@ -296,7 +304,7 @@ client c1 {
 		expect goaway.laststream == 0
 	} -run } -run
 
-client c1 {
+client c18 {
 	stream 0 {
 		# SETTING ACK with bad value
 		txsettings -winsize 0x80000000
@@ -306,7 +314,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c19 {
 	stream 0 {
 		# SETTING unknown value
 		sendhex "000006 04 00 00000000 ffff00000000"
@@ -326,16 +334,19 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test GOAWAY error conditions
 
-client c1 {
+client c20 {
 	stream 0 {
 		txgoaway -err 2
+		rxgoaway
+		expect goaway.err == NO_ERROR
 	} -run
 	expect_close
 } -run
 
-client c1 {
+client c21 {
 	stream 0 {
 		txgoaway -err 2222
+		rxgoaway
 	} -run
 	expect_close
 } -run
@@ -351,7 +362,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test HEADERS error conditions
 
-client c1 {
+client c22 {
 	stream 1 {
 		txreq -nostrend
 		txreq -nostrend
@@ -362,7 +373,7 @@ client c1 {
 	expect_close
 } -run
 
-client c1 {
+client c23 {
 	stream 0 {
 		sendhex 00000c
 		sendhex 01
@@ -376,7 +387,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c24 {
 	stream 0 {
 		sendhex 000012
 		sendhex 01
@@ -388,7 +399,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c25 {
 	stream 1 {
 		txreq -hdr ":bla" "foo"
 		rxrst
@@ -398,7 +409,7 @@ client c1 {
 
 
 #2349: Padding exceeds frame size
-client c1 {
+client c26 {
 	stream 1 {
 		sendhex 000001
 		sendhex 01
@@ -415,7 +426,7 @@ client c1 {
 } -run
 
 #2349: Padding equal to frame size
-client c1 {
+client c27 {
 	stream 1 {
 		sendhex 000001
 		sendhex 01
@@ -432,7 +443,7 @@ client c1 {
 } -run
 
 #2349: Integer underrun may also occur when the priority flag is set
-client c1 {
+client c28 {
 	stream 1 {
 		sendhex 000004
 		sendhex 01
@@ -458,7 +469,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test CONTINUATION error conditions
 
-client c1 {
+client c29 {
 	stream 1 {
 		txreq -nostrend
 		txcont -hdr "bar" "foo"
@@ -469,7 +480,7 @@ client c1 {
 	expect_close
 } -run
 
-client c1 {
+client c30 {
 	stream 0 {
 		sendhex 000014
 		sendhex 01
@@ -489,7 +500,7 @@ client c1 {
 	} -run
 } -run
 
-client c1 {
+client c31 {
 	stream 1 {
 		txreq -nohdrend
 		txcont -hdr "bar" "foo"
@@ -499,7 +510,7 @@ client c1 {
 } -run
 
 # 2350: Don't accept a continuation frame after stream is closed
-client c1 {
+client c32 {
 	stream 1 {
 		txreq
 		rxresp
@@ -522,25 +533,26 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 #######################################################################
 # Test DATA error conditions
 
-client c1 {
+client c33 {
 	stream 1 {
 		txdata -data "FOOBAR"
 	} -run
 	stream 0 {
 		rxgoaway
+		expect goaway.err == PROTOCOL_ERROR
 	} -run
 	expect_close
 } -run
 
-client c1 {
+client c34 {
 	stream 1 {
 		txreq
 		rxresp
 		txdata -data "FOOBAR"
 	} -run
-	stream 3 {
-		txreq
-		rxresp
+	stream 0 {
+		rxgoaway
+		expect goaway.err == PROTOCOL_ERROR
 	} -run
 } -run
 

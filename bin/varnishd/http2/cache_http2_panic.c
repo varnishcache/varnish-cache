@@ -78,10 +78,10 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 		return;
 	VSB_printf(vsb, "refcnt = %d, bogosity = %d, error = %s\n",
 	    h2->refcnt, h2->bogosity, h2_panic_error(h2->error));
-	VSB_printf(vsb,
-	    "open_streams = %d, highest_stream = %u,"
-	    " goaway_last_stream = %u,\n",
-	    h2->open_streams, h2->highest_stream, h2->goaway_last_stream);
+	VSB_printf(vsb, "open_streams = %d, highest_stream = %u,\n",
+	    h2->open_streams, h2->highest_stream);
+	VSB_printf(vsb, "tx_window = %jd, rx_window = %jd,\n",
+	    h2->tx_window, h2->rx_window);
 	VSB_cat(vsb, "local_settings = {");
 	h2_panic_settings(vsb, &h2->local_settings);
 	VSB_cat(vsb, "},\n");
@@ -107,10 +107,10 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 
 		VSB_printf(vsb, "h2_sess = %p, scheduled = %d, error = %s,\n",
 		    r2->h2sess, r2->scheduled, h2_panic_error(r2->error));
-		VSB_printf(vsb, "t_send = %f, t_winupd = %f,\n",
-		    r2->t_send, r2->t_winupd);
-		VSB_printf(vsb, "t_window = %jd, r_window = %jd,\n",
-		    (intmax_t)r2->t_window, (intmax_t)r2->r_window);
+		VSB_printf(vsb, "t_send = %f, t_win_low = %f,\n",
+		    r2->t_send, r2->t_win_low);
+		VSB_printf(vsb, "tx_window = %jd, rx_window = %jd,\n",
+		    (intmax_t)r2->tx_window, (intmax_t)r2->rx_window);
 
 		if (!PAN_dump_struct(vsb, r2->rxbuf, H2_RXBUF_MAGIC, "rxbuf")) {
 			VSB_printf(vsb, "stvbuf = %p,\n", r2->rxbuf->stvbuf);

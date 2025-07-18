@@ -206,6 +206,24 @@ H2_ERROR(
 	/* reason */	SC_NULL,
 	/* descr */	"HTTP/2 header list exceeded http_req_size"
 )
+
+H2_ERROR(
+	/* name */	SEND_TIMEOUT,
+	/* val */	8, /* CANCEL */
+	/* types */	2,
+	/* goaway */	0,
+	/* reason */	SC_NULL,
+	/* descr */	"send timeout"
+)
+
+H2_ERROR(
+	/* name */	IO_ERROR,
+	/* val */	0,
+	/* types */	1,
+	/* goaway */	1,
+	/* reason */	SC_REM_CLOSE,
+	/* descr */	"socket error"
+)
 #  undef H2_CUSTOM_ERRORS
 #endif
 

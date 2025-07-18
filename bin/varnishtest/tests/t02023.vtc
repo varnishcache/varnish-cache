@@ -14,58 +14,43 @@ client c1 {
 	expect resp.status == 400
 } -run
 
-client c1 {
+client c2 {
 	txreq -req ""
 	rxresp
 	expect resp.status == 400
 } -run
 
-client c1 {
+client c3 {
 	txreq -proto ""
 	rxresp
 	expect resp.status == 400
 } -run
 
-client c1 {
+client c4 {
 	stream 1 {
 		txreq -url ""
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c5 {
 	stream 1 {
 		txreq -scheme ""
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c6 {
 	stream 1 {
 		txreq -req ""
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c7 {
 	stream 1 {
 		txreq -hdr "empty" ""
 		rxresp
@@ -80,118 +65,74 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-client c1 {
+client c8 {
 	stream 1 {
 		txreq -hdr "foo" " bar"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c9 {
 	stream 1 {
 		txreq -hdr "foo" " "
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c10 {
 	stream 1 {
 		txreq -hdr ":foo" "bar"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c11 {
 	stream 1 {
 		txreq -hdr "foo" "b\x0car"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c12 {
 	stream 1 {
 		txreq -hdr "f o" "bar"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c13 {
 	stream 1 {
 		txreq -hdr "f: o" "bar"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c14 {
 	stream 1 {
 		txreq -hdr "foo" "bar "
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c15 {
 	stream 1 {
 		txreq -hdr "foo" "	bar"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
-	stream 3 {
-		txreq
-		rxresp
-		expect resp.status == 200
-	} -run
 } -run
 
-client c1 {
+client c16 {
 	stream 1 {
 		txreq -hdr "foo" "bar	"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
-	} -run
-	stream 3 {
-		txreq
-		rxresp
 	} -run
 } -run

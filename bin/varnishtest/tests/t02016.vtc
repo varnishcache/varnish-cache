@@ -6,6 +6,8 @@ server s1 {
 } -start
 
 varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set timeout_idle 10"
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.url ~ "synth") {
@@ -23,12 +25,7 @@ logexpect l1 -v v1 {
 } -start
 
 client c1 {
-	txpri
-
 	stream 0 {
-		rxsettings
-		expect settings.ack == false
-		txsettings -ack
 		txsettings -winsize 1000
 		rxsettings
 		expect settings.ack == true
@@ -60,12 +57,7 @@ logexpect l2 -v v1 {
 } -start
 
 client c2 {
-	txpri
-
 	stream 0 {
-		rxsettings
-		expect settings.ack == false
-		txsettings -ack
 		txsettings -winsize 1000
 		rxsettings
 		expect settings.ack == true
@@ -101,12 +93,7 @@ logexpect l3 -v v1 {
 } -start
 
 client c3 {
-	txpri
-
 	stream 0 {
-		rxsettings
-		expect settings.ack == false
-		txsettings -ack
 		txsettings -winsize 1000
 		rxsettings
 		expect settings.ack == true
