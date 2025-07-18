@@ -11,8 +11,8 @@ varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
 
 
-barrier b1 cond 2
-barrier b2 cond 2
+barrier b1 cond 3
+barrier b2 cond 3
 
 client c1 {
 	stream 1 {
@@ -27,7 +27,16 @@ client c1 {
 		barrier b1 sync
 		txcont -hdr "bar" "foo"
 
-	} -run
+	} -start
+
+	barrier b2 sync
+	non_fatal
+	barrier b1 sync
+
+	stream 1 -wait
+	stream 3 -wait
+	fatal
+
 	stream 0 {
 		rxgoaway
 		expect goaway.laststream == "1"
