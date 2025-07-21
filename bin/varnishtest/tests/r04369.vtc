@@ -1,0 +1,34 @@
+varnishtest "ACL folding with negative matches"
+
+varnish v1 -vcl+backend {
+	import std;
+
+	backend dummy None;
+
+	acl acl1 +log +fold +pedantic {
+		! "10.0.0.0"/23;
+		"10.0.3.0"/24;
+		"10.0.2.0"/23;
+	}
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub t {
+		if (std.ip(req.http.ip) ~ acl1) { }
+	}
+	sub vcl_synth {
+		set req.http.ip = "10.0.2.42";	call t;
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1001	ReqHeader	{^\Qip: 10.0.2.42\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "10.0.2.0"/23\E$}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+logexpect l1 -wait

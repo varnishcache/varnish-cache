@@ -291,7 +291,7 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 		default:
 			INCOMPL();
 		}
-		if (*l == NULL || *r == NULL)
+		if (*l == NULL || *r == NULL || (*l)->not || (*r)->not)
 			break;
 		cmp = vcl_acl_cmp(*l, *r);
 	} while (cmp != ACL_LT);
