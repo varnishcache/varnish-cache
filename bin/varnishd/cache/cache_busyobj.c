@@ -187,7 +187,8 @@ VBO_SetState(struct worker *wrk, struct busyobj *bo, enum boc_state_e next)
 	case BOS_STREAM:
 		AN(bo->do_stream);
 		AZ(bo->req);
-		/* fall through */
+		broadcast = 1;
+		break;
 	case BOS_FINISHED:
 	case BOS_FAILED:
 		/* We can't assert that either state already released its
