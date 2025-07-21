@@ -9,6 +9,10 @@ varnish v1 -vcl+backend {
 		! "10.0.0.0"/23;
 		"10.0.3.0"/24;
 		"10.0.2.0"/23;
+
+		! "10.1.0.0"/23;
+		"10.1.3.0"/24;
+		"10.1.0.0"/22;
 	}
 	sub vcl_recv {
 		return (synth(200));
@@ -18,12 +22,15 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_synth {
 		set req.http.ip = "10.0.2.42";	call t;
+		set req.http.ip = "10.1.0.42";	call t;
 	}
 } -start
 
 logexpect l1 -v v1 -g raw {
 	expect * 1001	ReqHeader	{^\Qip: 10.0.2.42\E$}
 	expect 0 =	VCL_acl	{^\QMATCH acl1 "10.0.2.0"/23\E$}
+	expect 1 =	ReqHeader	{^\Qip: 10.1.0.42\E$}
+	expect 0 =	VCL_acl	{^\QNEG_MATCH acl1 "10.1.0.0"/23\E$}
 } -start
 
 client c1 {
