@@ -517,8 +517,9 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 				viov->lease = ptr2lease(hdl->st);
 			}
 #ifdef VAI_DBG
-			VSLb(wrk->vsl, SLT_Debug, "off %zu + l %zu == space st %p next st %p stvprv %p",
-			    hdl->st_off, l, hdl->st, next, hdl->boc->stevedore_priv);
+			if (wrk->vsl)
+				VSLb(wrk->vsl, SLT_Debug, "off %zu + l %zu == space st %p next st %p stvprv %p",
+				    hdl->st_off, l, hdl->st, next, hdl->boc->stevedore_priv);
 #endif
 			hdl->st_off = 0;
 			hdl->st = next;
@@ -605,7 +606,8 @@ sml_ai_return(struct worker *wrk, vai_hdl vhdl, struct vscaret *scaret)
 	VSCARET_FOREACH(p, todo) {
 		CAST_OBJ_NOTNULL(st, lease2ptr(*p), STORAGE_MAGIC);
 #ifdef VAI_DBG
-		VSLb(wrk->vsl, SLT_Debug, "ret %p", st);
+		if (wrk->vsl != NULL)
+			VSLb(wrk->vsl, SLT_Debug, "ret %p", st);
 #endif
 		sml_stv_free(hdl->stv, st);
 	}
@@ -794,8 +796,9 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			VSCARET_ADD(scaret, vio->lease);
 
 #ifdef VAI_DBG
-			VSLb(wrk->vsl, SLT_Debug, "len %zu scaret %u uu %u",
-			    vio->iov.iov_len, scaret->used, uu);
+			if (wrk->vsl)
+				VSLb(wrk->vsl, SLT_Debug, "len %zu scaret %u uu %u",
+				    vio->iov.iov_len, scaret->used, uu);
 #endif
 
 			// whenever we have flushed, return leases
@@ -814,8 +817,9 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		VSCARAB_INIT(scarab, scarab->capacity);
 
 #ifdef VAI_DBG
-		VSLb(wrk->vsl, SLT_Debug, "r %d nn %d uu %u",
-		    r, nn, uu);
+		if (wrk->vsl)
+			VSLb(wrk->vsl, SLT_Debug, "r %d nn %d uu %u",
+			    r, nn, uu);
 #endif
 
 		// flush before blocking if we did not already
