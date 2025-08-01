@@ -38,6 +38,10 @@
 	    "Instead of presenting a continuously updated display,"	\
 	    " print the statistics to stdout."				\
 	)
+#define STAT_OPT_c							\
+	VOPT("c", "[-c]", "Live (curses) mode",				\
+	    "Presents a continuously updated, interactive display."	\
+	)
 #define STAT_OPT_j							\
 	VOPT("j", "[-j]", "Print statistics to stdout as JSON",		\
 	    "Print statistics to stdout as JSON."			\
@@ -57,6 +61,7 @@
 	)
 
 STAT_OPT_1
+STAT_OPT_c
 VSC_OPT_f
 VUT_OPT_h
 VSC_OPT_I
