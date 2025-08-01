@@ -296,6 +296,9 @@ main(int argc, char * const *argv)
 		case '1':
 			once = 1;
 			break;
+		case 'c':
+			curses = 1;
+			break;
 		case 'h':
 			/* Usage help */
 			usage(0);
@@ -333,8 +336,10 @@ main(int argc, char * const *argv)
 	if (optind != argc)
 		usage(1);
 
-	if (!(xml || json || once || f_list))
-		curses = 1;
+	if (!(curses || xml || json || once || f_list)) {
+		curses = isatty(STDOUT_FILENO);
+		once = !curses;
+	}
 
 	if (VSM_Attach(vd, STDERR_FILENO))
 		VUT_Error(vut, 1, "%s", VSM_Error(vd));

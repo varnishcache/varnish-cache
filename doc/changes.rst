@@ -89,6 +89,10 @@ Varnish Cache NEXT (8.0, 2025-09-15)
   Developers should use ``make update`` to update the referenced vtest2 commit
   after changes to vtest2.
 
+* ``varnishstat`` will automatically switch to ``-1`` output if ``stdout``
+  isn't a terminal (allowing ``varnishstat | grep MAIN``). A new ``-c`` switch
+  has been added to force the live mode.
+
 ==============================
 Varnish-Cache 7.7 (2025-03-17)
 ==============================
