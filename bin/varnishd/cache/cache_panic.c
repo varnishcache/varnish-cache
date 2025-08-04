@@ -218,9 +218,13 @@ pan_boc(struct vsb *vsb, const struct boc *boc)
 	if (PAN_dump_struct(vsb, boc, BOC_MAGIC, "boc"))
 		return;
 	VSB_printf(vsb, "refcnt = %u,\n", boc->refcount);
+	VSB_printf(vsb, "stevedore_priv = %p,\n", boc->stevedore_priv);
 	VSB_printf(vsb, "state = %s,\n", boc_state_2str(boc->state));
 	VSB_printf(vsb, "vary = %p,\n", boc->vary);
-	VSB_printf(vsb, "stevedore_priv = %p,\n", boc->stevedore_priv);
+	VSB_printf(vsb, "fetched_so_far = %ju,\n", (uintmax_t)boc->fetched_so_far);
+	VSB_printf(vsb, "delivered_so_far = %ju,\n", (uintmax_t)boc->delivered_so_far);
+	VSB_printf(vsb, "transit_buffer = %ju,\n", (uintmax_t)boc->transit_buffer);
+	VSB_printf(vsb, "VSLIST_FIRST(vai_q_head) = %p,\n", VSLIST_FIRST(&boc->vai_q_head));
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }
