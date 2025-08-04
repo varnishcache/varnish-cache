@@ -19,7 +19,7 @@ shell {
 	backend be none;
 
 	sub vcl_recv {
-		set req.http.vrt_blob = vtc.typesize("uzp");
+		set req.http.vrt_blob = vtc.typesize("uuzp");
 	}
 
 	sub shrink {
