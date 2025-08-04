@@ -456,10 +456,13 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 
 	CAST_VAI_HDL_NOTNULL(hdl, vhdl, SML_HDL_MAGIC);
 	VSCARAB_CHECK_NOTNULL(scarab);
+	assert(hdl->boc == hdl->oc->boc);
+	assert(hdl->oc->stobj->priv == hdl->obj);
 
 	if (hdl->avail == hdl->returned) {
 		hdl->avail = ObjVAIGetExtend(wrk, hdl->oc, hdl->returned,
 		    &state, &hdl->qe);
+		assert(state >= BOS_STREAM);
 		if (state == BOS_FAILED) {
 			hdl->last = NULL;
 			return (-EPIPE);
@@ -497,6 +500,7 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 
 	while (hdl->avail > hdl->returned && (viov = VSCARAB_GET(scarab)) != NULL) {
 		CHECK_OBJ_NOTNULL(hdl->st, STORAGE_MAGIC); // ObjVAIGetExtend ensures
+		assert(hdl->boc == hdl->oc->boc);
 		assert(hdl->st_off <= hdl->st->space);
 		size_t av = hdl->avail - hdl->returned;
 		size_t l = hdl->st->space - hdl->st_off;
