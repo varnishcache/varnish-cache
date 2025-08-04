@@ -944,6 +944,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Error", now);
 
 	if (oc->stobj->stevedore != NULL) {
+		// replacing an already fetched object with a "synth" one
+		assert(oc->boc->state < BOS_STREAM);
 		oc->boc->fetched_so_far = 0;
 		ObjFreeObj(bo->wrk, oc);
 	}
