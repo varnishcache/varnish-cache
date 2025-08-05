@@ -487,6 +487,7 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 		viov->iov.iov_base = null_iov;
 		viov->iov.iov_len = 0;
 		viov->lease = ptr2lease(hdl->last);
+		r++;
 	}
 	if (hdl->last != NULL)
 		hdl->last = NULL;
