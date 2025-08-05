@@ -35,6 +35,15 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish-Cache 7.6.4 (2025-08-05)
+================================
+
+.. _VSV00017: https://varnish-cache.org/security/VSV00017.html
+
+* Check and carge the rapid reset budget whenever we reset an HTTP/2
+  stream. (VSV00017_)
+
+================================
 Varnish-Cache 7.6.3 (2025-05-12)
 ================================
 
