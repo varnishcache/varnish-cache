@@ -666,8 +666,6 @@ sml_ai_init(struct worker *wrk, struct objcore *oc, struct ws *ws,
 	hdl->stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(hdl->stv, STEVEDORE_MAGIC);
 
-	hdl->st = VTAILQ_LAST(&hdl->obj->list, storagehead);
-	CHECK_OBJ_ORNULL(hdl->st, STORAGE_MAGIC);
 
 	hdl->qe.magic = VAI_Q_MAGIC;
 	hdl->qe.cb = notify;
@@ -675,8 +673,11 @@ sml_ai_init(struct worker *wrk, struct objcore *oc, struct ws *ws,
 	hdl->qe.priv = notify_priv;
 
 	hdl->boc = HSH_RefBoc(oc);
-	if (hdl->boc == NULL)
+	if (hdl->boc == NULL) {
+		hdl->st = VTAILQ_LAST(&hdl->obj->list, storagehead);
+		CHECK_OBJ_ORNULL(hdl->st, STORAGE_MAGIC);
 		return (hdl);
+	}
 	/* we only initialize notifications if we have a boc, so
 	 * any wrong attempt triggers magic checks.
 	 */
