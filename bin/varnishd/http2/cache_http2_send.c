@@ -32,128 +32,52 @@
 #include "config.h"
 
 #include <sys/uio.h>
+#include <stdio.h>
+#include <poll.h>
 
 #include "cache/cache_varnishd.h"
-
 #include "cache/cache_transport.h"
 #include "http2/cache_http2.h"
 
 #include "vend.h"
 #include "vtim.h"
 
-#define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
-
-static h2_error
-h2_errcheck(const struct h2_req *r2, const struct h2_sess *h2)
-{
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-
-	if (r2->error != NULL)
-		return (r2->error);
-	if (h2->error != NULL && r2->stream > h2->goaway_last_stream)
-		return (h2->error);
-	return (NULL);
-}
-
-static int
-h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
-{
-	vtim_dur tmo = 0.;
-	vtim_real now;
-	h2_error h2e;
-	int r;
-
-	AN(cond);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-
-	Lck_AssertHeld(&h2->sess->mtx);
-
-	if (cache_param->h2_window_timeout > 0.)
-		tmo = cache_param->h2_window_timeout;
-
-	r = Lck_CondWaitTimeout(cond, &h2->sess->mtx, tmo);
-	assert(r == 0 || r == ETIMEDOUT);
-
-	now = VTIM_real();
-
-	/* NB: when we grab h2_window_timeout before acquiring the session
-	 * lock we may time out, but once we wake up both send_timeout and
-	 * h2_window_timeout may have changed meanwhile. For this reason
-	 * h2_stream_tmo() may not log what timed out and we need to call
-	 * again with a magic NAN "now" that indicates to h2_stream_tmo()
-	 * that the stream reached the h2_window_timeout via the lock and
-	 * force it to log it.
-	 */
-	h2e = h2_stream_tmo(h2, r2, now);
-	if (h2e == NULL && r == ETIMEDOUT) {
-		h2e = h2_stream_tmo(h2, r2, NAN);
-		AN(h2e);
-	}
-
-	if (r2->error == NULL)
-		r2->error = h2e;
-
-	return (h2e != NULL ? -1 : 0);
-}
-
 static void
-h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_send_vsl(struct vsl_log *vsl, const void *ptr, size_t len)
 {
+	const uint8_t *b;
+	struct vsb *vsb;
+	const char *p;
+	unsigned u;
 
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	if (VSL_tag_is_masked(SLT_H2TxHdr) &&
+	    VSL_tag_is_masked(SLT_H2TxBody))
+		return;
 
-	Lck_AssertHeld(&h2->sess->mtx);
-	if (&wrk->cond == h2->cond)
-		ASSERT_RXTHR(h2);
-	r2->wrk = wrk;
-	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
-	while (!H2_SEND_HELD(h2, r2))
-		AZ(Lck_CondWait(&wrk->cond, &h2->sess->mtx));
-	r2->wrk = NULL;
-}
+	AN(ptr);
+	assert(len >= 9);
+	b = ptr;
 
-void
-H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
-{
+	vsb = VSB_new_auto();
+	AN(vsb);
+	p = h2_framename(b[3]);
+	if (p != NULL)
+		VSB_cat(vsb, p);
+	else
+		VSB_quote(vsb, b + 3, 1, VSB_QUOTE_HEX);
 
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	u = vbe32dec(b) >> 8;
+	VSB_printf(vsb, "[%u] ", u);
+	VSB_quote(vsb, b + 4, 1, VSB_QUOTE_HEX);
+	VSB_putc(vsb, ' ');
+	VSB_quote(vsb, b + 5, 4, VSB_QUOTE_HEX);
+	AZ(VSB_finish(vsb));
+	VSLb_bin(vsl, SLT_H2TxHdr, 9, b);
+	if (len > 9)
+		VSLb_bin(vsl, SLT_H2TxBody, len - 9, b + 9);
 
-	Lck_Lock(&h2->sess->mtx);
-	h2_send_get_locked(wrk, h2, r2);
-	Lck_Unlock(&h2->sess->mtx);
-}
-
-static void
-h2_send_rel_locked(struct h2_sess *h2, const struct h2_req *r2)
-{
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-
-	Lck_AssertHeld(&h2->sess->mtx);
-	AN(H2_SEND_HELD(h2, r2));
-	VTAILQ_REMOVE(&h2->txqueue, r2, tx_list);
-	r2 = VTAILQ_FIRST(&h2->txqueue);
-	if (r2 != NULL) {
-		CHECK_OBJ_NOTNULL(r2->wrk, WORKER_MAGIC);
-		PTOK(pthread_cond_signal(&r2->wrk->cond));
-	}
-}
-
-void
-H2_Send_Rel(struct h2_sess *h2, const struct h2_req *r2)
-{
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-
-	Lck_Lock(&h2->sess->mtx);
-	h2_send_rel_locked(h2, r2);
-	Lck_Unlock(&h2->sess->mtx);
+	VSLb(vsl, SLT_Debug, "H2TXF %s", VSB_data(vsb));
+	VSB_destroy(&vsb);
 }
 
 static void
@@ -162,6 +86,11 @@ h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
 {
 
 	AN(hdr);
+	AZ(flags & ~(ftyp->flags));
+	if (stream == 0)
+		AZ(ftyp->act_szero);
+	else
+		AZ(ftyp->act_snonzero);
 	assert(len < (1U << 24));
 	vbe32enc(hdr, len << 8);
 	hdr[3] = ftyp->type;
@@ -169,277 +98,527 @@ h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
 	vbe32enc(hdr + 5, stream);
 }
 
-/*
- * This is the "raw" frame sender, all per-stream accounting and
- * prioritization must have happened before this is called, and
- * the session mtx must be held.
- */
-
-void
-H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
-    h2_frame ftyp, uint8_t flags,
-    uint32_t len, uint32_t stream, const void *ptr)
+static int64_t
+h2_win_limit(const struct h2_req *r2)
 {
-	uint8_t hdr[9];
-	ssize_t s;
-	struct iovec iov[2];
 
-	(void)wrk;
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->h2sess, H2_SESS_MAGIC);
 
+	return (vmin_t(int64_t, r2->tx_window, r2->h2sess->tx_window));
+}
+
+static void
+h2_win_charge(struct h2_req *r2, uint32_t w)
+{
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->h2sess, H2_SESS_MAGIC);
+
+	r2->tx_window -= w;
+	r2->h2sess->tx_window -= w;
+}
+
+static int
+h2_send_small(struct h2_sess *h2, h2_frame ftyp, uint8_t flags,
+    uint32_t stream, uint32_t len, const void *ptr)
+{
+
+	ASSERT_H2_SESS(h2);
 	AN(ftyp);
 	AZ(flags & ~(ftyp->flags));
 	if (stream == 0)
 		AZ(ftyp->act_szero);
 	else
 		AZ(ftyp->act_snonzero);
+	assert(len + 9 <= pdiff(h2->tx_s_start, h2->tx_s_end));
+	if (len > 0)
+		AN(ptr);
 
-	h2_mk_hdr(hdr, ftyp, flags, len, stream);
-	Lck_Lock(&h2->sess->mtx);
-	VSLb_bin(h2->vsl, SLT_H2TxHdr, 9, hdr);
+	while (len + 9 > pdiff(h2->tx_s_head, h2->tx_s_end)) {
+		/* Send something (up until h2->deadline) to free up space. */
+		if (H2_Send_Something(h2) < 0)
+			return (-1);
+	}
+
+	h2_mk_hdr(h2->tx_s_head, ftyp, flags, len, stream);
+	h2->tx_s_head += 9;
+	if (len > 0) {
+		memcpy(h2->tx_s_head, ptr, len);
+		h2->tx_s_head += len;
+	}
+	assert(h2->tx_s_head <= h2->tx_s_end);
+	h2_send_vsl(h2->vsl, h2->tx_s_head - (9 + len), 9 + len);
+
 	h2->srq->acct.resp_hdrbytes += 9;
 	if (ftyp->overhead)
 		h2->srq->acct.resp_bodybytes += len;
-	Lck_Unlock(&h2->sess->mtx);
 
-	memset(iov, 0, sizeof iov);
-	iov[0].iov_base = (void*)hdr;
-	iov[0].iov_len = sizeof hdr;
-	iov[1].iov_base = TRUST_ME(ptr);
-	iov[1].iov_len = len;
-	s = writev(h2->sess->fd, iov, len == 0 ? 1 : 2);
-	if (s != sizeof hdr + len) {
-		if (errno == EWOULDBLOCK) {
-			H2S_Lock_VSLb(h2, SLT_SessError,
-			     "H2: stream %u: Hit idle_send_timeout", stream);
-		}
-		else {
-			H2S_Lock_VSLb(h2, SLT_Debug,
-			    "H2: stream %u: write error s=%zd/%zu errno=%d",
-			    stream, s, sizeof hdr + len, errno);
-		}
-		/*
-		 * There is no point in being nice here, we will be unable
-		 * to send a GOAWAY once the code unrolls, so go directly
-		 * to the finale and be done with it.
-		 */
-		h2->error = H2CE_PROTOCOL_ERROR;
-	} else if (len > 0) {
-		Lck_Lock(&h2->sess->mtx);
-		VSLb_bin(h2->vsl, SLT_H2TxBody, len, ptr);
-		Lck_Unlock(&h2->sess->mtx);
-	}
+	return (0);
 }
 
-static int64_t
-h2_win_limit(const struct h2_req *r2, const struct h2_sess *h2)
+int
+H2_Send_RST(struct h2_sess *h2, uint32_t stream, h2_error h2e)
 {
+	uint8_t buf[4];
 
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->req0, H2_REQ_MAGIC);
-
-	Lck_AssertHeld(&h2->sess->mtx);
-	return (vmin_t(int64_t, r2->t_window, h2->req0->t_window));
+	vbe32enc(buf, h2e->val);
+	return (h2_send_small(h2, H2_F_RST_STREAM, 0, stream,
+		sizeof buf, buf));
 }
 
-static void
-h2_win_charge(struct h2_req *r2, const struct h2_sess *h2, uint32_t w)
+int
+H2_Send_SETTINGS(struct h2_sess *h2, uint8_t flags, ssize_t len,
+    const uint8_t *buf)
 {
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(h2->req0, H2_REQ_MAGIC);
-
-	Lck_AssertHeld(&h2->sess->mtx);
-	r2->t_window -= w;
-	h2->req0->t_window -= w;
+	if (flags & H2FF_ACK)
+		assert(len == 0);
+	return (h2_send_small(h2, H2_F_SETTINGS, flags, 0, len, buf));
 }
 
-static int64_t
-h2_do_window(struct worker *wrk, struct h2_req *r2,
-    struct h2_sess *h2, int64_t wanted)
+int
+H2_Send_PING(struct h2_sess *h2, uint8_t flags, uint64_t data)
 {
-	int64_t w = 0;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-
-	if (wanted == 0)
-		return (0);
-
-	Lck_Lock(&h2->sess->mtx);
-	if (r2->t_window <= 0 || h2->req0->t_window <= 0) {
-		r2->t_winupd = VTIM_real();
-		h2_send_rel_locked(h2, r2);
-
-		assert(h2->winup_streams >= 0);
-		h2->winup_streams++;
-
-		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == NULL) {
-			r2->cond = &wrk->cond;
-			(void)h2_cond_wait(r2->cond, h2, r2);
-			r2->cond = NULL;
-		}
-
-		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == NULL)
-			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
-
-		if (h2_errcheck(r2, h2) == NULL) {
-			w = vmin_t(int64_t, h2_win_limit(r2, h2), wanted);
-			h2_win_charge(r2, h2, w);
-			assert (w > 0);
-		}
-
-		if (r2->error == H2SE_BROKE_WINDOW &&
-		    h2->open_streams <= h2->winup_streams) {
-			VSLb(h2->vsl, SLT_SessError, "H2: window bankrupt");
-			h2->error = r2->error = H2CE_BANKRUPT;
-		    }
-
-		assert(h2->winup_streams > 0);
-		h2->winup_streams--;
-
-		h2_send_get_locked(wrk, h2, r2);
-	}
-
-	if (w == 0 && h2_errcheck(r2, h2) == NULL) {
-		assert(r2->t_window > 0);
-		assert(h2->req0->t_window > 0);
-		w = h2_win_limit(r2, h2);
-		if (w > wanted)
-			w = wanted;
-		h2_win_charge(r2, h2, w);
-		assert (w > 0);
-	}
-	r2->t_winupd = 0;
-	Lck_Unlock(&h2->sess->mtx);
-	return (w);
+	return (h2_send_small(h2, H2_F_PING, flags, 0, sizeof data, &data));
 }
 
-/*
- * This is the per-stream frame sender.
- * XXX: priority
- */
+int
+H2_Send_GOAWAY(struct h2_sess *h2, uint32_t last_stream_id, h2_error h2e)
+{
+	uint8_t buf[8];
 
-static void
-h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
-    uint32_t len, const void *ptr, uint64_t *counter)
+	vbe32enc(&buf[0], last_stream_id);
+	vbe32enc(&buf[4], h2e->val);
+	return (h2_send_small(h2, H2_F_GOAWAY, 0, 0, sizeof buf, buf));
+}
+
+int
+H2_Send_WINDOW_UPDATE(struct h2_sess *h2, uint32_t stream, uint32_t incr)
+{
+	uint8_t buf[4];
+
+	vbe32enc(&buf[0], incr);
+	return (h2_send_small(h2, H2_F_WINDOW_UPDATE, 0, stream,
+		sizeof buf, buf));
+}
+
+struct h2_send_large {
+	unsigned			magic;
+#define H2_SEND_LARGE_MAGIC		0x478020e3
+
+	char				last;
+	char				started;
+	char				returned;
+
+	uint8_t				flags;
+	h2_frame			ftyp;
+
+	VTAILQ_ENTRY(h2_send_large)	list;
+
+	pthread_cond_t			cond;
+
+	struct h2_req			*r2;
+
+	const void			*ptr;
+	uint32_t			len;
+	uint32_t			count;
+};
+
+int
+H2_Send(struct vsl_log *vsl, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
+    uint32_t len, const void *ptr)
 {
 	struct h2_sess *h2;
-	uint32_t mfs, tf;
-	const char *p;
-	uint8_t final_flags;
+	struct h2_send_large large;
+	h2_error h2e;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	assert(len == 0 || ptr != NULL);
-	AN(counter);
 
-	AN(H2_SEND_HELD(h2, r2));
+	ASSERT_H2_REQ(h2);
 
-	if (h2_errcheck(r2, h2) != NULL)
-		return;
-
-	AN(ftyp);
+	assert(ftyp == H2_F_HEADERS || ftyp == H2_F_DATA);
 	AZ(flags & ~(ftyp->flags));
-	if (r2->stream == 0)
-		AZ(ftyp->act_szero);
-	else
-		AZ(ftyp->act_snonzero);
+
+	h2e = h2_errcheck(r2);
+	if (h2e != NULL) {
+		VSLb(vsl, SLT_Error, "H2: send error (%s)", h2e->name);
+		return (-1);
+	}
+
+	assert(r2->state > H2_S_IDLE);
+	if (r2->state >= H2_S_CLOSED) {
+		VSLb(vsl, SLT_Error, "H2: send on closed stream");
+		return (-1);
+	}
+
+	INIT_OBJ(&large, H2_SEND_LARGE_MAGIC);
+	PTOK(pthread_cond_init(&large.cond, NULL));
+
+	large.ftyp = ftyp;
+	large.flags = flags;
+	large.r2 = r2;
+	large.ptr = ptr;
+	large.len = len;
 
 	Lck_Lock(&h2->sess->mtx);
-	mfs = h2->remote_settings.max_frame_size;
-	if (r2->counted && (
-	    (ftyp == H2_F_HEADERS && (flags & H2FF_HEADERS_END_STREAM)) ||
-	    (ftyp == H2_F_DATA && (flags & H2FF_DATA_END_STREAM)) ||
-	    ftyp == H2_F_RST_STREAM
-	    )) {
-		assert(h2->open_streams > 0);
-		h2->open_streams--;
-		r2->counted = 0;
+
+	if (!h2->tx_stopped) {
+		VTAILQ_INSERT_TAIL(&h2->tx_l_queue, &large, list);
+		h2->tx_l_stuck = 0;
+		h2_attention(h2);
+
+		AZ(Lck_CondWait(&large.cond, &h2->sess->mtx));
+		AN(large.returned);	/* Sanity check */
+		/* Note: We will have been removed from the `h2->tx_l_queue`
+		 * list by the signaller. */
 	}
+
+	h2e = h2_errcheck(r2);
+
 	Lck_Unlock(&h2->sess->mtx);
 
-	if (ftyp->respect_window) {
-		tf = h2_do_window(wrk, r2, h2, (len > mfs) ? mfs : len);
-		if (h2_errcheck(r2, h2) != NULL)
-			return;
-		AN(H2_SEND_HELD(h2, r2));
-	} else
-		tf = mfs;
+	PTOK(pthread_cond_destroy(&large.cond));
+	large.magic = 0;
 
-	if (len <= tf) {
-		H2_Send_Frame(wrk, h2, ftyp, flags, len, r2->stream, ptr);
-		*counter += len;
-	} else {
-		AN(ptr);
-		p = ptr;
-		final_flags = ftyp->final_flags & flags;
-		flags &= ~ftyp->final_flags;
-		do {
-			AN(ftyp->continuation);
-			if (!ftyp->respect_window)
-				tf = mfs;
-			if (ftyp->respect_window && p != ptr) {
-				tf = h2_do_window(wrk, r2, h2,
-				    (len > mfs) ? mfs : len);
-				if (h2_errcheck(r2, h2) != NULL)
-					return;
-				AN(H2_SEND_HELD(h2, r2));
-			}
-			if (tf < len) {
-				H2_Send_Frame(wrk, h2, ftyp,
-				    flags, tf, r2->stream, p);
-			} else {
-				if (ftyp->respect_window)
-					assert(tf == len);
-				tf = len;
-				H2_Send_Frame(wrk, h2, ftyp, final_flags, tf,
-				    r2->stream, p);
-				flags = 0;
-			}
-			p += tf;
-			len -= tf;
-			*counter += tf;
-			ftyp = ftyp->continuation;
-			flags &= ftyp->flags;
-			final_flags &= ftyp->flags;
-		} while (h2->error == NULL && len > 0);
+	if (h2e != NULL) {
+		VSLb(vsl, SLT_Error, "H2: send error (%s)", h2e->name);
+		return (-1);
 	}
+
+	return (0);
 }
 
-void
-H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
-    uint32_t stream, h2_error h2e)
+static void
+h2_send_prep_large(struct h2_sess *h2, struct h2_send_large *large)
 {
-	char b[4];
+	struct h2_req *r2;
+	uint8_t flags;
+	ssize_t l, limit;
+	h2_frame ftyp;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	AZ(h2->tx_l_current);
+
+	CHECK_OBJ_NOTNULL(large, H2_SEND_LARGE_MAGIC);
+	AN(large->ftyp);
+	r2 = large->r2;
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	AN(H2_SEND_HELD(h2, r2));
-	AN(h2e);
 
-	H2S_Lock_VSLb(h2, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
-	vbe32enc(b, h2e->val);
+	assert(large->ftyp == H2_F_DATA || large->ftyp == H2_F_HEADERS ||
+	    large->ftyp == H2_F_PUSH_PROMISE);
+	AN(large->ftyp->continuation);
 
-	H2_Send_Frame(wrk, h2, H2_F_RST_STREAM, 0, sizeof b, stream, b);
+	l = large->len - large->count;
+	if (l > h2->remote_settings.max_frame_size)
+		l = h2->remote_settings.max_frame_size;
+
+	if (large->ftyp->respect_window) {
+		limit = h2_win_limit(r2);
+		assert(limit > 0);
+		if (l > limit)
+			l = limit;
+		h2_win_charge(r2, l);
+		if (r2->t_win_low == 0. && r2->tx_window == 0) {
+			/* The send window is low. Set a timestamp to
+			 * record when this happened, so that we can
+			 * become emo if the window isn't extended
+			 * promptly. */
+			/* XXX: This mechanism would be more effective if
+			 * we had some threshold (10% of initial window
+			 * size or something. */
+			r2->t_win_low = VTIM_real();
+			h2->win_low_streams++;
+		}
+	}
+	assert(large->count + l <= large->len);
+
+	ftyp = large->ftyp;
+	flags = large->flags;
+	AZ(flags & ~(ftyp->flags));
+
+	if (large->count > 0) {
+		/* This is a continuation. Switch frame type and mask out
+		 * the flags not defined on its continuation type. */
+		ftyp = ftyp->continuation;
+		AN(ftyp);
+		flags &= ftyp->flags;
+	}
+
+	if (large->count + l < large->len) {
+		/* We are breaking it up into smaller frames. Clear the
+		 * last marker from the flags if present. */
+		flags &= ~(ftyp->final_flags);
+	}
+
+	h2_mk_hdr(h2->tx_l_hdrbuf, ftyp, flags, l, r2->stream);
+	h2_send_vsl(h2->vsl, h2->tx_l_hdrbuf, 9);
+	h2->tx_vec[0].iov_base = h2->tx_l_hdrbuf;
+	h2->tx_vec[0].iov_len = 9;
+	if (l == 0) {
+		/* Zero payload frame is valid. Will be used on
+		 * "chunked encoding" and the end of stream is
+		 * found. */
+		h2->tx_nvec = 1;
+	} else {
+		h2->tx_vec[1].iov_base =
+		    TRUST_ME((uintptr_t)large->ptr + large->count);
+		h2->tx_vec[1].iov_len = l;
+		h2->tx_nvec = 2;
+		large->count += l;
+	}
+	h2->tx_l_current = large;
+
+	/* Charge the session accounting for the protocol bytes */
+	h2->srq->acct.resp_hdrbytes += 9;
+	if (ftyp->overhead)
+		h2->srq->acct.resp_bodybytes += l;
+
+	/* Charge the request accounting for HEADERS and DATA frames */
+	if (large->ftyp == H2_F_HEADERS)
+		r2->req->acct.resp_hdrbytes += l;
+	else if (large->ftyp == H2_F_DATA)
+		r2->req->acct.resp_bodybytes += l;
+}
+
+ssize_t
+H2_Send_TxStuff(struct h2_sess *h2)
+{
+	struct h2_send_large *large;
+	ssize_t l, ltot = 0;
+	int err = 0;
+
+	ASSERT_H2_SESS(h2);
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	AZ(h2->tx_stopped);
+
+	if (h2->tx_nvec == 0 && h2->tx_s_head != h2->tx_s_start) {
+		/* Prioritise sending the small frames */
+		assert(h2->tx_s_start < h2->tx_s_head);
+		assert(h2->tx_s_head <= h2->tx_s_end);
+		assert(h2->tx_s_mark == h2->tx_s_start);
+		h2->tx_vec[0].iov_base = h2->tx_s_start;
+		h2->tx_vec[0].iov_len = h2->tx_s_head - h2->tx_s_start;
+		h2->tx_nvec = 1;
+		h2->tx_s_mark = h2->tx_s_head;
+	} else if (h2->tx_nvec == 0) {
+		/* Construct a large frame from the queue (if possible
+		 * considering the current windows). If we ever implement
+		 * priorities, this would be the place to take them into
+		 * account. */
+		Lck_Lock(&h2->sess->mtx);
+
+		VTAILQ_FOREACH(large, &h2->tx_l_queue, list) {
+			CHECK_OBJ_NOTNULL(large, H2_SEND_LARGE_MAGIC);
+			CHECK_OBJ_NOTNULL(large->r2, H2_REQ_MAGIC);
+			assert(large->count <= large->len);
+			AN(large->ftyp);
+
+			if (h2_errcheck(large->r2) != NULL) {
+				VTAILQ_REMOVE(&h2->tx_l_queue, large, list);
+				large->returned = 1;
+				PTOK(pthread_cond_signal(&large->cond));
+				continue;
+			}
+
+			if (!large->ftyp->respect_window)
+				break;
+
+			if (h2->tx_window <= 0) {
+				/* If the session window is empty, none of
+				 * the respect_window frame types can be
+				 * selected. */
+				continue;
+			}
+
+			if (large->r2->tx_window > 0)
+				break;
+		}
+
+		if (large == NULL) {
+			/* Tx is unable to make progress until there has
+			 * been a window update. */
+			h2->tx_l_stuck = 1;
+		} else {
+			h2->tx_l_stuck = 0;
+		}
+
+		Lck_Unlock(&h2->sess->mtx);
+
+		if (large == NULL)
+			return (0);
+
+		h2_send_prep_large(h2, large);
+	}
+
+	assert(h2->tx_nvec > 0);
+	while (h2->tx_nvec > 0) {
+		l = writev(h2->sess->fd, h2->tx_vec, h2->tx_nvec);
+		if (l < 0) {
+			/* Save the value of errno. This is strictly not
+			 * necessary as none of the calls between here and
+			 * the return should update errno, but done for
+			 * future proofing. */
+			err = errno;
+			break;
+		}
+
+		assert(l > 0);
+		VIOV_prune(h2->tx_vec, &h2->tx_nvec, l);
+		ltot += l;
+	}
+
+	if (h2->tx_nvec == 0 && h2->tx_l_current != NULL) {
+		/* We have just finished sending a large frame. */
+		assert(h2->tx_s_mark == h2->tx_s_start);
+
+		TAKE_OBJ_NOTNULL(large, &h2->tx_l_current, H2_SEND_LARGE_MAGIC);
+		AZ(h2->tx_l_current);
+
+		AN(large->ftyp);
+
+		assert(large->count <= large->len);
+		if (large->count == large->len) {
+			if (large->flags & H2FF_END_STREAM)
+				h2_stream_setstate(large->r2, H2_S_CLOSED);
+
+			/* Signal that we are finished */
+			Lck_Lock(&h2->sess->mtx);
+			VTAILQ_REMOVE(&h2->tx_l_queue, large, list);
+			PTOK(pthread_cond_signal(&large->cond));
+			large->returned = 1;
+			Lck_Unlock(&h2->sess->mtx);
+		} else if (large->ftyp == H2_F_HEADERS ||
+		    large->ftyp == H2_F_PUSH_PROMISE) {
+			/* A CONTINUATION frame must come immediately
+			 * after the previous
+			 * HEADER|PUSH_PROMISE|CONTINUATION frame. Prepare
+			 * the `large` again, which will force that to be
+			 * the next output. */
+			h2_send_prep_large(h2, large);
+			assert(large == h2->tx_l_current);
+			assert(h2->tx_nvec > 0);
+		}
+	} else if (h2->tx_nvec == 0) {
+		/* We have just finished sending the small buffer */
+		assert(h2->tx_s_start < h2->tx_s_mark);
+		assert(h2->tx_s_mark <= h2->tx_s_head);
+		assert(h2->tx_s_head <= h2->tx_s_end);
+		memmove(h2->tx_s_start, h2->tx_s_mark,
+		    h2->tx_s_head - h2->tx_s_mark);
+		h2->tx_s_head -= h2->tx_s_mark - h2->tx_s_start;
+		h2->tx_s_mark = h2->tx_s_start;
+	}
+
+	if (ltot > 0)
+		return (ltot);
+
+	errno = err;
+	return (-1);
+}
+
+int
+H2_Send_Something(struct h2_sess *h2)
+{
+	ssize_t l;
+	vtim_real now;
+	struct pollfd pfd[1];
+
+	/* Block up until h2->deadline and then send something. */
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	ASSERT_H2_SESS(h2);
+	AZ(h2->tx_stopped);
+
+	assert(h2->sess->fd >= 0);
+	pfd->fd = h2->sess->fd;
+	pfd->events = POLLOUT;
+
+	do {
+		now = VTIM_real();
+		if (now > h2->deadline)
+			goto error;
+		l = poll(pfd, 1, VTIM_poll_tmo(h2->deadline - now));
+	} while (l < 0 && errno == EINTR);
+
+	if (l == 0 || !(pfd->revents & POLLOUT))
+		goto error;
+
+	l = H2_Send_TxStuff(h2);
+	if (l < 0 && errno != EWOULDBLOCK)
+		goto error;
+
+	return (0);
+
+error:
+	/* Failure to send on the socket (IO error or timeout). */
+	if (h2->error == NULL)
+		h2->error = H2CE_IO_ERROR;
+	return (-1);
+}
+
+int
+H2_Send_Pending(struct h2_sess *h2)
+{
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	ASSERT_H2_SESS(h2);
+
+	if (h2->tx_nvec > 0)
+		return (1);
+	if (h2->tx_s_head != h2->tx_s_start)
+		return (1);
+	if (!VTAILQ_EMPTY(&h2->tx_l_queue) && !h2->tx_l_stuck)
+		return (1);
+	return (0);
+}
+
+static void
+h2_send_close(struct h2_sess *h2, unsigned stop)
+{
+	struct h2_send_large *large, *large2;
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	ASSERT_H2_SESS(h2);
+
+	Lck_Lock(&h2->sess->mtx);
+
+	/* A session error state should have been set prior to calling
+	 * this function. */
+	AN(h2->error);
+	AZ(h2->tx_stopped);
+
+	if (stop) {
+		h2->tx_stopped = 1;
+
+		CHECK_OBJ_ORNULL(h2->tx_l_current, H2_SEND_LARGE_MAGIC);
+		if (h2->tx_l_current != NULL) {
+			/* Abort the large frame */
+			h2->tx_l_current = NULL;
+			h2->tx_nvec = 0;
+		}
+	}
+
+	VTAILQ_FOREACH_SAFE(large, &h2->tx_l_queue, list, large2) {
+		CHECK_OBJ_NOTNULL(large, H2_SEND_LARGE_MAGIC);
+		if (large == h2->tx_l_current)
+			continue;
+		VTAILQ_REMOVE(&h2->tx_l_queue, large, list);
+		large->returned = 1;
+		PTOK(pthread_cond_signal(&large->cond));
+	}
+
+	Lck_Unlock(&h2->sess->mtx);
 }
 
 void
-H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
-    uint32_t len, const void *ptr, uint64_t *counter)
+H2_Send_Shutdown(struct h2_sess *h2)
 {
-	uint64_t dummy_counter = 0;
-	h2_error h2e;
+	h2_send_close(h2, 0);
+}
 
-	if (counter == NULL)
-		counter = &dummy_counter;
-
-	h2_send(wrk, r2, ftyp, flags, len, ptr, counter);
-
-	h2e = h2_errcheck(r2, r2->h2sess);
-	if (H2_ERROR_MATCH(h2e, H2SE_CANCEL))
-		H2_Send_RST(wrk, r2->h2sess, r2, r2->stream, h2e);
+void
+H2_Send_Stop(struct h2_sess *h2)
+{
+	h2_send_close(h2, 1);
 }

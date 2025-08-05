@@ -23,6 +23,7 @@ libvarnish_la_SOURCES = \
 	vcli_serve.c \
 	vct.c \
 	venc.c \
+	vefd.c \
 	version.c \
 	vev.c \
 	vfil.c \

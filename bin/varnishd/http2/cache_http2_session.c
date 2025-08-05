@@ -31,10 +31,10 @@
 
 #include "config.h"
 
-#include "cache/cache_varnishd.h"
-
+#include <poll.h>
 #include <stdio.h>
 
+#include "cache/cache_varnishd.h"
 #include "cache/cache_transport.h"
 #include "http2/cache_http2.h"
 
@@ -88,30 +88,6 @@ h2_local_settings(struct h2_settings *h2s)
 	h2s->max_header_list_size = cache_param->http_req_size;
 }
 
-void
-H2S_Lock_VSLb(const struct h2_sess *h2, enum VSL_tag_e tag, const char *fmt, ...)
-{
-	va_list ap;
-	int held = 0;
-
-	AN(h2);
-
-	if (VSL_tag_is_masked(tag))
-		return;
-
-	if (h2->highest_stream > 0) {
-		held = 1;
-		Lck_Lock(&h2->sess->mtx);
-	}
-
-	va_start(ap, fmt);
-	VSLbv(h2->vsl, tag, fmt, ap);
-	va_end(ap);
-
-	if (held)
-		Lck_Unlock(&h2->sess->mtx);
-}
-
 /**********************************************************************
  * The h2_sess struct needs many of the same things as a request,
  * WS, VSL, HTC &c,  but rather than implement all that stuff over, we
@@ -120,20 +96,20 @@ H2S_Lock_VSLb(const struct h2_sess *h2, enum VSL_tag_e tag, const char *fmt, ...
  */
 
 static struct h2_sess *
-h2_init_sess(struct sess *sp,
-    struct h2_sess *h2s, struct req *srq, struct h2h_decode *decode)
+h2_init_sess(struct sess *sp, struct h2_sess *h2s, struct req **psrq,
+    struct h2h_decode *decode)
 {
+	struct req *srq;
 	uintptr_t *up;
 	struct h2_sess *h2;
+
+	TAKE_OBJ_NOTNULL(srq, psrq, REQ_MAGIC);
 
 	/* proto_priv session attribute will always have been set up by H1
 	 * before reaching here. */
 	AZ(SES_Get_proto_priv(sp, &up));
 	assert(*up == 0);
 
-	if (srq == NULL)
-		srq = Req_New(sp, NULL);
-	AN(srq);
 	h2 = h2s;
 	AN(h2);
 	INIT_OBJ(h2, H2_SESS_MAGIC);
@@ -146,12 +122,15 @@ h2_init_sess(struct sess *sp,
 	h2->htc->rfd = &sp->fd;
 	h2->sess = sp;
 	h2->rxthr = pthread_self();
-	PTOK(pthread_cond_init(h2->winupd_cond, NULL));
 	VTAILQ_INIT(&h2->streams);
-	VTAILQ_INIT(&h2->txqueue);
 	h2_local_settings(&h2->local_settings);
 	h2->remote_settings = H2_proto_settings;
 	h2->decode = decode;
+	h2->expect_settings_next = 1;
+	VEFD_INIT(h2->efd);
+
+	h2->tx_window = h2->remote_settings.initial_window_size;
+	h2->rx_window = h2->local_settings.initial_window_size;
 
 	h2->rapid_reset = cache_param->h2_rapid_reset;
 	h2->rapid_reset_limit = cache_param->h2_rapid_reset_limit;
@@ -162,6 +141,19 @@ h2_init_sess(struct sess *sp,
 	AZ(isnan(h2->last_rst));
 
 	AZ(VHT_Init(h2->dectbl, h2->local_settings.header_table_size));
+
+	/* Allocate a scratch space to use for staging small outgoing
+	 * frames. */
+	h2->tx_s_start = WS_Alloc(h2->ws, H2_TX_BUFSIZE);
+	AN(h2->tx_s_start);
+	h2->tx_s_end = h2->tx_s_start + H2_TX_BUFSIZE;
+	h2->tx_s_head = h2->tx_s_start;
+	h2->tx_s_mark = h2->tx_s_start;
+
+	/* Init send queue */
+	VTAILQ_INIT(&h2->tx_l_queue);
+
+	h2->htc->pipeline_snap = WS_Snapshot(h2->ws);
 
 	*up = (uintptr_t)h2;
 
@@ -180,7 +172,8 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, stream_close_t reason)
 	AN(reason);
 
 	VHT_Fini(h2->dectbl);
-	PTOK(pthread_cond_destroy(h2->winupd_cond));
+	if (h2->efd->poll_fd >= 0)
+		VEFD_Close(h2->efd);
 	TAKE_OBJ_NOTNULL(req, &h2->srq, REQ_MAGIC);
 	assert(!WS_IsReserved(req->ws));
 	sp = h2->sess;
@@ -264,28 +257,33 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 
 /**********************************************************************/
 
-static int
-h2_ou_rel(struct worker *wrk, struct req *req)
+static void
+h2_ou_rel_req(struct worker *wrk, struct req **preq)
 {
+	struct req *req;
+
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	TAKE_OBJ_NOTNULL(req, preq, REQ_MAGIC);
 	AZ(req->vcl);
 	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
-	return (0);
 }
 
-static int
+static struct h2_req *
 h2_ou_session(struct worker *wrk, struct h2_sess *h2,
-    struct req *req)
+    struct req **preq)
 {
+	struct req *req;
 	ssize_t sz;
 	enum htc_status_e hs;
 	struct h2_req *r2;
 
+	TAKE_OBJ_NOTNULL(req, preq, REQ_MAGIC);
+
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
-		return (h2_ou_rel(wrk, req));
+		h2_ou_rel_req(wrk, &req);
+		return (NULL);
 	}
 
 	sz = write(h2->sess->fd, h2_resp_101, strlen(h2_resp_101));
@@ -293,13 +291,11 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	if (sz != strlen(h2_resp_101)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Upgrade: Error writing 101"
 		    " response: %s\n", VAS_errtxt(errno));
-		return (h2_ou_rel(wrk, req));
+		h2_ou_rel_req(wrk, &req);
+		return (NULL);
 	}
 
-	http_Unset(req->http, H_Upgrade);
-	http_Unset(req->http, H_HTTP2_Settings);
-
-	/* Steal pipelined read-ahead, if any */
+	/* Copy any pipelined data from the request into the session. */
 	h2->htc->pipeline_b = req->htc->pipeline_b;
 	h2->htc->pipeline_e = req->htc->pipeline_e;
 	req->htc->pipeline_b = NULL;
@@ -309,36 +305,35 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	   do about the overflowing data is an open issue. */
 	HTC_RxInit(h2->htc, h2->ws);
 
-	/* Start req thread */
-	r2 = h2_new_req(h2, 1, req);
-	AZ(h2->highest_stream);
-	h2->highest_stream = r2->stream;
-	req->transport = &HTTP2_transport;
-	assert(req->req_step == R_STP_TRANSPORT);
-	req->task->func = h2_do_req;
-	req->task->priv = req;
-	r2->scheduled = 1;
-	r2->state = H2_S_CLOS_REM; // rfc7540,l,489,491
-	req->err_code = 0;
-	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
-
 	/* Wait for PRISM response */
 	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
 	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, NAN,
 	    sizeof H2_prism);
 	if (hs != HTC_S_COMPLETE) {
 		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
-		r2->scheduled = 0;
-		h2_del_req(wrk, r2);
-		return (0);
+		h2_ou_rel_req(wrk, &req);
+		return (NULL);
 	}
-	if (Pool_Task(wrk->pool, req->task, TASK_QUEUE_REQ)) {
-		r2->scheduled = 0;
-		h2_del_req(wrk, r2);
-		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
-		return (0);
-	}
-	return (1);
+
+	http_Unset(req->http, H_Upgrade);
+	http_Unset(req->http, H_HTTP2_Settings);
+
+	/* Prepare the req thread, but do not start it. The RFC requires
+	 * us to send our settings frame before any response frames, so we
+	 * delay the start of the thread until after the settings frame
+	 * has been sent. */
+	r2 = h2_new_req(h2, 1, &req);
+	AZ(req);
+	AZ(h2->highest_stream);
+	h2->highest_stream = r2->stream;
+	r2->req->transport = &HTTP2_transport;
+	assert(r2->req->req_step == R_STP_TRANSPORT);
+	r2->req->task->func = h2_do_req;
+	r2->req->task->priv = r2->req;
+	h2_stream_setstate(r2, H2_S_CLOS_REM); // rfc7540,l,489,491
+	http_SetH(r2->req->http, HTTP_HDR_PROTO, "HTTP/2.0");
+
+	return (r2);
 }
 
 /**********************************************************************
@@ -366,14 +361,15 @@ H2_OU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 static void v_matchproto_(task_func_t)
 h2_new_session(struct worker *wrk, void *arg)
 {
-	struct req *req;
+	struct req *req, *srq = NULL;
 	struct sess *sp;
 	struct h2_sess h2s;
 	struct h2_sess *h2;
-	struct h2_req *r2, *r22;
-	int again;
+	struct h2_req *r2_ou = NULL;
+	uint16_t marker;
 	uint8_t settings[48];
 	struct h2h_decode decode;
+	stream_close_t reason;
 	size_t l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -386,90 +382,110 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	assert(req->transport == &HTTP2_transport);
 
-	assert (req->err_code == H2_PU_MARKER || req->err_code == H2_OU_MARKER);
+	marker = req->err_code;
+	assert(marker == H2_PU_MARKER || marker == H2_OU_MARKER);
+	req->err_code = 0;
 
-	h2 = h2_init_sess(sp, &h2s,
-	    req->err_code == H2_PU_MARKER ? req : NULL, &decode);
-	h2->req0 = h2_new_req(h2, 0, NULL);
+	if (marker == H2_PU_MARKER) {
+		/* Prior knowledge. The incoming req does not hold
+		 * anything of value and can be repurposed as the session
+		 * req (srq). */
+		srq = req;
+		req = NULL;
+	} else {
+		/* Opportunistic upgrade. The incoming req holds the first
+		 * stream H/1 received request. We will need a fresh req
+		 * for srq. */
+		srq = Req_New(sp, NULL);
+	}
+	CHECK_OBJ_NOTNULL(srq, REQ_MAGIC);
+
+	h2 = h2_init_sess(sp, &h2s, &srq, &decode);
+	AZ(srq);
+
+	CHECK_OBJ_NOTNULL(h2->htc, HTTP_CONN_MAGIC);
 	AZ(h2->htc->priv);
 	h2->htc->priv = h2;
+
+	/* Set up the eventfd for communication with request handling
+	 * threads. */
+	if (VEFD_Open(h2->efd) < 0) {
+		VSLb(h2->vsl, SLT_Error, "H2: Failed to create eventfd");
+		h2_del_sess(wrk, h2, SC_OVERLOAD);
+		wrk->vsl = NULL;
+		return;
+	}
 
 	AZ(wrk->vsl);
 	wrk->vsl = h2->vsl;
 
-	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
-		assert(h2->refcnt == 1);
-		h2_del_req(wrk, h2->req0);
-		h2_del_sess(wrk, h2, SC_RX_JUNK);
-		wrk->vsl = NULL;
-		return;
-	}
+	if (marker == H2_OU_MARKER) {
+		/* Deal with opportunistic upgrade. The upgrade request
+		 * was received by HTTP/1 and is held in req. The response
+		 * will be sent by H/2. Convert the req struct to an H/2
+		 * req. */
+		AN(req);
+		r2_ou = h2_ou_session(wrk, h2, &req);
+		AZ(req);
+		if (r2_ou == NULL) {
+			h2_del_sess(wrk, h2, SC_RX_JUNK);
+			wrk->vsl = NULL;
+			return;
+		}
+
+		CHECK_OBJ_NOTNULL(r2_ou, H2_REQ_MAGIC);
+		AZ(r2_ou->scheduled);
+	} else
+		VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
+
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
+
+	/* Initialize the workspace rx buffer. Some read overshoot data
+	 * may be present as pipeline data. This sequence of calls
+	 * basically just resets the WS, memmove()s the pipeline data
+	 * first, and sets htc->rxbuf_[be] to the pipeline data. */
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
 	HTC_RxInit(h2->htc, h2->ws);
-	AN(WS_Reservation(h2->ws));
-	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
+	WS_ReleaseP(h2->htc->ws, h2->htc->rxbuf_e);
 
 	THR_SetRequest(h2->srq);
-	AN(WS_Reservation(h2->ws));
 
+	/* Send our settings */
 	l = h2_enc_settings(&h2->local_settings, settings, sizeof (settings));
-	AN(WS_Reservation(h2->ws));
-	H2_Send_Get(wrk, h2, h2->req0);
-	AN(WS_Reservation(h2->ws));
-	H2_Send_Frame(wrk, h2,
-	    H2_F_SETTINGS, H2FF_NONE, l, 0, settings);
-	AN(WS_Reservation(h2->ws));
-	H2_Send_Rel(h2, h2->req0);
-	AN(WS_Reservation(h2->ws));
+	H2_Send_SETTINGS(h2, H2FF_NONE, l, settings);
+
+	if (r2_ou != NULL) {
+		/* Schedule the opportunistic request received over HTTP/1
+		 * as part of the upgrade. */
+		AZ(r2_ou->scheduled);
+		r2_ou->scheduled = 1;
+		if (Pool_Task(wrk->pool, r2_ou->req->task, TASK_QUEUE_REQ)) {
+			/* We failed to schedule it. Make the client go
+			 * away.
+			 *
+			 * Note: Calling h2_tx_goaway will set the
+			 * h2->goaway flag, causing h2_rxframe() below to
+			 * return failure without reading from the
+			 * socket. */
+			r2_ou->scheduled = 0;
+			VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
+			h2_kill_req(wrk, h2, &r2_ou, H2SE_ENHANCE_YOUR_CALM);
+			h2->error = H2CE_ENHANCE_YOUR_CALM;
+		}
+		r2_ou = NULL;
+	}
 
 	/* and off we go... */
-	h2->cond = &wrk->cond;
-
-	while (h2_rxframe(wrk, h2)) {
-		HTC_RxInit(h2->htc, h2->ws);
-		if (WS_Overflowed(h2->ws)) {
-			H2S_Lock_VSLb(h2, SLT_SessError, "H2: Empty Rx Workspace");
-			h2->error = H2CE_INTERNAL_ERROR;
-			break;
-		}
-		AN(WS_Reservation(h2->ws));
-	}
+	h2_run(wrk, h2);
 
 	AN(h2->error);
-
-	/* Delete all idle streams */
-	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
-	VTAILQ_FOREACH(r2, &h2->streams, list) {
-		if (r2->error == 0)
-			r2->error = h2->error;
-		if (r2->cond != NULL)
-			PTOK(pthread_cond_signal(r2->cond));
+	reason = h2->error->reason;
+	if (reason == SC_NULL) {
+		/* XXX: It's messy that some h2_errors have reasosn
+		 * SC_NULL, which is just WRONG() wrt to SES_Delete(). */
+		reason = SC_REM_CLOSE;
 	}
-	PTOK(pthread_cond_broadcast(h2->winupd_cond));
-	Lck_Unlock(&h2->sess->mtx);
-	while (1) {
-		again = 0;
-		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
-			if (r2 != h2->req0) {
-				h2_kill_req(wrk, h2, r2, h2->error);
-				again++;
-			}
-		}
-		if (!again)
-			break;
-		Lck_Lock(&h2->sess->mtx);
-		VTAILQ_FOREACH(r2, &h2->streams, list)
-			VSLb(h2->vsl, SLT_Debug, "ST %u %d",
-			    r2->stream, r2->state);
-		(void)Lck_CondWaitTimeout(h2->cond, &h2->sess->mtx, .1);
-		Lck_Unlock(&h2->sess->mtx);
-	}
-	h2->cond = NULL;
-	assert(h2->refcnt == 1);
-	h2_del_req(wrk, h2->req0);
-	h2_del_sess(wrk, h2, h2->error->reason);
+	h2_del_sess(wrk, h2, reason);
 	wrk->vsl = NULL;
 }
 
@@ -489,7 +505,7 @@ struct transport HTTP2_transport = {
 	.deliver =		h2_deliver,
 	.minimal_response =	h2_minimal_response,
 	.new_session =		h2_new_session,
-	.req_body =		h2_req_body,
+	.req_body =		h2_reqbody,
 	.req_fail =		h2_req_fail,
 	.sess_panic =		h2_sess_panic,
 	.poll =			h2_poll,

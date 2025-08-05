@@ -111,6 +111,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
+	req->htc->pipeline_snap = ws_pipeline_rollback;
 	HTC_RxInit(req->htc, req->ws);
 
 	sz = sizeof u;

@@ -73,7 +73,7 @@ V2D_Init(void)
 /**********************************************************************/
 
 static int v_matchproto_(vdp_init_f)
-h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
+h2_vdp_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 {
 	struct h2_req *r2;
 
@@ -86,57 +86,67 @@ h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
 }
 
 static int v_matchproto_(vdp_fini_f)
-h2_fini(struct vdp_ctx *vdc, void **priv)
+h2_vdp_fini(struct vdp_ctx *vdc, void **priv)
 {
 	struct h2_req *r2;
+	h2_error h2e = NULL;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(r2, priv, H2_REQ_MAGIC);
 
-	if (r2->error)
-		return (0);
-
 	if (vdc->retval < 0) {
-		r2->error = H2SE_INTERNAL_ERROR; /* XXX: proper error? */
-		H2_Send_Get(vdc->wrk, r2->h2sess, r2);
-		H2_Send_RST(vdc->wrk, r2->h2sess, r2, r2->stream, r2->error);
-		H2_Send_Rel(r2->h2sess, r2);
-		return (0);
+		h2e = H2SE_INTERNAL_ERROR;
+		h2_async_error(r2, h2e);
+	} else
+		h2e = h2_errcheck(r2);
+
+	if (h2e != NULL)
+		VSLb(vdc->vsl, SLT_Error, "H2: delivery error (%s)", h2e->name);
+
+	if (h2e == NULL && r2->state < H2_S_CLOSED) {
+		/* Not all VDPs will always send VDP_END (e.g. ESI). End
+		 * the stream here if necessary. */
+		H2_Send(vdc->vsl, r2, H2_F_DATA, H2FF_END_STREAM, 0, NULL);
 	}
 
-	H2_Send_Get(vdc->wrk, r2->h2sess, r2);
-	H2_Send(vdc->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, "", NULL);
-	H2_Send_Rel(r2->h2sess, r2);
 	return (0);
 }
 
 static int v_matchproto_(vdp_bytes_f)
-h2_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+h2_vdp_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct h2_req *r2;
+	uint8_t flags = H2FF_NONE;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(r2, *priv, H2_REQ_MAGIC);
-	(void)act;
+	assert(len >= 0);
 
-	if ((r2->h2sess->error || r2->error))
+	if (h2_errcheck(r2) != NULL)
 		return (-1);
-	if (len == 0)
+	vdc->bytes_done = len;
+	if (len == 0) {
+		/* No reason to send an empty frame. There is code
+		 * (notably ESI) that will pass len==0 without
+		 * VDP_END. An incomplete delivery will result in
+		 * the len==0 && VDP_END combo, deferring the final
+		 * DATA frame to the h2_vdp_fini() call. */
 		return (0);
-	H2_Send_Get(vdc->wrk, r2->h2sess, r2);
-	vdc->bytes_done = 0;
-	H2_Send(vdc->wrk, r2, H2_F_DATA, H2FF_NONE, len, ptr, &vdc->bytes_done);
-	H2_Send_Rel(r2->h2sess, r2);
+	}
+	if (act == VDP_END)
+		flags |= H2FF_END_STREAM;
+	// XXX? return (H2_Send(...));
+	H2_Send(vdc->vsl, r2, H2_F_DATA, flags, len, ptr);
 	return (0);
 }
 
 static const struct vdp h2_vdp = {
 	.name =		"H2B",
-	.init =		h2_init,
-	.bytes =	h2_bytes,
-	.fini =		h2_fini,
+	.init =		h2_vdp_init,
+	.bytes =	h2_vdp_bytes,
+	.fini =		h2_vdp_fini,
 };
 
 static inline size_t
@@ -170,6 +180,7 @@ h2_minimal_response(struct req *req, uint16_t status)
 	struct h2_req *r2;
 	size_t l;
 	uint8_t buf[6];
+	uint8_t flags;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
@@ -189,14 +200,10 @@ h2_minimal_response(struct req *req, uint16_t status)
 		req->err_code = status;
 
 	/* XXX return code checking once H2_Send returns anything but 0 */
-	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2,
-	    H2_F_HEADERS,
-	    H2FF_HEADERS_END_HEADERS |
-		(status < 200 ? 0 : H2FF_HEADERS_END_STREAM),
-	    l, buf, NULL);
-	H2_Send_Rel(r2->h2sess, r2);
-	return (0);
+	flags = H2FF_END_HEADERS;
+	if (status >= 200)
+		flags |= H2FF_END_STREAM;
+	return (H2_Send(req->vsl, r2, H2_F_HEADERS, flags, l, buf));
 }
 
 static void
@@ -302,6 +309,7 @@ h2_deliver(struct req *req, int sendbody)
 	struct vsb resp[1];
 	struct vrt_ctx ctx[1];
 	uintptr_t ss;
+	uint8_t flags;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -332,11 +340,10 @@ h2_deliver(struct req *req, int sendbody)
 
 	r2->t_send = req->t_prev;
 
-	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2, H2_F_HEADERS,
-	    (sendbody ? 0 : H2FF_HEADERS_END_STREAM) | H2FF_HEADERS_END_HEADERS,
-	    sz, r, &req->acct.resp_hdrbytes);
-	H2_Send_Rel(r2->h2sess, r2);
+	flags = H2FF_END_HEADERS;
+	if (!sendbody)
+		flags |= H2FF_END_STREAM;
+	H2_Send(req->vsl, r2, H2_F_HEADERS, flags, sz, r);
 
 	WS_Reset(req->ws, ss);
 

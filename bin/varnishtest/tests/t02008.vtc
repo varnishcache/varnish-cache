@@ -28,6 +28,8 @@ client c1 {
 	} -run
 	stream 0 {
 		txgoaway -err 2
+		rxgoaway
+		expect goaway.err == NO_ERROR
 	} -run
 	expect_close
 } -run

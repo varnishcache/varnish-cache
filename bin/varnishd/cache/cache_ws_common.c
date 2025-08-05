@@ -37,6 +37,8 @@
 
 #include "cache_varnishd.h"
 
+uintptr_t const ws_pipeline_rollback = (uintptr_t)&ws_pipeline_rollback;
+
 void
 WS_Id(const struct ws *ws, char *id)
 {

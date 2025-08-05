@@ -1,0 +1,17 @@
+varnishtest "Bad preface: no SETTINGS frame first"
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -vcl "backend default none;" -start
+
+client c1 {
+	txpri
+
+	stream 0 {
+		rxsettings
+		expect settings.ack == false
+		txsettings -ack
+		rxgoaway
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -run
