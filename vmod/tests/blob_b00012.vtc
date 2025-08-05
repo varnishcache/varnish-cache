@@ -47,6 +47,8 @@ varnish v1 -arg "-p workspace_client=256k" -vcl {
 	  set resp.http.id2url
 	    = blob.transcode(IDENTITY, URL, encoded=req.http.foobar);
 
+	  set resp.http.urlencode = blob.urlencode(req.http.foobar);
+
 	  set resp.http.id2urluc
 	    = blob.transcode(IDENTITY, URL, UPPER, encoded=req.http.foobar);
 
@@ -108,6 +110,7 @@ client c1 {
 	expect resp.http.id2hexuc == "4D616E2069732064697374696E677569736865642C206E6F74206F6E6C792062792068697320726561736F6E2C2062757420627920746869732073696E67756C61722070617373696F6E2066726F6D206F7468657220616E696D616C732C2077686963682069732061206C757374206F6620746865206D696E642C20746861742062792061207065727365766572616E6365206F662064656C6967687420696E2074686520636F6E74696E75656420616E6420696E6465666174696761626C652067656E65726174696F6E206F66206B6E6F776C656467652C2065786365656473207468652073686F727420766568656D656E6365206F6620616E79206361726E616C20706C6561737572652E"
 	expect resp.http.id2hexlc == resp.http.id2hex
 	expect resp.http.id2url == "foo%3abar%3abaz%3aquux"
+	expect resp.http.urlencode == resp.http.id2url
 	expect resp.http.id2urluc == "foo%3Abar%3Abaz%3Aquux"
 	expect resp.http.id2urllc == resp.http.id2url
 	expect resp.http.b642id == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
@@ -294,6 +297,8 @@ varnish v1 -vcl {
 	  set resp.http.urllc2id
 	    = blob.transcode(URL, IDENTITY, encoded=req.http.urlhobbeslc);
 
+	  set resp.http.urldecode = blob.urldecode(req.http.urlhobbeslc);
+
 	  set resp.http.urlalldownuc2b64
 	    = blob.transcode(URL, BASE64, encoded=req.http.urlalldownuc);
 
@@ -376,6 +381,7 @@ client c1 {
 	rxresp
 	expect resp.http.urluc2id == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
 	expect resp.http.urllc2id == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
+	expect resp.http.urldecode == resp.http.urllc2id
 	expect resp.http.urlalldownuc2b64 == "//79/Pv6+fj39vX08/Lx8O/u7ezr6uno5+bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL++vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI+OjYyLiomIh4aFhIOCgYB/fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA=="
 	expect resp.http.urlalldownuc2b64url == "__79_Pv6-fj39vX08_Lx8O_u7ezr6uno5-bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL--vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI-OjYyLiomIh4aFhIOCgYB_fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA=="
 	expect resp.http.urlalldownuc2b64nopad == "__79_Pv6-fj39vX08_Lx8O_u7ezr6uno5-bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL--vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI-OjYyLiomIh4aFhIOCgYB_fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA"
