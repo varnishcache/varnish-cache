@@ -353,7 +353,7 @@ VRG_CheckBo(struct busyobj *bo)
 	if (!cache_param->http_range_support)
 		return (0);
 
-	err = http_GetRange(bo->bereq0, &rlo, &rhi, -1);
+	err = http_GetRange(bo->bereq, &rlo, &rhi, -1);
 	clen = http_GetContentLength(bo->beresp);
 	crlen = http_GetContentRange(bo->beresp, &crlo, &crhi);
 
