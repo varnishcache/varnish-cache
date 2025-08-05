@@ -457,7 +457,6 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 	CAST_VAI_HDL_NOTNULL(hdl, vhdl, SML_HDL_MAGIC);
 	VSCARAB_CHECK_NOTNULL(scarab);
 	assert(hdl->boc == hdl->oc->boc);
-	assert(hdl->oc->stobj->priv == hdl->obj);
 
 	if (hdl->avail == hdl->returned) {
 		hdl->avail = ObjVAIGetExtend(wrk, hdl->oc, hdl->returned,
