@@ -491,10 +491,8 @@ sml_ai_lease_boc(struct worker *wrk, vai_hdl vhdl, struct vscarab *scarab)
 	}
 	if (hdl->last != NULL)
 		hdl->last = NULL;
-	if (hdl->st == NULL) {
-		assert(hdl->returned == 0 || hdl->avail == hdl->returned);
+	if (hdl->st == NULL && hdl->returned == 0)
 		hdl->st = VTAILQ_LAST(&hdl->obj->list, storagehead);
-	}
 	if (hdl->st == NULL)
 		assert(hdl->avail == hdl->returned);
 
