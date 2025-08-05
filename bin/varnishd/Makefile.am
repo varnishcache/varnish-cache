@@ -109,6 +109,7 @@ varnishd_SOURCES = \
 	storage/storage_malloc.c \
 	storage/storage_debug.c \
 	storage/storage_simple.c \
+	storage/storage_synth.c \
 	storage/storage_umem.c \
 	waiter/cache_waiter.c \
 	waiter/cache_waiter_epoll.c \

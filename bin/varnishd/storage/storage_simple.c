@@ -743,8 +743,8 @@ sml_notify_wait(struct sml_notify *sn)
 	AZ(pthread_mutex_unlock(&sn->mtx));
 }
 
-static int v_matchproto_(objiterator_f)
-sml_iterator(struct worker *wrk, struct objcore *oc,
+int v_matchproto_(objiterator_f)
+SML_iterator(struct worker *wrk, struct objcore *oc,
     void *priv, objiterate_f *func, int final)
 {
 	struct sml_notify sn;
@@ -1153,7 +1153,7 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 
 const struct obj_methods SML_methods = {
 	.objfree	= sml_objfree,
-	.objiterator	= sml_iterator,
+	.objiterator	= SML_iterator,
 	.objgetspace	= sml_getspace,
 	.objextend	= sml_extend,
 	.objtrimstore	= sml_trimstore,
