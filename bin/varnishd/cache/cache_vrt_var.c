@@ -148,42 +148,6 @@ VRT_STATUS_L(beresp)
 VRT_STATUS_R(beresp)
 
 /*--------------------------------------------------------------------
- * Pulling things out of the packed object->http
- */
-
-VCL_INT
-VRT_r_obj_status(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-
-	return (HTTP_GetStatusPack(ctx->req->wrk, ctx->req->objcore));
-}
-
-VCL_STRING
-VRT_r_obj_proto(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
-	    H__Proto));
-}
-
-VCL_STRING
-VRT_r_obj_reason(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
-	    H__Reason));
-}
-
-/*--------------------------------------------------------------------
  * beresp bool-fields
  */
 
@@ -530,28 +494,74 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-VCL_STEVEDORE
-VRT_r_obj_storage(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	AN(ctx->req->objcore->stobj);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore->stobj->stevedore,
-	    STEVEDORE_MAGIC);
-	return (ctx->req->objcore->stobj->stevedore);
+#define VRT_OC_VAR_R(which, obj, obj_magic, field)		\
+VCL_STEVEDORE							\
+VRT_r_##which##_storage(VRT_CTX)				\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
+	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+	AN(ctx->obj->field->stobj);				\
+	CHECK_OBJ_NOTNULL(ctx->obj->field->stobj->stevedore,	\
+	    STEVEDORE_MAGIC);					\
+	return (ctx->obj->field->stobj->stevedore);		\
+}								\
+								\
+VCL_BOOL							\
+VRT_r_##which##_can_esi(VRT_CTX)				\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
+	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+	return (ObjHasAttr(ctx->obj->wrk, ctx->obj->field,	\
+	    OA_ESIDATA));					\
+}								\
+								\
+VCL_BOOL							\
+VRT_r_##which##_uncacheable(VRT_CTX)				\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
+	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+								\
+	return (ctx->obj->field->flags & OC_F_HFM ? 1 : 0);	\
+}								\
+								\
+VCL_INT							\
+VRT_r_##which##_status(VRT_CTX)				\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
+	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+								\
+	return (HTTP_GetStatusPack(ctx->obj->wrk,		\
+	    ctx->obj->field));					\
+}								\
+								\
+VCL_STRING							\
+VRT_r_##which##_proto(VRT_CTX)					\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
+	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+								\
+	return (HTTP_GetHdrPack(ctx->obj->wrk, ctx->obj->field,	\
+	    H__Proto));						\
+}								\
+								\
+VCL_STRING							\
+VRT_r_##which##_reason(VRT_CTX)				\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
+	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+								\
+	return (HTTP_GetHdrPack(ctx->obj->wrk, ctx->obj->field,	\
+	    H__Reason));					\
 }
 
-/*--------------------------------------------------------------------*/
-
-VCL_BOOL
-VRT_r_obj_can_esi(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	return (ObjHasAttr(ctx->req->wrk, ctx->req->objcore, OA_ESIDATA));
-}
+VRT_OC_VAR_R(obj, req, REQ_MAGIC, objcore);
+VRT_OC_VAR_R(obj_stale, bo, BUSYOBJ_MAGIC, stale_oc);
 
 /*--------------------------------------------------------------------*/
 
@@ -792,9 +802,13 @@ VRT_r_##which##_##fld(VRT_CTX)					\
 
 /*lint -save -e835 */	// Zero right hand arg to '-'
 
+VRT_DO_EXP_R(obj_stale, ctx->bo->stale_oc, ttl,
+    ttl_now(ctx) - ctx->bo->stale_oc->t_origin)
 VRT_DO_EXP_R(obj, ctx->req->objcore, ttl,
     ttl_now(ctx) - ctx->req->objcore->t_origin)
+VRT_DO_EXP_R(obj_stale, ctx->bo->stale_oc, grace, 0)
 VRT_DO_EXP_R(obj, ctx->req->objcore, grace, 0)
+VRT_DO_EXP_R(obj_stale, ctx->bo->stale_oc, keep, 0)
 VRT_DO_EXP_R(obj, ctx->req->objcore, keep, 0)
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore, ttl,
     ttl_now(ctx) - ctx->bo->fetch_objcore->t_origin)
@@ -826,6 +840,7 @@ VRT_DO_TIME_R(resp, req, t_resp)
 VRT_DO_TIME_R(bereq, bo, t_first)
 VRT_DO_TIME_R(beresp, bo, t_resp)
 VRT_DO_TIME_R(obj, req->objcore, t_origin)
+VRT_DO_TIME_R(obj_stale, bo->stale_oc, t_origin)
 
 /*--------------------------------------------------------------------
  */
@@ -840,6 +855,7 @@ VRT_r_##which##_##age(VRT_CTX)					\
 	return (ttl_now(ctx) - oc->t_origin);			\
 }
 
+VRT_DO_AGE_R(obj_stale, ctx->bo->stale_oc)
 VRT_DO_AGE_R(obj, ctx->req->objcore)
 VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore)
 
@@ -1001,14 +1017,26 @@ VRT_r_obj_hits(VRT_CTX)
 	return (ctx->req->is_hit ? ctx->req->objcore->hits : 0);
 }
 
-VCL_BOOL
-VRT_r_obj_uncacheable(VRT_CTX)
-{
+/*--------------------------------------------------------------------*/
 
+VCL_INT
+VRT_r_obj_stale_hits(VRT_CTX)
+{
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	return (ctx->req->objcore->flags & OC_F_HFM ? 1 : 0);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->stale_oc, OBJCORE_MAGIC);
+
+	return (ctx->bo->stale_oc->hits);
+}
+
+VCL_BOOL
+VRT_r_obj_stale_is_valid(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->stale_oc, OBJCORE_MAGIC);
+
+	return (!(ctx->bo->stale_oc->flags & OC_F_DYING));
 }
 
 /*--------------------------------------------------------------------*/
