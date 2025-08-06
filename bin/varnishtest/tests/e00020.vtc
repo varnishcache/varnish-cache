@@ -24,8 +24,8 @@ varnish v1 -cliok "param.set http_gzip_support true"
 
 logexpect l1 -v v1 -g vxid {
 	expect * * Fetch_Body
-	expect 0 = ESI_xmlerror {^ERR after 3 ESI 1.0 <esi:include> element nested in <esi:remove>$}
-	expect 0 = ESI_xmlerror {^ERR after 3 ESI 1.0 Nested <!--esi element in <esi:remove>$}
+	expect 0 = ESI_xmlerror {^ERR: after 3 ESI 1.0 <esi:include> element nested in <esi:remove>$}
+	expect 0 = ESI_xmlerror {^ERR: after 3 ESI 1.0 Nested <!--esi element in <esi:remove>$}
 	expect 0 = Gzip         {^U}
 	expect 0 = BackendClose
 } -start

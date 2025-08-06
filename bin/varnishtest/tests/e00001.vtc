@@ -23,8 +23,8 @@ varnish v1 -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -g raw {
-	expect * * ESI_xmlerror {^ERR after 3 ESI 1.0 <esi:include> element nested in <esi:remove>}
-	expect 0 = ESI_xmlerror {^ERR after 3 ESI 1.0 Nested <!--esi element in <esi:remove>}
+	expect * * ESI_xmlerror {^ERR: after 3 ESI 1.0 <esi:include> element nested in <esi:remove>}
+	expect 0 = ESI_xmlerror {^ERR: after 3 ESI 1.0 Nested <!--esi element in <esi:remove>}
 } -start
 
 client c1 {

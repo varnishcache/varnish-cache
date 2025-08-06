@@ -201,7 +201,7 @@ static void
 vep_error(const struct vep_state *vep, const char *p)
 {
 	VSC_C_main->esi_errors++;
-	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "ERR after %zd %s",
+	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "ERR: after %zd %s",
 	     vep->o_last, p);
 }
 
@@ -213,7 +213,7 @@ static void
 vep_warn(const struct vep_state *vep, const char *p)
 {
 	VSC_C_main->esi_warnings++;
-	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "WARN after %zd %s",
+	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "WARN: after %zd %s",
 	     vep->o_last, p);
 }
 
@@ -673,14 +673,14 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				vep->state = VEP_STARTTAG;
 			} else if (p < e && *p == (char)0xeb) {
 				VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror,
-				    "No ESI processing, "
+				    "WARN: No ESI processing, "
 				    "first char not '<' but BOM."
 				    " (See feature esi_remove_bom)"
 				);
 				vep->state = VEP_NOTXML;
 			} else if (p < e) {
 				VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror,
-				    "No ESI processing, "
+				    "WARN: No ESI processing, "
 				    "first char not '<'."
 				    " (See feature esi_disable_xml_check)"
 				);
