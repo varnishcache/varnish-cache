@@ -494,70 +494,70 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-#define VRT_OC_VAR_R(which, obj, obj_magic, field)		\
+#define VRT_OC_VAR_R(obj, which, which_magic, field)		\
 VCL_STEVEDORE							\
-VRT_r_##which##_storage(VRT_CTX)				\
+VRT_r_##obj##_storage(VRT_CTX)					\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
-	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
-	AN(ctx->obj->field->stobj);				\
-	CHECK_OBJ_NOTNULL(ctx->obj->field->stobj->stevedore,	\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+	AN(ctx->which->field->stobj);				\
+	CHECK_OBJ_NOTNULL(ctx->which->field->stobj->stevedore,	\
 	    STEVEDORE_MAGIC);					\
-	return (ctx->obj->field->stobj->stevedore);		\
+	return (ctx->which->field->stobj->stevedore);		\
 }								\
 								\
 VCL_BOOL							\
-VRT_r_##which##_can_esi(VRT_CTX)				\
+VRT_r_##obj##_can_esi(VRT_CTX)					\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
-	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
-	return (ObjHasAttr(ctx->obj->wrk, ctx->obj->field,	\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+	return (ObjHasAttr(ctx->which->wrk, ctx->which->field,	\
 	    OA_ESIDATA));					\
 }								\
 								\
 VCL_BOOL							\
-VRT_r_##which##_uncacheable(VRT_CTX)				\
+VRT_r_##obj##_uncacheable(VRT_CTX)				\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
-	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
 								\
-	return (ctx->obj->field->flags & OC_F_HFM ? 1 : 0);	\
+	return (ctx->which->field->flags & OC_F_HFM ? 1 : 0);	\
 }								\
 								\
-VCL_INT							\
-VRT_r_##which##_status(VRT_CTX)				\
+VCL_INT								\
+VRT_r_##obj##_status(VRT_CTX)					\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
-	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
 								\
-	return (HTTP_GetStatusPack(ctx->obj->wrk,		\
-	    ctx->obj->field));					\
-}								\
-								\
-VCL_STRING							\
-VRT_r_##which##_proto(VRT_CTX)					\
-{								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
-	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
-								\
-	return (HTTP_GetHdrPack(ctx->obj->wrk, ctx->obj->field,	\
-	    H__Proto));						\
+	return (HTTP_GetStatusPack(ctx->which->wrk,		\
+	    ctx->which->field));				\
 }								\
 								\
 VCL_STRING							\
-VRT_r_##which##_reason(VRT_CTX)				\
+VRT_r_##obj##_proto(VRT_CTX)					\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->obj, obj_magic);			\
-	CHECK_OBJ_NOTNULL(ctx->obj->field, OBJCORE_MAGIC);	\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
 								\
-	return (HTTP_GetHdrPack(ctx->obj->wrk, ctx->obj->field,	\
-	    H__Reason));					\
+	return (HTTP_GetHdrPack(ctx->which->wrk,		\
+	    ctx->which->field, H__Proto));			\
+}								\
+								\
+VCL_STRING							\
+VRT_r_##obj##_reason(VRT_CTX)					\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->which, which_magic);		\
+	CHECK_OBJ_NOTNULL(ctx->which->field, OBJCORE_MAGIC);	\
+								\
+	return (HTTP_GetHdrPack(ctx->which->wrk,		\
+	    ctx->which->field, H__Reason));			\
 }
 
 VRT_OC_VAR_R(obj, req, REQ_MAGIC, objcore);
