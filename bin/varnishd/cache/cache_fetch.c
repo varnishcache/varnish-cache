@@ -895,6 +895,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		 * (this would be an issue for ie OA_GZIPBITS). */
 		VSLb(bo->vsl, SLT_Notice,
 		    "vsl: Conditional fetch wait for streaming object");
+		/* XXX: We should have a VCL controlled timeout here */
 		ObjWaitState(stale_oc, BOS_FINISHED);
 		stale_state = stale_boc->state;
 		HSH_DerefBoc(bo->wrk, stale_oc);
