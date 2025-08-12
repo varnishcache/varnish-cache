@@ -1,0 +1,39 @@
+varnishtest "storage failure with 304 response"
+
+server s1 {
+	rxreq
+	txresp -hdr {Etag: "abc"} -bodylen 2049
+
+	rxreq
+	txresp -status 304
+} -start
+
+varnish v1 \
+    -arg "-smalloc=malloc,1M" \
+    -arg "-scondfetch=debug,maxspace=1024B" \
+    -vcl+backend {
+	sub vcl_backend_response {
+		if (beresp.was_304) {
+			set beresp.storage = storage.condfetch;
+		}
+		set beresp.ttl = 0.001s;
+		set beresp.grace = 0s;
+		set beresp.keep = 1m;
+	}
+} -start
+
+varnish v1 -cliok "debug.fragfetch 2048"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2049
+
+	txreq
+	# we do not care that this is an error, the important point is not to
+	# panic
+	non_fatal
+	rxresp
+	expect resp.status == 200
+} -run

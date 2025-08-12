@@ -819,7 +819,7 @@ vbf_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		len -= l;
 		vop->pl -= l;
 	}
-	if (flush)
+	if (flush && vop->bo->vfc->failed == 0)
 		AZ(vop->l);
 	return (0);
 }
