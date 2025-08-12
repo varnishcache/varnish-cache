@@ -486,8 +486,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			vbf_cleanup(bo);
 			return (F_STP_ERROR);
 		}
-		VCL_backend_refresh_method(bo->vcl, wrk, NULL, bo, NULL);
 		bo->was_304 = 1;
+		VCL_backend_refresh_method(bo->vcl, wrk, NULL, bo, NULL);
 		switch (wrk->vpi->handling) {
 		case VCL_RET_MERGE:
 			vbf_304_logic(bo);
