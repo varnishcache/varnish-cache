@@ -492,10 +492,14 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			break;
 		case VCL_RET_BERESP:
 			http_SetStatus(bo->beresp, 200, NULL);
-			http_ForceHeader(bo->beresp, H_Content_Length,
-			    HTTP_GetHdrPack(wrk, bo->stale_oc,
-			    H_Content_Length));
+			http_Unset(bo->beresp, H_Content_Length);
 			http_Unset(bo->beresp, H_Content_Encoding);
+			q = HTTP_GetHdrPack(wrk, bo->stale_oc,
+			    H_Content_Length);
+			if (q != NULL) {
+				http_ForceHeader(bo->beresp,
+				    H_Content_Length, q);
+			}
 			q = HTTP_GetHdrPack(wrk, bo->stale_oc,
 			    H_Content_Encoding);
 			if (q != NULL) {
