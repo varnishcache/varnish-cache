@@ -43,9 +43,27 @@ digraph cache_fetch {
 		]
 		v_b_f:error:s -> v_b_e
 		v_b_f:fetch:s -> v_b_hdrs [style=bold]
+		RETRY_FETCH [shape=plaintext]
+		RETRY_FETCH -> v_b_hdrs [style=bold]
 		v_b_hdrs [ label="send bereq,\nread beresp (headers)"]
-		v_b_hdrs -> v_b_r [style=bold]
+		v_b_hdrs -> v_b_r [label="\"no stale object\""] [style=bold]
 		v_b_hdrs -> v_b_e
+		v_b_hdrs -> v_b_refresh [label="\"stale object\""] [style=bold]
+
+		v_b_refresh [
+			    shape=record
+			    label="{vbf_stp_startfetch:|{vcl_backend_refresh\{\}|{bereq.*|beresp.*}}|{<error>error|fail|{retry|{<max>max?|<retry>ok?}}|{retry(fetch)|{<rf_max>max?|<rf_retry>ok?}}|abandon|<merge>merge|<stale>obj_stale|<beresp>beresp}}"
+		]
+		v_b_refresh:error:s -> v_b_e
+		v_b_refresh:retry -> v_b_r_retry [color=purple]
+		v_b_refresh:rf_retry -> v_b_r_retry_fetch [color=purple]
+		v_b_refresh:rf_max -> v_b_e
+		v_b_refresh:max -> v_b_e
+
+		v_b_refresh:merge -> v_b_r
+		v_b_refresh:beresp -> v_b_r
+		v_b_refresh:stale -> v_b_r
+
 		v_b_r [
 			    shape=record
 			    label="{vbf_stp_startfetch:|{vcl_backend_response\{\}|{bereq.*|beresp.*}}|{<error>error|fail|{retry|{<max>max?|<retry>ok?}}|abandon|{deliver or pass|{<fetch_304>304?|<non_304>other?}}}}"
@@ -57,6 +75,7 @@ digraph cache_fetch {
 		v_b_r:non_304:s -> vbf_stp_fetch
 
 		v_b_r_retry [label="RETRY",shape=plaintext]
+		v_b_r_retry_fetch [label="RETRY_FETCH",shape=plaintext]
 
 		vbf_stp_fetchbody [
 			       shape=record

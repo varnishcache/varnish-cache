@@ -259,6 +259,7 @@ VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 	case HDR_RESP:
 		hp = ctx->http_resp;
 		break;
+	case HDR_OBJ_STALE:
 	case HDR_OBJ:
 		hp = NULL;
 		break;
@@ -281,6 +282,13 @@ VRT_GetHdr(VRT_CTX, VCL_HEADER hs)
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 		return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
+		    hs->what));
+	}
+
+	if (hs->where == HDR_OBJ_STALE) {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->bo->stale_oc, OBJCORE_MAGIC);
+		return (HTTP_GetHdrPack(ctx->bo->wrk, ctx->bo->stale_oc,
 		    hs->what));
 	}
 	hp = VRT_selecthttp(ctx, hs->where);
