@@ -298,6 +298,8 @@ VTCP_connect(const struct suckaddr *name, int msec)
 	AZ(setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof val));
 
 	i = connect(s, sa, sl);
+	if (i == 0 && msec > 0)
+		VTCP_blocking(s);
 	if (i == 0)
 		return (s);
 	if (errno != EINPROGRESS) {
