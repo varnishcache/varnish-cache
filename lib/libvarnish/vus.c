@@ -160,6 +160,8 @@ VUS_connect(const char *path, int msec)
 		VTCP_nonblocking(s);
 
 	i = connect(s, (const void*)&uds, sl);
+	if (i == 0 && msec > 0)
+		VTCP_blocking(s);
 	if (i == 0)
 		return (s);
 	if (errno != EINPROGRESS) {
