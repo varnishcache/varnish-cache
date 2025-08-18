@@ -54,6 +54,7 @@ struct acl {
 
 	int			flag_log;
 	int			flag_fold;
+	int			flag_silent;
 	int			flag_pedantic;
 	int			flag_table;
 
@@ -263,11 +264,13 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 	do {
 		switch (cmp) {
 		case ACL_CONTAINED:
-			VSB_cat(tl->sb, "ACL entry:\n");
-			vcc_ErrWhere(tl, (*r)->t_addr);
-			VSB_cat(tl->sb, "supersedes / removes:\n");
-			vcc_ErrWhere(tl, (*l)->t_addr);
-			vcc_Warn(tl);
+			if (tl->acl->flag_silent == 0) {
+				VSB_cat(tl->sb, "ACL entry:\n");
+				vcc_ErrWhere(tl, (*r)->t_addr);
+				VSB_cat(tl->sb, "supersedes / removes:\n");
+				vcc_ErrWhere(tl, (*l)->t_addr);
+				vcc_Warn(tl);
+			}
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
 			FREE_OBJ(*l);
 			*l = VRBT_PREV(acl_tree, &tl->acl->acl_tree, *r);
@@ -275,14 +278,16 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 		case ACL_LEFT:
 			(*l)->mask--;
 			(*l)->fixed = "folded";
-			VSB_cat(tl->sb, "ACL entry:\n");
-			vcc_ErrWhere(tl, (*l)->t_addr);
-			VSB_cat(tl->sb, "left of:\n");
-			vcc_ErrWhere(tl, (*r)->t_addr);
-			VSB_printf(tl->sb, "removing the latter and expanding "
-			    "mask of the former by one to /%u\n",
-			    (*l)->mask - 8);
-			vcc_Warn(tl);
+			if (tl->acl->flag_silent == 0) {
+				VSB_cat(tl->sb, "ACL entry:\n");
+				vcc_ErrWhere(tl, (*l)->t_addr);
+				VSB_cat(tl->sb, "left of:\n");
+				vcc_ErrWhere(tl, (*r)->t_addr);
+				VSB_printf(tl->sb, "removing the latter and "
+				    "expanding mask of the former by one to "
+				    "/%u\n", (*l)->mask - 8);
+				vcc_Warn(tl);
+			}
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *r);
 			FREE_OBJ(*r);
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
@@ -837,6 +842,9 @@ vcc_ParseAcl(struct vcc *tl)
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "fold")) {
 			acl->flag_fold = sign;
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(tl->t, "silent")) {
+			acl->flag_silent = sign;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "pedantic")) {
 			acl->flag_pedantic = sign;
