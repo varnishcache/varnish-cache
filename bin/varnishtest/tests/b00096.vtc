@@ -1,0 +1,64 @@
+varnishtest "Test vcl_backend_refresh on streaming object"
+
+barrier b1 sock 2
+
+server s1 {
+	rxreq
+	txresp -hdr "Etag: abcd" -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 10
+	barrier b1 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+server s2 {
+	rxreq
+	expect req.http.if-none-match == "abcd"
+	txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+		if (req.http.stale) {
+			set req.backend_hint = s2;
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		if (bereq.http.stale) {
+			vtc.barrier_sync("${b1_sock}");
+		}
+	}
+
+	sub vcl_backend_refresh {
+		return (beresp);
+	}
+
+} -start
+
+# insert object in cache
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 20
+} -start
+
+# let the object die
+delay 0.02
+
+# object is still being fetched at this point
+client c2 {
+	txreq -hdr "stale: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 20
+} -start
+
+client c1 -wait
+client c2 -wait
