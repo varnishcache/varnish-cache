@@ -41,6 +41,10 @@ Varnish Cache NEXT (8.0, 2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* ``builtin.vcl`` has been updated to return a synthetic 501 response and
+  close the connection when receiving requests with an unknown/unsupported
+  http method instead of piping them.
+
 * The default value for ``ban_any_variant`` is now ``0``. This means that
   during a lookup, only the matching variants of an object will be evaluated
   against the ban list.
