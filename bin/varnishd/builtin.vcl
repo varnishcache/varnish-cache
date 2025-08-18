@@ -73,7 +73,7 @@ sub vcl_req_method {
 	    req.method != "DELETE" &&
 	    req.method != "PATCH") {
 		# Non-RFC2616 or CONNECT which is weird.
-		return (pipe);
+		return (synth(501));
 	}
 	if (req.method != "GET" && req.method != "HEAD") {
 		# We only deal with GET and HEAD by default.
@@ -171,6 +171,9 @@ sub vcl_synth {
 }
 
 sub vcl_builtin_synth {
+	if (resp.status == 501) {
+		set resp.http.Connection = "close";
+	}
 	set resp.http.Content-Type = "text/html; charset=utf-8";
 	set resp.http.Retry-After = "5";
 	set resp.body = {"<!DOCTYPE html>
