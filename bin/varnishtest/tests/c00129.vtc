@@ -1,0 +1,58 @@
+varnishtest "304 on invalidated stale object"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 {
+	rxreq
+	txresp -hdr {ETag: "foo"} -body corrupted
+
+	rxreq
+	expect req.http.If-None-Match == {"foo"}
+	barrier b1 sync
+	barrier b2 sync
+	txresp -status 304 -hdr {ETag: "foo"}
+
+	rxreq
+	expect req.http.If-None-Match == <undef>
+	txresp -hdr {ETag: "foo"} -body valid
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.method == "PURGE") {
+			return (purge);
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.ttl = 1ms;
+		set beresp.grace = 0s;
+		set beresp.keep = 10s;
+	}
+	sub vcl_deliver {
+		set resp.http.obj-hits = obj.hits;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.body == corrupted
+	expect resp.http.obj-hits == 0
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.body == valid
+	expect resp.http.obj-hits == 0
+} -start
+
+barrier b1 sync
+client c2 {
+	txreq -req PURGE
+	rxresp
+} -run
+barrier b2 sync
+
+client c1 -wait

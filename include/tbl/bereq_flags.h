@@ -34,6 +34,7 @@
 /* lower, vcl_r, vcl_w, doc */
 BEREQ_FLAG(uncacheable,	0, 0, "")	// also beresp
 BEREQ_FLAG(is_bgfetch,	1, 0, "")
+BEREQ_FLAG(retry_fetch,	0, 0, "")
 #define REQ_BEREQ_FLAG(lower, vcl_r, vcl_w, doc) \
 	BEREQ_FLAG(lower, vcl_r, vcl_w, doc)
 #include "tbl/req_bereq_flags.h"
