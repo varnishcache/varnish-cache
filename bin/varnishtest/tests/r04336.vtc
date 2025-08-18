@@ -1,0 +1,57 @@
+varnishtest "Range headers"
+
+server s1 {
+	rxreq
+	expect req.http.Range == "bytes=0-"
+	txresp -status 206 -hdr "Content-Range: bytes 0-99/100" -bodylen 100
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.Range ~ "^bytes=") {
+			set req.http.X-Range = req.http.Range;
+		} else {
+			unset req.http.X-Range;
+		}
+		unset req.http.Range;
+	}
+
+	sub vcl_hash {
+		hash_data(req.http.X-Range);
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.http.X-Range) {
+			set bereq.http.Range = bereq.http.X-Range;
+		}
+	}
+
+	sub vcl_backend_response {
+		if (beresp.status != 206 && beresp.status != 416) {
+			unset beresp.http.Content-Range;
+		}
+		if (beresp.status == 206) {
+			if (! bereq.http.X-Range) {
+				return (abandon);
+			}
+			set beresp.http.X-Content-Range = beresp.http.Content-Range;
+		}
+	}
+
+	sub vcl_deliver {
+		if (resp.status == 206) {
+			if (! resp.http.X-Content-Range) {
+				return (synth(500, "206 but no X-Content-Range"));
+			}
+			set resp.http.Content-Range = resp.http.X-Content-Range;
+		}
+		unset resp.http.X-Content-Range;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Range: bytes=0-"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 100
+} -run
