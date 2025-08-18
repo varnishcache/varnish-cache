@@ -73,7 +73,8 @@ sub vcl_req_method {
 	    req.method != "DELETE" &&
 	    req.method != "PATCH") {
 		# Non-RFC2616 or CONNECT which is weird.
-		return (pipe);
+		set req.http.Connection = "close";
+		return (synth(501));
 	}
 	if (req.method != "GET" && req.method != "HEAD") {
 		# We only deal with GET and HEAD by default.
