@@ -7,6 +7,9 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pipe);
+	}
 } -start
 
 client c1 {

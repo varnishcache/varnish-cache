@@ -6,6 +6,10 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pipe);
+	}
+
 	sub vcl_pipe {
 		return (synth(401));
 	}
