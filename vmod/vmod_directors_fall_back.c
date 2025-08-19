@@ -251,6 +251,16 @@ vmod_fallback_remove_backend(VRT_CTX,
 	vdir_remove_backend(ctx, fb->vd, be, &fb->cur);
 }
 
+VCL_VOID v_matchproto_()
+vmod_fallback_reset_stickiness(VRT_CTX, struct vmod_directors_fallback *fb)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	vdir_wrlock(fb->vd);
+	fb->cur = 0;
+	vdir_unlock(fb->vd);
+}
+
 VCL_BACKEND v_matchproto_()
 vmod_fallback_backend(VRT_CTX,
     struct vmod_directors_fallback *fb)
