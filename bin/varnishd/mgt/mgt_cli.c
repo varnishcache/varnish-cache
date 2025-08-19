@@ -69,6 +69,7 @@ static const int ncmds = vcountof(cmds);
 static int		cli_i = -1, cli_o = -1;
 struct VCLS		*mgt_cls;
 static const char	*secret_file;
+static char		*admin_sockets;
 
 static struct vsb	*cli_buf = NULL;
 
@@ -322,11 +323,80 @@ mcf_help_json(struct cli *cli, const char * const *av, void *priv)
 		mcf_askchild(cli, av, priv);
 }
 
+static void v_matchproto_(cli_func_t)
+mcf_admin_socket_info(struct cli *cli, const char * const *av, void *priv)
+{
+	char *as, *p;
+	const char *joint = "";
+
+	(void)av;
+	(void)priv;
+
+	VCLI_Out(cli, "sockets=");
+	as = strdup(admin_sockets);
+	AN(as);
+	for (p = strtok(as, "\n"); p != NULL; p = strtok(NULL, "\n")) {
+		VCLI_Out(cli, "%s%s", joint, p);
+		joint = ",";
+	}
+	free(as);
+
+	VCLI_Out(cli, "\nsecret=%s\n", secret_file);
+	VCLI_SetResult(cli, CLIS_OK);
+}
+
+static void v_matchproto_(cli_func_t)
+mcf_admin_socket_info_json(struct cli *cli, const char * const *av, void *priv)
+{
+	char *addr, *as, *port, *save;
+	const char *joint = "";
+	(void)av;
+	(void)priv;
+
+
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n");
+	VCLI_Out(cli, "{\n");
+	VSB_indent(cli->sb, 2);
+	VCLI_Out(cli, "\"sockets\": [");
+
+	as = strdup(admin_sockets);
+	AN(as);
+	for (addr = strtok_r(as, "\n", &save);
+	     addr != NULL;
+	     addr = strtok_r(NULL, "%s{\n", &save)) {
+		port = strchr(addr, ' ');
+		AN(port);
+		*port++ = '\0';
+		VCLI_Out(cli, "%s\n", joint);
+		VSB_indent(cli->sb, 2);
+		VCLI_Out(cli, "{\n");
+		VSB_indent(cli->sb, 2);
+		VCLI_Out(cli, "\"address\": \"%s\",\n", addr);
+		VCLI_Out(cli, "\"port\": %s\n", port);
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "}");
+		VSB_indent(cli->sb, -2);
+		joint = ",";
+	}
+	free(as);
+	VCLI_Out(cli, "\n");
+	VCLI_Out(cli, "],\n");
+	VSB_indent(cli->sb, -2);
+
+	VCLI_Out(cli, "  \"secret\": \"%s\"\n", secret_file);
+	VCLI_Out(cli, "}");
+
+	VCLI_JSON_end(cli);
+}
+
+
 static struct cli_proto cli_auth[] = {
-	{ CLICMD_HELP,		"", mcf_help, mcf_help_json },
-	{ CLICMD_PING,		"", VCLS_func_ping, VCLS_func_ping_json },
-	{ CLICMD_AUTH,		"", mcf_auth },
-	{ CLICMD_QUIT,		"", VCLS_func_close },
+	{ CLICMD_HELP,			"", mcf_help, mcf_help_json },
+	{ CLICMD_PING,			"", VCLS_func_ping, VCLS_func_ping_json },
+	{ CLICMD_AUTH,			"", mcf_auth },
+	{ CLICMD_ADMIN_SOCKET_INFO,	"", mcf_admin_socket_info, mcf_admin_socket_info_json },
+	{ CLICMD_QUIT,			"", VCLS_func_close },
 	{ NULL }
 };
 
@@ -530,6 +600,12 @@ mct_callback(void *priv, const struct suckaddr *sa)
 	return (0);
 }
 
+static void
+free_admin_sockets(void)
+{
+	free(admin_sockets);
+}
+
 void
 mgt_cli_telnet(const char *T_arg)
 {
@@ -550,6 +626,11 @@ mgt_cli_telnet(const char *T_arg)
 		ARGV_ERR("-T %s could not be listened on.\n", T_arg);
 	/* Save in shmem */
 	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T");
+
+	if (admin_sockets == NULL)
+		AZ(atexit(free_admin_sockets));
+	REPLACE(admin_sockets, VSB_data(vsb));
+
 	VSB_destroy(&vsb);
 }
 

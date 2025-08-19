@@ -451,6 +451,13 @@ CLI_CMD(PID,
 	0, 0
 )
 
+CLI_CMD(ADMIN_SOCKET_INFO,
+	"admin_socket.info",
+	"admin_socket.info [-j]",
+	"List admin socket addresses/ports as well as the secret file path.",
+	"  ``-j`` specifies JSON output.",
+	0, 0
+)
 #undef CLI_CMD
 
 /*lint -restore */

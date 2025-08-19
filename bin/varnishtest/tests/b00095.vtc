@@ -1,0 +1,23 @@
+vtest "admin_socket.info -j"
+
+feature cmd "jq -V"
+
+varnish v1 -vcl {
+	backend be none;
+} -start
+
+varnish v1 -cliok "admin_socket.info -j"
+
+shell {
+	t() {
+		el=$1
+		ty=$2
+		[[ $(varnishadm -n ${v1_name} admin_socket.info -j | jq -r "$el | type") == $ty ]]
+	}
+
+	t .[3].secret string
+	t .[3].sockets array
+	t .[3].sockets[0] object
+	t .[3].sockets[0].address string
+	t .[3].sockets[0].port number
+}
