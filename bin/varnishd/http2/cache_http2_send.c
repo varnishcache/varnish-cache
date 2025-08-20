@@ -105,6 +105,8 @@ h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_AssertHeld(&h2->sess->mtx);
 	if (&wrk->cond == h2->cond)
 		ASSERT_RXTHR(h2);
+	AZ(H2_SEND_HELD(h2, r2));
+	AZ(r2->wrk);
 	r2->wrk = wrk;
 	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
 	while (!H2_SEND_HELD(h2, r2))
