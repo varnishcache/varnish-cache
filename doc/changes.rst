@@ -34,6 +34,15 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
+=================================
+Varnish-Cache 7.6.5 (2025-08-20)
+=================================
+
+* Fixed a regression in the previous release that would lead to the HTTP/2
+  send queue becoming corrupted (4380_).
+
+.. _4380: https://github.com/varnishcache/varnish-cache/issues/4380
+
 ================================
 Varnish-Cache 7.6.4 (2025-08-05)
 ================================
