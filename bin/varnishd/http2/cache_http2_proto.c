@@ -391,9 +391,9 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL)
 		return (0);
 	if (h2_rapid_reset_check(wrk, h2, r2)) {
-		H2_Send_Get(wrk, h2, r2);
-		h2e = h2_rapid_reset_charge(wrk, h2, r2);
-		H2_Send_Rel(h2, r2);
+		H2_Send_Get(wrk, h2, h2->req0);
+		h2e = h2_rapid_reset_charge(wrk, h2, h2->req0);
+		H2_Send_Rel(h2, h2->req0);
 	}
 	h2_kill_req(wrk, h2, r2, h2_streamerror(vbe32dec(h2->rxf_data)));
 	return (h2e);
