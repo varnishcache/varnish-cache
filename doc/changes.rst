@@ -37,6 +37,15 @@ release process.
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+=================================
+Varnish-Cache 7.7.3 (2025-08-20)
+=================================
+
+* Fixed a regression in the previous release that would lead to the HTTP/2
+  send queue becoming corrupted (4380_).
+
+.. _4380: https://github.com/varnishcache/varnish-cache/issues/4380
+
 ================================
 Varnish-Cache 7.7.2 (2025-08-05)
 ================================
