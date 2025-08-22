@@ -1,0 +1,12 @@
+vtest "admin_socket.info"
+
+varnish v1 -vcl {
+	backend be none;
+} -start
+
+varnish v1 -cliok "admin_socket.info"
+
+shell {
+	varnishadm -n ${v1_name} admin_socket.info | grep -E 'secret=${v1_name}/_.secret'
+	varnishadm -n ${v1_name} admin_socket.info | grep -E 'sockets=\S+ [0-9]+'
+}
