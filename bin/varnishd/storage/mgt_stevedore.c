@@ -183,6 +183,7 @@ STV_Register_The_Usual_Suspects(void)
 	STV_Register(&smf_stevedore, NULL);
 	STV_Register(&sma_stevedore, NULL);
 	STV_Register(&smd_stevedore, NULL);
+	STV_Register(&ssy_stevedore, NULL);
 #ifdef WITH_PERSISTENT_STORAGE
 	STV_Register(&smp_stevedore, NULL);
 	STV_Register(&smp_fake_stevedore, NULL);

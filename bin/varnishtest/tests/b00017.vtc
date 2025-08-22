@@ -1,6 +1,6 @@
-varnishtest "Check set resp.body in vcl_synth"
+varnishtest "Check set resp.body & storage in vcl_synth"
 
-varnish v1 -arg "-sTransient=debug,lessspace" -vcl {
+varnish v1 -arg "-sTransient=debug,lessspace -ssynth=synth" -vcl {
 	backend foo {
 		.host = "${bad_backend}";
 	}
@@ -9,7 +9,11 @@ varnish v1 -arg "-sTransient=debug,lessspace" -vcl {
 	}
 
 	sub vcl_synth {
-		set resp.body = "Custom vcl_synth's body";
+		if (! req.http.synth) {
+			set resp.storage = storage.Transient;
+		}
+		set resp.body = "Custom vcl_synth's " + now + " body";
+		set resp.http.storage = resp.storage;
 		return (deliver);
 	}
 } -start
@@ -19,8 +23,19 @@ client c1 {
 	rxresp
 	expect resp.status == 888
 	expect resp.http.connection != close
-	expect resp.bodylen == 23
-	expect resp.body == "Custom vcl_synth's body"
+	expect resp.bodylen >= 52
+	expect resp.bodylen <= 53
+	expect resp.body ~ "^Custom vcl_synth's .* body$"
+	expect resp.http.storage == "storage.Transient"
+
+	txreq -url "/" -hdr "synth: true"
+	rxresp
+	expect resp.status == 888
+	expect resp.http.connection != close
+	expect resp.bodylen >= 52
+	expect resp.bodylen <= 53
+	expect resp.body ~ "^Custom vcl_synth's .* body$"
+	expect resp.http.storage == "storage.synth"
 } -run
 
-varnish v1 -expect s_synth == 1
+varnish v1 -expect s_synth == 2

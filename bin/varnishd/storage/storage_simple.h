@@ -87,6 +87,8 @@ struct object *SML_MkObject(const struct stevedore *, struct objcore *,
 void *SML_AllocBuf(struct worker *, const struct stevedore *, size_t,
     uintptr_t *);
 void SML_FreeBuf(struct worker *, const struct stevedore *, uintptr_t);
+int SML_iterator(struct worker *wrk, struct objcore *oc,
+    void *priv, objiterate_f *func, int final);
 
 storage_allocobj_f SML_allocobj;
 storage_panic_f SML_panic;
