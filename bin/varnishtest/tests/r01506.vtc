@@ -68,4 +68,5 @@ client c1 {
 } -run
 
 varnish v1 -expect sc_range_short == 0
+varnish v1 -stop
 server s1 -wait
