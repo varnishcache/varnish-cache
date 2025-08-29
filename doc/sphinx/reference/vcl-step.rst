@@ -61,13 +61,17 @@ Common actions for the client and backend side
 
 .. _fail:
 
-``fail``
-~~~~~~~~
+``fail(err)``
+~~~~~~~~~~~~~
 
     Transition to :ref:`vcl_synth` on the client side as for
     ``return(synth(503, "VCL Failed"))``, but with any request state
     changes undone as if ``std.rollback()`` was called and forcing a
-    connection close.
+    connection close. The optional string argument `err` is logged to
+    VSL under a `VCL_Error` tag.
+
+    Returning `fail` from `vcl_synth` sends a minimal response with a 500
+    status.
 
     Intended for fatal errors, for which only minimal error handling is
     possible.

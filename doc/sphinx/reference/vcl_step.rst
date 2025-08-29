@@ -24,7 +24,7 @@ The `vcl_recv` subroutine may terminate with calling ``return()`` on one
 of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
@@ -75,7 +75,7 @@ The `vcl_pipe` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
@@ -98,7 +98,7 @@ The `vcl_pass` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
@@ -122,7 +122,7 @@ The `vcl_hash` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see  :ref:`fail` section above
   |
   | ``lookup``
@@ -154,7 +154,7 @@ The `vcl_purge` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
@@ -179,7 +179,7 @@ The `vcl_miss` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
@@ -207,7 +207,7 @@ stale: It can have a zero or negative `ttl` with only `grace` or
 The `vcl_hit` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
@@ -234,7 +234,7 @@ The `vcl_deliver` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
@@ -262,7 +262,7 @@ The subroutine may terminate with calling ``return()`` with one of the
 following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``restart``
@@ -287,7 +287,7 @@ The `vcl_backend_fetch` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``abandon``
@@ -343,7 +343,7 @@ The `vcl_backend_response` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``abandon``
@@ -398,7 +398,7 @@ The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
   |
-  | ``fail``
+  | ``fail(err)``
   |  see :ref:`fail` section above
   |
   | ``abandon``
@@ -433,7 +433,7 @@ with one of the following keywords:
   | ``ok``
   |  Normal return, VCL continues loading.
   |
-  | ``fail``
+  | ``fail(err)``
   |  Abort loading of this VCL.
 
 .. _vcl_fini:
