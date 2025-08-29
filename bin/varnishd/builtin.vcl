@@ -60,10 +60,6 @@ sub vcl_req_host {
 }
 
 sub vcl_req_method {
-	if (req.method == "PRI") {
-		# This will never happen in properly formed traffic.
-		return (synth(405));
-	}
 	if (req.method != "GET" &&
 	    req.method != "HEAD" &&
 	    req.method != "PUT" &&
