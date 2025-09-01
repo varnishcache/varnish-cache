@@ -398,7 +398,7 @@ hsh_vry_match(const struct req *req, struct objcore *oc, const uint8_t *vary)
 }
 
 static unsigned
-hsh_rush_match(struct req *req)
+hsh_rush_match(const struct req *req)
 {
 	struct objhead *oh;
 	struct objcore *oc;
