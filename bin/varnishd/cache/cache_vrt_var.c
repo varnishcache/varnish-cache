@@ -560,8 +560,8 @@ VRT_r_##obj##_reason(VRT_CTX)					\
 	    ctx->which->field, H__Reason));			\
 }
 
-VRT_OC_VAR_R(obj, req, REQ_MAGIC, objcore);
-VRT_OC_VAR_R(obj_stale, bo, BUSYOBJ_MAGIC, stale_oc);
+VRT_OC_VAR_R(obj, req, REQ_MAGIC, objcore)
+VRT_OC_VAR_R(obj_stale, bo, BUSYOBJ_MAGIC, stale_oc)
 
 /*--------------------------------------------------------------------*/
 
