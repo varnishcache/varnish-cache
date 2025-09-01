@@ -78,7 +78,6 @@ struct boc *HSH_RefBoc(const struct objcore *);
 void HSH_DerefBoc(struct worker *wrk, struct objcore *);
 void HSH_DeleteObjHead(const struct worker *, struct objhead *);
 int HSH_DerefObjCore(struct worker *, struct objcore **);
-int HSH_DerefObjCoreUnlock(struct worker *, struct objcore **);
 enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **);
 void HSH_Ref(struct objcore *o);
 void HSH_AddString(struct req *, void *ctx, const char *str);

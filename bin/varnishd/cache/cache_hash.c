@@ -82,6 +82,7 @@ static void hsh_rush2(struct worker *, struct rush *);
 static int hsh_deref_objhead(struct worker *wrk, struct objhead **poh);
 static int hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh,
     struct objcore *oc);
+static int hsh_deref_objcore_unlock(struct worker *, struct objcore **);
 
 /*---------------------------------------------------------------------*/
 
@@ -1024,7 +1025,7 @@ HSH_Withdraw(struct worker *wrk, struct objcore **ocp)
 	oc->flags &= ~OC_F_BUSY;
 	oc->flags |= OC_F_WITHDRAWN;
 	hsh_rush1(wrk, oc, &rush); /* grabs up to 1 oc ref */
-	assert(HSH_DerefObjCoreUnlock(wrk, &oc) <= 1);
+	assert(hsh_deref_objcore_unlock(wrk, &oc) <= 1);
 
 	hsh_rush2(wrk, &rush);
 }
@@ -1227,11 +1228,11 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&oh->mtx);
-	return (HSH_DerefObjCoreUnlock(wrk, &oc));
+	return (hsh_deref_objcore_unlock(wrk, &oc));
 }
 
-int
-HSH_DerefObjCoreUnlock(struct worker *wrk, struct objcore **ocp)
+static int
+hsh_deref_objcore_unlock(struct worker *wrk, struct objcore **ocp)
 {
 	struct objcore *oc;
 	struct objhead *oh;
