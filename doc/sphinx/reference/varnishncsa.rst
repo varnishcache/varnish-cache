@@ -105,9 +105,10 @@ Supported formatters are:
   total bytes sent to the backend.
 
 %{X}i
-  The contents of request header X. If the header appears multiple times
-  in a single transaction, the last occurrence is used in backend mode
-  and the first one in client mode.
+  The contents of request header X before any VCL processing for client side,
+  and before vcl_backend_response for backend side. If the header appears
+  multiple times in a single transaction, the last occurrence is used in
+  backend mode and the first one in client mode.
 
 %l
   Remote logname. Always '-'.
@@ -116,9 +117,10 @@ Supported formatters are:
   Request method. Defaults to '-' if not known.
 
 %{X}o
-  The contents of response header X. If the header appears multiple
-  times in a single transaction, the last occurrence is used in client
-  mode and the first one in backend mode.
+  The contents of response header X, as it was delivered for client mode, and
+  before VCL processing for backend mode. If the header appears multiple times
+  in a single transaction, the last occurrence is used in client mode and the
+  first one in backend mode.
 
 %O
   In client mode, total bytes sent to client.  In backend mode, total
@@ -255,6 +257,10 @@ Furthermore, these rules also apply to items that appear multiple times in a
 transaction. For example, if a header appears multiple times in a client
 request, the first occurrence is logged in client mode, while in backend mode
 the last occurrence is logged.
+
+Prior to 7.7, formats %{X}i and %{X}o used to include header fields populated
+from VCL. Consider %{VCL_Log:key}x instead to capture data from VCL
+transactions.
 
 EXAMPLE
 =======
