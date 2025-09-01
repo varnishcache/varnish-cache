@@ -382,7 +382,7 @@ hsh_insert_busyobj(const struct worker *wrk, struct objhead *oh)
  */
 
 static int
-hsh_vry_match(struct req *req, struct objcore *oc, const uint8_t *vary)
+hsh_vry_match(const struct req *req, struct objcore *oc, const uint8_t *vary)
 {
 
 	if (req->hash_ignore_vary)
