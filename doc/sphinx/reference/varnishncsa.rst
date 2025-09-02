@@ -229,12 +229,12 @@ Supported formatters are:
 SIGNALS
 =======
 
-* SIGHUP
+``SIGHUP``
 
   Rotate the log file (see -w option) in daemon mode,
   abort the loop and die gracefully when running in the foreground.
 
-* SIGUSR1
+``SIGUSR1``
 
   Flush any outstanding transactions.
 
