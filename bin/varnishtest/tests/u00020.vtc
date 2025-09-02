@@ -174,7 +174,7 @@ shell {
 	varnishncsa -n ${v1_name} -d -c -F '%H %{reqhdr}i %{notreceived}i %{unset}i %m %q %U %u' > ncsa_rc.txt
 
 	cat >expected_rc.txt <<-EOF
-	HTTP/1.1 hash-modified hash - GET ?q=hashQuerry /hash-url hash
+	HTTP/1.1 hash-modified hash client GET ?q=hashQuerry /hash-url hash
 	EOF
 	diff -u expected_rc.txt ncsa_rc.txt
 }

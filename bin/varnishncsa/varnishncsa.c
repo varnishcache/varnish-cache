@@ -965,6 +965,9 @@ process_hdr(enum format_policy fp, const struct watch_head *head, const char *b,
 	struct watch *w;
 	const char *p;
 
+	if (unset && getenv("VARNISHNCSA_COMPAT") != NULL)
+		return;
+
 	VTAILQ_FOREACH(w, head, list) {
 		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
 		if (!isprefix(w->key, w->keylen, b, e, &p))

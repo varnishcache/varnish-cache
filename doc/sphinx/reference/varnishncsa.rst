@@ -251,7 +251,8 @@ The following environment variables shall affect the execution of
 ``VARNISHNCSA_COMPAT``
 
     Restore compatibility with the previous interpretation of formats ``%{X}i``
-    and ``%{X}o``. They used to include header fields populated from VCL.
+    and ``%{X}o``. They used to include header fields populated from VCL and
+    ignore unset headers for messages sent by Varnish.
     Consider ``%{VCL_Log:key}x`` instead to capture data from VCL transactions.
 
 NOTES
