@@ -147,6 +147,7 @@ static struct ctx {
 	uint64_t		gen;
 	VTAILQ_HEAD(,format)	format;
 	int			quote_how;
+	int			compat;
 	char			*missing_string;
 	char			*missing_int;
 
@@ -176,7 +177,7 @@ frag_needed(const struct fragment *frag, enum format_policy fp)
 {
 	unsigned is_first, want_first, want_frag;
 
-	if (getenv("VARNISHNCSA_COMPAT") != NULL)
+	if (CTX.compat)
 		return (1);
 
         is_first = CTX.gen != frag->gen;
@@ -965,7 +966,7 @@ process_hdr(enum format_policy fp, const struct watch_head *head, const char *b,
 	struct watch *w;
 	const char *p;
 
-	if (unset && getenv("VARNISHNCSA_COMPAT") != NULL)
+	if (unset && CTX.compat)
 		return;
 
 	VTAILQ_FOREACH(w, head, list) {
@@ -1244,6 +1245,7 @@ main(int argc, char * const *argv)
 	CTX.vsb = VSB_new_auto();
 	AN(CTX.vsb);
 	CTX.quote_how = VSB_QUOTE_ESCHEX;
+	CTX.compat = getenv("VARNISHNCSA_COMPAT") != NULL;
 	REPLACE(CTX.missing_string, "-");
 	REPLACE(CTX.missing_int, "-");
 
