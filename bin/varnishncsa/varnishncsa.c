@@ -176,6 +176,9 @@ frag_needed(const struct fragment *frag, enum format_policy fp)
 {
 	unsigned is_first, want_first, want_frag;
 
+	if (getenv("VARNISHNCSA_COMPAT") != NULL)
+		return (1);
+
         is_first = CTX.gen != frag->gen;
 
         switch (fp) {

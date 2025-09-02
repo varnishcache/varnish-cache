@@ -238,6 +238,22 @@ SIGNALS
 
   Flush any outstanding transactions.
 
+ENVIRONMENT
+===========
+
+The following environment variables shall affect the execution of
+``varnishncsa``:
+
+``VARNISH_DEFAULT_N``
+
+    Default value for the ``-n`` option when omitted from the command line.
+
+``VARNISHNCSA_COMPAT``
+
+    Restore compatibility with the previous interpretation of formats ``%{X}i``
+    and ``%{X}o``. They used to include header fields populated from VCL.
+    Consider ``%{VCL_Log:key}x`` instead to capture data from VCL transactions.
+
 NOTES
 =====
 
@@ -257,10 +273,6 @@ Furthermore, these rules also apply to items that appear multiple times in a
 transaction. For example, if a header appears multiple times in a client
 request, the first occurrence is logged in client mode, while in backend mode
 the last occurrence is logged.
-
-Prior to 7.7, formats %{X}i and %{X}o used to include header fields populated
-from VCL. Consider %{VCL_Log:key}x instead to capture data from VCL
-transactions.
 
 EXAMPLE
 =======
