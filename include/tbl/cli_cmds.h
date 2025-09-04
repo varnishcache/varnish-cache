@@ -45,7 +45,7 @@ CLI_CMD(BAN,
 	"ban",
 	"ban <field> <operator> <arg> [&& <field> <oper> <arg> ...]",
 	"Mark obsolete all objects where all the conditions match.",
-	"  See :ref:`vcl(7)_ban` for details",
+	"  See :ref:`std.ban()` for details",
 	3, -1
 )
 
