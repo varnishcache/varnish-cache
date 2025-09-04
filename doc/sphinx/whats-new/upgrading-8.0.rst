@@ -1,12 +1,15 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
 
-.. _whatsnew_upgrading_CURRENT:
+.. _whatsnew_upgrading_8.0:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish-Cache 8.0
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This document only lists breaking changes that you should be aware of when
+upgrading from Varnish-Cache 7.x to 8.0. For a complete list of changes,
+please refer to the `change log`_ or :ref:`whatsnew_changes_8.0`.
+
+.. _change log: https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst
 
 vmod_std changes:
 =================
