@@ -176,30 +176,30 @@ frag_needed(const struct fragment *frag, enum format_policy fp)
 {
 	unsigned is_first, want_first, want_frag;
 
-        is_first = CTX.gen != frag->gen;
+	is_first = CTX.gen != frag->gen;
 
-        switch (fp) {
-        case FMTPOL_INTERNAL:
-                want_first = 1;
-                want_frag = 1;
-                break;
-        case FMTPOL_REQ:
-                want_first = *CTX.side == 'c';
-                want_frag = !CTX.recv_compl;
-                break;
-        case FMTPOL_RESP:
-                want_first = *CTX.side == 'b';
-                want_frag = (*CTX.side == 'c') || !CTX.recv_compl;
-                break;
-        default:
-                WRONG("Invalid format policy");
-        }
+	switch (fp) {
+	case FMTPOL_INTERNAL:
+		want_first = 1;
+		want_frag = 1;
+		break;
+	case FMTPOL_REQ:
+		want_first = *CTX.side == 'c';
+		want_frag = !CTX.recv_compl;
+		break;
+	case FMTPOL_RESP:
+		want_first = *CTX.side == 'b';
+		want_frag = (*CTX.side == 'c') || !CTX.recv_compl;
+		break;
+	default:
+		WRONG("Invalid format policy");
+	}
 
-        if (!want_frag)
-                return (0);
-        if (want_first && !is_first)
-                return (0);
-        return (1);
+	if (!want_frag)
+		return (0);
+	if (want_first && !is_first)
+		return (0);
+	return (1);
 }
 
 static void
