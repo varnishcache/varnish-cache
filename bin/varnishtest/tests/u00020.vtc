@@ -43,6 +43,15 @@ shell {
 	diff -u expected_sb.txt ncsa_sb.txt
 }
 
+shell {
+	varnishncsa -n ${v1_name} -d -b -F '%{notsent:first}i %{notsent:last}i %{unset:first}i %{unset:last}i' > ncsa_sb.txt
+
+	cat >expected_sb.txt <<-EOF
+	notsent notsent client toolate
+	EOF
+	diff -u expected_sb.txt ncsa_sb.txt
+}
+
 varnish v1 -stop
 
 # Test things we receive from the backend
@@ -74,6 +83,15 @@ shell {
 
 	cat >expected_rb.txt <<-EOF
 	202 origin origin
+	EOF
+	diff -u expected_rb.txt ncsa_rb.txt
+}
+
+shell {
+	varnishncsa -n ${v1_name} -d -b -F '%{beresp:first}o %{beresp:last}o %{unset:first}o %{unset:last}o' > ncsa_rb.txt
+
+	cat >expected_rb.txt <<-EOF
+	origin vbr-updated origin origin
 	EOF
 	diff -u expected_rb.txt ncsa_rb.txt
 }
@@ -118,6 +136,15 @@ shell {
 	diff -u expected_sc.txt ncsa_sc.txt
 }
 
+shell {
+	varnishncsa -n ${v1_name} -d -c -F '%{resp:first}o %{resp:last}o %{unset:first}o %{unset:last}o' > ncsa_sc.txt
+
+	cat >expected_sc.txt <<-EOF
+	vbr-updated deliver-updated origin origin
+	EOF
+	diff -u expected_sc.txt ncsa_sc.txt
+}
+
 varnish v1 -stop
 
 # Test things we receive from the client
@@ -144,6 +171,7 @@ varnish v1 -vcl+backend {
 		set req.url = "/hash-url?q=hashQuerry";
 		set req.http.Authorization = "basic aGFzaDpwYXNz";
 		set req.http.notreceived = "hash";
+		set req.http.unset = "hash";
 	}
 
 } -start
@@ -163,6 +191,15 @@ shell {
 
 	cat >expected_rc.txt <<-EOF
 	HTTP/1.1 client-header - client POST ?q=clientQuerry /client-url client
+	EOF
+	diff -u expected_rc.txt ncsa_rc.txt
+}
+
+shell {
+	varnishncsa -n ${v1_name} -d -c -F '%{notreceived:first}i %{notreceived:last}i %{unset:first}i %{unset:last}i' > ncsa_rc.txt
+
+	cat >expected_rc.txt <<-EOF
+	recv hash client hash
 	EOF
 	diff -u expected_rc.txt ncsa_rc.txt
 }

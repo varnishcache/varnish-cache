@@ -104,11 +104,16 @@ Supported formatters are:
   In client mode, total bytes received from client.  In backend mode,
   total bytes sent to the backend.
 
-%{X}i
+%{X[:first|last]}i
   The contents of request header X before any VCL processing for client side,
   and before vcl_backend_response for backend side. If the header appears
   multiple times in a single transaction, the last occurrence is used in
   backend mode and the first one in client mode.
+
+  If an optional `:first` or `:last` is used, VCL processing will be taken into
+  account and the matching rule will be first match or last match respectively.
+  When using `:last`, unset headers will still be captured.
+
 
 %l
   Remote logname. Always '-'.
@@ -116,11 +121,15 @@ Supported formatters are:
 %m
   Request method. Defaults to '-' if not known.
 
-%{X}o
+%{X[:first|last]}o
   The contents of response header X, as it was delivered for client mode, and
   before VCL processing for backend mode. If the header appears multiple times
   in a single transaction, the last occurrence is used in client mode and the
   first one in backend mode.
+
+  If an optional `:first` or `:last` is used, VCL processing will be taken into
+  account and the matching rule will be first match or last match respectively.
+  When using `:last`, unset headers will still be captured.
 
 %O
   In client mode, total bytes sent to client.  In backend mode, total
@@ -278,6 +287,11 @@ Log in JSON, using the -j flag to ensure that the output is valid JSON
 for all inputs::
 
   varnishncsa -j -F '{"size": %b, "time": "%t", "ua": "%{User-Agent}i"}'
+
+Log the first and last values of a request header that is modified multiple
+times in VCL:
+
+  varnishncsa -F "%{x-custom-header:first}i %{x-custom-header:last}i"
 
 SEE ALSO
 ========

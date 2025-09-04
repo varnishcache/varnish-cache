@@ -92,6 +92,14 @@ enum e_frag {
 	F__MAX,
 };
 
+enum format_policy {
+	FMTPOL_INTERNAL = 1,
+	FMTPOL_REQ,
+	FMTPOL_RESP,
+	FMTPOL_FIRST,
+	FMTPOL_LAST
+};
+
 struct fragment {
 	uint64_t		gen;
 	const char		*b, *e;
@@ -121,6 +129,7 @@ struct watch {
 	char			*key;
 	int			keylen;
 	struct fragment		frag;
+	enum format_policy	match;
 };
 VTAILQ_HEAD(watch_head, watch);
 
@@ -163,12 +172,6 @@ static struct ctx {
 	int			recv_compl;
 } CTX;
 
-enum format_policy {
-        FMTPOL_INTERNAL,
-        FMTPOL_REQ,
-        FMTPOL_RESP,
-};
-
 static void parse_format(const char *format);
 
 static unsigned
@@ -179,6 +182,11 @@ frag_needed(const struct fragment *frag, enum format_policy fp)
 	is_first = CTX.gen != frag->gen;
 
 	switch (fp) {
+	case FMTPOL_LAST:
+		want_frag = 1;
+		want_first = 0;
+		break;
+	case FMTPOL_FIRST:
 	case FMTPOL_INTERNAL:
 		want_first = 1;
 		want_frag = 1;
@@ -593,11 +601,25 @@ addf_hdr(struct watch_head *head, const char *key)
 {
 	struct watch *w;
 	struct format *f;
+	char *match;
 
 	AN(head);
 	AN(key);
 	ALLOC_OBJ(w, WATCH_MAGIC);
 	AN(w);
+
+	match = strchr(key, ':');
+	if (match != NULL) {
+		match++;
+		if (!strncmp(match, "first", 5))
+			w->match = FMTPOL_FIRST;
+		else if (!strncmp(match, "last", 4))
+			w->match = FMTPOL_LAST;
+		else
+			VUT_Error(vut, 1, "Unknown match rule :%s", match);
+		match[-1] = '\0';
+	}
+
 	w->keylen = asprintf(&w->key, "%s:", key);
 	assert(w->keylen > 0);
 	VTAILQ_INSERT_TAIL(head, w, list);
@@ -935,9 +957,10 @@ frag_line(enum format_policy fp, const char *b, const char *e,
     struct fragment *f)
 {
 
-	if (!frag_needed(f, fp))
+	if (!frag_needed(f, fp)) {
 		/* We only grab the same matching record once */
 		return;
+	}
 
 	if (e == NULL)
 		e = b + strlen(b);
@@ -966,7 +989,14 @@ process_hdr(enum format_policy fp, const struct watch_head *head, const char *b,
 		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
 		if (!isprefix(w->key, w->keylen, b, e, &p))
 			continue;
-		if (unset) {
+
+		if (w->match) {
+			assert(w->match == FMTPOL_FIRST ||
+			    w->match == FMTPOL_LAST);
+			fp = w->match;
+		}
+
+		if (unset && !w->match) {
 			frag_line(fp, CTX.missing_string,
 			    NULL,
 			    &w->frag);
