@@ -8,26 +8,37 @@ released versions of Varnish, see:** :ref:`whats-new-index`
 Upgrading to Varnish **$NEXT_RELEASE**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-**XXX: how to upgrade from previous deployments to this
-version. Limited to work that has to be done for an upgrade, new
-features are listed in "Changes". Explicitly mention what does *not*
-have to be changed, especially in VCL. May include, but is not limited
-to:**
+vmod_std changes:
+=================
 
-* Elements of VCL that have been removed or are deprecated, or whose
-  semantics have changed.
+The VMOD functions ``std.real2integer()``, ``std.real2time()``,
+``std.time2integer()`` and ``std.time2real()`` have been removed. They had
+been marked deprecated since Varnish Cache release 6.2.0 (2019-03-15).
 
-* -p parameters that have been removed or are deprecated, or whose
-  semantics have changed.
+The plug-in replacements for these functions are:
 
-* Changes in the CLI.
+ ``std.real2integer()``::
 
-* Changes in the output or interpretation of stats or the log, including
-  changes affecting varnishncsa/-hist/-top.
+        std.integer(real=std.round(...), fallback=...)
 
-* Changes that may be necessary in VTCs or in the use of varnishtest.
+ ``std.real2time()``::
 
-* Changes in public APIs that may require changes in VMODs or VAPI/VUT
-  clients.
+        std.time(real=std.round(...), fallback=...)
+
+ ``std.time2integer()``::
+
+        std.integer(time=..., fallback=...)
+
+ ``std.time2real()``::
+
+        std.real(time=..., fallback=...)
+
+
+Upgrade notes for VMOD developers
+=================================
+
+``VRT_VSC_Alloc()`` was renamed to ``VRT_VSC_Allocv()`` and a new version of
+``VRT_VSC_Alloc()`` that takes a ``va_list`` argument was reintroduced. This
+makes it consistent with our naming conventions.
 
 *eof*

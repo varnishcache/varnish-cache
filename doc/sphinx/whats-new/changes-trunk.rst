@@ -23,7 +23,17 @@ varnishd
 Parameters
 ~~~~~~~~~~
 
-**XXX changes in -p parameters**
+
+Read only parameter can no longer be set through an alias.
+
+Deprecated aliases for parameters can no longer be set read only, it should
+instead be done directly on the parameters they point to.
+
+A new parameter ``uncacheable_ttl`` defines the TTL of objects marked as
+uncacheable (or hit-for-miss) by the built-in VCL. It is accessible in VCL
+as the ``param.uncacheable_ttl`` variable.
+
+`http_req_overflow_status` can now also be set to 500.
 
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -34,7 +44,9 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
-**XXX new, deprecated or removed variables, or changed semantics**
+Runtime parameters can now be accessed from VCL through:
+``param.<param_name>``. See ``VCL-VARIABLES(7)`` for the list of available
+parameters.
 
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
@@ -42,7 +54,32 @@ Other changes to VCL
 VMODs
 =====
 
-**XXX changes in the bundled VMODs**
+The VMOD functions ``std.real2integer()``, ``std.real2time()``,
+``std.time2integer()`` and ``std.time2real()`` have been removed. They had
+been marked deprecated since Varnish Cache release 6.2.0 (2019-03-15).
+
+The plug-in replacements for these functions are:
+
+ ``std.real2integer()``::
+
+        std.integer(real=std.round(...), fallback=...)
+
+ ``std.real2time()``::
+
+        std.time(real=std.round(...), fallback=...)
+
+ ``std.time2integer()``::
+
+        std.integer(time=..., fallback=...)
+
+ ``std.time2real()``::
+
+        std.real(time=..., fallback=...)
+
+VUTs
+====
+
+VUTs now print backtraces to syslog after a crash.
 
 varnishlog
 ==========
@@ -52,22 +89,40 @@ varnishlog
 varnishadm
 ==========
 
-**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
+New ban expression variable `obj.last_hit` allows to remove objects from
+cache which have not been accessed for a given amount of time. This is
+particularly useful to get rid of request bans by removing all objects which
+have not been touched since the request ban.
 
 varnishstat
 ===========
 
-**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
+New VSC counters for connection pools:
+
+- ``VCP.ref_hit`` counts the number of times an existing connection pool was
+    found while creating a backend.
+- ``VCP.ref_miss`` counts the number of times an existing connection pool was
+    not found while creating a backend.
 
 varnishtest
 ===========
 
-**XXX changes concerning varnishtest(1) and/or vtc(7)**
+``varnishtest`` now prints a backtrace to stderr after a crash.
 
 Changes for developers and VMOD authors
 =======================================
 
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
+`hdr_t` type is now a structured type but keeps the same memory layout as
+before.
+
+``VRT_VSC_Alloc()`` was renamed to ``VRT_VSC_Allocv()`` and a new version of
+``VRT_VSC_Alloc()`` that takes a ``va_list`` argument was reintroduced. This
+makes it consistent with our naming conventions.
+
+vmod authors can now specify C names for function/method arguments like follows:
+
+  [BOOL bool:boolean]
+
+This is useful to avoid name clashes with keywords reserved by the language.
 
 *eof*

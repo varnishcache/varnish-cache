@@ -84,6 +84,10 @@ Varnish Cache NEXT (8.0, 2025-09-15)
 
         std.real(time=..., fallback=...)
 
+* ``varnishstat`` will automatically switch to ``-1`` output if ``stdout``
+  isn't a terminal (allowing ``varnishstat | grep MAIN``). A new ``-c`` switch
+  has been added to force the live mode.
+
 * The bundled varnishtest sources have now been replaced with the seperate
   VTest2 repository.
 
@@ -93,9 +97,75 @@ Varnish Cache NEXT (8.0, 2025-09-15)
   Developers should use ``make update`` to update the referenced vtest2 commit
   after changes to vtest2.
 
-* ``varnishstat`` will automatically switch to ``-1`` output if ``stdout``
-  isn't a terminal (allowing ``varnishstat | grep MAIN``). A new ``-c`` switch
-  has been added to force the live mode.
+.. _4199: https://github.com/varnishcache/varnish-cache/issues/4199
+
+* Handling of VCL temperature changes was improved. (4199_)
+
+* ``varnishtest`` and VUTs will now print backtraces after a crash. The
+  backtrace for VUTs is printed to syslog while ``varnishtest`` will print
+  it to ``stderr``.
+
+.. _4323: https://github.com/varnishcache/varnish-cache/issues/4323
+
+* Fixed a bug where a read only parameter could still be set through its alias.
+  (4323_)
+
+* Deprecated aliases for parameters can no longer be set read only, it should
+  instead be done directly on the parameters they point to.
+
+.. _VSV00016: https://varnish-cache.org/security/VSV00016.html
+
+*  We now check for CRLF after chunked body in HTTP/1. (VSV00016_)
+
+* Ban lurker statistics are updated more frequently.
+
+* A new parameter ``uncacheable_ttl`` defines the TTL of objects marked as
+  uncacheable (or hit-for-miss) by the built-in VCL. It is accessible in VCL
+  as the ``param.uncacheable_ttl`` variable.
+
+* Runtime parameters can now be accessed from VCL through:
+  ``param.<param_name>``. See :ref:`vcl_variables` for the list of available
+  parameters.
+
+* vmod authors can now specify C names for function/method arguments. This is
+  useful to avoid name clashes with keywords reserved by the language.
+
+* ``VRT_VSC_Alloc()`` was renamed to ``VRT_VSC_Allocv()`` and a new version of
+  ``VRT_VSC_Alloc()`` that takes a ``va_list`` argument was reintroduced. This
+  makes it consistent with our naming conventions.
+
+* ``http_req_overflow_status`` can now also be set to 500.
+
+.. _4261: https://github.com/varnishcache/varnish-cache/pull/4261
+
+* An optimization was added to make startups faster when loading a persistent
+  storage with a long list of bans. (4261_)
+
+* gzip buffers are now allocated from transient stevedore memory instead of a
+  regular heap allocation.
+
+.. _4308: https://github.com/varnishcache/varnish-cache/pull/4308
+
+* ``hdr_t`` type is now a structured type. (4308_)
+
+* Regexp failures now have a more harmonized error message format.
+
+* VSC counters for connection pools have been added:
+
+  * ``VCP.ref_hit`` counts the number of times an existing connection pool was
+    found while creating a backend.
+  * ``VCP.ref_miss`` counts the number of times an existing connection pool was
+    not found while creating a backend.
+
+.. _4313: https://github.com/varnishcache/varnish-cache/issues/4313
+
+* A failure to allocate a synthetic beresp body now properly fails the
+  respective response. (4313_)
+
+* New ban expression variable `obj.last_hit` allows to remove objects from
+  cache which have not been accessed for a given amount of time. This is
+  particularly useful to get rid of request bans by removing all objects which
+  have not been touched since the request ban.
 
 ==============================
 Varnish-Cache 7.7 (2025-03-17)
