@@ -249,7 +249,7 @@ runs on its own CPU. That way they will not fight about the cachelines.
 
 If all this sounds foreign to you, let me just assure you that it
 works: we spend less than 18 system calls on serving a cache hit,
-and even many of those are calls tog get timestamps for statistics.
+and even many of those are calls to get timestamps for statistics.
 
 These techniques are also nothing new, we have used them in the
 kernel for more than a decade, now it's your turn to learn them :-)
