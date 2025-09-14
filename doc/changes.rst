@@ -173,11 +173,11 @@ Varnish-Cache 8.0 (2025-09-15)
 
         std.real(time=..., fallback=...)
 
-* The bundled varnishtest sources have now been replaced with the seperate
+* The bundled varnishtest sources have now been replaced with the separate
   VTest2 repository.
 
-  When building from git, either clone with the ``-r`` option, or use ``git
-  submodule update --init`` on an existing repository.
+  When building from git, either clone with the ``--recursive`` option, or use
+  ``git submodule update --init`` on an existing repository.
 
   Developers should use ``make update`` to update the referenced vtest2 commit
   after changes to vtest2.
