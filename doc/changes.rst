@@ -120,9 +120,9 @@ Varnish-Cache 8.0 (2025-09-15)
 
 .. _4369: https://github.com/varnishcache/varnish-cache/issues/4369
 
-* A bug as been fixed in the Access Control List (ACL) implementation where
-  folding could lead to negated entries being folded with positive ones.
-  (`4369`_)
+* A bug as been fixed in the Access Control List (ACL) implementation which
+  could get triggered with folding enabled (``+fold``) where negated entries
+  could erroneously get folded with positive ones. (`4369`_)
 
 * The default value for ``ban_any_variant`` is now ``0``. This means that
   during a lookup, only the matching variants of an object will be evaluated
@@ -133,8 +133,8 @@ Varnish-Cache 8.0 (2025-09-15)
   of bans over time. In such cases, it is recommended to set
   ``ban_any_variant`` to a higher value.
 
-* The VMOD function ``cookie.format_rfc1123()`` is now removed. It had been
-  renamed to ``cookie.format_date()``.
+* The already deprecated VMOD function ``cookie.format_rfc1123()`` is now
+  removed. It had been renamed to ``cookie.format_date()``.
 
 * The already deprecated functions ``VRT_{Add,Remove}_{VDP,VFP}`` have been
   removed from VRT.
