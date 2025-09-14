@@ -208,7 +208,7 @@ Varnish-Cache 8.0 (2025-09-15)
   uncacheable (or hit-for-miss) by the built-in VCL. It is accessible in VCL
   as the ``param.uncacheable_ttl`` variable.
 
-* Runtime parameters can now be accessed from VCL through:
+* Some Runtime parameters can now be accessed from VCL as
   ``param.<param_name>``. See :ref:`vcl_variables` for the list of available
   parameters.
 
