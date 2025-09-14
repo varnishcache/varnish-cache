@@ -69,20 +69,20 @@ Varnish-Cache 8.0 (2025-09-15)
   ``Content-Encoding``, ``Etag`` and ``Last-Modified`` headers, which are copied
   from the stale object for correctness.
 
-  Various helper subroutines have been added to ``builtin.vcl`` with code to
-  check for various corner cases. Besides this, ``builtin.vcl`` should result in
-  unchanged default behavior for ``304`` responses.
+  Helper subroutines have been added to ``builtin.vcl`` with code to check for
+  various corner cases. Besides this, ``builtin.vcl`` should result in unchanged
+  default behavior for ``304`` responses.
 
 * Handling of request coalescing using the `waitinglist` mechanism has been
   changed fundamentally in order to allow for all requests waiting in parallel
-  to handle a newly arriving cache entry object as successfully revalidated - in
+  to handle a newly arriving non private object as successfully revalidated - in
   other words, cases where a response with a ttl and grace value of 0 seconds
-  still serves multiple client requests.
+  still serve multiple client requests.
 
   The new implementation addresses long standing issues like "waitinglist
   serialization" and "spurious waitinglist rushes".
 
-* An explicit ``stop`` if the ``varnishd`` process now explicitly waits for all
+* A ``stop`` command to the ``varnishd`` process now explicitly waits for all
   VCL references to be returned, which is the same as waiting for all ongoing
   transactions to complete. There is currently no timeout. If this new behavior
   is unwanted, the worker process can still be terminated externally.
@@ -95,7 +95,7 @@ Varnish-Cache 8.0 (2025-09-15)
 
 * ``varnishstat`` will automatically switch to ``-1`` output if ``stdout``
   isn't a terminal (allowing ``varnishstat | grep MAIN``). A new ``-c`` switch
-  has been added to force the live mode.
+  has been added to force curses (interactive terminal) mode.
 
 * The format of logs emitted under the ``ESI_xmlerror`` tag has been changed
   slightly with a colon added after the ``ERR`` and ``WARN`` prefixes. This
