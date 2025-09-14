@@ -358,7 +358,7 @@ is always the one from the stale object.
   |  without executing the RFC merge logic. Any content-length and
   |  content-encoding headers present in the 304 beresp will be removed and
   |  replaced by the stale object ones if available. Etag and Last-Modified
-  |  headers are also copied from the stale object to allow futur revalidations.
+  |  headers are also copied from the stale object to allow future revalidations.
   |
   | ``fail``
   |  see :ref:`fail` section above
