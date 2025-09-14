@@ -41,9 +41,57 @@ Varnish-Cache 8.0 (2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+.. _4336: https://github.com/varnishcache/varnish-cache/pull/4336
+
+* A regression has been fixed which prevented vcl controlled custom Range
+  requests with ``http_range_support`` enabled. (`4336`_)
+
+.. _4245: https://github.com/varnishcache/varnish-cache/pull/4245
+
+* The ``Content-Length`` response header is now also sent in response to all
+  ``HEAD`` requests. (`4245`_)
+
 * ``builtin.vcl`` has been updated to return a synthetic 501 response and
   close the connection when receiving requests with an unknown/unsupported
   http method instead of piping them.
+
+* VCL control has been added over the logic to handle ``304 Not Modified``
+  responses to backend requests. The subroutine ``vcl_backend_refresh`` is now
+  getting called with ``304`` response objects as ``beresp`` and the stale
+  object to potentially re-use as ``obj_stale``. From this subroutine,
+  ``return(merge)`` will invoke the header merging and re-use of the stale
+  object body which so far was the only option. But besides the usual options to
+  fail, abandon, retry or return an error, it now also offers the options to
+  return the stale object as-is (``return(obj_stale)``) or to return whatever
+  headers are received or created in ``beresp.http`` using ``return(beresp)``.
+  The latter option allows for almost full control over the response headers to use
+  with the stale object, with the exception of the ``Content-Length``,
+  ``Content-Encoding``, ``Etag`` and ``Last-Modified`` headers, which are copied
+  from the stale object for correctness.
+
+  Various helper subroutines have been added to ``builtin.vcl`` with code to
+  check for various corner cases. Besides this, ``builtin.vcl`` should result in
+  unchanged default behavior for ``304`` responses.
+
+* Handling of request coalescing using the `waitinglist` mechanism has been
+  changed fundamentally in order to allow for all requests waiting in parallel
+  to handle a newly arriving cache entry object as successfully revalidated - in
+  other words, cases where a response with a ttl and grace value of 0 seconds
+  still serves multiple client requests.
+
+  The new implementation addresses long standing issues like "waitinglist
+  serialization" and "spurious waitinglist rushes".
+
+* An explicit ``stop`` if the ``varnishd`` process now explicitly waits for all
+  VCL references to be returned, which is the same as waiting for all ongoing
+  transactions to complete. There is currently no timeout. If this new behavior
+  is unwanted, the worker process can still be terminated externally.
+
+.. _4380: https://github.com/varnishcache/varnish-cache/issues/4380
+.. _VSV17: https://varnish-cache.org/security/VSV00017.html
+
+* The `reverse rapid reset` vector, also known as `HTTP/2 Made You Reset Attack`, has
+  been addressed (`VSV17`_, `4380`_).
 
 * The default value for ``ban_any_variant`` is now ``0``. This means that
   during a lookup, only the matching variants of an object will be evaluated
