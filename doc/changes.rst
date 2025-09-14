@@ -93,6 +93,10 @@ Varnish-Cache 8.0 (2025-09-15)
 * The `reverse rapid reset` vector, also known as `HTTP/2 Made You Reset Attack`, has
   been addressed (`VSV17`_, `4380`_).
 
+* ``varnishstat`` will automatically switch to ``-1`` output if ``stdout``
+  isn't a terminal (allowing ``varnishstat | grep MAIN``). A new ``-c`` switch
+  has been added to force the live mode.
+
 * The default value for ``ban_any_variant`` is now ``0``. This means that
   during a lookup, only the matching variants of an object will be evaluated
   against the ban list.
@@ -131,10 +135,6 @@ Varnish-Cache 8.0 (2025-09-15)
   * ``std.time2real()``::
 
         std.real(time=..., fallback=...)
-
-* ``varnishstat`` will automatically switch to ``-1`` output if ``stdout``
-  isn't a terminal (allowing ``varnishstat | grep MAIN``). A new ``-c`` switch
-  has been added to force the live mode.
 
 * The bundled varnishtest sources have now been replaced with the seperate
   VTest2 repository.
