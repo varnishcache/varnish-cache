@@ -97,6 +97,33 @@ Varnish-Cache 8.0 (2025-09-15)
   isn't a terminal (allowing ``varnishstat | grep MAIN``). A new ``-c`` switch
   has been added to force the live mode.
 
+* The format of logs emitted under the ``ESI_xmlerror`` tag has been changed
+  slightly with a colon added after the ``ERR`` and ``WARN`` prefixes. This
+  allows use of prefix-matching with vsl clients, for example using
+  ``%{VSL:ESI_xmlerror:WARN}x``.
+
+* A bug has been fixed in the ``transit_buffer`` implementation which could lead
+  to lockups on request body fetches.
+
+* The new counters ``transit_stored`` and ``transit_buffered`` have been added.
+  The former is the number of bytes stored in cache for uncachable body data,
+  and the latter is the number of bytes of body data for which the
+  ``transit_buffer`` limitation has been used.
+
+* ``struct strands`` and ``struct vrt_blob`` gained a magic number.
+
+* A scalability limit with private (uncacheable) objects has been addressed.
+
+* The ``vcountof()`` utility macro has been added to ``vdef.h``
+
+* Request body read failures now result in a ``400`` response status.
+
+.. _4369: https://github.com/varnishcache/varnish-cache/issues/4369
+
+* A bug as been fixed in the Access Control List (ACL) implementation where
+  folding could lead to negated entries being folded with positive ones.
+  (`4369`_)
+
 * The default value for ``ban_any_variant`` is now ``0``. This means that
   during a lookup, only the matching variants of an object will be evaluated
   against the ban list.
@@ -109,10 +136,20 @@ Varnish-Cache 8.0 (2025-09-15)
 * The VMOD function ``cookie.format_rfc1123()`` is now removed. It had been
   renamed to ``cookie.format_date()``.
 
+* The already deprecated functions ``VRT_{Add,Remove}_{VDP,VFP}`` have been
+  removed from VRT.
+
 * The ACL option ``+fold`` is now default. This means that ACL entries will
   automatically be merged for adjacent networks and subnets will be removed in
   the presence of supernets. This affects logging. The old default behavior can
   be restored by adding the ``-fold`` option to ACLs.
+
+* A new storage API named VAI (for Varnish Asynchronous Iteration) and a new API
+  for delivery filters named VDPIO have been added in order to support
+  asynchronous delivery of response bodies on the storage and protocol sides.
+
+  The default delivery function has been reimplemented to use VAI, but for now
+  all code within Varnish-Cache continues to use synchronous I/O.
 
 * The VMOD functions ``std.real2integer()``, ``std.real2time()``,
   ``std.time2integer()`` and ``std.time2real()`` have been removed. They had
