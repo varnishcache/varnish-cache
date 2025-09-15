@@ -15,6 +15,7 @@ varnish v1 -clierr 106 "vcl.label vcl.A vcl1"
 varnish v1 -cliok "vcl.label vclA vcl1"
 # labeling twice #2834
 varnish v1 -cliok "vcl.label vclA vcl1"
+varnish v1 -cliok "backend.list vcl1.*"
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {

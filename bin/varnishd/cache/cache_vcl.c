@@ -530,6 +530,8 @@ vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
 	int i, found = 0;
 	struct vcldir *vdir;
 
+	AN(vcl->vdire);	// no labels
+
 	Lck_AssertHeld(&vcl_mtx);
 	VTAILQ_FOREACH(vdir, &vcl->vdire->directors, directors_list) {
 		CHECK_OBJ(vdir, VCLDIR_MAGIC);
@@ -575,6 +577,9 @@ VCL_IterDirector(struct cli *cli, const char *pat,
 	} else {
 		Lck_Lock(&vcl_mtx);
 		VTAILQ_FOREACH(vcl, &vcl_head, list) {
+			// skip labels
+			if (! vcl->vdire)
+				continue;
 			i = vcl_iterdir(cli, VSB_data(vsb), vcl, func, priv);
 			if (i < 0) {
 				found = i;
