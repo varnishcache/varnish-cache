@@ -40,7 +40,7 @@ Request body read failures now result in a ``400`` response status.
 Bans
 ====
 
-The default value of the ``ban_any_variant``parameter was changed to 0.
+The default value of the ``ban_any_variant`` parameter was changed to 0.
 This means that during a lookup, only the matching variants of an object will be
 evaluated against the ban list.
 As a side effect, variants that are rarely requested may never get a chance to
