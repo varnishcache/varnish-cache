@@ -168,7 +168,7 @@ repository.
 varnishncsa
 ===========
 
-``varnishncsa`` recovered the ability to log VCL set headers through the
+``varnishncsa`` regained the ability to log headers set from VCL through the
 ``%{X[:first|last]}i`` and ``%{X[:first|last]}o`` formats. ``:first`` means
 that the value of the header when it is first seen in a VSL transaction is
 logged, while ``:last`` means that the final one is logged.
