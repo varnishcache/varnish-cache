@@ -6,7 +6,7 @@ parameters:
     default: "HEAD"
   pkg-commit:
     type: string
-    default: "master"
+    default: "8.0"
   dist-url:
     type: string
     default: ""
