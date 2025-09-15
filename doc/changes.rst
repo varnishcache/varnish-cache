@@ -41,6 +41,12 @@ Varnish-Cache 8.0 (2025-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+
+.. _4388: https://github.com/varnishcache/varnish-cache/pull/4388
+
+* ``varnishncsa`` can log VCL set headers again using the ``%{X[:first|last]}i``
+  and ``%{X[:first|last]}o`` formats. (`4388`_)
+
 .. _4336: https://github.com/varnishcache/varnish-cache/pull/4336
 
 * A regression has been fixed which prevented vcl controlled custom Range

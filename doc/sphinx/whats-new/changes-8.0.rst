@@ -165,6 +165,16 @@ varnishtest
 The bundled varnishtest sources have now been replaced with the separate VTest2
 repository.
 
+varnishncsa
+===========
+
+``varnishncsa`` recovered the ability to log VCL set headers through the
+``%{X[:first|last]}i`` and ``%{X[:first|last]}o`` formats. ``:first`` means
+that the value of the header when it is first seen in a VSL transaction is
+logged, while ``:last`` means that the final one is logged.
+The default behavior is unchanged when neither ``:first`` nor ``:last`` is
+specified.
+
 Changes for developers and VMOD authors
 =======================================
 
