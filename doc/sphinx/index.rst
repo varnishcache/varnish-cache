@@ -40,7 +40,7 @@ Conventions used in this manual include:
 Longer listings like example command output and VCL look like this::
 
     $ /opt/varnish/sbin/varnishd -V
-    varnishd (varnish-7.7.0 revision 1234567)
+    varnishd (varnish-8.0.0 revision 1234567)
     Copyright (c) 2006 Verdens Gang AS
     Copyright (c) 2006-2025 Varnish Software
 
