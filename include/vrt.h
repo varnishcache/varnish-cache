@@ -70,6 +70,7 @@
  *	VRT_r_obj_stale_time() added
  *	VRT_r_obj_stale_ttl() added
  *	VRT_r_obj_stale_uncacheable() added
+ *	VRT_r_obj_stale_is_valid() added
  *	enum gethdr_e has new value HDR_OBJ_STALE
  *	typedef hdr_t added
  *	struct gethdr_s.what changed to hdr_t
