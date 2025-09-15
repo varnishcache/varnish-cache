@@ -46,7 +46,7 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
-#define VRT_MAJOR_VERSION	21U
+#define VRT_MAJOR_VERSION	22U
 
 #define VRT_MINOR_VERSION	0U
 
@@ -57,7 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * XX.X (unreleased)
+ * 22.0 (2025-09-15)
  *	VRT_r_obj_stale_age() added
  *	VRT_r_obj_stale_can_esi() added
  *	VRT_r_obj_stale_grace() added
