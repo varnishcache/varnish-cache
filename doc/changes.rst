@@ -126,7 +126,7 @@ Varnish-Cache 8.0 (2025-09-15)
 
 .. _4369: https://github.com/varnishcache/varnish-cache/issues/4369
 
-* A bug as been fixed in the Access Control List (ACL) implementation which
+* A bug has been fixed in the Access Control List (ACL) implementation which
   could get triggered with folding enabled (``+fold``) where negated entries
   could erroneously get folded with positive ones. (`4369`_)
 
@@ -253,7 +253,7 @@ Varnish-Cache 8.0 (2025-09-15)
 * A failure to allocate a synthetic beresp body now properly fails the
   respective response. (4313_)
 
-* New ban expression variable `obj.last_hit` allows to remove objects from
+* New ban expression variable ``obj.last_hit`` allows to remove objects from
   cache which have not been accessed for a given amount of time. This is
   particularly useful to get rid of request bans by removing all objects which
   have not been touched since the request ban.

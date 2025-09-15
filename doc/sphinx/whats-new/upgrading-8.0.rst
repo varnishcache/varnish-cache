@@ -94,7 +94,7 @@ usually created through existing VRT functions, but where they are managed
 specifically, they  should  now be initialized / allocated with:
 
 * ``INIT_OBJ(strands, STRANDS_MAGIC)`` / ``ALLOC_OBJ(strands, STRANDS_MAGIC)``
-* ``INIT_OBJ(blob, VMOD_BLOB_MAGIC)`` / ``ALLOC_OBJ(blo, VMOD_BLOB_MAGIC)``
+* ``INIT_OBJ(blob, VMOD_BLOB_MAGIC)`` / ``ALLOC_OBJ(blob, VMOD_BLOB_MAGIC)``
 
 The already deprecated functions ``VRT_{Add,Remove}_{VDP,VFP}`` have been
 removed from VRT. They had already been replaced by ``VRT_AddFilter()`` and
