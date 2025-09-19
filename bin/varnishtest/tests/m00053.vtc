@@ -240,3 +240,22 @@ client c2 {
 
 client c1 -wait
 client c2 -wait
+
+varnish v1 -vcl {
+	import debug;
+	import std;
+
+	backend b None;
+
+	sub logger {
+		std.log("logger called");
+	}
+
+	sub vcl_init {
+		debug.call(logger);
+	}
+
+	sub vcl_fini {
+		debug.call(logger);
+	}
+}

@@ -44,6 +44,7 @@
 
 #include "cache_director.h"
 #include "cache_vcl.h"
+#include "vbm.h"
 #include "vcli_serve.h"
 #include "vte.h"
 #include "vtim.h"
@@ -215,6 +216,8 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 	int r, havemsg;
 	unsigned method = 0;
 	struct vrt_ctx *ctx;
+	void *vbm_alloc = NULL;
+	size_t sz;
 
 	ASSERT_CLI();
 	ASSERT_VCL_ACTIVE();
@@ -251,6 +254,13 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 	ctx->syntax = ctx->vcl->conf->syntax;
 	ctx->method = method;
 
+	if (vcl->conf->nsub > 0) {
+		sz = VBITMAP_SZ(vcl->conf->nsub);
+		vbm_alloc = malloc(sz);
+		AN(vbm_alloc);
+		ctx->called = vbit_init(vbm_alloc, sz);
+	}
+
 	VCL_TaskEnter(cli_task_privs);
 	r = ctx->vcl->conf->event_vcl(ctx, ev);
 	VCL_TaskLeave(ctx, cli_task_privs);
@@ -260,6 +270,8 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 
 	if (r && (ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD))
 		WRONG("A VMOD cannot fail COLD or DISCARD events");
+
+	free(vbm_alloc);
 
 	return (r);
 }
