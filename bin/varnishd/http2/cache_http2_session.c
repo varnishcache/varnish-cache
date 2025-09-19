@@ -436,6 +436,7 @@ h2_new_session(struct worker *wrk, void *arg)
 		AN(WS_Reservation(h2->ws));
 	}
 
+	assert(!WS_IsReserved(h2->ws));
 	AN(h2->error);
 
 	/* Delete all idle streams */
