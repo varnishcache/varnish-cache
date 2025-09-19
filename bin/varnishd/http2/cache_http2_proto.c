@@ -1517,8 +1517,11 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	ASSERT_RXTHR(h2);
 
-	if (h2->goaway && h2->open_streams == 0)
+	if (h2->goaway && h2->open_streams == 0) {
+		// h2 WS must always be released before returning
+		WS_ReleaseP(h2->ws, h2->htc->rxbuf_b);
 		return (0);
+	}
 
 	h2->t1 = NAN;
 	VTCP_blocking(*h2->htc->rfd);
