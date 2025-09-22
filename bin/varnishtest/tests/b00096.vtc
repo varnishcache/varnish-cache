@@ -1,6 +1,7 @@
 varnishtest "Test vcl_backend_refresh on streaming object"
 
 barrier b1 sock 2
+barrier b2 sock 2
 
 server s1 {
 	rxreq
@@ -39,6 +40,12 @@ varnish v1 -vcl+backend {
 		return (beresp);
 	}
 
+	sub vcl_deliver {
+		if (!req.http.stale) {
+			vtc.barrier_sync("${b2_sock}");
+		}
+	}
+
 } -start
 
 # insert object in cache
@@ -49,6 +56,7 @@ client c1 {
 	expect resp.bodylen == 20
 } -start
 
+barrier b2 sync
 # let the object die
 delay 0.02
 
