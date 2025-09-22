@@ -37,3 +37,5 @@ client c1 {
 	expect resp.status == 200
 	expect resp.body == "foo"
 } -run
+
+server s1 -wait
