@@ -709,28 +709,24 @@
 	workspace memory during delivery.
 
 .. varnish_vsc:: ws_backend_overflow
-	:level: diag
 	:group: wrk
 	:oneliner: workspace_backend overflows
 
 	Number of times we ran out of space in workspace_backend.
 
 .. varnish_vsc:: ws_client_overflow
-	:level: diag
 	:group: wrk
 	:oneliner: workspace_client overflows
 
 	Number of times we ran out of space in workspace_client.
 
 .. varnish_vsc:: ws_thread_overflow
-	:level: diag
 	:group: wrk
 	:oneliner: workspace_thread overflows
 
 	Number of times we ran out of space in workspace_thread.
 
 .. varnish_vsc:: ws_session_overflow
-	:level: diag
 	:oneliner: workspace_session overflows
 
 	Number of times we ran out of space in workspace_session.
