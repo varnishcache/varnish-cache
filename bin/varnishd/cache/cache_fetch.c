@@ -388,6 +388,14 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	oc = bo->fetch_objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
+	// this complements the stale_oc handling in vbf_stp_mkbereq():
+	// Conditions might have changed since we made the bereq (retry)
+	if (! bo->uncacheable && bo->stale_oc != NULL &&
+	    bo->stale_oc->flags & OC_F_DYING) {
+		http_Unset(bo->bereq, H_If_Modified_Since);
+		http_Unset(bo->bereq, H_If_None_Match);
+	}
+
 	AZ(bo->storage);
 	bo->storage = bo->uncacheable ? stv_transient : STV_next();
 
