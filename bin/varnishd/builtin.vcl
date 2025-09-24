@@ -230,7 +230,10 @@ sub vcl_refresh_conditions {
 # We currently only revalidate 200 responses
 sub vcl_refresh_status {
 	if (obj_stale.status != 200) {
-		return (error(503, "Invalid object for refresh"));
+		# Can happen if VCL adds If-Modified-Since / If-None-Match
+		# for non-200 status objects. If deliberate, this sub can
+		# be overridden with sub vcl_refresh_status { return; }
+		return (error(503, "Invalid object for refresh (status)"));
 	}
 }
 
