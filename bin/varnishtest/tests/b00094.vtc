@@ -24,7 +24,7 @@ server s1 {
 varnish v1 -vcl+backend {
 
 	sub vcl_backend_response {
-		set beresp.ttl = 0.01s;
+		set beresp.ttl = 1ms;
 		set beresp.grace = 0s;
 		set beresp.keep = 10m;
 		set beresp.http.was-304 = beresp.was_304;
@@ -216,5 +216,48 @@ client c8 {
 	txreq -url /2
 	rxresp
 	expect resp.status == 503
-	expect resp.reason == "Invalid object for refresh"
+	expect resp.reason == "Invalid object for refresh (status)"
+} -run
+
+###################################################################
+# overriding the status check, allowing 304 on non-200
+
+server s1 {
+	rxreq
+	txresp -status 404 -body "precious"
+	rxreq
+	txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.01s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.http.if-none-match = "abcd";
+	}
+
+	sub vcl_refresh_status {
+		return;
+	}
+}
+
+# Receiving 304 for non-200 objects, but accepting it
+# (violating http)
+client c8 {
+	txreq -url /3
+	rxresp
+	expect resp.status == 404
+	expect resp.body == "precious"
+	delay 0.01
+	txreq -url /3
+	rxresp
+	expect resp.status == 404
+	expect resp.http.was-304 == true
+	expect resp.body == "precious"
 } -run
