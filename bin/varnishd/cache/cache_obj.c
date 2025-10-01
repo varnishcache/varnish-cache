@@ -524,9 +524,10 @@ ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next,
 /*====================================================================
  */
 
-void
+enum boc_state_e
 ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 {
+	enum boc_state_e got;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
@@ -540,7 +541,10 @@ ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
 	}
+	got = oc->boc->state;
 	Lck_Unlock(&oc->boc->mtx);
+
+	return (got);
 }
 
 /*====================================================================
