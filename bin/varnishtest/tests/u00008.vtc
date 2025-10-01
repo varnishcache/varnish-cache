@@ -71,9 +71,11 @@ process p1 -expect-text 4 124 "AVG_1000"
 process p1 -expect-text 22 108 "UNSEEN  DIAG"
 
 process p1 -key NPAGE
+process p1 -key NPAGE
 process p1 -expect-text 0 0 "VBE.vcl1.s1.helddown"
 process p1 -screen_dump
 
+process p1 -key PPAGE
 process p1 -key PPAGE
 process p1 -expect-text 0 0 "VBE.vcl1.s1.happy"
 process p1 -screen_dump
