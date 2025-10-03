@@ -395,7 +395,7 @@ static int
 event_warm(VRT_CTX, const struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
-	char buf[32];
+	char buf[512];
 	const char *vcl_name = VCL_Name(ctx->vcl);
 
 	// Using VSLs for coverage
