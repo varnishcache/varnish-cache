@@ -886,8 +886,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		VSLb(bo->vsl, SLT_Notice,
 		    "vsl: Conditional fetch wait for streaming object");
 		/* XXX: We should have a VCL controlled timeout here */
-		(void)ObjWaitState(stale_oc, BOS_FINISHED);
-		stale_state = stale_boc->state;
+		stale_state = ObjWaitState(stale_oc, BOS_FINISHED);
 		HSH_DerefBoc(bo->wrk, stale_oc);
 		stale_boc = NULL;
 		if (stale_state != BOS_FINISHED) {
