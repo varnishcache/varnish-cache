@@ -990,7 +990,7 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 
 	if (boc != NULL) {
 		hsh_cancel(oc);
-		ObjWaitState(oc, BOS_FINISHED);
+		(void)ObjWaitState(oc, BOS_FINISHED);
 	}
 
 	if (bocref != NULL)

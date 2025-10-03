@@ -448,7 +448,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	/* Grab a ref to the bo if there is one (=streaming) */
 	req->boc = HSH_RefBoc(req->objcore);
 	if (req->boc && req->boc->state < BOS_STREAM)
-		ObjWaitState(req->objcore, BOS_STREAM);
+		(void)ObjWaitState(req->objcore, BOS_STREAM);
 	clval = http_GetContentLength(req->resp);
 	/* RFC 7230, 3.3.3 */
 	status = http_GetStatus(req->resp);

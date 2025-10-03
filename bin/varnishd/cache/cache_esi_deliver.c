@@ -911,7 +911,7 @@ ved_deliver(struct req *req, int wantbody)
 
 		/* OA_GZIPBITS are not valid until BOS_FINISHED */
 		if (req->boc != NULL)
-			ObjWaitState(req->objcore, BOS_FINISHED);
+			(void)ObjWaitState(req->objcore, BOS_FINISHED);
 
 		if (req->objcore->flags & OC_F_FAILED) {
 			/* No way of signalling errors in the middle of

@@ -886,7 +886,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		VSLb(bo->vsl, SLT_Notice,
 		    "vsl: Conditional fetch wait for streaming object");
 		/* XXX: We should have a VCL controlled timeout here */
-		ObjWaitState(stale_oc, BOS_FINISHED);
+		(void)ObjWaitState(stale_oc, BOS_FINISHED);
 		stale_state = stale_boc->state;
 		HSH_DerefBoc(bo->wrk, stale_oc);
 		stale_boc = NULL;
@@ -1172,6 +1172,7 @@ void
 VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
     struct objcore *oldoc, enum vbf_fetch_mode_e mode)
 {
+	enum boc_state_e state;
 	struct boc *boc;
 	struct busyobj *bo;
 	enum task_prio prio;
@@ -1257,12 +1258,12 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		THR_SetBusyobj(NULL);
 		bo = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {
-			ObjWaitState(oc, BOS_REQ_DONE);
+			(void)ObjWaitState(oc, BOS_REQ_DONE);
 			(void)VRB_Ignore(req);
 		} else {
-			ObjWaitState(oc, BOS_STREAM);
+			state = ObjWaitState(oc, BOS_STREAM);
 			AZ(oc->flags & OC_F_BUSY);
-			if (oc->boc->state == BOS_FAILED)
+			if (state == BOS_FAILED)
 				AN(oc->flags & OC_F_FAILED);
 		}
 	}
