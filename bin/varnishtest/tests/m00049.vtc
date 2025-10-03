@@ -4,6 +4,8 @@ varnishtest "VMOD vfp & vdp - request bodies"
 
 server s1 {
 	rxreq
+	expect req.http.Content-Length == "28"
+	expect req.http.Transfer-Encoding == <undef>
 	expect req.body == "Cbagb Snpgb, Pnrfne Genafvg!"
 	txresp
 } -start
@@ -21,6 +23,34 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
+
+server s1 -wait
+
+# ---
+
+server s1 {
+	rxreq
+	expect req.http.Content-Length == <undef>
+	expect req.http.Transfer-Encoding == "chunked"
+	expect req.body == "Cbagb Snpgb, Pnrfne Genafvg!"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_backend_fetch {
+		set bereq.filters = "rot13 debug.pedantic debug.chunked";
+	}
+}
+
+client c1 {
+	txreq -req POST -body "Ponto Facto, Caesar Transit!"
+	rxresp
+	expect resp.status == 200
+} -run
+
+# ---
 
 varnish v1 -vsl_catchup
 
