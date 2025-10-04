@@ -346,7 +346,7 @@ uint64_t ObjWaitExtend(const struct worker *, const struct objcore *,
     uint64_t l, enum boc_state_e *statep);
 void ObjSetState(struct worker *, struct objcore *, enum boc_state_e next,
     unsigned broadcast);
-void ObjWaitState(const struct objcore *, enum boc_state_e want);
+enum boc_state_e ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTouch(struct worker *, struct objcore *, vtim_real now);
 void ObjFreeObj(struct worker *, struct objcore *);
 void ObjSlim(struct worker *, struct objcore *);
