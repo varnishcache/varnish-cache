@@ -556,41 +556,36 @@ VJSN_TYPES
  *
  * And run this python in test_parsing:
 
-	import glob
+import glob
 
-	skip = {}
+def emit(fin):
+    x = bytearray(open(fin, 'rb').read())
+    if 0 in x:
+        print("\t// SKIP: NUL in", fin)
+        return
+    if len(x) > 1000:
+        print("\t// SKIP: LONG ", fin)
+        return
+    t = '\t"'
+    for i in x:
+        t += "\\x%02x" % i
+        if len(t) > 64:
+            print(t + '"')
+            t = '\t"'
+    print(t + '",')
 
-	def emit(fin):
-		if fin in skip:
-			return
-		x = bytearray(open(fin, 'rb').read())
-		if 0 in x:
-			return
-		if len(x) > 1000:
-			return
-		t = '\t"'
-		for i in x:
-			t += "\\x%02x" % i
-			if len(t) > 64:
-				print(t + '"')
-				t = '\t"'
-		print(t + '",')
+print("static const char *good[] = {")
+for f in sorted(glob.glob("y_*")):
+    emit(f)
+print("\tNULL")
+print("};\n")
 
-	print("static const char *good[] = {")
-	l = list(glob.glob("y_*"))
-	l.sort()
-	for f in l:
-		emit(f)
-	print("\tNULL")
-	print("};\n")
+print("static const char *bad[] = {")
+for f in sorted(glob.glob("n_*")):
+        emit(f)
+print("\tNULL")
+print("};")
 
-	print("static const char *bad[] = {")
-	l = list(glob.glob("n_*"))
-	l.sort()
-	for f in l:
-		emit(f)
-	print("\tNULL")
-	print("};")
  */
 
 static const char *good[] = {
@@ -759,6 +754,7 @@ static const char *bad[] = {
 	"\x5b\x66\x61\x6c\x73\x5d",
 	"\x5b\x6e\x75\x6c\x5d",
 	"\x5b\x74\x72\x75\x5d",
+	// SKIP: NUL in n_multidigit_number_then_00.json
 	"\x5b\x2b\x2b\x31\x32\x33\x34\x5d",
 	"\x5b\x2b\x31\x5d",
 	"\x5b\x2b\x49\x6e\x66\x5d",
@@ -848,6 +844,7 @@ static const char *bad[] = {
 	"\x5b\x22\x5c\x75\x44\x38\x30\x30\x5c\x75\x31\x22\x5d",
 	"\x5b\x22\x5c\x75\x44\x38\x30\x30\x5c\x75\x31\x78\x22\x5d",
 	"\x5b\xc3\xa9\x5d",
+	// SKIP: NUL in n_string_backslash_00.json
 	"\x5b\x22\x5c\x78\x30\x30\x22\x5d",
 	"\x5b\x22\x5c\x5c\x5c\x22\x5d",
 	"\x5b\x22\x5c\x09\x22\x5d",
@@ -868,10 +865,12 @@ static const char *bad[] = {
 	"",
 	"\x61\x62\x63",
 	"\x5b\x22\x5c",
+	// SKIP: NUL in n_string_unescaped_ctrl_char.json
 	"\x5b\x22\x6e\x65\x77\x0a\x6c\x69\x6e\x65\x22\x5d",
 	"\x5b\x22\x09\x22\x5d",
 	"\x22\x5c\x55\x41\x36\x36\x44\x22",
 	"\x22\x22\x78",
+	// SKIP: LONG  n_structure_100000_opening_arrays.json
 	"\x5b\xe2\x81\xa0\x5d",
 	"\xef\xbb\xbf",
 	"\x3c\x2e\x3e",
@@ -889,6 +888,7 @@ static const char *bad[] = {
 	"\xe5",
 	"\x5b",
 	"",
+	// SKIP: NUL in n_structure_null-byte-outside-string.json
 	"\x32\x40",
 	"\x7b\x7d\x7d",
 	"\x7b\x22\x22\x3a",
@@ -897,6 +897,7 @@ static const char *bad[] = {
 	"\x7b\x22\x61\x22\x3a\x20\x74\x72\x75\x65\x7d\x20\x22\x78\x22",
 	"\x5b\x27",
 	"\x5b\x2c",
+	// SKIP: LONG  n_structure_open_array_object.json
 	"\x5b\x7b",
 	"\x5b\x22\x61",
 	"\x5b\x22\x61\x22",
