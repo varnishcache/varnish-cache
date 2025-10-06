@@ -74,7 +74,9 @@ VSUB_closefrom(int fd)
 		return;
 #  endif
 	char buf[128];
-	int i, maxfd = 0;
+	int i;
+	long maxfd_l = 0;
+	int maxfd;
 	DIR *d;
 	struct dirent *de;
 	char *p;
@@ -89,14 +91,19 @@ VSUB_closefrom(int fd)
 			i = strtoul(de->d_name, &p, 10);
 			if (*p != '\0')
 				continue;
-			if (i > maxfd)
-				maxfd = i;
+			if (i > maxfd_l)
+				maxfd_l = i;
 		}
 		AZ(closedir(d));
 	}
 
-	if (maxfd == 0)
-		maxfd = sysconf(_SC_OPEN_MAX);
+	if (maxfd_l == 0) {
+		maxfd_l = sysconf(_SC_OPEN_MAX);
+		/* sysconf may return unreasonably large values, cap it */
+		if (maxfd_l > 65536 || maxfd_l <= 0)
+			maxfd_l = 1024;
+	}
+	maxfd = (int)maxfd_l;
 	assert(maxfd > 0);
 	for (; maxfd > fd; maxfd--)
 		(void)close(maxfd);
