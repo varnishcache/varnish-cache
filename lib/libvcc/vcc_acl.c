@@ -823,11 +823,12 @@ vcc_ParseAcl(struct vcc *tl)
 	ERRCHK(tl);
 	AN(sym);
 
+#define FLAGS_MSG "Valid ACL flags are `log`, `fold`, `pedantic` and `table`:\n"
+
 	while (1) {
 		sign = vcc_IsFlag(tl);
 		if (tl->err) {
-			VSB_cat(tl->sb,
-			    "Valid ACL flags are `log` and `table`:\n");
+			VSB_cat(tl->sb, FLAGS_MSG);
 			return;
 		}
 		if (sign < 0)
@@ -845,11 +846,13 @@ vcc_ParseAcl(struct vcc *tl)
 			acl->flag_table = sign;
 			vcc_NextToken(tl);
 		} else {
-			VSB_cat(tl->sb, "Unknown ACL flag:\n");
+			VSB_cat(tl->sb, "Unknown ACL flag. " FLAGS_MSG);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 	}
+
+#undef FLAGS_MSG
 
 	SkipToken(tl, '{');
 
