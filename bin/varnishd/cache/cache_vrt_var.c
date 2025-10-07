@@ -598,12 +598,17 @@ VRT_u_req_##nm(VRT_CTX)							\
 
 REQ_VAR_R(backend_hint, director_hint, VCL_BACKEND)
 
-REQ_VAR_L(ttl, d_ttl, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
-REQ_VAR_R(ttl, d_ttl, VCL_DURATION)
-REQ_VAR_U(ttl, d_ttl, -1)
+REQ_VAR_L(max_age, d_ttl, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
+REQ_VAR_R(max_age, d_ttl, VCL_DURATION)
+REQ_VAR_U(max_age, d_ttl, -1)
 REQ_VAR_L(grace, d_grace, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(grace, d_grace, VCL_DURATION)
 REQ_VAR_U(grace, d_grace, -1)
+
+// deprecated, to be removed
+VCL_VOID VRT_l_req_ttl(VRT_CTX, VCL_DURATION arg) { VRT_l_req_max_age(ctx, arg); }
+VCL_DURATION VRT_r_req_ttl(VRT_CTX) { return (VRT_r_req_max_age(ctx)); }
+VCL_VOID VRT_u_req_ttl(VRT_CTX) { return (VRT_u_req_max_age(ctx)); }
 
 VCL_VOID
 VRT_l_req_backend_hint(VRT_CTX, VCL_BACKEND be)

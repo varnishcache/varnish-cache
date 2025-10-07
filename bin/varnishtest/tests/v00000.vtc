@@ -1,4 +1,4 @@
-varnishtest "VCL/VRT: req.ttl / beresp.ttl / beresp.grace"
+varnishtest "VCL/VRT: req.max_age / beresp.ttl / beresp.grace"
 
 
 server s1 {
@@ -10,7 +10,7 @@ server s1 -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		set req.ttl += 1 s;
+		set req.max_age += 1 s;
 	}
 	sub vcl_backend_response {
 		set beresp.ttl += 1 m;

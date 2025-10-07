@@ -60,9 +60,9 @@ struct exp_priv {
 static struct exp_priv *exphdl;
 static int exp_shutdown = 0;
 
-/*--------------------------------------------------------------------
- * Calculate an object's effective ttl time, taking req.ttl into account
- * if it is available.
+/*---------------------------------------------------------------------
+ * Calculate the point in time when an object will become stale, taking
+ * req.max_age into account, if available
  */
 
 vtim_real

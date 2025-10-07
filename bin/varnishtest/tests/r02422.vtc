@@ -1,4 +1,4 @@
-varnishtest "long polling and low latency using req.ttl"
+varnishtest "long polling and low latency using req.max_age"
 
 # synchronizes the setup of all clients
 barrier b1 cond 2
@@ -25,7 +25,7 @@ varnish v1 -cliok "param.set default_grace 0"
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.restarts > 0) {
-			set req.ttl = 1ms;
+			set req.max_age = 1ms;
 		}
 	}
 

@@ -529,6 +529,24 @@ req.transport
 	The transport protocol which brought this request.
 
 
+.. _req.max_age:
+
+req.max_age
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Unsettable from: client
+
+
+	Upper limit on the object age for cache lookups to return hit. Matches
+	``Cache-Control: max-age`` request header semantics.
+
+	When reading the unset value, it is returned as -1.
+
 .. _req.ttl:
 
 req.ttl
@@ -539,12 +557,11 @@ req.ttl
 
 	Writable from: client
 
-        Unsettable from: client
+	Unsettable from: client
 
 
-	Upper limit on the object age for cache lookups to return hit.
-
-        When reading the unset value, it is returned as -1.
+	Deprecated alias of ``req.max-age``, which will be removed in a future
+	version of Vinyl-Cache.
 
 .. _req.url:
 

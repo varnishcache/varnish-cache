@@ -41,6 +41,12 @@ Vinyl-Cache NEXT (2026-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+.. _4389: https://github.com/varnishcache/varnish-cache/issues/4389
+
+* ``req.ttl`` has been renamed to ``req.max_age`` for clarity, with ``req.ttl``
+  being retained as an alias. ``req.ttl`` is now deprecated, but no warning is
+  emitted yet. It will be removed in a future version of Vinyl-Cache. (`4389`_)
+
 ================================
 Varnish-Cache 8.0.0 (2025-09-15)
 ================================
