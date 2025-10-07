@@ -251,8 +251,8 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 {
 	struct ws *ws;
 	unsigned l;
-	const unsigned maxlen = 1024;
-	unsigned char buf[maxlen];
+#define MAXLEN 1024
+	unsigned char buf[MAXLEN];
 	const char *p, *err;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -263,14 +263,14 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 		return (NULL);
 	WS_Assert(ws);
 
-	if (len > maxlen) {
+	if (len > MAXLEN) {
 		VRT_fail(ctx, "workspace_dump: max length is %jd",
-		    (intmax_t)maxlen);
+		    (intmax_t)MAXLEN);
 		return (NULL);
 	}
 
 	l = WS_Dump(ws, *where, off, buf, len);
-	assert(l <= maxlen);
+	assert(l <= MAXLEN);
 
 	if (l == 0) {
 		switch (errno) {
@@ -289,6 +289,7 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 		return (NULL);
 	}
 	return (VRT_blob(ctx, "workspace_dump", p, l, 0xd000d000));
+#undef MAXLEN
 }
 
 /*--------------------------------------------------------------------*/
