@@ -54,6 +54,7 @@ struct acl {
 
 	int			flag_log;
 	int			flag_fold;
+	int			flag_fold_report;
 	int			flag_pedantic;
 	int			flag_table;
 
@@ -263,11 +264,13 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 	do {
 		switch (cmp) {
 		case ACL_CONTAINED:
-			VSB_cat(tl->sb, "ACL entry:\n");
-			vcc_ErrWhere(tl, (*r)->t_addr);
-			VSB_cat(tl->sb, "supersedes / removes:\n");
-			vcc_ErrWhere(tl, (*l)->t_addr);
-			vcc_Warn(tl);
+			if (tl->acl->flag_fold_report) {
+				VSB_cat(tl->sb, "ACL entry:\n");
+				vcc_ErrWhere(tl, (*r)->t_addr);
+				VSB_cat(tl->sb, "supersedes / removes:\n");
+				vcc_ErrWhere(tl, (*l)->t_addr);
+				vcc_Warn(tl);
+			}
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
 			FREE_OBJ(*l);
 			*l = VRBT_PREV(acl_tree, &tl->acl->acl_tree, *r);
@@ -275,14 +278,16 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 		case ACL_LEFT:
 			(*l)->mask--;
 			(*l)->fixed = "folded";
-			VSB_cat(tl->sb, "ACL entry:\n");
-			vcc_ErrWhere(tl, (*l)->t_addr);
-			VSB_cat(tl->sb, "left of:\n");
-			vcc_ErrWhere(tl, (*r)->t_addr);
-			VSB_printf(tl->sb, "removing the latter and expanding "
-			    "mask of the former by one to /%u\n",
-			    (*l)->mask - 8);
-			vcc_Warn(tl);
+			if (tl->acl->flag_fold_report) {
+				VSB_cat(tl->sb, "ACL entry:\n");
+				vcc_ErrWhere(tl, (*l)->t_addr);
+				VSB_cat(tl->sb, "left of:\n");
+				vcc_ErrWhere(tl, (*r)->t_addr);
+				VSB_printf(tl->sb, "removing the latter and "
+				    "expanding mask of the former by one to "
+				    "/%u\n", (*l)->mask - 8);
+				vcc_Warn(tl);
+			}
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *r);
 			FREE_OBJ(*r);
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
@@ -803,6 +808,37 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 	VSB_destroy(&func);
 }
 
+static void
+vcc_parseAclFold(struct vcc *tl, int sign)
+{
+	struct acl *acl;
+	struct token *t;
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	assert(vcc_IdIs(tl->t, "fold"));
+	acl = tl->acl;
+	CHECK_OBJ_NOTNULL(acl, VCC_ACL_MAGIC);
+
+	t = tl->t;
+	acl->flag_fold = sign;
+	acl->flag_fold_report = 1;
+	vcc_NextToken(tl);
+	if (tl->t->tok != ',')
+		return;
+
+	vcc_NextToken(tl);
+	if (! vcc_IdIs(tl->t, "noreport")) {
+		VSB_cat(tl->sb, "Unknown modifier:\n");
+		vcc_ErrWhere(tl, tl->t);
+	} else if (! sign) {
+		VSB_cat(tl->sb, "-fold,noreport is invalid, use -fold:\n");
+		vcc_ErrWhere(tl, t);
+	} else {
+		acl->flag_fold_report = 0;
+	}
+	vcc_NextToken(tl);
+}
+
 void
 vcc_ParseAcl(struct vcc *tl)
 {
@@ -814,6 +850,7 @@ vcc_ParseAcl(struct vcc *tl)
 	tl->acl = acl;
 	acl->flag_pedantic = 1;
 	acl->flag_fold = 1;
+	acl->flag_fold_report = 1;
 	vcc_NextToken(tl);
 	VRBT_INIT(&acl->acl_tree);
 
@@ -837,8 +874,7 @@ vcc_ParseAcl(struct vcc *tl)
 			acl->flag_log = sign;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "fold")) {
-			acl->flag_fold = sign;
-			vcc_NextToken(tl);
+			vcc_parseAclFold(tl, sign);
 		} else if (vcc_IdIs(tl->t, "pedantic")) {
 			acl->flag_pedantic = sign;
 			vcc_NextToken(tl);
