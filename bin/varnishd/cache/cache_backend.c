@@ -210,6 +210,51 @@ vbe_close_acct(const struct pfd *pfd, const stream_close_t reason)
 	WRONG("Wrong event in vbe_close_acct");
 }
 
+static void v_matchproto_(vdi_finish_f)
+vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
+{
+	struct backend *bp;
+	struct busyobj *bo;
+	struct pfd *pfd;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	bo = ctx->bo;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+
+	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
+
+	pfd = bo->htc->priv;
+	bo->htc->priv = NULL;
+	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
+		vbe_close_acct(pfd, bo->htc->doclose);
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s close %s", *PFD_Fd(pfd),
+		    VRT_BACKEND_string(d), bo->htc->doclose->name);
+		VCP_Close(&pfd);
+		AZ(pfd);
+		Lck_Lock(bp->director->mtx);
+		VSC_C_main->backend_closed++;
+	} else {
+		assert (PFD_State(pfd) == PFD_STATE_USED);
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),
+		    VRT_BACKEND_string(d));
+		Lck_Lock(bp->director->mtx);
+		VSC_C_main->backend_recycle++;
+		VCP_Recycle(bo->wrk, &pfd);
+	}
+	assert(bp->n_conn > 0);
+	bp->n_conn--;
+	AN(bp->vsc);
+	bp->vsc->conn--;
+#define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
+#include "tbl/acct_fields_bereq.h"
+	vbe_connwait_signal_locked(bp);
+	Lck_Unlock(bp->director->mtx);
+	bo->htc = NULL;
+}
+
 /*--------------------------------------------------------------------
  * Get a connection to the backend
  *
@@ -377,51 +422,6 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	    bo->htc->between_bytes_timeout, bo, bp);
 	vbe_connwait_fini(cw);
 	return (pfd);
-}
-
-static void v_matchproto_(vdi_finish_f)
-vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
-{
-	struct backend *bp;
-	struct busyobj *bo;
-	struct pfd *pfd;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	bo = ctx->bo;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
-
-	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
-
-	pfd = bo->htc->priv;
-	bo->htc->priv = NULL;
-	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
-		vbe_close_acct(pfd, bo->htc->doclose);
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s close %s", *PFD_Fd(pfd),
-		    VRT_BACKEND_string(d), bo->htc->doclose->name);
-		VCP_Close(&pfd);
-		AZ(pfd);
-		Lck_Lock(bp->director->mtx);
-		VSC_C_main->backend_closed++;
-	} else {
-		assert (PFD_State(pfd) == PFD_STATE_USED);
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),
-		    VRT_BACKEND_string(d));
-		Lck_Lock(bp->director->mtx);
-		VSC_C_main->backend_recycle++;
-		VCP_Recycle(bo->wrk, &pfd);
-	}
-	assert(bp->n_conn > 0);
-	bp->n_conn--;
-	AN(bp->vsc);
-	bp->vsc->conn--;
-#define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
-#include "tbl/acct_fields_bereq.h"
-	vbe_connwait_signal_locked(bp);
-	Lck_Unlock(bp->director->mtx);
-	bo->htc = NULL;
 }
 
 static int v_matchproto_(vdi_gethdrs_f)
