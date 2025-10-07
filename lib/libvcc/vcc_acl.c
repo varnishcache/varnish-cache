@@ -803,6 +803,20 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 	VSB_destroy(&func);
 }
 
+static void
+vcc_parseAclFold(struct vcc *tl, int sign)
+{
+	struct acl *acl;
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	assert(vcc_IdIs(tl->t, "fold"));
+	acl = tl->acl;
+	CHECK_OBJ_NOTNULL(acl, VCC_ACL_MAGIC);
+
+	acl->flag_fold = sign;
+	vcc_NextToken(tl);
+}
+
 void
 vcc_ParseAcl(struct vcc *tl)
 {
@@ -837,8 +851,7 @@ vcc_ParseAcl(struct vcc *tl)
 			acl->flag_log = sign;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "fold")) {
-			acl->flag_fold = sign;
-			vcc_NextToken(tl);
+			vcc_parseAclFold(tl, sign);
 		} else if (vcc_IdIs(tl->t, "pedantic")) {
 			acl->flag_pedantic = sign;
 			vcc_NextToken(tl);
