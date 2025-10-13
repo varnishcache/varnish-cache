@@ -223,7 +223,7 @@ Supported formatters are:
 
     The record prefix will limit the matches to those records that
     have this prefix as the first part of the record content followed
-    by a colon.
+    by a colon or a white space.
 
     The field will, if present, treat the log record as a white
     space separated list of fields, and only the nth part of the
