@@ -345,6 +345,8 @@ the stale ones.
 The returned value only affects response headers, the body that is delivered
 is always the one from the stale object.
 
+See :ref:`vcl-built-in-refresh` for additional explanations.
+
   |
   | ``merge``
   |  Merge the headers we got from the backend response with
