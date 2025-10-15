@@ -23,8 +23,8 @@ parameters:
         --disable-stack-protector \
         --with-persistent-storage \
   build-pkgs:
-    type: string
-    default: ""
+    type: boolean
+    default: false
 
 jobs:
   dist:
