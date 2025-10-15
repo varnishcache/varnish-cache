@@ -433,12 +433,13 @@ workflows:
           matrix:
             parameters:
               platform:
-                - ubuntu:focal
                 - ubuntu:jammy
                 - ubuntu:noble
                 - debian:bookworm
+                - debian:trixie
                 - almalinux:8
                 - almalinux:9
+                - almalinux:10
                 - fedora:latest
                 - alpine:latest
               rclass:
