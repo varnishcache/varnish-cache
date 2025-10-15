@@ -1,6 +1,6 @@
 varnishtest "Check object references"
 
-feature persistent_storage
+builtwith persistent_storage
 
 shell "rm -f ${tmpdir}/_.per"
 

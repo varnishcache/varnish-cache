@@ -127,12 +127,14 @@ else
 ################################################################################
 ## BEGIN vtc_varnish ext
 
-lib_LTLIBRARIES = libvtc_varnish.la libdummy.la
+lib_LTLIBRARIES = libvtc_varnish.la libvtc_builtwith.la libdummy.la
 
 # XXX TODO
 # - for actual move, the sources need to be relocated from VTest2 back to here
 # - for actual move, remove -DVTEST_WITH_...
-# - solve WITH_PERSISTENT_STORAGE
+# - remove feature tests now in builtwith from Vtest2 core
+# - remove pkg_version pkg_branch from Vtest2 core
+# - add libvtc_builtwith to Vtest2 as an example
 libvtc_varnish_la_SOURCES = \
 	vtest2/src/vtc_varnish.c \
 	vtest2/src/vtc_vsm.c \
@@ -150,6 +152,10 @@ libvtc_varnish_la_LIBADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvgz/libvgz.la \
 	${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
+
+libvtc_builtwith_la_SOURCES = vtc_ext_builtwith.c
+
+libvtc_builtwith_la_CFLAGS = @VTEST_CFLAGS@
 
 libdummy_la_SOURCES = libdummy.c
 

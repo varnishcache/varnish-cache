@@ -1,6 +1,6 @@
 varnishtest "test reload of object spanning incomplete segment"
 
-feature persistent_storage
+builtwith persistent_storage
 feature disable_aslr
 
 barrier b1 cond 2

@@ -44,7 +44,9 @@
 #include "vdef.h"
 
 const char *addargs[]= {
-	"vtest", "-E", "libvtc_varnish.so"
+	"vtest",
+	"-E", "libvtc_varnish.so",
+	"-E", "libvtc_builtwith.so"
 };
 
 int
