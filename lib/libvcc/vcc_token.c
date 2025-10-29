@@ -473,6 +473,18 @@ vcc_delim_token(struct vcc *tl, struct source *sp, const char *p,
  * We enforce the RFC8941 restrictions on number of digits here.
  */
 
+static int
+vcc_lex_number_token_valid(struct vcc *tl)
+{
+	if (*tl->t->e == 'e' || *tl->t->e == 'E') {
+		VSB_printf(tl->sb, "Unexpected character '%c'.\n", *tl->t->e);
+		tl->t->e++;
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
+	return (1);
+}
+
 static const char *
 vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 {
@@ -503,12 +515,8 @@ vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);
 	}
-	if (*tl->t->e == 'e' || *tl->t->e == 'E') {
-		VSB_printf(tl->sb, "Unexpected character '%c'.\n", *tl->t->e);
-		tl->t->e++;
-		vcc_ErrWhere(tl, tl->t);
+	if (! vcc_lex_number_token_valid(tl))
 		return (NULL);
-	}
 	tl->t->num = strtod(p, &s);
 	assert(s == tl->t->e);
 	return (r);
