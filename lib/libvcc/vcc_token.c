@@ -501,6 +501,8 @@ vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 			vcc_ErrWhere(tl, tl->t);
 			return (NULL);
 		}
+		if (! vcc_lex_number_token_valid(tl))
+			return (NULL);
 		tl->t->num = strtod(p, &s);
 		assert(s == tl->t->e);
 		return (q);

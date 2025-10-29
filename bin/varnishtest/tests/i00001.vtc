@@ -20,6 +20,11 @@ varnish v1 -errvcl {Unexpected character 'e'.} {
 	sub vcl_recv { set req.http.foo = 42.42e42; }
 }
 
+varnish v1 -errvcl {Unexpected character 'e'.} {
+	import std;
+	sub vcl_synth { set resp.http.foo = std.integer(real=1e10); }
+}
+
 server s1 {
 	rxreq
 	txresp
