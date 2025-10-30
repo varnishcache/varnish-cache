@@ -341,7 +341,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
-	while (wrk->vpi->handling == VCL_RET_FAIL) {
+	while (req->req_reset || wrk->vpi->handling == VCL_RET_FAIL) {
 		if (req->esi_level > 0) {
 			wrk->vpi->handling = VCL_RET_DELIVER;
 			break;
