@@ -596,9 +596,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the
-		 * worker thread.   We return to STP_LOOKUP when the busy
-		 * object has been unbusied, and still have the objhead
-		 * around to restart the lookup with.
+		 * worker thread.  We return to R_STP_LOOKUP, with the
+		 * object still around when it has been unbusied, to
+		 * restart the lookup with.
 		 */
 		return (REQ_FSM_DISEMBARK);
 	}
