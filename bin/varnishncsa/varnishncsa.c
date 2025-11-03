@@ -647,7 +647,7 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 	assert(i <= INT_MAX);
 	w->idx = i;
 	if (prefix != NULL) {
-		w->prefixlen = asprintf(&w->prefix, "%s:", prefix);
+		w->prefixlen = asprintf(&w->prefix, "%s", prefix);
 		assert(w->prefixlen > 0);
 	}
 	VTAILQ_INSERT_TAIL(&CTX.watch_vsl, w, list);
@@ -895,12 +895,17 @@ parse_format(const char *format)
 
 static int
 isprefix(const char *prefix, size_t len, const char *b,
-    const char *e, const char **next)
+    const char *e, const char **next, const char *sep)
 {
 	assert(len > 0);
 	if (e < b + len || strncasecmp(b, prefix, len))
 		return (0);
 	b += len;
+	if (b < e && sep != NULL && strchr(sep, *b) == NULL)
+		return (0);
+	if (b < e && sep != NULL)
+		b++;
+
 	if (next) {
 		while (b < e && *b == ' ')
 			b++;
@@ -987,7 +992,7 @@ process_hdr(enum format_policy fp, const struct watch_head *head, const char *b,
 
 	VTAILQ_FOREACH(w, head, list) {
 		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
-		if (!isprefix(w->key, w->keylen, b, e, &p))
+		if (!isprefix(w->key, w->keylen, b, e, &p, NULL))
 			continue;
 
 		if (w->match) {
@@ -1017,7 +1022,7 @@ process_vsl(const struct vsl_watch_head *head, enum VSL_tag_e tag,
 			continue;
 		p = b;
 		if (w->prefixlen > 0 &&
-		    !isprefix(w->prefix, w->prefixlen, b, e, &p))
+		    !isprefix(w->prefix, w->prefixlen, b, e, &p, ": "))
 			continue;
 		if (w->idx == 0)
 			frag_line(FMTPOL_INTERNAL, p, e, &w->frag);
@@ -1116,7 +1121,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				    0, NULL);
 				break;
 			case SLT_Timestamp:
-#define ISPREFIX(a, b, c, d)	isprefix(a, strlen(a), b, c, d)
+#define ISPREFIX(a, b, c, d)	isprefix(a, strlen(a), b, c, d, NULL)
 				if (ISPREFIX("Start:", b, e, &p)) {
 					frag_fields(FMTPOL_INTERNAL, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
