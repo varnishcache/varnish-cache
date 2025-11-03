@@ -449,7 +449,8 @@ mgt_sigint(const struct vev *e, int what)
 {
 
 	(void)what;
-	MGT_Complain(C_ERR, "Manager got %s from PID %jd", e->name, (intmax_t)e->siginfo->si_pid);
+	MGT_Complain(C_INFO, "Manager got %s from PID %jd",
+	    e->name, (intmax_t)e->siginfo->si_pid);
 	(void)fflush(stdout);
 	if (MCH_Running())
 		MCH_Stop_Child();
