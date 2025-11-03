@@ -991,7 +991,6 @@ main(int argc, char * const *argv)
 	sac.sa_flags = SA_RESTART;
 
 	AZ(sigaction(SIGPIPE, &sac, NULL));
-	AZ(sigaction(SIGHUP, &sac, NULL));
 
 	MCH_Init();
 
