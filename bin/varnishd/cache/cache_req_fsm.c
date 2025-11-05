@@ -65,7 +65,7 @@
   REQ_STEP(fetch,               FETCH,		static) \
   REQ_STEP(deliver,             DELIVER,	static) \
   REQ_STEP(vclfail,             VCLFAIL,	static) \
-  REQ_STEP(synth,               SYNTH,		static) \
+  REQ_STEP(synth,               SYNTH,		) \
   REQ_STEP(transmit,            TRANSMIT,	static) \
   REQ_STEP(finish,              FINISH,		static)
 
