@@ -302,3 +302,56 @@ VPI_Call_End(VRT_CTX, unsigned n)
 	AN(vbm);
 	vbit_clr(vbm, n);
 }
+
+/*--------------------------------------------------------------------
+ * tell interface.
+ *
+ * we all agree it does not quite fit the purpose of VPI, but it fits here
+ * better than anywhere else
+ *
+ * XXX: Replace instance info with a tree indexed by name
+ */
+
+int
+VPI_Tell(VRT_CTX, VCL_STRING objname, VCL_STRANDS msg)
+{
+	struct vcl *vcl;
+	const struct VCL_conf *conf;
+	const struct vpi_ii *ii;
+	vmod_cli_f *cli;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(objname);
+
+	ASSERT_CLI();
+	AZ(ctx->method);
+	AN(ctx->msg);
+
+	vcl = ctx->vcl;
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
+	conf = vcl->conf;
+	CHECK_OBJ_NOTNULL(conf, VCL_CONF_MAGIC);
+
+	ii = conf->instance_info;
+	AN(ii);
+	while (ii->p != NULL) {
+		if (! strcmp(ii->name, objname))
+			break;
+		ii++;
+	}
+
+	if (ii->p == NULL) {
+		VSB_printf(ctx->msg, "No object named %s found\n", objname);
+		return (300);
+	}
+	if (ii->clip == NULL) {
+		VSB_printf(ctx->msg, "Object %s has no cli method\n", objname);
+		return (300);
+	}
+
+	cli = (void *)*ii->clip;
+	AN(cli);
+	AN(*ii->p);
+	return(cli(ctx, (void *)*ii->p, msg));
+}

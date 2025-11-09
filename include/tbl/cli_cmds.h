@@ -451,6 +451,16 @@ CLI_CMD(PID,
 	0, 0
 )
 
+CLI_CMD(TELL,
+	"tell",
+	"tell [<vcl>.]<object> <msg> ...",
+	"Tell <msg> to <object> from the given <vcl> or the active vcl",
+	"  It is entirely up to the cli method implementation of the"
+	"  respective vmod to interpret <msg>, implement any actions"
+	"  and generate a response",
+	2, -1
+)
+
 #undef CLI_CMD
 
 /*lint -restore */

@@ -81,6 +81,8 @@ $Method VOID .enum(ENUM { phk, des, kristian, mithrandir, martin })
 Testing that enums work as part of object and that the parser isn't
 (too) buggy.
 
+$Cli INT cli(STRANDS)
+
 $Method VOID .obj()
 
 Covering the fact that a method can be named like the constructor.
