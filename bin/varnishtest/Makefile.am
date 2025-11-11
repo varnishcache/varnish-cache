@@ -11,7 +11,8 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include \
 	-I$(top_builddir) \
 	-I$(top_srcdir)/lib/libvgz \
-	-I$(srcdir)/vtest2/lib
+	-I$(srcdir)/vtest2/lib \
+	-I$(srcdir)/vtest2/src
 
 bin_PROGRAMS =	varnishtest
 
@@ -65,6 +66,7 @@ varnishtest_SOURCES = \
 		vtest2/src/vtc_tunnel.c \
 		vtest2/src/vtc_varnish.c \
 		vtest2/src/vtc_vsm.c \
+		vtest2/src/vtest_api.h \
 		vtest2/lib/vudp.h \
 		vtest2/lib/vudp.c
 
