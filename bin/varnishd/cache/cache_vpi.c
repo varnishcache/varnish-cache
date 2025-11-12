@@ -85,9 +85,9 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 	const struct VCL_conf *conf = NULL;
 	const struct vpi_ref *ref;
 	const char *p, *src = NULL;
-	const int lim = 40;
+#define LIM 40
 	const char *abbstr = "[...]";
-	char buf[lim + sizeof(abbstr)];
+	char buf[LIM + sizeof(abbstr)];
 	int w = 0;
 
 	AN(vsb);
@@ -134,9 +134,9 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 			w = p - src;
 		else
 			w -= ref->offset;
-		if (w > lim) {
+		if (w > LIM) {
 			w = snprintf(buf, sizeof buf, "%.*s%s",
-			    lim, src, abbstr);
+			    LIM, src, abbstr);
 			src = buf;
 		}
 	}
@@ -153,7 +153,7 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 	}
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
-
+#undef LIM
 }
 void
 VPI_Panic(struct vsb *vsb, const struct wrk_vpi *vpi, const struct vcl *vcl)
