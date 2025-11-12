@@ -23,8 +23,8 @@ parameters:
         --disable-stack-protector \
         --with-persistent-storage \
   build-pkgs:
-    type: string
-    default: ""
+    type: boolean
+    default: false
 
 jobs:
   dist:
@@ -231,16 +231,16 @@ jobs:
             case "<< parameters.dist >>" in
             almalinux|fedora)
                 case "<< parameters.dist >>:<< parameters.release >>" in
-                    almalinux:9)
+                    almalinux:8)
                         dnf -y install "dnf-command(config-manager)"
-                        dnf config-manager --set-enabled crb
+                        dnf config-manager --set-enabled powertools
                         dnf -y install diffutils
                         dnf -y install epel-release
                         dnf -y groupinstall "Development Tools"
                         ;;
-                    almalinux:8)
+                    almalinux:*)
                         dnf -y install "dnf-command(config-manager)"
-                        dnf config-manager --set-enabled powertools
+                        dnf config-manager --set-enabled crb
                         dnf -y install diffutils
                         dnf -y install epel-release
                         dnf -y groupinstall "Development Tools"
@@ -433,12 +433,13 @@ workflows:
           matrix:
             parameters:
               platform:
-                - ubuntu:focal
                 - ubuntu:jammy
                 - ubuntu:noble
                 - debian:bookworm
+                - debian:trixie
                 - almalinux:8
                 - almalinux:9
+                - almalinux:10
                 - fedora:latest
                 - alpine:latest
               rclass:
