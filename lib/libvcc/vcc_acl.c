@@ -54,6 +54,7 @@ struct acl {
 
 	int			flag_log;
 	int			flag_fold;
+	int			flag_fold_report;
 	int			flag_pedantic;
 	int			flag_table;
 
@@ -263,11 +264,13 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 	do {
 		switch (cmp) {
 		case ACL_CONTAINED:
-			VSB_cat(tl->sb, "ACL entry:\n");
-			vcc_ErrWhere(tl, (*r)->t_addr);
-			VSB_cat(tl->sb, "supersedes / removes:\n");
-			vcc_ErrWhere(tl, (*l)->t_addr);
-			vcc_Warn(tl);
+			if (tl->acl->flag_fold_report) {
+				VSB_cat(tl->sb, "ACL entry:\n");
+				vcc_ErrWhere(tl, (*r)->t_addr);
+				VSB_cat(tl->sb, "supersedes / removes:\n");
+				vcc_ErrWhere(tl, (*l)->t_addr);
+				vcc_Warn(tl);
+			}
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
 			FREE_OBJ(*l);
 			*l = VRBT_PREV(acl_tree, &tl->acl->acl_tree, *r);
@@ -275,14 +278,16 @@ vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
 		case ACL_LEFT:
 			(*l)->mask--;
 			(*l)->fixed = "folded";
-			VSB_cat(tl->sb, "ACL entry:\n");
-			vcc_ErrWhere(tl, (*l)->t_addr);
-			VSB_cat(tl->sb, "left of:\n");
-			vcc_ErrWhere(tl, (*r)->t_addr);
-			VSB_printf(tl->sb, "removing the latter and expanding "
-			    "mask of the former by one to /%u\n",
-			    (*l)->mask - 8);
-			vcc_Warn(tl);
+			if (tl->acl->flag_fold_report) {
+				VSB_cat(tl->sb, "ACL entry:\n");
+				vcc_ErrWhere(tl, (*l)->t_addr);
+				VSB_cat(tl->sb, "left of:\n");
+				vcc_ErrWhere(tl, (*r)->t_addr);
+				VSB_printf(tl->sb, "removing the latter and "
+				    "expanding mask of the former by one to "
+				    "/%u\n", (*l)->mask - 8);
+				vcc_Warn(tl);
+			}
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *r);
 			FREE_OBJ(*r);
 			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
@@ -814,7 +819,39 @@ vcc_parseAclFold(struct vcc *tl, int sign)
 	CHECK_OBJ_NOTNULL(acl, VCC_ACL_MAGIC);
 
 	acl->flag_fold = sign;
+	acl->flag_fold_report = 1;
 	vcc_NextToken(tl);
+	if (tl->t->tok != '(')
+		return;
+
+	if (! acl->flag_fold) {
+		VSB_cat(tl->sb, "-fold(...) is invalid, use -fold:\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+
+	SkipToken(tl, '(');
+
+#define FOLD_SUBFLAGS_MSG "The only ACL fold sub-flag is `report`:\n"
+
+	sign = vcc_IsFlag(tl);
+	if (tl->err) {
+		VSB_cat(tl->sb, FOLD_SUBFLAGS_MSG);
+		return;
+	}
+	if (sign < 0)
+		return;
+
+	if (! vcc_IdIs(tl->t, "report")) {
+		VSB_cat(tl->sb, FOLD_SUBFLAGS_MSG);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+
+	acl->flag_fold_report = sign;
+
+	vcc_NextToken(tl);
+	SkipToken(tl, ')');
 }
 
 void
@@ -828,6 +865,7 @@ vcc_ParseAcl(struct vcc *tl)
 	tl->acl = acl;
 	acl->flag_pedantic = 1;
 	acl->flag_fold = 1;
+	acl->flag_fold_report = 1;
 	vcc_NextToken(tl);
 	VRBT_INIT(&acl->acl_tree);
 

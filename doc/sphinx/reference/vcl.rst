@@ -354,7 +354,7 @@ individually:
 
   Skip and fold operations on ACL entries are output as warnings
   during VCL compilation as entries from the VCL are processed in
-  order.
+  order unless the `-report` sub-flag is also given (see below).
 
   Logging under the ``VCL_acl`` tag can change with this parameter
   enabled: Matches on skipped subnet entries are now logged as matches
@@ -364,6 +364,19 @@ individually:
   ``fixed: folded``.
 
   Negated ACL entries are never folded.
+
+  Exactly one sub-flag is supported following `fold` in parenthesis:
+
+  - `+fold(+report)` - Fold with reporting (default)
+
+    Report about folding as described above
+
+  - `+fold(-report)` - Fold without reporting
+
+    Enable folding, but do not output folding-related warnings during VCL
+    compilation
+
+  The ``report`` sub-option is only valid with ``+fold``.
 
 VCL objects
 -----------

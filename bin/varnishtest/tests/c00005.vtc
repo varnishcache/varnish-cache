@@ -375,3 +375,39 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+
+# test +fold(-report)
+varnish v1 -cliexpect "^$" {vcl.inline silent << EOF
+	vcl 4.1;
+
+	backend dummy None;
+
+	acl acl1 +log +pedantic +fold(-report) {
+		"1.2.0.0"/23;
+		"1.2.2.0"/24;
+		"1.2.3.0"/24;
+	}
+
+	sub vcl_recv {
+		if (client.ip ~ acl1) {
+			return (synth(403));
+		}
+	}
+	EOF
+}
+
+varnish v1 -errvcl "-fold(...) is invalid, use -fold" {
+	backend dummy None;
+
+	acl acl1 +log +pedantic -fold(+foo) {
+		"1.2.0.0"/23;
+	}
+}
+
+varnish v1 -errvcl "The only ACL fold sub-flag is `report`" {
+	backend dummy None;
+
+	acl acl1 +log +pedantic +fold(+foo) {
+		"1.2.0.0"/23;
+	}
+}
