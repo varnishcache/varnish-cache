@@ -5,9 +5,6 @@ Copyright 2010-2025 UPLEX - Nils Goroll Systemoptimierung])
 AC_REVISION([$Id$])
 AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
-if ! test -f "${srcdir}/bin/varnishtest/vtest2/src/vtc_main.c" ; then
-  AC_MSG_ERROR([vtest2 seems to be missing, use "git clone --recursive" or "git submodule update --init"])
-fi
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -49,6 +46,27 @@ CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 AC_PROG_INSTALL
+
+AM_CONDITIONAL([HAVE_VTEST_SUBMODULE],
+  [test -f "${srcdir}/bin/varnishtest/vtest2/src/vtc_main.c"])
+AM_COND_IF([HAVE_VTEST_SUBMODULE], [], [
+  AC_ARG_VAR([VTEST], [The vtest program from VTest2])
+  AM_MISSING_PROG([VTEST], [vtest])
+  AC_CHECK_PROGS([VTEST], [vtest])
+  if test "x$VTEST" = "xno"; then
+    AC_MSG_ERROR([requires vtest. Either clone the submodule, or set VTEST, or add it to PATH])
+  fi
+
+  AC_ARG_VAR([VTEST_CFLAGS], [compiler flags to find vtc.h])
+  if test "$ac_cv_env_VTEST_CFLAGS_set" = "set"; then
+    VTEST_CFLAGS="$ac_cv_env_VTEST_CFLAGS_value"
+  else
+    PKG_CHECK_MODULES([VTEST], [vtest], [], [
+      AC_MSG_ERROR([requires vtest includes. Either clone the submodule, or set VTEST_CFLAGS, or add the pkg-config .pc file])
+      ])
+  fi
+  AC_SUBST([VTEST_CFLAGS])
+  ])
 
 AC_ARG_WITH([rst2man],
   AS_HELP_STRING([--with-rst2man=PATH], [Location of rst2man (auto)]),
