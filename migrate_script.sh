@@ -53,6 +53,20 @@ move_testcases() (
 	bulk tests/extensions			bin/varnishtest/tests/x*
 )
 
+adjust_testcases() (
+	echo "---------------------------------------- adjust_testcases"
+
+	sed -i '' '
+1a\
+\
+# force load vtest_ext_vinyl to define vinyl_branch macro\
+vinyl v1
+s/pkg_branch/vinyl_branch/g
+' tests/regressions/r03794.vtc
+
+
+)
+
 pretend_vtest_pkg() (
 	echo "---------------------------------------- pretend_vtest_pkg"
 	# Pretend we have the, not yet existing VTEST package installed
@@ -109,6 +123,8 @@ fi
 start_from_fresh
 
 move_testcases
+
+adjust_testcases
 
 pretend_vtest_pkg
 
