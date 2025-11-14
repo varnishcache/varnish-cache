@@ -15,8 +15,9 @@ move_testcases() (
 	echo "---------------------------------------- move_testcases"
 	rm -rf tests
 
-	# This test recursively starts varnishtest
+	# These tests recursively starts varnishtest
 	git rm bin/varnishtest/tests/r02262.vtc
+	git rm bin/varnishtest/tests/u00018.vtc
 
 	bulk() (
 		td=$1
