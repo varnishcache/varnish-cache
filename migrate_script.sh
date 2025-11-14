@@ -5,6 +5,8 @@ set -e
 start_from_fresh() (
 	echo "---------------------------------------- start_from_fresh"
 	make -j 4 distclean > /dev/null 2>&1 || true
+	rm -rf lib/libvtest_ext_vinyl
+	rm -rf pretend_vtest
 	git reset --hard
 )
 
@@ -12,6 +14,9 @@ start_from_fresh() (
 move_testcases() (
 	echo "---------------------------------------- move_testcases"
 	rm -rf tests
+
+	# This test recursively starts varnishtest
+	git rm bin/varnishtest/tests/r02262.vtc
 
 	bulk() (
 		td=$1
