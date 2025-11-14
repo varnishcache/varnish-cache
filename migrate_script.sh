@@ -28,6 +28,8 @@ move_testcases() (
 			bn=`basename $fn`
 			git mv $fn $td/$bn
 			sed -i '' '
+				/^varnishtest/s//vtest/
+				/varnishtest/s//vinyltest/
 				/^varnish/s/varnish /vinyl /
 				/^logexpect/s/logexpect /vsl_expect /
 			' $td/$bn
@@ -64,7 +66,6 @@ adjust_testcases() (
 vinyl v1
 s/pkg_branch/vinyl_branch/g
 ' tests/regressions/r03794.vtc
-
 
 )
 
@@ -142,5 +143,5 @@ make -j 4
 #(cd lib/libvtest_ext_vinyl && make -k)
 
 env LD_LIBRARY_PATH=`pwd`/lib/libvtest_ext_vinyl/.libs \
-	pretend_vtest/bin/vtest -i -k tests/*/*.vtc 2>&1 |
+	pretend_vtest/bin/vtest -j 4 -i -k tests/*/*.vtc 2>&1 |
 	tee _
