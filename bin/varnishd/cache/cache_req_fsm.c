@@ -240,7 +240,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		Req_StashObjcore(req, &req->objcore);
 		http_Teardown(req->resp);
 
 		switch (wrk->vpi->handling) {
@@ -685,8 +685,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_hit{}");
 	}
 
-	/* Drop our object, we won't need it */
-	(void)HSH_DerefObjCore(wrk, &req->objcore);
+	Req_StashObjcore(req, &req->objcore);
 
 	if (busy != NULL) {
 		HSH_Withdraw(wrk, &busy);
@@ -716,7 +715,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 		wrk->stats->cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, req->stale_oc, VBF_NORMAL);
 		if (req->stale_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &req->stale_oc);
+			Req_StashObjcore(req, &req->stale_oc);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FAIL:
@@ -736,7 +735,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	}
 	VRY_Clear(req);
 	if (req->stale_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &req->stale_oc);
+		Req_StashObjcore(req, &req->stale_oc);
 	HSH_Withdraw(wrk, &req->objcore);
 	return (REQ_FSM_MORE);
 }
