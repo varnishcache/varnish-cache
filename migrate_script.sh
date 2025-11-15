@@ -45,7 +45,7 @@ move_testcases() (
 	bulk tests/compliance			bin/varnishtest/tests/i*
 	bulk tests/jailing			bin/varnishtest/tests/j*
 	bulk tests/logging			bin/varnishtest/tests/l*
-	bulk tests/vmod_support			bin/varnishtest/tests/m*
+	bulk tests/infra_vmod			bin/varnishtest/tests/m*
 	bulk tests/proxy_protocol		bin/varnishtest/tests/o*
 	bulk tests/persistence			bin/varnishtest/tests/p*
 	bulk tests/regressions			bin/varnishtest/tests/r*
@@ -54,6 +54,16 @@ move_testcases() (
 	bulk tests/utilities			bin/varnishtest/tests/u*
 	bulk tests/VCL				bin/varnishtest/tests/v*
 	bulk tests/extensions			bin/varnishtest/tests/x*
+
+	bulk tests/vmod_blob			vmod/tests/blob*.vtc
+	bulk tests/vmod_cookie			vmod/tests/cookie*.vtc
+	bulk tests/vmod_directors		vmod/tests/directors*.vtc
+	bulk tests/vmod_h2			vmod/tests/h2*.vtc
+	bulk tests/vmod_proxy			vmod/tests/proxy*.vtc
+	bulk tests/vmod_purge			vmod/tests/purge*.vtc
+	bulk tests/vmod_std			vmod/tests/std*.vtc
+	bulk tests/vmod_unix			vmod/tests/unix*.vtc
+	bulk tests/vmod_vtc			vmod/tests/vtc*.vtc
 )
 
 adjust_testcases() (
@@ -72,8 +82,8 @@ s/pkg_branch/vinyl_branch/g
 pretend_vtest_pkg() (
 	echo "---------------------------------------- pretend_vtest_pkg"
 	# Pretend we have the, not yet existing VTEST package installed
-	# VT2D=/home/phk/Varnish/VTest2
-	VT2D=bin/varnishtest/vtest2
+	VT2D=/home/phk/Varnish/VTest2
+	# VT2D=bin/varnishtest/vtest2
 	rm -rf pretend_vtest
 	( cd ${VT2D} && make clean && make)
 	mkdir -p pretend_vtest/bin pretend_vtest/include
@@ -107,12 +117,97 @@ libvtest_ext_vinyl() (
 
 	sed -i '' '/lib.libvgz.Makefile/a\
     lib/libvtest_ext_vinyl/Makefile
+
 	' configure.ac
 )
 
 run_autogen() (
 	echo "---------------------------------------- run_autogen"
 	env CPPFLAGS=-I`pwd`/pretend_vtest/include sh autogen.des
+)
+
+uncouple_varnishtest() (
+	echo "---------------------------------------- uncouple_varnishtest"
+	sed -i '' '/varnishtest/d' man/Makefile.am
+	sed -i '' '
+		/varnishtop.*/s//varnishtop/
+		/varnishtest/d
+	' bin/Makefile.am
+
+	sed -i '' '
+	/^# Stupid automake/{
+N
+N
+N
+N
+N
+N
+N
+d
+}
+	/bin\/varnishtest\/Makefile/d
+	' configure.ac
+
+	sed -i '' '
+	/^VTC_LOG_COMPILER/s/=.*/= $(srcdir)\/vtest_script.sh/
+	' vtc.am
+)
+
+couple_in_tests() (
+	echo "---------------------------------------- couple_in_tests"
+
+	sed -i '' '
+	/SUBDIRS =/s/$/ tests/
+	' Makefile.am
+
+	echo '
+SUBDIRS = \
+	basic_functionality
+
+FOOSUBDIRS = \
+	vmod_blob \
+	complex_functionality \
+	compliance \
+	edge_side_includes \
+	extensions \
+	gzip \
+	http2 \
+	haproxy \
+	jailing \
+	logging \
+	notably_slow_tests \
+	persistence \
+	proxy_protocol \
+	regressions \
+	security \
+	infra_vmod \
+	VCL \
+	utilities \
+	vmod_blob \
+	vmod_cookie \
+	vmod_directors \
+	vmod_h2 \
+	vmod_proxy \
+	vmod_purge \
+	vmod_std \
+	vmod_unix \
+	vmod_vtc
+	' > tests/Makefile.am
+
+	echo '
+VTC_LOG_DRIVER = $(top_srcdir)/build-aux/vtest_driver.sh --top-srcdir ${top_srcdir} --top-builddir ${top_builddir}
+TEST_EXTENSIONS = .vtc
+ 
+TESTS   = \
+	b00000.vtc \
+	b00001.vtc
+
+	' > tests/basic_functionality/Makefile.am
+
+	sed -i '' '/vmod\/Makefile/a\
+    tests\/Makefile\
+    tests\/basic_functionality\/Makefile
+	' configure.ac
 )
 
 #######################################################################
@@ -134,13 +229,15 @@ slam_new_stuff_in
 
 libvtest_ext_vinyl
 
+uncouple_varnishtest
+
+couple_in_tests
+
 run_autogen
 
-#(cd lib/libvarnish && make)
-#(cd lib/libvarnishapi && make)
-
 make -j 4
-#(cd lib/libvtest_ext_vinyl && make -k)
+
+make check
 
 env LD_LIBRARY_PATH=`pwd`/lib/libvtest_ext_vinyl/.libs \
 	pretend_vtest/bin/vtest -j 4 -i -k tests/*/*.vtc 2>&1 |
