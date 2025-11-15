@@ -21,6 +21,10 @@ done
 
 export PATH
 
+VMOD_PATH="`cd ${top_builddir} && pwd`/vmod/.libs"
+VINYL_TEST_ARGS="-p vmod_path=${VMOD_PATH}"
+export VINYL_TEST_ARGS
+
 exec ${top_srcdir}/pretend_vtest/bin/vtest \
 	--extension \
 		${top_builddir}/lib/libvtest_ext_vinyl/.libs/libvtest_ext_vinyl.so \
