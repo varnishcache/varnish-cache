@@ -12,7 +12,9 @@ if [ "x$1" != "x--top-builddir" ] ; then exit 4 ; fi
 top_builddir=$2
 shift ; shift
 
-for i in ${top_builddir}/bin/*
+abs_top_builddir=`cd ${top_builddir} && pwd`
+
+for i in ${abs_top_builddir}/bin/*
 do
 	if [ -d $i ] ; then
 		PATH=${i}:${PATH}
@@ -21,7 +23,7 @@ done
 
 export PATH
 
-VMOD_PATH="`cd ${top_builddir} && pwd`/vmod/.libs"
+VMOD_PATH="${abs_top_builddir}/vmod/.libs"
 VINYL_TEST_ARGS="-p vmod_path=${VMOD_PATH}"
 export VINYL_TEST_ARGS
 
