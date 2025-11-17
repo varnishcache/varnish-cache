@@ -14,8 +14,8 @@ start_from_fresh() (
 pretend_vtest_pkg() (
 	echo "---------------------------------------- pretend_vtest_pkg"
 	# Pretend we have the, not yet existing VTEST package installed
-	VT2D=/home/phk/Varnish/VTest2
-	# VT2D=bin/varnishtest/vtest2
+	# VT2D=/home/phk/Varnish/VTest2
+	VT2D=bin/varnishtest/vtest2
 	rm -rf pretend_vtest
 	( cd ${VT2D} && make clean && make)
 	mkdir -p pretend_vtest/bin pretend_vtest/include
