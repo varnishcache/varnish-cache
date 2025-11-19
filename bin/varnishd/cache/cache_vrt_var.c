@@ -608,7 +608,7 @@ REQ_VAR_U(grace, d_grace, -1)
 // deprecated, to be removed
 VCL_VOID VRT_l_req_ttl(VRT_CTX, VCL_DURATION arg) { VRT_l_req_max_age(ctx, arg); }
 VCL_DURATION VRT_r_req_ttl(VRT_CTX) { return (VRT_r_req_max_age(ctx)); }
-VCL_VOID VRT_u_req_ttl(VRT_CTX) { return (VRT_u_req_max_age(ctx)); }
+VCL_VOID VRT_u_req_ttl(VRT_CTX) { VRT_u_req_max_age(ctx); }
 
 VCL_VOID
 VRT_l_req_backend_hint(VRT_CTX, VCL_BACKEND be)
