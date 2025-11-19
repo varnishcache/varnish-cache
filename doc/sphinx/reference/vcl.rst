@@ -352,7 +352,7 @@ individually:
   folded (e.g.  if both 1.2.3.0/25 and 1.2.3.128/25 are added, they will be
   folded to 1.2.3.0/24).
 
-  Skip and fold operations on VCL entries are output as warnings
+  Skip and fold operations on ACL entries are output as warnings
   during VCL compilation as entries from the VCL are processed in
   order.
 
