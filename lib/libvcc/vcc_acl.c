@@ -890,6 +890,8 @@ vcc_ParseAcl(struct vcc *tl)
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "fold")) {
 			vcc_parseAclFold(tl, sign);
+			if (tl->err)
+				return;
 		} else if (vcc_IdIs(tl->t, "pedantic")) {
 			acl->flag_pedantic = sign;
 			vcc_NextToken(tl);
