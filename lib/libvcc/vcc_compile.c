@@ -147,6 +147,13 @@ TLWriteVSB(struct vcc *tl, const char *fn, const struct vsb *vsb,
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcc_refUnusedProbes(struct vcc *tl, const struct symbol *sym)
+{
+	if (sym->ndef != 0 && sym->nref == 0)
+		Fc(tl, 0, "\t(void)%s;\n", sym->rname);
+}
+
 struct proc *
 vcc_NewProc(struct vcc *tl, struct symbol *sym)
 {
@@ -426,7 +433,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
  */
 
 static void
-EmitInitFini(const struct vcc *tl)
+EmitInitFini(struct vcc *tl)
 {
 	struct inifin *p, *q = NULL;
 	unsigned has_event = 0;
@@ -574,6 +581,7 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "\n");
 	if (!has_event)
 		Fc(tl, 0, "\t(void)vgc_warmupstep;\n");
+	VCC_WalkSymbols(tl, vcc_refUnusedProbes, SYM_MAIN, SYM_PROBE);
 	Fc(tl, 0, "\treturn (%d);\n", has_event ? 1 : 0);
 	Fc(tl, 0, "}\n");
 }
