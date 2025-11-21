@@ -315,7 +315,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
 
-	if (bo->no_retry != NULL) {
+	if (bo->no_retry != NULL && bo->no_retry != retry_disabled) {
 		VSLb(bo->vsl, SLT_Error,
 		    "Retry not possible, %s", bo->no_retry);
 		return (F_STP_FAIL);

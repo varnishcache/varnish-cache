@@ -1,0 +1,127 @@
+varnishtest "Test bereq.retry_connect aka extrachance"
+
+server s0 {
+	rxreq
+	txresp -hdr "Connection: keep-alive" -body "hello"
+
+	rxreq
+	close
+	accept
+	rxreq
+	txresp -hdr "Connection: keep-alive" -body "hello"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+} -start
+
+client c1 {
+	# First backend connection
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "hello"
+	# Reuse with extrachance
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "hello"
+} -run
+
+server s0 -start
+
+client c2 {
+	# First backend connection
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "hello"
+	# We should not retry when reqbody is not cached
+	txreq -req "POST" -bodylen 5
+	rxresp
+	expect resp.status == 503
+} -run
+
+server s0 -break
+server s0 -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.retry_connect = false;
+	}
+}
+
+client c3 {
+	# First backend connection
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "hello"
+	# No retry when retry_connect = false
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+
+server s0 -break
+server s0 -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.retry_connect = true;
+	}
+}
+
+client c4 {
+	# First backend connection
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "hello"
+	# retry_connect does not force a retry when reqbody is not cached
+	txreq -req "POST" -bodylen 5
+	rxresp
+	expect resp.status == 503
+} -run
+
+server s0 -break
+server s0 -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.retry_connect = false;
+	}
+
+	sub vcl_backend_error {
+		if (bereq.retries < 1) {
+			return (retry);
+		}
+	}
+}
+
+client c5 {
+	# First backend connection
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "hello"
+	# Disabling retry_connect from vcl does not prevent vcl retry
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

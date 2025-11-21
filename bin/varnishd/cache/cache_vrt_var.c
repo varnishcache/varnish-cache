@@ -48,6 +48,7 @@
 #define VRT_TMO(tmo) (isinf(tmo) ? VRT_DECIMAL_MAX : tmo)
 
 static char vrt_hostname[255] = "";
+const char *retry_disabled = "disabled from VCL";
 
 /*--------------------------------------------------------------------
  * VRT variables relating to first line of HTTP/1.1 req/resp
@@ -735,6 +736,28 @@ VRT_r_bereq_retries(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	return (ctx->bo->retries);
+}
+
+VCL_VOID
+VRT_l_bereq_retry_connect(VRT_CTX, VCL_BOOL b)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+	if (!b && ctx->bo->no_retry == NULL)
+		ctx->bo->no_retry = retry_disabled;
+	else if (b && ctx->bo->no_retry == retry_disabled)
+		ctx->bo->no_retry = NULL;
+}
+
+VCL_BOOL
+VRT_r_bereq_retry_connect(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->no_retry == NULL);
 }
 
 /*--------------------------------------------------------------------*/

@@ -908,6 +908,27 @@ bereq.retries
 
 	A count of how many times this request has been retried.
 
+.. _bereq.retry_connect:
+
+bereq.retry_connect
+
+	Type: BOOL
+
+	Readable from: backend
+
+	Writable from: backend
+
+	Default: ``true``.
+	Controls whether Varnish will make a second attempt to connect to the
+	backend if a first connection reuse attempt failed. Setting to ``false``
+	means that no retries will be made. However, setting this to ``true``
+	does not guarantee that a retry will always be attempted, as there are
+	other factors involved in the decision (ex: a request body not being
+	cached).
+	Note that this only controls automatic retries due to connection
+	failures, and does not affect retries initiated from VCL using
+	``return(retry);``.
+
 
 .. _bereq.task_deadline:
 
