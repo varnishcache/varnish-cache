@@ -396,7 +396,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 static int v_matchproto_(vdi_gethdrs_f)
 vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 {
-	int i, extrachance = 1;
+	int i, retry_connect = 1;
 	struct backend *bp;
 	struct pfd *pfd;
 	struct busyobj *bo;
@@ -424,13 +424,13 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 	do {
 		if (bo->htc != NULL)
 			CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
-		pfd = vbe_dir_getfd(ctx, wrk, d, bp, extrachance == 0 ? 1 : 0);
+		pfd = vbe_dir_getfd(ctx, wrk, d, bp, retry_connect == 0 ? 1 : 0);
 		if (pfd == NULL)
 			return (-1);
 		AN(bo->htc);
 		CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
 		if (PFD_State(pfd) != PFD_STATE_STOLEN)
-			extrachance = 0;
+			retry_connect = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
 		    &bo->acct.bereq_bodybytes);
@@ -441,7 +441,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
 				     "first byte timeout (reused connection)");
-				extrachance = 0;
+				retry_connect = 0;
 			}
 		}
 
@@ -464,12 +464,12 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		 */
 		vbe_dir_finish(ctx, d);
 		AZ(bo->htc);
-		if (i < 0 || extrachance == 0)
+		if (i < 0 || retry_connect == 0)
 			break;
 		if (bo->no_retry != NULL)
 			break;
 		VSC_C_main->backend_retry++;
-	} while (extrachance--);
+	} while (retry_connect--);
 	return (-1);
 }
 
