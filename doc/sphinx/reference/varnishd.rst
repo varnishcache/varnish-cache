@@ -193,8 +193,10 @@ Operations options
 
 -F
 
-  Do not fork, run in the foreground. Only one of -F or -d can be
-  specified, and -F cannot be used together with -C.
+  Do not fork a daemon process, run in the foreground. Only one of -F
+  or -d can be specified, and -F cannot be used together with -C. In
+  foreground mode ``varnishd`` will honor ``SIGHUP`` and terminate.
+  The expected signal for shutdown is ``SIGTERM``.
 
 -T <address[:port]>
 
