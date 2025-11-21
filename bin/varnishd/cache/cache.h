@@ -455,6 +455,7 @@ struct busyobj {
 #define BUSYOBJ_TMO(bo, pfx, tmo)					\
 	(isnan((bo)->tmo) ? cache_param->pfx##tmo : (bo)->tmo)
 
+extern const char *retry_disabled;
 
 /*--------------------------------------------------------------------*/
 
