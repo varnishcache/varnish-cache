@@ -65,7 +65,9 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* To be used only when the state is known to be valid */
 
         /* common constants */
-
+#if MAX_WBITS < 9 || MAX_WBITS > 15
+#  error MAX_WBITS must be in 9..15
+#endif
 #ifndef DEF_WBITS
 #  define DEF_WBITS MAX_WBITS
 #endif
