@@ -597,7 +597,7 @@ addf_vcl_log(const char *key)
 }
 
 static void
-addf_hdr(struct watch_head *head, const char *key)
+addf_hdr(struct watch_head *head, char *key)
 {
 	struct watch *w;
 	struct format *f;
