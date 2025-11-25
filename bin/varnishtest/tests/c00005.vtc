@@ -377,7 +377,7 @@ client c1 {
 logexpect l1 -wait
 
 # test +fold(-report)
-varnish v1 -cliexpect "^$" {vcl.inline silent << EOF
+varnish v1 -cliexpect ! "fold" {vcl.inline silent << EOF
 	vcl 4.1;
 
 	backend dummy None;
