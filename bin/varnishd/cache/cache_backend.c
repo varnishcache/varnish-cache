@@ -341,7 +341,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		VSLb(bo->vsl, SLT_BackendOpen,
 		    "%d %s %s %s %s %s reuse %.6f %ju", *fdp,
 		    VRT_BACKEND_string(dir), abuf2, pbuf2, abuf1, pbuf1,
-		    PFD_Age(pfd), PFD_Reused(pfd));
+		    PFD_Age(pfd), (uintmax_t)PFD_Reused(pfd));
 	}
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
