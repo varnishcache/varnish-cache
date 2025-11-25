@@ -39,11 +39,59 @@
 
 #include "cache_varnishd.h"
 #include "cache_filter.h"
+#include "cache_objhead.h"
 #include "cache_pool.h"
 #include "cache_transport.h"
 
 #include "common/heritage.h"
 #include "vtim.h"
+
+/*--------------------------------------------------------------------
+ * Facility to keep obcore references until the end of the task across restarts
+ */
+
+struct ocstash {
+	unsigned		magic;
+#define OCSTASH_MAGIC		0x242031b5
+	uint16_t		l;
+	uint16_t		n;
+	struct objcore *	ocs[] v_counted_by_(l);
+};
+
+static void
+ocstash_push(struct ocstash *stash, struct objcore **ocp)
+{
+
+	CHECK_OBJ_NOTNULL(stash, OCSTASH_MAGIC);
+	assert(stash->n < stash->l);
+	TAKE_OBJ_NOTNULL(stash->ocs[stash->n], ocp, OBJCORE_MAGIC);
+	stash->n++;
+}
+
+static void
+ocstash_clear(struct worker *wrk, struct ocstash *stash)
+{
+	uint16_t u;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(stash, OCSTASH_MAGIC);
+	assert(stash->n <= stash->l);
+	for (u = 0; u < stash->n; u++)
+		(void)HSH_DerefObjCore(wrk, &stash->ocs[u]);
+	for (; u < stash->l; u++)
+		AZ(stash->ocs[u]);
+	stash->n = 0;
+}
+
+void
+Req_StashObjcore(struct req *req, struct objcore **ocp)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	ocstash_push(req->stash, ocp);
+}
+
+/*--------------------------------------------------------------------*/
 
 void
 Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
@@ -127,7 +175,7 @@ Req_New(struct sess *sp, const struct req *preq)
 {
 	struct pool *pp;
 	struct req *req;
-	uint16_t nhttp;
+	uint16_t l, nhttp;
 	unsigned sz, hl;
 	char *p, *e;
 
@@ -191,6 +239,17 @@ Req_New(struct sess *sp, const struct req *preq)
 		p = (void*)PRNDUP(p + sizeof(*req->top));
 	}
 
+	req->max_restarts = cache_param->max_restarts;
+	assert(req->max_restarts + 1 <= UINT16_MAX);
+	// each restart may ref one stale_oc and one oc
+	l = (2 * req->max_restarts) + 1;
+	sz = SIZEOF_FLEX_OBJ(req->stash, ocs, l);
+	req->stash = (void*)p;
+	req->stash->magic = OCSTASH_MAGIC;
+	req->stash->l = l;
+	p += sz;
+	p = (void*)PRNDUP(p);
+
 	assert(p < e);
 
 	WS_Init(req->ws, "req", p, e - p);
@@ -200,7 +259,6 @@ Req_New(struct sess *sp, const struct req *preq)
 	req->t_req = NAN;
 	req->req_step = R_STP_TRANSPORT;
 	req->doclose = SC_NULL;
-	req->max_restarts = cache_param->max_restarts;
 
 	return (req);
 }
@@ -253,6 +311,7 @@ Req_Rollback(VRT_CTX)
 	if (IS_TOPREQ(req))
 		VCL_TaskLeave(ctx, req->top->privs);
 	VCL_TaskLeave(ctx, req->privs);
+	ocstash_clear(req->wrk, req->stash);
 	VCL_TaskEnter(req->privs);
 	if (IS_TOPREQ(req))
 		VCL_TaskEnter(req->top->privs);
@@ -283,6 +342,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	AZ(req->director_hint);
 	req->restarts = 0;
+
+	ocstash_clear(wrk, req->stash);
 
 	if (req->vcl != NULL)
 		VCL_Recache(wrk, &req->vcl);
