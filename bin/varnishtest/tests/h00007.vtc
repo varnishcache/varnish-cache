@@ -9,6 +9,7 @@ feature cmd {haproxy --version 2>&1 | grep -q 'HA-*Proxy version'}
 server s1 {
     rxreq
     txresp -body "s1 >>> Hello world!"
+    shutdown
 } -start
 
 varnish v1 -proto "PROXY" -vcl+backend {} -start
@@ -28,7 +29,7 @@ haproxy h1 -D -conf {
 varnish v1 -vcl+backend {
 	import std;
 
-	acl localhost {
+	acl localhost -fold {
 		"localhost";
 		"127.0.0.1";
 		"::1";
@@ -58,3 +59,7 @@ client c1 -connect ${h1_fe1_sock} {
     expect resp.http.notstdip == false
     expect resp.body == "s1 >>> Hello world!"
 } -run
+
+varnish v1 -vsl_catchup
+
+haproxy h1 -wait
