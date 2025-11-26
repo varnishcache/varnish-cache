@@ -560,13 +560,16 @@ req_poll(struct worker *wrk, struct req *req)
 {
 	struct req *top;
 
-	/* NB: Since a fail transition leads to vcl_synth, the request may be
-	 * short-circuited twice.
+	/* If the req_reset flag was raised without taking the emulated
+	 * return(fail) transition, there must be a good reason for that.
+	 * One is that sub vcl_recv is always followed by a call to sub
+	 * vcl_hash to always compute a cache key. The other one is that
+	 * we always want to run sub vcl_synth for return(fail) even if
+	 * we won't deliver the response, and maybe sub vcl_synth needs
+	 * the cache key. There may be other good reasons to proceed.
 	 */
-	if (req->req_reset) {
-		wrk->vpi->handling = VCL_RET_FAIL;
-		return (-1);
-	}
+	if (req->req_reset)
+		return (0);
 
 	top = req->top->topreq;
 	CHECK_OBJ_NOTNULL(top, REQ_MAGIC);
@@ -581,8 +584,12 @@ req_poll(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Reset", W_TIM_real(wrk));
 	wrk->stats->req_reset++;
-	wrk->vpi->handling = VCL_RET_FAIL;
 	req->req_reset = 1;
+
+	if (req->req_step == R_STP_SYNTH)
+		return (0);
+
+	wrk->vpi->handling = VCL_RET_FAIL;
 	return (-1);
 }
 
