@@ -825,6 +825,15 @@ VRT_BACKEND_string(VCL_BACKEND d)
 }
 
 VCL_STRING v_matchproto_()
+VRT_PROBE_string(VCL_PROBE p)
+{
+	if (p == NULL)
+		return (NULL);
+	CHECK_OBJ_NOTNULL(p, VRT_BACKEND_PROBE_MAGIC);
+	return (p->vcl_name);
+}
+
+VCL_STRING v_matchproto_()
 VRT_BOOL_string(VCL_BOOL val)
 {
 

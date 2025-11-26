@@ -1,0 +1,31 @@
+vtest "Test VCL_PROBE type handling in VCC"
+
+# To truly test this we would have to inspect the generated
+# C-source code.
+
+varnish v1 -vcl {
+	vcl 4.1;
+
+	backend be none;
+
+	probe p1 { }
+	probe p2 { }
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.self-cmp = (p1 == p1);
+		set resp.http.cmp = (p1 == p2);
+		set resp.http.name = p1 + "/" + p2;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.cmp == false
+	expect resp.http.self-cmp == true
+	expect resp.http.name == p1/p2
+} -run

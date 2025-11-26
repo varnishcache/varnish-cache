@@ -216,8 +216,14 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 	}
 	Fh(tl, 0, "static const struct vrt_backend_probe %s[] = {{\n", name);
 	Fh(tl, 0, "\t.magic = VRT_BACKEND_PROBE_MAGIC,\n");
-	if (namep != NULL)
+	if (sym != NULL) {
+		Fh(tl, 0, "\t.vcl_name = \"%s\",\n", sym->name);
+	} else {
+		Fh(tl, 0, "\t.vcl_name = \"%s\",\n", name);
+	}
+	if (namep != NULL) {
 		*namep = TlDup(tl, name);
+	}
 
 	window = 0;
 	threshold = 0;

@@ -57,6 +57,9 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * 22.1 (trunk)
+ *	"vcl_name" member added to vrt_backend_probe{}
+ *	VRT_PROBE_string() added
  * 22.0 (2025-09-15)
  *	VRT_r_obj_stale_age() added
  *	VRT_r_obj_stale_can_esi() added
@@ -623,6 +626,7 @@ VCL_STRING VRT_BOOL_string(VCL_BOOL);
 VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB);
 VCL_STRING VRT_INT_string(VRT_CTX, VCL_INT);
 VCL_STRING VRT_IP_string(VRT_CTX, VCL_IP);
+VCL_STRING VRT_PROBE_string(VCL_PROBE);
 VCL_STRING VRT_REAL_string(VRT_CTX, VCL_REAL);
 VCL_STRING VRT_STEVEDORE_string(VCL_STEVEDORE);
 VCL_STRING VRT_STRANDS_string(VRT_CTX, VCL_STRANDS);
@@ -720,6 +724,7 @@ struct vrt_backend_probe {
 	const char			*url;
 	const char			*request;
 	VRT_BACKEND_PROBE_FIELDS(const)
+	const char			*vcl_name;
 };
 
 /* Backend related */

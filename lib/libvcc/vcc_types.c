@@ -174,6 +174,7 @@ const struct type PROBE[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"PROBE",
 	.global_pfx =		"vgc_probe",
+	.tostring =		"VRT_PROBE_string(\v1)",
 	.default_sym =		default_probe,
 }};
 
