@@ -1234,7 +1234,6 @@ static const struct cmps vcc_cmps[] = {
 	NUM_REL(TIME),
 	IDENT_REL(BACKEND),
 	IDENT_REL(ACL),
-	IDENT_REL(PROBE),
 	IDENT_REL(STEVEDORE),
 	IDENT_REL(SUB),
 	IDENT_REL(INSTANCE),
@@ -1246,6 +1245,9 @@ static const struct cmps vcc_cmps[] = {
 
 	{IP,		'~',		cmp_acl, "" },
 	{IP,		T_NOMATCH,	cmp_acl, "!" },
+
+	{PROBE,		T_EQ,		cmp_simple, "!VPI_ProbeCmp(\v1, \v2)" },
+	{PROBE,		T_NEQ,		cmp_simple, "VPI_ProbeCmp(\v1, \v2)" },
 
 	{STRINGS,	T_EQ,		cmp_string, "0 =="},
 	{STRINGS,	T_NEQ,		cmp_string, "0 !="},
