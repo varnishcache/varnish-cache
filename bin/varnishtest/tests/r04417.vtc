@@ -11,11 +11,25 @@ varnish v1 -vcl {
 	probe p1 { }
 	probe p2 { }
 
+	acl a1 { "localhost"; }
+
 	sub vcl_recv {
 		return (synth(200));
 	}
 
 	sub vcl_synth {
+		if (a1 == a1) {
+			set resp.http.be-cmp = "true";
+		}
+		if (be == be) {
+			set resp.http.be-cmp = "true";
+		}
+		if (p1 == p1) {
+			set resp.http.pb-cmp = "true";
+		}
+		if (p1 == p2) {
+			set resp.http.false = "false";
+		}
 		set resp.http.self-cmp = (p1 == p1);
 		set resp.http.cmp = (p1 == p2);
 		set resp.http.name = p1 + "/" + p2;
@@ -28,4 +42,7 @@ client c1 {
 	expect resp.http.cmp == false
 	expect resp.http.self-cmp == true
 	expect resp.http.name == p1/p2
+	expect resp.http.be-cmp == "true"
+	expect resp.http.pb-cmp == "true"
+	expect resp.http.false == <undef>
 } -run
