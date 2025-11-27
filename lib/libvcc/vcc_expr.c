@@ -1215,6 +1215,10 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	}
 }
 
+#define PTR_REL(typ)								\
+	{typ,		T_EQ,		cmp_simple, "!VPI_PtrCmp(\v1, \v2)" },	\
+	{typ,		T_NEQ,		cmp_simple, "VPI_PtrCmp(\v1, \v2)" }
+
 #define IDENT_REL(typ)							\
 	{typ,		T_EQ,		cmp_simple, "(\v1 == \v2)" },	\
 	{typ,		T_NEQ,		cmp_simple, "(\v1 != \v2)" }
@@ -1232,9 +1236,9 @@ static const struct cmps vcc_cmps[] = {
 	NUM_REL(BYTES),
 	NUM_REL(REAL),
 	NUM_REL(TIME),
-	IDENT_REL(BACKEND),
-	IDENT_REL(ACL),
-	IDENT_REL(PROBE),
+	PTR_REL(BACKEND),
+	PTR_REL(ACL),
+	PTR_REL(PROBE),
 	IDENT_REL(STEVEDORE),
 	IDENT_REL(SUB),
 	IDENT_REL(INSTANCE),

@@ -118,3 +118,4 @@ enum vcl_func_fail_e VPI_Call_Check(VRT_CTX, const struct VCL_conf *conf,
     unsigned methods, unsigned n);
 void VPI_Call_Begin(VRT_CTX, unsigned n);
 void VPI_Call_End(VRT_CTX, unsigned n);
+VCL_BOOL VPI_PtrCmp(const void *p1, const void *p2);
