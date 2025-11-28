@@ -263,3 +263,11 @@ pthread_create(void)
 #define MGT_EXPERIMENT(x)	COM_EXPERIMENT(mgt_param.experimental_bits, x)
 #define MGT_DO_DEBUG(x)		COM_DO_DEBUG(mgt_param.debug_bits, x)
 #define MGT_VCC_FEATURE(x)	COM_VCC_FEATURE(mgt_param.vcc_feature_bits, x)
+
+/* mgt_vext.c */
+void vext_argument(const char *);
+void vext_copyin(struct vsb *);
+void vext_load(void);
+void vext_cleanup(int);
+typedef void vext_iter_f(const char *, void *);
+void vext_iter(vext_iter_f *func, void *);

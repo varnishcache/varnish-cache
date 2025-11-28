@@ -134,12 +134,3 @@ extern vsm_lock_f *vsc_lock;
 extern vsm_lock_f *vsc_unlock;
 extern vsm_lock_f *vsmw_lock;
 extern vsm_lock_f *vsmw_unlock;
-
-/* common/common_vext.c */
-
-void vext_argument(const char *);
-void vext_copyin(struct vsb *);
-void vext_load(void);
-void vext_cleanup(int);
-typedef void vext_iter_f(const char *, void *);
-void vext_iter(vext_iter_f *func, void *);

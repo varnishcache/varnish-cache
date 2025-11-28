@@ -40,7 +40,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vdef.h"
+#include "mgt.h"
+
 #include "vas.h"
 #include "miniobj.h"
 #include "vav.h"
@@ -48,7 +49,7 @@
 #include "vrnd.h"
 #include "vsb.h"
 
-#include "heritage.h"
+#include "common/heritage.h"
 
 struct vext {
 	unsigned		magic;
@@ -95,7 +96,7 @@ vext_iter(vext_iter_f *func, void *priv)
 }
 
 void
-vext_copyin(struct vsb *vident)
+vext_copyin(struct vsb *vi)
 {
 	struct vext *vp;
 	const char *p;
@@ -115,7 +116,7 @@ vext_copyin(struct vsb *vident)
 			p++;
 		else
 			p = vp->argv[0];
-		VSB_printf(vident, ",-E%s", p);
+		VSB_printf(vi, ",-E%s", p);
 		VSB_printf(vp->vsb, "vext_cache/%s,", p);
 		for (i = 0; i < 8; i++) {
 			AZ(VRND_RandomCrypto(&u, sizeof u));
