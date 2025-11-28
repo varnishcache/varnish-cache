@@ -185,7 +185,9 @@ Build dependencies on Alpine Linux
 
 As of Alpine 3, these steps should install the required dependencies:
 
-* Add the `Alpine Community Repository`_
+* Add the `Alpine Community Repository`_::
+
+        setup-apkrepos -c
 
 * Install dependencies::
 
