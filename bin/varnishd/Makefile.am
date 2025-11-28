@@ -63,7 +63,6 @@ varnishd_SOURCES = \
 	cache/cache_ws_common.c \
 	common/common_vsc.c \
 	common/common_vsmw.c \
-	common/common_vext.c \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
 	hash/hash_simple_list.c \
@@ -99,6 +98,7 @@ varnishd_SOURCES = \
 	mgt/mgt_util.c \
 	mgt/mgt_vcc.c \
 	mgt/mgt_vcl.c \
+	mgt/mgt_vext.c \
 	proxy/cache_proxy_proto.c \
 	proxy/cache_proxy.h \
 	storage/mgt_stevedore.c \
