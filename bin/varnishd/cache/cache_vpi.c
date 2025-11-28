@@ -302,3 +302,11 @@ VPI_Call_End(VRT_CTX, unsigned n)
 	AN(vbm);
 	vbit_clr(vbm, n);
 }
+
+VCL_BOOL
+VPI_ProbeCmp(const struct vrt_backend_probe *p1,
+    const struct vrt_backend_probe *p2)
+{
+
+	return (p1 != p2);
+}
