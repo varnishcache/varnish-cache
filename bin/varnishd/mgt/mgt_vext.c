@@ -45,6 +45,7 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vav.h"
+#include "vfil.h"
 #include "vqueue.h"
 #include "vrnd.h"
 #include "vsb.h"
@@ -65,10 +66,25 @@ struct vext {
 static VTAILQ_HEAD(,vext) vext_list =
     VTAILQ_HEAD_INITIALIZER(vext_list);
 
+static int
+vext_tryopen(void *priv, const char *fn)
+{
+	struct vext *vp;
+
+	CAST_OBJ_NOTNULL(vp, priv, VEXT_MAGIC);
+	vp->fd = open(fn, O_RDONLY);
+	if (vp->fd < 0)
+		return (1);
+	return (0);
+}
+
 void
 vext_argument(const char *arg)
 {
 	struct vext *vp;
+	char fn[1024];
+	char *fno = NULL;
+	struct vfil_path *vmod_path = NULL;
 
 	fprintf(stderr, "EEE <%s>\n", arg);
 	ALLOC_OBJ(vp, VEXT_MAGIC);
@@ -79,11 +95,20 @@ vext_argument(const char *arg)
 		ARGV_ERR("\tParse failure in argument: %s\n\t%s\n",
 		    arg, vp->argv[0]);
 	VTAILQ_INSERT_TAIL(&vext_list, vp, list);
-	fprintf(stderr, "eee <%s>\n", vp->argv[1]);
-	vp->fd = open(vp->argv[1], O_RDONLY);
-	if (vp->fd < 0)
+
+	if (strchr(vp->argv[1], '/'))
+		bstrcpy(fn, vp->argv[1]);
+	else
+		bprintf(fn, "libvmod_%s.so", vp->argv[1]);
+
+	VFIL_setpath(&vmod_path, mgt_vmod_path);
+	if (VFIL_searchpath(vmod_path, vext_tryopen, vp, fn, &fno)) {
 		ARGV_ERR("\tCannot open %s\n\t%s\n",
-		    vp->argv[1], strerror(errno));
+		    fn, strerror(errno));
+	}
+
+	fprintf(stderr, "eee <%s>\n", fno);
+	free(fno);
 }
 
 void
@@ -115,7 +140,7 @@ vext_copyin(struct vsb *vi)
 		if (p != NULL)
 			p++;
 		else
-			p = vp->argv[0];
+			p = vp->argv[1];
 		VSB_printf(vi, ",-E%s", p);
 		VSB_printf(vp->vsb, "vext_cache/%s,", p);
 		for (i = 0; i < 8; i++) {
