@@ -54,6 +54,7 @@ extern const int VRE_ERROR_NOMATCH;
 
 /* And those to PCRE2 compilation options */
 extern const unsigned VRE_CASELESS;
+extern const unsigned VRE_NO_AUTO_CAPTURE;
 
 vre_t *VRE_compile(const char *, unsigned, int *, int *, unsigned);
 vre_t *VRE_export(const vre_t *, size_t *);

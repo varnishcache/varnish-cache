@@ -66,6 +66,7 @@ struct vre {
 const int VRE_ERROR_NOMATCH = PCRE2_ERROR_NOMATCH;
 
 const unsigned VRE_CASELESS = PCRE2_CASELESS;
+const unsigned VRE_NO_AUTO_CAPTURE = PCRE2_NO_AUTO_CAPTURE;
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,

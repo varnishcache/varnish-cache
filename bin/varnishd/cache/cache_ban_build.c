@@ -193,7 +193,7 @@ ban_parse_regexp(struct ban_proto *bp, const char *a3)
 	size_t sz;
 	vre_t *re, *rex;
 
-	re = VRE_compile(a3, 0, &errorcode, &erroroffset, 0);
+	re = VRE_compile(a3, VRE_NO_AUTO_CAPTURE, &errorcode, &erroroffset, 0);
 	if (re == NULL) {
 		AN(VSB_init(vsb, errbuf, sizeof errbuf));
 		AZ(VRE_error(vsb, errorcode));
