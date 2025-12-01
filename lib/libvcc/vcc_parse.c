@@ -213,6 +213,36 @@ vcc_Compound(struct vcc *tl)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vcc_ParseUnused(struct vcc *tl)
+{
+	struct symbol *sym;
+	struct token *t;
+	struct inifin *ifp;
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	t = tl->t;
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_EXISTING, XREF_REF);
+	ERRCHK(tl);
+	AN(sym);
+	if (sym->kind != SYM_BACKEND && sym->kind != SYM_PROBE &&
+	    sym->kind != SYM_ACL && sym->kind != SYM_SUB) {
+		vcc_ErrWhere2(tl, t, tl->t);
+		VSB_printf(tl->sb, "Symbol '%s' cannot follow 'unused'.\n",
+		    sym->name);
+		return;
+	}
+	AN(sym->rname);
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->ini, "\t(void)%s;\n", sym->rname);
+	ifp->ignore_errors = 1;
+	SkipToken(tl, ';');
+}
+
+/*--------------------------------------------------------------------
  * SYNTAX:
  *    Function:
  *	'sub' ID(name) Compound
@@ -348,6 +378,7 @@ vcc_ParseVcl(struct vcc *tl)
  *	Backend definitions
  *	VMOD import directives
  *	VCL version declarations
+ *	Unused symbols declarations
  *	End of input
  */
 
@@ -365,6 +396,7 @@ static struct toplev {
 	{ "probe",		vcc_ParseProbe,		VCL_41,	VCL_HIGH },
 	{ "import",		vcc_ParseImport,	VCL_41,	VCL_HIGH },
 	{ "vcl",		vcc_ParseVcl,		VCL_41,	VCL_HIGH },
+	{ "unused",		vcc_ParseUnused,	VCL_41,	VCL_HIGH},
 	{ NULL, NULL }
 };
 
