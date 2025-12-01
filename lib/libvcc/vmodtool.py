@@ -1206,8 +1206,6 @@ class vcc():
     # parts from varnish-cache include/generate.py
     def version(self):
         srcdir = os.path.dirname(self.inputfile)
-        if not srcdir:
-            srcdir = "."
 
         pkgstr = "NOVERSION"
 
@@ -1228,30 +1226,13 @@ class vcc():
     # parts from varnish-cache include/generate.py
     def vcs(self):
         srcdir = os.path.dirname(self.inputfile)
-        if not srcdir:
-            srcdir = "."
 
-        gitver = "NOGIT"
+        gitver = subprocess.check_output([
+            "git -C %s rev-parse HEAD 2>/dev/null || echo NOGIT" %
+            srcdir], shell=True, universal_newlines=True).strip()
         gitfile = "vmod_vcs_version.txt"
 
-        status = subprocess.run(
-            [
-                "git",
-                "-C",
-                srcdir,
-                "rev-parse",
-                "HEAD"
-            ],
-            shell=False,
-            universal_newlines=True,
-            capture_output=True
-        )
-
-        if status.returncode == 0:
-            gitver = status.stdout.strip()
-            with open(gitfile, "w") as fh:
-                fh.write(gitver)
-        else:
+        if gitver == "NOGIT":
             for d in [".", srcdir]:
                 f = os.path.join(d, gitfile)
                 if not os.path.exists(f):
@@ -1262,6 +1243,10 @@ class vcc():
                 gitver = fh.read()
                 fh.close()
                 break;
+        else:
+            fh = open(gitfile, "w")
+            fh.write(gitver)
+            fh.close()
 
         if gitver == "NOGIT":
             print("WARNING: Neither git nor vmod_vcs_version.txt found.\n\t" +
