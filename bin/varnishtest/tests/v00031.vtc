@@ -15,6 +15,7 @@ varnish v1 -vcl {
 varnish v1 -vcl {
 	backend default none;
 	probe p { }
+	sub sb { }
 }
 
 varnish v1 -cliok "param.set vcc_feature +err_unref"
@@ -27,4 +28,8 @@ varnish v1 -errvcl {Unused backend c, defined:} {
 varnish v1 -errvcl {Unused probe p, defined:} {
 	backend default none;
 	probe p { }
+}
+
+varnish v1 -errvcl {Unused sub sb, defined:} {
+	sub sb { }
 }
