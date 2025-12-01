@@ -725,14 +725,14 @@ class FunctionMethodStanzaBase(Stanza):
 
     def rstdoc(self, fo, unused_man):
         super().rstdoc(fo,unused_man)
-        if (self.restrict is not None):
+        if self.restrict is not None:
             fo.write("\nRestricted to: ``%s``.\n\n" %
                      '``, ``'.join(self.restrict.restrict_toks))
             self.restrict.rstdoc(fo, unused_man)
 
     def json(self, jl):
         self.proto.jsonproto(jl[-1], self.proto.cname())
-        if (self.restrict is not None):
+        if self.restrict is not None:
             self.restrict.json(jl)
 
 
@@ -873,12 +873,12 @@ class RestrictStanza(Stanza):
         if len(self.toks) < 2:
             self.syntax()
         p = self.vcc.contents[-1]
-        if (isinstance(p, ObjectStanza)):
-            if(p.methods):
+        if isinstance(p, ObjectStanza):
+            if p.methods:
                 p.methods[-1].restrict = self
             else:
                 err("$Restrict should be after $Method or $Function", False)
-        elif (isinstance(p, FunctionStanza)):
+        elif isinstance(p, FunctionStanza):
             p.restrict = self
         else :
             err("$Restrict should be after $Method or $Function", False)
@@ -1206,6 +1206,8 @@ class vcc():
     # parts from varnish-cache include/generate.py
     def version(self):
         srcdir = os.path.dirname(self.inputfile)
+        if not srcdir:
+            srcdir = "."
 
         pkgstr = "NOVERSION"
 
@@ -1226,13 +1228,30 @@ class vcc():
     # parts from varnish-cache include/generate.py
     def vcs(self):
         srcdir = os.path.dirname(self.inputfile)
+        if not srcdir:
+            srcdir = "."
 
-        gitver = subprocess.check_output([
-            "git -C %s rev-parse HEAD 2>/dev/null || echo NOGIT" %
-            srcdir], shell=True, universal_newlines=True).strip()
+        gitver = "NOGIT"
         gitfile = "vmod_vcs_version.txt"
 
-        if gitver == "NOGIT":
+        status = subprocess.run(
+            [
+                "git",
+                "-C",
+                srcdir,
+                "rev-parse",
+                "HEAD"
+            ],
+            shell=False,
+            universal_newlines=True,
+            capture_output=True
+        )
+
+        if status.returncode == 0:
+            gitver = status.stdout.strip()
+            with open(gitfile, "w") as fh:
+                fh.write(gitver)
+        else:
             for d in [".", srcdir]:
                 f = os.path.join(d, gitfile)
                 if not os.path.exists(f):
@@ -1243,10 +1262,6 @@ class vcc():
                 gitver = fh.read()
                 fh.close()
                 break;
-        else:
-            fh = open(gitfile, "w")
-            fh.write(gitver)
-            fh.close()
 
         if gitver == "NOGIT":
             print("WARNING: Neither git nor vmod_vcs_version.txt found.\n\t" +
