@@ -103,6 +103,27 @@ The following operators are available in VCL:
   ``&&`` / ``||``
     Logical and/or.
 
+On Equality
+~~~~~~~~~~~
+
+In this section, "compare equal" means that the ``==`` operator returns ``true``
+and, conversely, the ``!=`` operator returns ``false``.
+
+The VCL types ``INT``, ``DURATION``, ``BYTES``, ``REAL`` and ``TIME`` compare
+equal if their values compare equal numerically.
+
+Notice that ``DURATION``, ``REAL`` and ``TIME`` are represented as floating
+point numbers, and hence testing for (in)equality might be unreliable.
+
+``IP`` compares equal for equal address.
+
+``STRING`` and ``STRANDS`` compare equal if the represented strings are equal.
+
+``BOOL`` compares equal if the truth value is the same.
+
+The VCL types ``BACKEND``, ``ACL``, ``PROBE``, ``STEVEDORE``, ``SUB`` and
+``INSTANCE`` compare equal if they represent the same object. Different objects
+with the same properties will never compare equal.
 
 Conditionals
 ------------
