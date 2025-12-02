@@ -436,6 +436,28 @@ subroutine's name::
         call pipe_if_local;
     }
 
+Symbol references
+-----------------
+
+Some VCL symbols are subject to reference counting, and would trigger a vcl
+compiler error if they were declared but not used. One way to turn these errors
+into warnings is to add ``-p vcc_feature=-err_unref`` to your ``varnishd``
+command line. This will disable the error globally for all symbols in every VCL
+that is compiled.
+
+If you only want to disable the error for some specific symbols, the ``unused``
+keyword can be used to mark such symbols as intentionally unused::
+
+    backend b1 { .host = "localhost"; }
+    probe p1 { }
+    acl acl1 { "localhost"; }
+    sub sb {}
+
+    unused b1;
+    unused p1;
+    unused acl1;
+    unused sb;
+
 Return statements
 ~~~~~~~~~~~~~~~~~
 
