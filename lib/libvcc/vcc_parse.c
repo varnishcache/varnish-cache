@@ -188,13 +188,13 @@ vcc_Compound(struct vcc *tl)
 			    SYMTAB_PARTIAL, XREF_NONE);
 			if (sym == NULL) {
 				VSB_printf(tl->sb, "Symbol not found.\n");
-				vcc_ErrWhere(tl, tl->t);
+				vcc_ErrWhere(tl, t);
 				return;
 			}
 			if (sym->action == NULL) {
 				VSB_printf(tl->sb,
 				    "Symbol cannot be used here.\n");
-				vcc_ErrWhere(tl, tl->t);
+				vcc_ErrWhere(tl, t);
 				return;
 			}
 			if (sym->action_mask != 0)
