@@ -1,8 +1,8 @@
 varnishtest "test if our default parameters make sense ..."
 
-feature 64bit
-feature !sanitizer
-feature !coverage
+builtwith 64bit
+builtwith !sanitizer
+builtwith !coverage
 
 # ... for our definition of a standard use case:
 # - 2019 header madness

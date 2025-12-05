@@ -1,6 +1,6 @@
 varnishtest "Test Basic persistence"
 
-feature persistent_storage
+builtwith persistent_storage
 
 process p1 -dump {
 	varnishd -spersistent -b ${localhost} -a :0 -d 2>&1

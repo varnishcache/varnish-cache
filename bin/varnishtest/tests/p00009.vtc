@@ -1,6 +1,6 @@
 varnishtest "Check that reloaded bans with completed flag are really completed on restart"
 
-feature persistent_storage
+builtwith persistent_storage
 
 shell "rm -f ${tmpdir}/_.per[12]"
 

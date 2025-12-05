@@ -2,7 +2,7 @@ varnishtest	"test sigsegv handler"
 
 # Under ASAN, the stack layout is different and STACK OVERFLOW is
 # never printed.
-feature !asan
+builtwith !asan
 
 server s1 {
 	rxreq

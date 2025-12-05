@@ -1,6 +1,6 @@
 varnishtest "Test priv_task"
 
-feature !sanitizer
+builtwith !sanitizer
 
 server s1 {
 	rxreq
