@@ -25,6 +25,7 @@ varnishd
     [-b [host[:port]|path]]
     [-C]
     [-d]
+    [-E extension]
     [-F]
     [-f config]
     [-h type[,options]]
@@ -228,6 +229,22 @@ Operations options
 
   Execute the management commands in the file given as ``clifile``
   before the worker process starts, see `CLI Command File`_.
+
+-E extension
+
+  Load the named extension. Extensions are modules (VMODs) which can modify
+  varnishd behavior outside VCL, for example by adding storage- or protocol
+  implementations. Extensions are always also VMODs, even if they do not provide
+  any functionality to VCL, but in most cases they will.
+
+  Any VMOD can be loaded as an extension, in which case it is simply pre-loaded
+  at startup and prevented from ever getting unloaded.
+
+  If `extension` contains any slashes ``/``, it is taken as an abslute path.
+  Otherwise, for `extention` ``ext``, a ``vmod_ext.so`` is searched for in
+  ``vmod_path``.
+
+  ``varnishd`` startup fails if loading the extension fails for any reason.
 
 Tuning options
 --------------
