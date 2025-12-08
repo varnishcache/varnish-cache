@@ -96,6 +96,11 @@ FEATURE_BIT(VCL_REQ_RESET,			vcl_req_reset,
     "When this happens MAIN.req_reset is incremented."
 )
 
+FEATURE_BIT(VCL_BAN,		vcl_ban,
+    "Allow the use of bans in VCL. "
+    "When this is turned off, bans can only be issued through the CLI."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

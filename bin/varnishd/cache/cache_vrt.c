@@ -940,6 +940,11 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
+	if (!FEATURE(FEATURE_VCL_BAN)) {
+		VRT_fail(ctx, "ban(): Feature flag vcl_ban is off");
+		return (vrt_ban_error(ctx, "Feature flag vcl_ban is off"));;
+	}
+
 	if (str == NULL)
 		return (vrt_ban_error(ctx, "Null argument"));
 
