@@ -84,10 +84,7 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 {
 	const struct VCL_conf *conf = NULL;
 	const struct vpi_ref *ref;
-	const char *p, *src = NULL;
-	const int lim = 40;
-	const char *abbstr = "[...]";
-	char buf[lim + sizeof(abbstr)];
+	const char *src = NULL;
 	int w = 0;
 
 	AN(vsb);
@@ -124,20 +121,10 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 	if (src != NULL) {
 		w = strlen(src);
 		assert(w > 0);
-		if (ref->offset >= (unsigned)w)
+		if (ref->offset >= (unsigned)w) {
 			src = NULL;
-	}
-	if (src != NULL) {
-		src += ref->offset;
-		p = strchr(src, '\n');
-		if (p != NULL)
-			w = p - src;
-		else
-			w -= ref->offset;
-		if (w > lim) {
-			w = snprintf(buf, sizeof buf, "%.*s%s",
-			    lim, src, abbstr);
-			src = buf;
+		} else {
+			src += ref->offset;
 		}
 	}
 
@@ -145,8 +132,8 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 	VSB_printf(vsb, "line = %u,\n", ref->line);
 	VSB_printf(vsb, "pos = %u,\n", ref->pos);
 	if (src != NULL) {
-		VSB_cat(vsb, "src = ");
-		VSB_quote(vsb, src, w, VSB_QUOTE_CSTR);
+		VSB_cat(vsb, "src = "); 
+		VSB_quote(vsb, src, 40, VSB_QUOTE_CSTR | VSB_QUOTE_ABBREVIATE);
 		VSB_putc(vsb, '\n');
 	} else {
 		VSB_printf(vsb, "token = \"%s\"\n", ref->token);
