@@ -129,7 +129,7 @@ static struct tc tcs[] = {
 	{
 		VSB_QUOTE_CSTR | VSB_QUOTE_ABBREVIATE,
 		11, "Hello World\n",
-		"PFX\"Hello [...]\"",
+		"PFX\"Hello \"[...]",
 	},
 	{
 		0, -1, NULL, NULL
