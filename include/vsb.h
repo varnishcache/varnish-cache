@@ -123,6 +123,11 @@ void		 VSB_destroy(struct vsb **);
 	 * Not valid with VSB_QUOTE_JSON and VSB_QUOTE_HEX
 	 */
 
+#define VSB_QUOTE_ABBREVIATE	64
+	/*
+	 * Abbreviate with "[...]" If longer than specified length 
+	 */
+
 void		 VSB_quote_pfx(struct vsb *, const char*, const void *,
 		     int len, int how);
 void		 VSB_quote(struct vsb *, const void *, int len, int how);

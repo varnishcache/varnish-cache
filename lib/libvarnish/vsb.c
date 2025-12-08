@@ -543,6 +543,15 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		how |= VSB_QUOTE_NONL;
 
 	assert(p != NULL);
+	if (how & VSB_QUOTE_ABBREVIATE) {
+		assert (len > 5);
+		if (strlen(v) < len) {
+			len = strlen(v);
+			how &= ~VSB_QUOTE_ABBREVIATE;
+		} else {
+			len -= 5;
+		}
+	}
 	if (len == -1)
 		len = strlen(v);
 
@@ -582,6 +591,8 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 
 	if (!quote) {
 		VSB_bcat(s, p, len);
+		if (how & VSB_QUOTE_ABBREVIATE)
+			VSB_cat(s, "[...]");
 		if ((how & VSB_QUOTE_NONL) &&
 		    p[len-1] != '\n')
 			(void)VSB_putc(s, '\n');
@@ -640,6 +651,8 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			break;
 		}
 	}
+	if (how & VSB_QUOTE_ABBREVIATE)
+		VSB_cat(s, "[...]");
 	if (how & VSB_QUOTE_CSTR)
 		VSB_putc(s, '"');
 	if ((how & VSB_QUOTE_NONL) && !nl)

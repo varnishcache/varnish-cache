@@ -127,6 +127,11 @@ static struct tc tcs[] = {
 		"PFX\nPFX\\t\n"
 	},
 	{
+		VSB_QUOTE_CSTR | VSB_QUOTE_ABBREVIATE,
+		11, "Hello World\n",
+		"PFX\"Hello [...]\"",
+	},
+	{
 		0, -1, NULL, NULL
 	}
 };
@@ -180,6 +185,8 @@ main(int argc, char *argv[])
 				VSB_cat(vsbo, "\n\tVSB_QUOTE_UNSAFE");
 			if (tc->how & VSB_QUOTE_ESCHEX)
 				VSB_cat(vsbo, "\n\tVSB_QUOTE_ESCHEX");
+			if (tc->how & VSB_QUOTE_ABBREVIATE)
+				VSB_cat(vsbo, "\n\tVSB_QUOTE_ABBREVIATE");
 			VSB_cat(vsbo, "\n\n");
 			err = 1;
 		}
