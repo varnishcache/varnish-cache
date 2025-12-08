@@ -261,8 +261,7 @@ shardcfg_hashcircle(struct sharddir *shardd)
 	unsigned h;
 	uint32_t i, j, n_points, r, rmax;
 	const char *ident;
-	const int len = 12; // log10(UINT32_MAX) + 2;
-	char s[len];
+	char s[12]; // log10(UINT32_MAX) + 2;
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	AZ(shardd->hashcircle);
@@ -294,7 +293,7 @@ shardcfg_hashcircle(struct sharddir *shardd)
 		r = vmin_t(uint32_t, b->replicas, rmax);
 
 		for (j = 0; j < r; j++) {
-			assert(snprintf(s, len, "%d", j) < len);
+			bprintf(s, "%d", j);
 			assert (i < n_points);
 			shardd->hashcircle[i].point =
 			    VRT_HashStrands32(TOSTRANDS(2, ident, s));
