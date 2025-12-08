@@ -428,6 +428,10 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
+		if (WS_Overflowed(bo->ws)) {
+			VSLb(bo->vsl, SLT_FetchError, "workspace_backend overflow");
+			return (-1);
+		}
 		if (bo->htc != NULL)
 			CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
 		pfd = vbe_dir_getfd(ctx, wrk, d, bp, retry_connect == 0 ? 1 : 0);
