@@ -1,0 +1,17 @@
+varnishtest "Test VSUB_closefrom() with sysconf overflow (r03000)"
+
+# This test verifies that VSUB_closefrom() correctly handles systems
+# where sysconf(_SC_OPEN_MAX) returns values too large for int.
+# On macOS without /proc/pid/fd/, sysconf can return LONG_MAX.
+# The bug caused integer overflow to -1, triggering assert(maxfd > 0).
+
+shell {
+	cat > ${tmpdir}/test.vcl <<EOF
+	vcl 4.1;
+	backend default {
+		.host = "127.0.0.1";
+		.port = "8080";
+	}
+	EOF
+	varnishd -C -n ${tmpdir} -f ${tmpdir}/test.vcl > /dev/null
+}
