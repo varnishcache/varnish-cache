@@ -385,3 +385,23 @@ vmod_timed_call(VRT_CTX, VCL_SUB sub)
 	VRT_call(ctx, sub);
 	return (VTIM_mono() - b);
 }
+
+VCL_VOID v_matchproto_(td_std_rfc_ttl)
+vmod_rfc_ttl(VRT_CTX)
+{
+	struct busyobj *bo;
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	// $Restrict guarantees
+	bo = ctx->bo;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	RFC2616_Ttl(bo, ctx->now,
+	     &oc->t_origin,
+	     &oc->ttl,
+	     &oc->grace,
+	     &oc->keep);
+}

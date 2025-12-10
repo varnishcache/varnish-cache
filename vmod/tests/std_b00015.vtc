@@ -1,0 +1,87 @@
+varnishtest "std.rfc_ttl()"
+
+server s1 {
+	rxreq
+	txresp -status 202 -hdr "Cache-Control: public, s-maxage=4711"
+
+	rxreq
+	expect req.url == "/200"
+	txresp -status 200 \
+	       -hdr "Cache-Control: public, s-maxage=0, stale-while-revalidate=99" \
+	       -hdr {Etag: "foo"} \
+	       -bodylen 64
+
+	rxreq
+	expect req.url == "/200"
+	expect req.http.If-None-Match == {"foo"}
+	txresp -status 304 -hdr "Cache-Control: s-maxage=11, stale-while-revalidate=77"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_refresh {
+		set beresp.http.Cache-Control = "s-maxage=10, stale-while-revalidate=42";
+		std.rfc_ttl();
+	}
+
+	sub vcl_backend_response {
+		if (beresp.status == 202) {
+			set beresp.status = 200;
+			std.rfc_ttl();
+			set beresp.status = 202;
+		}
+		# avoid zero ttl which is uncacheable
+		set beresp.ttl += 0.001s;
+	}
+} -start
+
+logexpect l1 -v v1 -g vxid -q "vxid == 1002" {
+	fail add *	Error
+	fail add *	VCL_Error
+	fail add *	End
+	expect * 1002	TTL		{^RFC -1 }
+	expect 1 =	BerespStatus	{^200}
+	expect 1 =	TTL		{^RFC 4711 }
+	fail clear
+} -start
+
+logexpect l2 -v v1 -g vxid -q "vxid == 1004" {
+	fail add *	Error
+	fail add *	VCL_Error
+	fail add *	End
+	expect * 1004	BereqURL	{^/200}
+	expect * =	BerespStatus	{^200}
+	expect * =	TTL		{^RFC 0 99 }
+	fail clear
+} -start
+
+logexpect l3 -v v1 -g vxid -q "vxid == 1006" {
+	fail add *	Error
+	fail add *	VCL_Error
+	fail add *	End
+	expect * 1006	BereqURL	{^/200}
+	expect * =	BerespStatus	{^304}
+	expect * =	TTL		{^RFC 11 77 }
+	expect * =	TTL		{^RFC 10 42 }
+	fail clear
+} -start
+
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 202
+
+	txreq -url "/200"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/200"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait
+logexpect l2 -wait
+logexpect l3 -wait

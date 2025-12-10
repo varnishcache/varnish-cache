@@ -696,6 +696,19 @@ $Function DURATION timed_call(SUB)
 Call the given SUB and return a high precision measurement of the
 execution time.
 
+$Function VOID rfc_ttl()
+
+$Restrict vcl_backend_response vcl_backend_refresh
+
+Re-calculate the object timers (``beresp.ttl``, ``beresp.grace`` and
+``beresp.keep``) based on the current state of ``beresp`` as if it had been
+processed by core code before ``vcl_backend_response`` was called. This does not
+change ``beresp.uncacheable``.
+
+This is useful to get the default ttl calculations after modifications of
+relevant properties like ``beresp.status``, ``beresp.http.Date``,
+``beresp.http.Age`` or ``beresp.http.Cache-Control``.
+
 SEE ALSO
 ========
 
