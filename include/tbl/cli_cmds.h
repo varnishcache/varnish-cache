@@ -361,7 +361,7 @@ CLI_CMD(DEBUG_REQPOOLFAIL,
 	"debug.reqpool.fail",
 	"Schedule req-pool failures.",
 	"The argument is read L-R and 'f' means fail:\n\n"
-	"\tparam.set debug.reqpoolfail F__F_F\n\n"
+	"\tdebug.reqpool.fail F__F_F\n\n"
 	"In the example above the first, fourth and sixth attempted\n"
 	"allocations will fail.",
 	1, 1
