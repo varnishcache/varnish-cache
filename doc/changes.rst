@@ -41,6 +41,8 @@ Vinyl-Cache NEXT (2026-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* Added vmod ``math``.
+
 .. _4389: https://github.com/varnishcache/varnish-cache/issues/4389
 
 * ``req.ttl`` has been renamed to ``req.max_age`` for clarity, with ``req.ttl``

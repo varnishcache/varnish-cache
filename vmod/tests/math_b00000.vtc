@@ -1,0 +1,78 @@
+varnishtest vmod_math
+
+varnish v1 -vcl {
+	import math;
+
+	backend proforma none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		if (req.http.strfromdfmt) {
+			set resp.http.result = math.strfromd(req.http.strfromdfmt, math.constant(M_PI));
+			return (deliver);
+		}
+
+		# formatting basics
+		set resp.http."n.v" = 0.1;
+		set resp.http."n.13a" = math.strfromd("%.13a", 0.1);
+		set resp.http."n.17e" = math.strfromd("%.17e", 0.1);
+		set resp.http."n.17f" = math.strfromd("%.17f", 0.1);
+		set resp.http."n.g" = math.strfromd("%g", 0.1);
+
+		# edge cases where approx makes a difference
+
+		set resp.http."sinpi.v" = math.sin(math.constant(M_PI));
+		set resp.http."sinpi.17f" = math.strfromd("%.17f", math.sin(math.constant(M_PI)));
+		set resp.http."sinpi.0.equals" = math.sin(math.constant(M_PI)) == 0.0;
+		set resp.http."sinpi.0.approx" = math.approx(math.sin(math.constant(M_PI)), 0);
+		set resp.http."sinpi.0.zero" =
+			math.fpclassify(math.sin(math.constant(M_PI))) ==
+			math.fpclass(FP_ZERO);
+
+		# VRT_DECIMAL_MAX == 0x426d1a94a1fffff8
+		set resp.http."some1.v" = 999999999999 + 0.999;
+		set resp.http."some1.f" = math.strfromd("%f", 999999999999 + 0.999);
+		# VRT_DECIMAL_MAX - ULP == 0x426d1a94a1fffff7
+		set resp.http."some2.v" = 999999999999 + (9.989 / 10);
+		set resp.http."some2.f" = math.strfromd("%f", 999999999999 + (9.989 / 10));
+
+		set resp.http."some1.some2.equals" =
+			(999999999999 + 0.999) == (999999999999 + (9.989 / 10));
+		set resp.http."some1.some2.approx" =
+			math.approx(999999999999 + 0.999, 999999999999 + (9.989 / 10));
+
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	expect resp.http.n.v == 0.100
+	expect resp.http.n.13a == 0x1.999999999999ap-4
+	expect resp.http.n.17e == 1.00000000000000006e-01
+	expect resp.http.n.17f == 0.10000000000000001
+	expect resp.http.n.g == 0.1
+
+	expect resp.http.sinpi.v == 0.000
+	expect resp.http.sinpi.17f == 0.00000000000000012
+	expect resp.http.sinpi.0.equals == false
+	expect resp.http.sinpi.0.approx == true
+	expect resp.http.sinpi.0.zero == false
+
+	expect resp.http.some1.v == 999999999999.999
+	expect resp.http.some1.f == 999999999999.999023
+	expect resp.http.some2.v == 999999999999.999
+	expect resp.http.some2.f == 999999999999.998901
+	expect resp.http.some1.some2.equals == false
+	expect resp.http.some1.some2.approx == true
+
+	txreq -hdr "strfromdfmt: %5f"
+	rxresp
+	expect resp.status == 500
+} -run

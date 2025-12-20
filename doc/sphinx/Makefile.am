@@ -206,6 +206,10 @@ include/vmod_proxy.generated.rst: $(top_builddir)/vmod/vmod_proxy.rst
 	cp $(top_builddir)/vmod/vmod_proxy.rst $@
 BUILT_SOURCES += include/vmod_proxy.generated.rst
 
+include/vmod_math.generated.rst: $(top_builddir)/vmod/vmod_math.rst
+	cp $(top_builddir)/vmod/vmod_math.rst $@
+BUILT_SOURCES += include/vmod_math.generated.rst
+
 EXTRA_DIST += $(BUILT_SOURCES)
 CLEANFILES = $(BUILT_SOURCES)
 
