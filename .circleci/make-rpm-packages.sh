@@ -14,14 +14,14 @@ elif [ -z "$PARAM_DIST" ]; then
 fi
 
 case "$PARAM_DIST:$PARAM_RELEASE" in
-    almalinux:9)
-        dnf -y install 'dnf-command(config-manager)'
-        dnf config-manager --set-enabled crb
-        dnf -y install epel-release
-        ;;
     almalinux:8)
         dnf -y install 'dnf-command(config-manager)'
         dnf config-manager --set-enabled powertools
+        dnf -y install epel-release
+        ;;
+    almalinux:*)
+        dnf -y install 'dnf-command(config-manager)'
+        dnf config-manager --set-enabled crb
         dnf -y install epel-release
         ;;
 esac
