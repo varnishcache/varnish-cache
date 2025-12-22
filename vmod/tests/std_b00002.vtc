@@ -20,6 +20,9 @@ varnish v1 -vcl+backend {
 		} else if (req.http.duration-nf) {
 			set resp.http.duration =
 			    std.duration(req.http.duration) + 1000000s;
+		} else if (req.http.duration-lit) {
+			set resp.http.duration =
+			    std.duration(req.http.duration-lit, 0.42s);
 		} else {
 			set resp.http.duration =
 			    std.duration(req.http.duration, 1s) + 1000000s;
@@ -132,6 +135,10 @@ client c1 {
 	rxresp
 	expect resp.http.duration == 1036000.000
 	expect resp.http.bytes == 131941395845
+
+	txreq -hdr "duration-lit: -12.345s"
+	rxresp
+	expect resp.http.duration ==  -12.345
 
 	txreq -hdr "d-real: -100"
 	rxresp
