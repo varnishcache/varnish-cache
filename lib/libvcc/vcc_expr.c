@@ -747,7 +747,7 @@ vcc_number(struct vcc *tl, struct expr **e, vcc_type_t fmt, const char *sign)
 		} else if (fmt == REAL || t->tok == FNUM) {
 			e1 = vcc_mk_expr(REAL, "%s%.3f", sign, t->num);
 		} else {
-			e1 = vcc_mk_expr(INT, "%s%.0f", sign, t->num);
+			e1 = vcc_mk_expr(INT, "%s%.0fLL", sign, t->num);
 		}
 	}
 	e1->constant = EXPR_CONST;
