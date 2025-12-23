@@ -174,9 +174,8 @@ code using::
 Built-in VCL reference
 ----------------------
 
-A copy of the ``builtin.vcl`` file might be provided with your Varnish
-installation but :ref:`varnishd(1)` is the reference to determine the code
-that is appended to any loaded VCL.
+A copy of the ``builtin.vcl`` file can be obtained by running
+``varnishd -x builtin``.
 
 The VCL compilation happens in two passes:
 
@@ -186,3 +185,30 @@ The VCL compilation happens in two passes:
 
 Any VCL subroutine present in the built-in VCL can be extended, in which
 case the loaded VCL code will be executed before the built-in code.
+
+Re-enabling pipe mode
+~~~~~~~~~~~~~~~~~~~~~
+
+As of Varnish 8.0, Varnish no longer pipes unknown HTTP methods by default.
+Instead, it returns a 501 synthetic error. If you want to re-enable pipe
+mode for a specific method, you can do so by adding the following to your
+VCL:
+
+.. code-block:: vcl
+
+    sub vcl_req_method {
+            if (req.method == "CUSTOM") {
+                    return (pipe);
+            }
+    }
+
+You can also re-enable pipe mode for a specific request, for example for
+WebSockets:
+
+.. code-block:: vcl
+
+    sub vcl_recv {
+            if (req.http.upgrade == "websocket") {
+                    return (pipe);
+            }
+    }
