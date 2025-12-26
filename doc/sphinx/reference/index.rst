@@ -37,6 +37,7 @@ Bundled VMODs
 	vmod_cookie.rst
 	vmod_directors.rst
 	vmod_h2.rst
+	vmod_math.rst
 	vmod_proxy.rst
 	vmod_purge.rst
 	vmod_std.rst
