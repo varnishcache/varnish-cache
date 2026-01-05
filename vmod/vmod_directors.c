@@ -343,7 +343,7 @@ vdir_update_health(VRT_CTX, struct vdir *vd)
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		c = 0;
-		h = VRT_Healthy(ctx, vd->backend[u], &c);
+		h = VRT_Healthy(ctx, be, &c);
 		if (h) {
 			nh++;
 			tw += vd->weight[u];
