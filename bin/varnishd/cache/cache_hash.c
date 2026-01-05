@@ -400,7 +400,6 @@ hsh_vry_match(const struct req *req, struct objcore *oc, const uint8_t *vary)
 static unsigned
 hsh_rush_match(const struct req *req)
 {
-	struct objhead *oh;
 	struct objcore *oc;
 
 	oc = req->objcore;
@@ -415,9 +414,6 @@ hsh_rush_match(const struct req *req)
 
 	if (req->vcf != NULL) /* NB: must operate under oh lock. */
 		return (0);
-
-	oh = oc->objhead;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	return (hsh_vry_match(req, oc, NULL));
 }
