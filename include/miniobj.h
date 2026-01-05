@@ -57,6 +57,7 @@
 #define VALID_OBJ(ptr, type_magic)					\
 	((ptr) != NULL && (ptr)->magic == (type_magic))
 
+#ifndef NO_CHECK_OBJ
 #define CHECK_OBJ(ptr, type_magic)					\
 	do {								\
 		assert((ptr)->magic == type_magic);			\
@@ -73,6 +74,11 @@
 		if ((ptr) != NULL)					\
 			assert((ptr)->magic == type_magic);		\
 	} while (0)
+#else
+#define CHECK_OBJ(ptr, type_magic) (void)0
+#define CHECK_OBJ_NOTNULL(ptr, type_magic) (void)0
+#define CHECK_OBJ_ORNULL(ptr, type_magic) (void)0
+#endif
 
 #define CAST_OBJ(to, from, type_magic)					\
 	do {								\
