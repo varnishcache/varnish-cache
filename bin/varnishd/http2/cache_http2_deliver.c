@@ -297,7 +297,6 @@ h2_deliver(struct req *req, int sendbody)
 {
 	size_t sz;
 	const char *r;
-	struct sess *sp;
 	struct h2_req *r2;
 	struct vsb resp[1];
 	struct vrt_ctx ctx[1];
@@ -306,8 +305,7 @@ h2_deliver(struct req *req, int sendbody)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
 

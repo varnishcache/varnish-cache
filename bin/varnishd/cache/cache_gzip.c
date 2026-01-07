@@ -417,12 +417,10 @@ vdp_gunzip_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 	enum vgzret_e vr;
 	ssize_t dl;
 	const void *dp;
-	struct worker *wrk;
 	struct vgz *vg;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
-	wrk = vdc->wrk;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
 	(void)act;
 
 	CAST_OBJ_NOTNULL(vg, *priv, VGZ_MAGIC);

@@ -675,11 +675,9 @@ void
 SES_Rel(struct sess *sp)
 {
 	int i;
-	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->pool;
-	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->pool, POOL_MAGIC);
 
 	Lck_Lock(&sp->mtx);
 	assert(sp->refcnt > 0);
