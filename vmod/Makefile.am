@@ -63,11 +63,11 @@ vmodtoolargs_debug = --boilerplate --noinst -o vcc_debug_if
 vmod_math_spec.html:
 	curl -o $@ https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/math.h.html
 
-vmod_math.c: vmod_math.vcc
+$(builddir)/vmod_math.c: $(builddir)/vmod_math.vcc
 
-vmod_math.vcc: vmod_math_spec.html vmod_math_gen.py
+$(builddir)/vmod_math.vcc: vmod_math_spec.html vmod_math_gen.py
 	@PYTHON@ $(srcdir)/vmod_math_gen.py \
-		vmod_math_spec.html vmod_math.vcc vmod_math.c
+		$(srcdir)/vmod_math_spec.html $(builddir)/vmod_math.vcc $(builddir)/vmod_math.c
 
 # avoid running curl when building from a dist
 dist_noinst_SCRIPTS = vmod_math_gen.py vmod_math_spec.html
