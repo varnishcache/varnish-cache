@@ -545,7 +545,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 	assert(p != NULL);
 	if (how & VSB_QUOTE_ABBREVIATE) {
 		assert (len > 5);
-		if (strlen(v) < len) {
+		if (strlen(v) < (unsigned)len) {
 			len = strlen(v);
 			how &= ~VSB_QUOTE_ABBREVIATE;
 		} else {
