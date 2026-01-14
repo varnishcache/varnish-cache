@@ -45,9 +45,9 @@ vcc_type_map = {
 def_arg_names = ["x", "y", "z"]
 arg_names_map = {
     "atan2": ["y", "x"],
-    "ldexp": ["x", "exp"],
+    "ldexp": ["x", "e"],
     "nan": ["tag"],
-    "scalbln": ["x", "exp"],
+    "scalbln": ["x", "e"],
     "yn": ["n", "x"],
 }
 

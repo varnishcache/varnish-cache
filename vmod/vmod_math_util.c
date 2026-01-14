@@ -35,9 +35,12 @@
 #include <float.h>
 #include <math.h>
 
-#include "miniobj.h"
 #include "cache/cache.h"
 #include "vcc_math_if.h"
+
+// macros in math.h code are generic-ish across float/double/long double
+//lint --e{506} Constant value Boolean
+//lint --e{736} Loss of precision
 
 /*
  * this is AlmostEqualRelativeAndAbs() by Bruce Dawson
