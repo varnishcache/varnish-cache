@@ -321,3 +321,27 @@ typedef struct {
         __DEQUALIFY(s *, (const volatile char *)(x) - offsetof(s, m))
 #endif
 #endif
+
+/**********************************************************************
+ * various optinal built-ins
+ *
+ * https://clang.llvm.org/docs/LanguageExtensions.html#builtin-functions
+ *
+ */
+#ifndef __has_builtin
+#  define __has_builtin(x) 0
+#endif
+
+#if __has_builtin(__builtin_strcmp)
+#  define vstrcmp(s1, s2) __builtin_strcmp(s1, s2)
+#else
+#  define vstrcmp(s1, s2) strcmp(s1, s2)
+#endif
+
+#if __has_builtin(__builtin_strlen)
+#  define vstrlen(s) __builtin_strlen(s)
+#else
+#  define vstrlen(s) strlen(s)
+#endif
+
+// ... to be extended

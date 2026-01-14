@@ -694,7 +694,9 @@ extern hdr_t H__Reason;
 
 // rfc7230,l,1144,1144
 // rfc7231,l,1156,1158
-#define http_method_eq(str, tok)	(!strcmp(str, #tok))
+#define http_method_eq(str, tok)	(!vstrcmp(str, #tok))
+// l = vstrlen(str)
+#define http_method_eq_l(str, l, tok)	(l == vstrlen(#tok) && ! vstrcmp(str, #tok))
 
 // rfc7230,l,1222,1222
 // rfc7230,l,2848,2848
