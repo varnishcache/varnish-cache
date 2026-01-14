@@ -322,6 +322,10 @@ c_top = """
 #include "vas.h"
 #include "vrt.h"
 #include "vcc_math_if.h"
+
+// macros in math.h code are generic-ish across float/double/long double
+//lint --e{506} Constant value Boolean
+//lint --e{736} Loss of precision
 """
 
 
