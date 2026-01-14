@@ -37,18 +37,13 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "mgt.h"
 
-#include "vas.h"
-#include "miniobj.h"
 #include "vav.h"
 #include "vfil.h"
-#include "vqueue.h"
 #include "vrnd.h"
-#include "vsb.h"
 
 #include "common/heritage.h"
 
