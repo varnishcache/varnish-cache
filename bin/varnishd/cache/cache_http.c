@@ -361,6 +361,7 @@ HTTP_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl,
 	hp->logtag = whence;
 	hp->ws = ws;
 	hp->vsl = vsl;
+	hp->wkm = WKM_UNKNOWN;
 }
 
 /*--------------------------------------------------------------------
@@ -397,6 +398,7 @@ HTTP_Dup(struct http *to, const struct http * fm)
 	to->logtag = fm->logtag;
 	to->status = fm->status;
 	to->protover = fm->protover;
+	to->wkm = fm->wkm;
 }
 
 
