@@ -454,6 +454,8 @@ http_SetH(struct http *to, unsigned n, const char *header)
 	http_VSLH(to, n);
 	if (n == HTTP_HDR_PROTO)
 		http_Proto(to);
+	if (n == HTTP_HDR_METHOD)
+		http_SetWellKnownMethod(to);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1458,6 +1460,7 @@ http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 
 	http_linkh(to, fm, HTTP_HDR_METHOD);
+	http_SetWellKnownMethod(to);
 	http_linkh(to, fm, HTTP_HDR_URL);
 	http_linkh(to, fm, HTTP_HDR_PROTO);
 	to->protover = fm->protover;
@@ -1626,4 +1629,27 @@ http_Unset(struct http *hp, hdr_t hdr)
 		v++;
 	}
 	hp->nhd = v;
+}
+
+void
+http_SetWellKnownMethod(struct http *hp)
+{
+	size_t l;
+	const char *method;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	method = http_GetMethod(hp);
+	AN(method);
+	hp->wkm = WKM_UNKNOWN;
+#define WKM(wk, bit)							\
+	do {								\
+		l = vstrlen(method);					\
+		if (l == vstrlen(#wk) && !vstrcmp(#wk, method)) {	\
+			hp->wkm = WKM_##wk;				\
+			return;						\
+		}							\
+	} while (0);
+#include "tbl/well_known_methods.h"
+#undef WKM
 }

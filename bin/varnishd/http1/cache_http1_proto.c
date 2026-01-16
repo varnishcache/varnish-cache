@@ -390,6 +390,7 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	p = http_GetMethod(hp);
 	AN(p);
 	l = vstrlen(p);
+	http_SetWellKnownMethod(hp);
 
 	if (htc->body_status == BS_EOF) {
 		assert(hp->protover == 10);
