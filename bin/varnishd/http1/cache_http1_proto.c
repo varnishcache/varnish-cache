@@ -355,7 +355,6 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	uint16_t retval;
 	const char *p;
 	const char *b = NULL, *e;
-	size_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -389,19 +388,18 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 
 	p = http_GetMethod(hp);
 	AN(p);
-	l = vstrlen(p);
 	http_SetWellKnownMethod(hp);
 
 	if (htc->body_status == BS_EOF) {
 		assert(hp->protover == 10);
 		/* RFC1945 8.3 p32 and D.1.1 p58 */
-		if (http_method_eq_l(p, l, POST) || http_method_eq_l(p, l, PUT))
+		if (http_method_among(hp->wkm, (WKM_POST | WKM_PUT)))
 			return (400);
 		htc->body_status = BS_NONE;
 	}
 
 	/* HEAD with a body is a hard error */
-	if (htc->body_status != BS_NONE && http_method_eq_l(p, l, HEAD))
+	if (htc->body_status != BS_NONE && http_method_eq(hp->wkm, WKM_HEAD))
 		return (400);
 
 	return (retval);

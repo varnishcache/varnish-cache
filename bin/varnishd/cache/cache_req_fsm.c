@@ -452,7 +452,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	clval = http_GetContentLength(req->resp);
 	/* RFC 7230, 3.3.3 */
 	status = http_GetStatus(req->resp);
-	head = http_method_eq(req->http0->hd[HTTP_HDR_METHOD].b, HEAD);
+	head = http_method_eq(req->http0->wkm, WKM_HEAD);
 
 	if (req->boc != NULL || (req->objcore->flags & (OC_F_FAILED)))
 		req->resp_len = clval;
