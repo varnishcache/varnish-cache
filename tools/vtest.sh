@@ -55,7 +55,7 @@ MAXRUNS="${MAXRUNS:-0}"
 
 enable_gcov=false
 
-: ${SSH_DST:="-p 203 vtest@varnish-cache.org"}
+: ${SSH_DST:="-p 203 vtest@vinyl-cache.org"}
 
 # make sure we use our own key
 unset SSH_AUTH_SOCK
