@@ -776,6 +776,74 @@ static const struct vdp xyzzy_vdp_awshog = {
 	.init  = xyzzy_awshog_init
 };
 
+/**********************************************************************/
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_vdp_body_prefix_init(VRT_CTX, struct vdp_ctx *vdc, void **priv)
+{
+	struct xyzzy_bp_string *bps;
+	struct xyzzy_bp *bp;
+	struct vmod_priv *task;
+	intmax_t l;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	AN(vdc->clen);
+
+	task = VRT_priv_task_get(ctx, priv_task_id_bp);
+	if (task == NULL)
+		return (1);
+	CAST_OBJ_NOTNULL(bp, task->priv, XYZZY_BP_MAGIC);
+	AN(priv);
+	AZ(*priv);
+	*priv = bp;
+
+	if (*vdc->clen < 0)
+		return (0);
+
+	l = 0;
+	VSTAILQ_FOREACH(bps, &bp->head, list)
+		l += strlen(bps->s);
+	*vdc->clen += l;
+
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
+xyzzy_vdp_body_prefix_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	struct xyzzy_bp_string *bps;
+	struct xyzzy_bp *bp;
+
+	AN(priv);
+	CAST_OBJ_NOTNULL(bp, *priv, XYZZY_BP_MAGIC);
+
+	while ((bps = VSTAILQ_FIRST(&bp->head)) != NULL) {
+		VSTAILQ_REMOVE_HEAD(&bp->head, list);
+		if (VDP_bytes(vdc, VDP_NULL, bps->s, strlen(bps->s)))
+			return (vdc->retval);
+	}
+
+	return (VDP_bytes(vdc, act, ptr, len));
+}
+
+static int v_matchproto_(vdp_fini_f)
+xyzzy_vdp_body_prefix_fini(struct vdp_ctx *vdc, void **priv)
+{
+	(void)vdc;
+	AN(priv);
+	*priv = NULL;
+	return (0);
+}
+
+static const struct vdp xyzzy_vdp_body_prefix = {
+	.name  = "debug.body_prefix",
+	.init  = xyzzy_vdp_body_prefix_init,
+	.bytes = xyzzy_vdp_body_prefix_bytes,
+	.fini = xyzzy_vdp_body_prefix_fini
+};
+
 void
 debug_add_filters(VRT_CTX)
 {
@@ -787,6 +855,7 @@ debug_add_filters(VRT_CTX)
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chkcrc32));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_chklen));
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_awshog));
+	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_body_prefix));
 }
 
 void
@@ -800,4 +869,5 @@ debug_remove_filters(VRT_CTX)
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chkcrc32);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_chklen);
 	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_awshog);
+	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_body_prefix);
 }

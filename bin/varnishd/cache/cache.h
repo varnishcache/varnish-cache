@@ -559,6 +559,8 @@ struct req {
 	struct vrt_privs	privs[1];
 
 	struct vcf		*vcf;
+
+	struct ocstash		*stash;
 };
 
 #define IS_TOPREQ(req) ((req)->top->topreq == (req))

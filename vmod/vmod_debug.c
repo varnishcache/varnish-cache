@@ -646,8 +646,6 @@ xyzzy_concatenate(VRT_CTX, VCL_STRANDS s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	r = VRT_StrandsWS(ctx->ws, NULL, s);
-	if (r != NULL && *r != '\0')
-		AN(WS_Allocated(ctx->ws, r, strlen(r) + 1));
 	return (r);
 }
 
@@ -658,8 +656,6 @@ xyzzy_collect(VRT_CTX, VCL_STRANDS s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	r = VRT_STRANDS_string(ctx, s);
-	if (r != NULL && *r != '\0')
-		AN(WS_Allocated(ctx->ws, r, strlen(r) + 1));
 	return (r);
 }
 
@@ -692,8 +688,6 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 			VSLbs(ctx->vsl, SLT_LostHeader,
 			    TOSTRAND(hdr->what->str));
 		} else {
-			if (*b != '\0')
-				AN(WS_Allocated(hp->ws, b, strlen(b) + 1));
 			http_Unset(hp, hdr->what);
 			http_SetHeader(hp, b);
 		}
@@ -1372,4 +1366,33 @@ xyzzy_log_strands(VRT_CTX, VCL_STRING prefix, VCL_STRANDS subject, VCL_INT nn)
 		mylog(ctx->vsl, SLT_Debug, "%s[%d]: (%s) %p %.*s%s", prefix, i,
 		    ptr_where(ctx, p), p, n, p, strlen(p) > (unsigned)n ? "..." : "");
 	}
+}
+
+const void * const priv_task_id_bp = &priv_task_id_bp;
+
+VCL_VOID
+xyzzy_body_prefix(VRT_CTX, VCL_STRING s)
+{
+	struct xyzzy_bp_string *bps;
+	struct xyzzy_bp *bp;
+	struct vmod_priv *task;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	task = VRT_priv_task(ctx, priv_task_id_bp);
+	AN(task);
+	bp = task->priv;
+	if (bp == NULL) {
+		bp = WS_Alloc(ctx->ws, (unsigned)sizeof *bp);
+		AN(bp);
+		task->priv = bp;
+		INIT_OBJ(bp, XYZZY_BP_MAGIC);
+		VSTAILQ_INIT(&bp->head);
+	}
+	CHECK_OBJ(bp, XYZZY_BP_MAGIC);
+
+	bps = WS_Alloc(ctx->ws, (unsigned)sizeof *bps);
+	AN(bps);
+	bps->s = s;
+	VSTAILQ_INSERT_TAIL(&bp->head, bps, list);
 }

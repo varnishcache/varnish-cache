@@ -34,6 +34,20 @@ debug_add_filters(VRT_CTX);
 void
 debug_remove_filters(VRT_CTX);
 
+/* body_prefix vdp */
+struct xyzzy_bp_string {
+	VSTAILQ_ENTRY(xyzzy_bp_string)	list;
+	VCL_STRING			s;
+};
+
+struct xyzzy_bp {
+	unsigned			magic;
+#define XYZZY_BP_MAGIC			0x88db5d93
+	VSTAILQ_HEAD(,xyzzy_bp_string)	head;
+};
+
+extern const void * const priv_task_id_bp;
+
 /* vmod_debug_transport_reembarking_http1.c */
 void
 debug_transport_reembarking_http1_use(VRT_CTX);
