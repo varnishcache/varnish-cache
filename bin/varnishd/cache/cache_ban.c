@@ -39,6 +39,7 @@
 #include "cache_ban.h"
 #include "cache_objhead.h"
 
+#include "vbm.h"
 #include "vcli_serve.h"
 #include "vend.h"
 #include "vmb.h"
@@ -65,6 +66,10 @@ struct ban_test {
 	double			arg2_double;
 	const void		*arg2_spec;
 };
+
+// mark invalid arg1/oper so we report only once
+static struct vbitmap *inval_oper_logged;
+static struct vbitmap *inval_arg1_logged;
 
 static const char * const arg_name[BAN_ARGARRSZ + 1] = {
 #define PVAR(a, b, c) [BAN_ARGIDX(c)] = (a),
@@ -217,6 +222,8 @@ ban_get_lump(const uint8_t **bs)
 
 /*--------------------------------------------------------------------
  * Pick a test apart from a spec string
+ *
+ * NOTICE: This code must be invariant to unknown arg1 and oper
  */
 
 static void
@@ -491,6 +498,30 @@ BAN_Time(const struct ban *b)
  * Evaluate ban-spec
  */
 
+static void
+ban_inval_arg1(uint8_t arg1)
+{
+	Lck_Lock(&ban_mtx);
+	VSC_C_main->bans_inval_arg1++;
+	Lck_Unlock(&ban_mtx);
+	if (vbit_test(inval_arg1_logged, arg1))
+		return;
+	vbit_set(inval_arg1_logged, arg1);
+	VSL(SLT_Error, NO_VXID, "Unsupported ban argument 0x%02x", arg1);
+}
+
+static void
+ban_inval_oper(uint8_t oper)
+{
+	Lck_Lock(&ban_mtx);
+	VSC_C_main->bans_inval_oper++;
+	Lck_Unlock(&ban_mtx);
+	if (vbit_test(inval_oper_logged, oper))
+		return;
+	vbit_set(inval_oper_logged, oper);
+	VSL(SLT_Error, NO_VXID, "Unsupported ban operator 0x%02x", oper);
+}
+
 int
 ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests)
@@ -561,7 +592,8 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			darg2 = 0.0 - (ban_time(bsarg) - bt.arg2_double);
 			break;
 		default:
-			WRONG("Wrong BAN_ARG code");
+			ban_inval_arg1(bt.arg1);
+			continue;
 		}
 
 		switch (bt.oper) {
@@ -622,7 +654,7 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 				return (0);
 			break;
 		default:
-			WRONG("Wrong BAN_OPER code");
+			ban_inval_oper(bt.oper);
 		}
 	}
 	return (1);
@@ -809,6 +841,27 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	} while (0)
 
 static void
+ban_render_inval(struct cli *cli, uint8_t arg1, uint8_t oper)
+{
+	if (! IS_BAN_ARG(arg1))
+		ban_inval_arg1(arg1);
+	if (! IS_BAN_OPER(oper))
+		ban_inval_oper(oper);
+
+	if (IS_BAN_ARG(arg1))
+		VCLI_Out(cli, "%s", arg_name[BAN_ARGIDX(arg1)]);
+	else
+		VCLI_Out(cli, "(0x%02x)", arg1);
+
+	if (IS_BAN_OPER(oper))
+		VCLI_Out(cli, " %s ", ban_oper[BAN_OPERIDX(oper)]);
+	else
+		VCLI_Out(cli, " (0x%02x) ", oper);
+
+	VCLI_Out(cli, "UNSUPPORTED");
+}
+
+static void
 ban_render(struct cli *cli, const uint8_t *bs, int quote)
 {
 	struct ban_test bt;
@@ -819,6 +872,13 @@ ban_render(struct cli *cli, const uint8_t *bs, int quote)
 	bs += BANS_HEAD_LEN;
 	while (bs < be) {
 		ban_iter(&bs, &bt);
+		if (UNLIKELY(! IS_BAN_ARG(bt.arg1) || ! IS_BAN_OPER(bt.oper))) {
+			ban_render_inval(cli, bt.arg1, bt.oper);
+			if (bs < be)
+				VCLI_Out(cli, " && ");
+			continue;
+		}
+
 		ASSERT_BAN_ARG(bt.arg1);
 		ASSERT_BAN_OPER(bt.oper);
 
@@ -999,6 +1059,12 @@ BAN_Init(void)
 {
 	struct ban_proto *bp;
 
+	// uses malloc where static could be used, but only once
+	inval_oper_logged = vbit_new(256);
+	inval_arg1_logged = vbit_new(256);
+	AN(inval_oper_logged);
+	AN(inval_arg1_logged);
+
 	BAN_Build_Init();
 	Lck_New(&ban_mtx, lck_ban);
 	CLI_AddFuncs(ban_cmds);
@@ -1042,4 +1108,9 @@ BAN_Shutdown(void)
 	Lck_Unlock(&ban_mtx);
 
 	BAN_Build_Fini();
+
+	vbit_destroy(inval_oper_logged);
+	vbit_destroy(inval_arg1_logged);
+	inval_oper_logged = NULL;
+	inval_arg1_logged = NULL;
 }

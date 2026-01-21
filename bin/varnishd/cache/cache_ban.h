@@ -86,7 +86,8 @@
 
 #define BAN_OPERIDX(x) ((x) - BANS_OPER_OFF_)
 #define BAN_OPERARRSZ  (BANS_OPER_LIM_ - BANS_OPER_OFF_)
-#define ASSERT_BAN_OPER(x) assert((x) >= BANS_OPER_OFF_ && (x) < BANS_OPER_LIM_)
+#define IS_BAN_OPER(x) ((x) >= BANS_OPER_OFF_ && (x) < BANS_OPER_LIM_)
+#define ASSERT_BAN_OPER(x) assert(IS_BAN_OPER(x))
 
 #define BANS_ARG_URL		0x18
 #define BANS_ARG_OFF_		BANS_ARG_URL
@@ -102,7 +103,8 @@
 
 #define BAN_ARGIDX(x) ((x) - BANS_ARG_OFF_)
 #define BAN_ARGARRSZ  (BANS_ARG_LIM - BANS_ARG_OFF_)
-#define ASSERT_BAN_ARG(x) assert((x) >= BANS_ARG_OFF_ && (x) < BANS_ARG_LIM)
+#define IS_BAN_ARG(x) ((x) >= BANS_ARG_OFF_ && (x) < BANS_ARG_LIM)
+#define ASSERT_BAN_ARG(x) assert(IS_BAN_ARG(x))
 
 // has an arg1_spec (BANS_FLAG_HTTP at build time)
 #define BANS_HAS_ARG1_SPEC(arg)	\
