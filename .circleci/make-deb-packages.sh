@@ -12,7 +12,7 @@ echo "PARAM_DIST: $PARAM_DIST"
 
 
 if [ -z "$PARAM_RELEASE" ]; then
-    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=focal for Ubuntu 20.04"
+    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=jammy for Ubuntu 22.04"
     exit 1
 elif [ -z "$PARAM_DIST" ]; then
     echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=debian"
