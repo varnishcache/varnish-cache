@@ -96,6 +96,7 @@ nobase_noinst_HEADERS = \
 	vcs_version.h \
 	vct.h \
 	vcurses.h \
+	vefd.h \
 	venc.h \
 	vend.h \
 	vev.h \
