@@ -67,6 +67,11 @@ file             File to use as a script
 If `TMPDIR` is set in the environment, varnishtest creates temporary
 `vtc.*` directories for each test in `$TMPDIR`, otherwise in `/tmp`.
 
+At several points during a test, the process will be forked and excess file
+descriptors are closed. This can consume significant amounts of time and CPU on
+systems without the `closefrom` system call, or read access to `/proc/<PID>/fd`,
+and can be mitigated by lowering the file descriptor limit.
+
 SCRIPTS
 =======
 
