@@ -1,0 +1,64 @@
+varnishtest "Sticky fallback director, resetting stickiness"
+
+server s1 {
+	rxreq
+	expect req.url == "/baz"
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	expect req.url == "/bar"
+	txresp
+} -start
+
+server s3 {
+	rxreq
+	expect req.url == "/foo"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new vd = directors.fallback(sticky = true);
+		vd.add_backend(s1);
+		vd.add_backend(s2);
+		vd.add_backend(s3);
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = vd.backend();
+		return(pass);
+	}
+
+	sub vcl_deliver {
+		vd.reset_stickiness();
+	}
+} -start
+
+varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.set_health s2 sick"
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "backend.set_health s2 healthy"
+
+client c1 {
+	txreq -url /bar
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "backend.set_health s1 healthy"
+
+client c1 {
+	txreq -url /baz
+	rxresp
+	expect resp.status == 200
+} -run
