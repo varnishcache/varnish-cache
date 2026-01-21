@@ -49,6 +49,18 @@ CLI_CMD(BAN,
 	3, -1
 )
 
+CLI_CMD(BAN_CANCEL,
+	"ban.cancel",
+	"ban.cancel [-j] <field> <operator> <arg> [&& <field> <oper> <arg> ...]",
+	"Mark complete all bans where all the conditions match. If objects"
+	" were invalidated by a ban before the ban was cancelled, the object"
+	" remains invalidated. Bans with only ``obj`` expressions can be"
+	" cancelled before ``ban_lurker_age``, but may still be evaluated"
+	" during cache lookups and invalidate objects.",
+	"See :ref:`vcl(7)_ban` for details",
+	3, -1
+)
+
 CLI_CMD(BAN_LIST,
 	"ban.list",
 	"ban.list [-j]",
