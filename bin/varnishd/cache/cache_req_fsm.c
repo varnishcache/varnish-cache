@@ -238,6 +238,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(req->restarts <= req->max_restarts);
 
+	if (WS_Overflowed(req->ws))
+		wrk->vpi->handling = VCL_RET_FAIL;
 	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
 		(void)HSH_DerefObjCore(wrk, &req->objcore);
@@ -649,6 +651,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	VCL_hit_method(req->vcl, wrk, req, NULL, NULL);
 
+	if (WS_Overflowed(req->ws))
+		wrk->vpi->handling = VCL_RET_FAIL;
 	switch (wrk->vpi->handling) {
 	case VCL_RET_DELIVER:
 		if (busy != NULL) {
@@ -711,6 +715,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 	CHECK_OBJ_ORNULL(req->stale_oc, OBJCORE_MAGIC);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, NULL);
+	if (WS_Overflowed(req->ws))
+		wrk->vpi->handling = VCL_RET_FAIL;
 	switch (wrk->vpi->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats->cache_miss++;
@@ -756,6 +762,8 @@ cnt_pass(struct worker *wrk, struct req *req)
 	AZ(req->stale_oc);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, NULL);
+	if (WS_Overflowed(req->ws))
+		wrk->vpi->handling = VCL_RET_FAIL;
 	switch (wrk->vpi->handling) {
 	case VCL_RET_FAIL:
 		req->req_step = R_STP_VCLFAIL;
@@ -1033,6 +1041,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 		assert(wrk->vpi->handling == VCL_RET_LOOKUP);
 	VSHA256_Final(req->digest, &sha256ctx);
 
+	if (WS_Overflowed(req->ws))
+		recv_handling = VCL_RET_FAIL;
 	switch (recv_handling) {
 	case VCL_RET_VCL:
 		VSLb(req->vsl, SLT_VCL_Error,
@@ -1115,6 +1125,8 @@ cnt_purge(struct worker *wrk, struct req *req)
 	HSH_Withdraw(wrk, &boc);
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, NULL);
+	if (WS_Overflowed(req->ws))
+		   wrk->vpi->handling = VCL_RET_FAIL;
 	switch (wrk->vpi->handling) {
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;

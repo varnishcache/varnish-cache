@@ -1,0 +1,61 @@
+varnishtest "Workspace overflow through LostHeader"
+
+server s1 {} -start
+
+varnish v1 -cliok "param.set http_max_hdr 32"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/1") {
+			set req.http.make-overflow = "some value";
+		}
+	}
+} -start
+
+logexpect l1 -v v1 {
+#	expect * 1001 LostHeader 	"make-overflow: some value"
+#	expect * 1001 Error 		"out of workspace"
+#	expect * 1001 RespStatus 	"200"
+#	expect * 1001 VCL_return	"deliver"
+#	expect * 1001 Error 		"workspace_client overflow"
+
+#	expect * 1005 Error 		"out of workspace"
+#	expect * 1005 LostHeader 	"Accept-Encoding"
+#	expect * 1005 Error 		"out of workspace"
+#	expect * 1005 LostHeader 	"X-Varnish: 1005"
+#	expect * 1005 BerespStatus	"200"
+} -start
+
+# 1. Trigger client workspace overflow through LostHeader in vcl_recv
+# 2. Go to vcl_backend_fetch and cause a backend workspace overflow and
+#    still return a 200
+# 3. Notice a workspace overflow after vcl_deliver and give client 500 response
+client c1 {
+	txreq -url "/1"    -hdr "h1: 1"   -hdr "h2: 2"   \
+		-hdr "h3: 3"   -hdr "h4: 4"   -hdr "h5: 5"   \
+		-hdr "h6: 6"   -hdr "h7: 7"   -hdr "h8: 8"   \
+		-hdr "h9: 9"   -hdr "h10: 10" -hdr "h11: 11" \
+		-hdr "h12: 12" -hdr "h13: 13" -hdr "h14: 14" \
+		-hdr "h15: 15" -hdr "h16: 16" -hdr "h17: 17" \
+		-hdr "h18: 18" -hdr "h19: 19" -hdr "h20: 20" \
+		-hdr "h21: 21" -hdr "h22: 22" -hdr "h23: 23"
+	rxresp
+	expect resp.status == 503
+} -run
+
+# 1. Trigger backend workspace overflow through LostHeader in vcl_backend_fetch
+# 2. Get and deliver 200 from backend, send 200 to client
+client c2 {
+	txreq -url "/2"    -hdr "h1: 1"   -hdr "h2: 2"   \
+		-hdr "h3: 3"   -hdr "h4: 4"   -hdr "h5: 5"   \
+		-hdr "h6: 6"   -hdr "h7: 7"   -hdr "h8: 8"   \
+		-hdr "h9: 9"   -hdr "h10: 10" -hdr "h11: 11" \
+		-hdr "h12: 12" -hdr "h13: 13" -hdr "h14: 14" \
+		-hdr "h15: 15" -hdr "h16: 16" -hdr "h17: 17" \
+		-hdr "h18: 18" -hdr "h19: 19" -hdr "h20: 20" \
+		-hdr "h21: 21" -hdr "h22: 22" -hdr "h23: 23"
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l1 -wait
