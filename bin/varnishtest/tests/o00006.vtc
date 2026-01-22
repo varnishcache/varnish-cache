@@ -1,6 +1,7 @@
 varnishtest "SES_Reserve_proto_priv() overflow"
 
-feature 64bit ipv4
+builtwith 64bit
+feature ipv4
 
 server s1 {
 	rxreq
