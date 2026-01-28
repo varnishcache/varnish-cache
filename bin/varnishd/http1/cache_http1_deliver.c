@@ -92,6 +92,13 @@ V1D_Deliver(struct req *req, int sendbody)
 	} else if (!http_GetHdr(req->resp, H_Connection, NULL))
 		http_SetHeader(req->resp, "Connection: keep-alive");
 
+	/* If draining, force Connection: close */
+	if (cache_draining && req->doclose == SC_NULL) {
+		req->doclose = SC_DRAIN;
+		http_Unset(req->resp, H_Connection);
+		http_SetHeader(req->resp, "Connection: close");
+	}
+
 	CHECK_OBJ_NOTNULL(req->wrk, WORKER_MAGIC);
 
 	v1l = V1L_Open(req->wrk->aws, &req->sp->fd, req->vsl,

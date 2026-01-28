@@ -122,6 +122,7 @@ typedef enum htc_status_e htc_complete_f(struct http_conn *);
 /* -------------------------------------------------------------------*/
 
 extern volatile struct params * cache_param;
+extern volatile unsigned cache_draining;
 
 /* -------------------------------------------------------------------
  * The VCF facility is deliberately undocumented, use at your peril.
@@ -414,6 +415,7 @@ int Pool_Task_Arg(struct worker *, enum task_prio, task_func_t *,
     const void *arg, size_t arg_len);
 void Pool_Sumstat(const struct worker *w);
 int Pool_TrySumstat(const struct worker *wrk);
+void Pool_WakeIdle(void);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 void pan_pool(struct vsb *);
@@ -456,6 +458,7 @@ void SES_DestroyPool(struct pool *);
 void SES_Wait(struct sess *, const struct transport *);
 void SES_Ref(struct sess *sp);
 void SES_Rel(struct sess *sp);
+unsigned SES_ActiveCount(void);
 
 void HTC_Status(enum htc_status_e, const char **, const char **);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
@@ -504,6 +507,7 @@ struct vsb *VCL_Rel_CliCtx(struct vrt_ctx **);
 void VCL_Panic(struct vsb *, const char *nm, const struct vcl *);
 void VCL_Poll(void);
 void VCL_Init(void);
+int VCL_Drained(void);
 void VCL_Shutdown(void);
 
 #define VCL_MET_MAC(l,u,t,b) \

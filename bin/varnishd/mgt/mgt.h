@@ -64,6 +64,7 @@ struct vclprog;
 extern struct vev_root	*mgt_evb;
 extern unsigned		d_flag;
 extern int		exit_status;
+extern int		mgt_draining;
 
 /* option=value argument parse helper */
 static inline const char *

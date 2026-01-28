@@ -216,6 +216,16 @@ CLI_CMD(SERVER_STOP,
 	0, 0
 )
 
+CLI_CMD(SERVER_DRAIN,
+	"drain",
+	"drain",
+	"Start connection draining for graceful shutdown.",
+	"  Enables draining mode where all HTTP/1 responses include\n"
+	"  Connection: close to gracefully close client connections.\n"
+	"  HTTP/2 connections receive a GOAWAY frame.",
+	0, 0
+)
+
 CLI_CMD(SERVER_START,
 	"start",
 	"start",

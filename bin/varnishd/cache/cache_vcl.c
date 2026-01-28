@@ -1288,6 +1288,27 @@ VCL_Init(void)
 	VSL_Setup(&vsl_cli, NULL, 0);
 }
 
+/*
+ * Check if all VCL references have been released.
+ * Returns 1 if all VCLs have busy == 0, 0 otherwise.
+ */
+int
+VCL_Drained(void)
+{
+	struct vcl *vcl;
+	int drained = 1;
+
+	Lck_Lock(&vcl_mtx);
+	VTAILQ_FOREACH(vcl, &vcl_head, list) {
+		if (vcl->busy) {
+			drained = 0;
+			break;
+		}
+	}
+	Lck_Unlock(&vcl_mtx);
+	return (drained);
+}
+
 void
 VCL_Shutdown(void)
 {

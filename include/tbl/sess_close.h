@@ -52,6 +52,7 @@ SESS_CLOSE(REQ_HTTP20,	  req_http20,	1,	"HTTP2 not accepted")
 SESS_CLOSE(VCL_FAILURE,	  vcl_failure,	1,	"VCL failure")
 SESS_CLOSE(RAPID_RESET,	  rapid_reset,  1,      "HTTP2 rapid reset")
 SESS_CLOSE(BANKRUPT,	  bankrupt,	1,      "HTTP2 credit bankruptcy")
+SESS_CLOSE(DRAIN,	  drain,	0,      "Connection draining")
 #undef SESS_CLOSE
 
 /*lint -restore */

@@ -1,0 +1,40 @@
+varnishtest "Test drain timeout still waits for active requests"
+
+# Test that even after drain_timeout expires, Varnish waits for
+# active requests to complete before shutting down
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	# Signal that request was received
+	barrier b1 sync
+	# Hold the connection open longer than drain timeout
+	delay 3
+	txresp -body "completed after drain timeout"
+} -start
+
+varnish v1 -arg "-p drain_timeout=1" -vcl+backend { } -start
+
+# Start a request that will be in-flight when drain starts
+client c1 {
+	txreq -url "/"
+	rxresp
+	# Request should complete even after drain timeout expires
+	expect resp.status == 200
+	expect resp.body == "completed after drain timeout"
+	# Response during drain should have Connection: close
+	expect resp.http.Connection == "close"
+} -start
+
+# Wait for request to reach backend
+barrier b1 sync
+
+# Start drain via SIGTERM (drain_timeout=1s, but backend delays 3s)
+shell "kill -15 ${v1_pid}"
+
+# Wait for client - request should complete successfully
+client c1 -wait
+
+# Use -cleanup since varnish will exit on its own
+varnish v1 -cleanup

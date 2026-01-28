@@ -628,11 +628,17 @@ mgt_reap_child(void)
 		exit(1);
 	}
 
-	if (child_state == CH_DIED && mgt_param.auto_restart)
+	if (child_state == CH_DIED && mgt_param.auto_restart && !mgt_draining)
 		mgt_launch_child(NULL);
-	else if (child_state == CH_DIED)
+	else if (child_state == CH_DIED) {
 		child_state = CH_STOPPED;
-	else if (child_state == CH_STOPPING)
+		if (mgt_draining) {
+			/* Child exited during drain, proceed with shutdown */
+			MGT_Complain(C_INFO,
+			    "Child exited during drain, proceeding with shutdown");
+			(void)raise(SIGTERM);
+		}
+	} else if (child_state == CH_STOPPING)
 		child_state = CH_STOPPED;
 }
 

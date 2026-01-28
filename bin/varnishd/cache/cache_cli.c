@@ -39,6 +39,7 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
+#include "acceptor/cache_acceptor.h"
 #include "common/heritage.h"
 
 #include "vcli_serve.h"
@@ -108,9 +109,35 @@ CLI_Run(void)
 	cli->auth = 255;	// Non-zero to disable paranoia in vcli_serve
 
 	do {
-		i = VCLS_Poll(cache_cls, cli, -1);
+		/*
+		 * When draining, use short poll timeout so we can check
+		 * if all connections have been closed.
+		 */
+		i = VCLS_Poll(cache_cls, cli, cache_draining ? 1000 : -1);
+		if (cache_draining && SES_ActiveCount() == 0 && VCL_Drained()) {
+			VSL(SLT_CLI, NO_VXID,
+			    "All connections drained, shutting down");
+			break;
+		}
 	} while (i == 0);
 	VSL(SLT_CLI, NO_VXID, "EOF on CLI connection, worker stops");
+}
+
+static void v_matchproto_(cli_func_t)
+ccf_drain(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)cli;
+	(void)av;
+	(void)priv;
+	cache_draining = 1;
+	/* Enable rapid VCL release so idle workers release VCL immediately */
+	cache_param->debug_bits[DBG_VCLREL >> 3] |=
+	    (0x80 >> (DBG_VCLREL & 7));
+	/* Stop accepting new connections immediately */
+	VCA_Shutdown();
+	/* Wake up idle workers so they release VCL references */
+	Pool_WakeIdle();
+	VCLI_Out(cli, "Connection draining enabled, new connections refused");
 }
 
 /*--------------------------------------------------------------------*/
@@ -118,6 +145,7 @@ CLI_Run(void)
 static struct cli_proto cli_cmds[] = {
 	{ CLICMD_PING,	"i", VCLS_func_ping, VCLS_func_ping_json },
 	{ CLICMD_HELP,	"i", VCLS_func_help, VCLS_func_help_json },
+	{ CLICMD_SERVER_DRAIN,	"", ccf_drain },
 	{ NULL }
 };
 

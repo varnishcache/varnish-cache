@@ -1,0 +1,46 @@
+varnishtest "Test connection draining adds Connection: close"
+
+# Test that during draining, responses include Connection: close header
+# The connection must be established BEFORE drain starts (VCA_Shutdown stops new connections)
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 {
+	rxreq
+	# Signal that backend received the request
+	barrier b1 sync
+	# Wait for drain to start before responding
+	barrier b2 sync
+	txresp -body "response during drain"
+} -start
+
+varnish v1 -arg "-p drain_timeout=10" -vcl+backend { } -start
+
+# Start request (establishes connection)
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "response during drain"
+	# Response during drain should have Connection: close
+	expect resp.http.Connection == "close"
+} -start
+
+# Wait for request to reach backend (connection is now established)
+barrier b1 sync
+
+# Now start draining - connection already exists
+shell "kill -15 ${v1_pid}"
+
+# Small delay for drain to initialize
+delay 0.1
+
+# Signal backend to respond
+barrier b2 sync
+
+# Wait for client to complete
+client c1 -wait
+
+# Use -cleanup since varnish will exit on its own after drain completes
+varnish v1 -cleanup
