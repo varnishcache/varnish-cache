@@ -76,6 +76,32 @@ Pool_TrySumstat(const struct worker *wrk)
 }
 
 /*--------------------------------------------------------------------
+ * Wake up all idle workers so they can release VCL references quickly.
+ * Called when draining starts.
+ */
+
+void
+Pool_WakeIdle(void)
+{
+	struct pool *pp;
+	struct pool_task *pt;
+	struct worker *wrk;
+
+	Lck_Lock(&pool_mtx);
+	VTAILQ_FOREACH(pp, &pools, list) {
+		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+		Lck_Lock(&pp->mtx);
+		VTAILQ_FOREACH(pt, &pp->idle_queue, list) {
+			AZ(pt->func);
+			CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
+			PTOK(pthread_cond_signal(&wrk->cond));
+		}
+		Lck_Unlock(&pp->mtx);
+	}
+	Lck_Unlock(&pool_mtx);
+}
+
+/*--------------------------------------------------------------------
  * Facility for scheduling a task on any convenient pool.
  */
 

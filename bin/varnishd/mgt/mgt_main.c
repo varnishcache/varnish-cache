@@ -74,6 +74,8 @@ struct vsb		*vident;
 struct VSC_mgt		*VSC_C_mgt;
 static int		I_fd = -1;
 static char		*workdir;
+int			mgt_draining = 0;
+static struct vev	*drain_timer = NULL;
 
 static struct vfil_path *vcl_path = NULL;
 
@@ -445,16 +447,65 @@ mgt_eric_im_done(int eric_fd, unsigned u)
 /*--------------------------------------------------------------------*/
 
 static int v_matchproto_(vev_cb_f)
+mgt_drain_timeout(const struct vev *e, int what)
+{
+	(void)e;
+	(void)what;
+	MGT_Complain(C_INFO, "Drain timeout reached, stopping child");
+	MCH_Stop_Child();
+	(void)raise(SIGTERM);  /* Trigger signal handler to exit event loop */
+	return (1);  /* Remove this timeout event */
+}
+
+static int v_matchproto_(vev_cb_f)
 mgt_sigint(const struct vev *e, int what)
 {
+	unsigned status;
+	char *p;
 
 	(void)what;
 	MGT_Complain(C_INFO, "Manager got %s from PID %jd",
 	    e->name, (intmax_t)e->siginfo->si_pid);
 	(void)fflush(stdout);
-	if (MCH_Running())
+
+	if (!MCH_Running())
+		return (-42);
+
+	/* If drain_timeout is 0, do immediate shutdown */
+	if (mgt_param.drain_timeout == 0) {
 		MCH_Stop_Child();
-	return (-42);
+		return (-42);
+	}
+
+	/* If already draining, proceed to shutdown */
+	if (mgt_draining) {
+		MGT_Complain(C_INFO, "Already draining, stopping child");
+		MCH_Stop_Child();
+		return (-42);
+	}
+
+	/* Send drain command to child */
+	if (mgt_cli_askchild(&status, &p, "drain\n")) {
+		MGT_Complain(C_ERR, "Failed to send drain command: %s", p);
+		free(p);
+		MCH_Stop_Child();
+		return (-42);
+	}
+	free(p);
+
+	mgt_draining = 1;
+	MGT_Complain(C_INFO, "Connection draining started, timeout %.0f seconds",
+	    mgt_param.drain_timeout);
+
+	/* Set up drain timeout event */
+	drain_timer = VEV_Alloc();
+	AN(drain_timer);
+	drain_timer->name = "drain_timeout";
+	drain_timer->timeout = mgt_param.drain_timeout;
+	drain_timer->callback = mgt_drain_timeout;
+	AZ(VEV_Start(mgt_evb, drain_timer));
+
+	return (0);  /* Keep event loop running */
 }
 
 /*--------------------------------------------------------------------*/

@@ -714,6 +714,13 @@
 
 	Number of times we ran out of space in workspace_backend.
 
+.. varnish_vsc:: sc_drain
+	:level: diag
+	:oneliner:      Session OK  DRAIN
+
+	Number of session closes with DRAIN (Connection draining for
+	graceful shutdown)
+
 .. varnish_vsc:: ws_client_overflow
 	:group: wrk
 	:oneliner: workspace_client overflows

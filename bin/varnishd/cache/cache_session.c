@@ -52,6 +52,9 @@
 #include "vtim.h"
 #include "waiter/waiter.h"
 
+/* Count of active sessions (for drain detection) */
+static volatile unsigned n_sess_active = 0;
+
 static const struct {
 	const char		*type;
 } sess_attr[SA_LAST] = {
@@ -447,6 +450,7 @@ SES_New(struct pool *pp)
 	sp->idle_send_timeout = NAN;
 	Lck_New(&sp->mtx, lck_sess);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	n_sess_active++;
 	return (sp);
 }
 
@@ -689,6 +693,8 @@ SES_Rel(struct sess *sp)
 #ifdef ENABLE_WORKSPACE_EMULATOR
 	WS_Rollback(sp->ws, 0);
 #endif
+	assert(n_sess_active > 0);
+	n_sess_active--;
 	MPL_Free(sp->pool->mpl_sess, sp);
 }
 
@@ -719,4 +725,13 @@ SES_DestroyPool(struct pool *pp)
 	MPL_Destroy(&pp->mpl_req);
 	MPL_Destroy(&pp->mpl_sess);
 	Waiter_Destroy(&pp->waiter);
+}
+
+/*
+ * Return count of active sessions (for drain detection).
+ */
+unsigned
+SES_ActiveCount(void)
+{
+	return (n_sess_active);
 }

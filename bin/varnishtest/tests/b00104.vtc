@@ -1,0 +1,26 @@
+varnishtest "Test basic connection draining"
+
+# Basic test: Varnish exits cleanly when SIGTERM is sent with drain_timeout > 0
+
+server s1 {
+	rxreq
+	txresp -body "hello"
+} -start
+
+varnish v1 -arg "-p drain_timeout=5" -vcl+backend { } -start
+
+# Verify varnish is working
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "hello"
+} -run
+
+server s1 -wait
+
+# Send SIGTERM - this triggers draining
+shell "kill -15 ${v1_pid}"
+
+# Use -cleanup since varnish will exit on its own after drain completes
+varnish v1 -cleanup

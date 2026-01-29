@@ -1,0 +1,48 @@
+varnishtest "Test draining waits for active request to complete"
+
+# Test that draining waits for an in-flight request to complete
+# before the child exits
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 {
+	rxreq
+	# Signal that we received the request
+	barrier b1 sync
+	# Wait for drain to be confirmed started
+	barrier b2 sync
+	# Respond after drain started
+	delay 0.3
+	txresp -body "completed during drain"
+} -start
+
+varnish v1 -arg "-p drain_timeout=10" -vcl+backend { } -start
+
+# Start a request that will be in-flight when drain starts
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "completed during drain"
+	# Response during drain should have Connection: close
+	expect resp.http.Connection == "close"
+} -start
+
+# Wait for request to reach backend
+barrier b1 sync
+
+# Start drain while request is in progress
+shell "kill -15 ${v1_pid}"
+
+# Small delay for drain to start
+delay 0.1
+
+# Signal server to respond
+barrier b2 sync
+
+# Wait for client to complete
+client c1 -wait
+
+# Use -cleanup since varnish will exit on its own after drain completes
+varnish v1 -cleanup

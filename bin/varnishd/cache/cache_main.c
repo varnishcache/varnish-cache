@@ -54,6 +54,7 @@
 #include "hash/hash_slinger.h"
 
 volatile struct params		*cache_param;
+volatile unsigned		cache_draining = 0;
 static pthread_mutex_t		cache_vrnd_mtx;
 static vtim_dur			shutdown_delay = 0;
 
@@ -557,9 +558,13 @@ child_main(int sigmagic, size_t altstksz)
 	if (shutdown_delay > 0)
 		VTIM_sleep(shutdown_delay);
 
-	VCA_Shutdown();
+	/* If draining, VCA_Shutdown was already called in ccf_drain */
+	if (!cache_draining)
+		VCA_Shutdown();
 	BAN_Shutdown();
 	STV_warn();
+	/* Wake up any idle workers so they release VCL references */
+	Pool_WakeIdle();
 	VCL_Shutdown();
 	EXP_Shutdown();
 	STV_close();

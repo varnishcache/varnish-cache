@@ -446,6 +446,10 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					tmo = INFINITY;
 				else if (DO_DEBUG(DBG_VTC_MODE))
 					tmo = now + 1.;
+				else if (cache_draining)
+					/* During draining, use short timeout
+					 * to release VCL quickly */
+					tmo = now + 1.;
 				else
 					tmo = now + 60.;
 				(void)Lck_CondWaitUntil(

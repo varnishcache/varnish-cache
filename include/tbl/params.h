@@ -1086,6 +1086,24 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	drain_timeout,
+	/* type */	duration,
+	/* min */	"0.000",
+	/* max */	"300.000",
+	/* def */	"0.000",
+	/* units */	"seconds",
+	/* descr */
+	"How long to wait for connections to drain when receiving a "
+	"shutdown signal (SIGTERM/SIGINT).\n\n"
+	"During this period, all HTTP/1 responses will include "
+	"'Connection: close' and HTTP/2 connections will receive "
+	"a GOAWAY frame, allowing clients to gracefully close "
+	"their connections.\n\n"
+	"Set to 0 to disable connection draining and shut down immediately.",
+	/* flags */	0
+)
+
+PARAM_SIMPLE(
 	/* name */	transit_buffer,
 	/* type */	bytes,
 	/* min */	"0k",
