@@ -30,3 +30,5 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
+
+server s1 -wait
