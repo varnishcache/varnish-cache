@@ -68,4 +68,3 @@ stream_close_t V1L_Flush(struct v1l *v1l);
 stream_close_t V1L_Close(struct v1l **v1lp, uint64_t *cnt);
 size_t V1L_Write(struct v1l *v1l, const void *ptr, ssize_t len);
 extern const struct vdp * const VDP_v1l;
-void http_SetWellKnownMethod(struct http *hp);
