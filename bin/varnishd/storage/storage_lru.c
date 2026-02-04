@@ -87,7 +87,7 @@ LRU_Add(struct objcore *oc, vtim_real now)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	if (oc->flags & OC_F_PRIVATE)
+	if (oc->flags & (OC_F_PRIVATE|OC_F_FAILED))
 		return;
 
 	AZ(oc->boc);
@@ -109,7 +109,7 @@ LRU_Remove(struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	if (oc->flags & OC_F_PRIVATE)
+	if (oc->flags & (OC_F_PRIVATE|OC_F_FAILED))
 		return;
 
 	AZ(oc->boc);
@@ -130,7 +130,7 @@ LRU_Touch(struct worker *wrk, struct objcore *oc, vtim_real now)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	if (oc->flags & OC_F_PRIVATE || isnan(oc->last_lru))
+	if (oc->flags & (OC_F_PRIVATE|OC_F_FAILED) || isnan(oc->last_lru))
 		return;
 
 	/*
