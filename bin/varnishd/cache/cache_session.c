@@ -600,6 +600,8 @@ SES_Delete(struct sess *sp, stream_close_t reason, vtim_real now)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(reason, STREAM_CLOSE_MAGIC);
 
+	DRAIN_DecSess();
+
 	if (reason != SC_NULL)
 		SES_Close(sp, reason);
 	assert(sp->fd < 0);

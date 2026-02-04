@@ -383,6 +383,23 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	shutdown_timeout,
+	/* type */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"0.000",
+	/* units */	"seconds",
+	/* descr */
+	"Default timeout for graceful shutdown draining.\n"
+	"When 'stop -t' is used without a value, or when the manager\n"
+	"process receives SIGINT or SIGTERM, this parameter provides\n"
+	"the draining timeout. During draining, Varnish stops accepting\n"
+	"new connections and responds with 'Connection: close' headers\n"
+	"until all active sessions complete or the timeout expires.\n"
+	"A value of 0 means immediate shutdown (no draining)."
+)
+
+PARAM_SIMPLE(
 	/* name */	clock_skew,
 	/* type */	uint,
 	/* min */	"0",

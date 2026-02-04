@@ -1,0 +1,38 @@
+varnishtest "Test debug.drain CLI command"
+
+# This test verifies the debug.drain command works in the child process
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	delay 0.3
+	txresp -body "OK"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+# Verify debug.drain command syntax error handling
+varnish v1 -clierr 104 "debug.drain"
+varnish v1 -clierr 106 "debug.drain invalid"
+
+# Test direct drain command with active request
+client c1 {
+	txreq -hdr "Connection: keep-alive"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Connection == "close"
+} -start
+
+barrier b1 sync
+
+# Directly invoke drain in child
+varnish v1 -cliok "debug.drain 10s"
+
+client c1 -wait
+
+# Child should exit after draining (sessions drained)
+# Need extra time for VCL cleanup and manager to reap child
+delay 2
+varnish v1 -cliexpect "stopped" status

@@ -444,7 +444,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					tmo = now + 1.;
 				else if (wrk->wpriv->vcl == NULL)
 					tmo = INFINITY;
-				else if (DO_DEBUG(DBG_VTC_MODE))
+				else if (DO_DEBUG(DBG_VTC_MODE) ||
+				    DRAIN_Active())
 					tmo = now + 1.;
 				else
 					tmo = now + 60.;

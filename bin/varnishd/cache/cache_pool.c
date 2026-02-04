@@ -111,6 +111,31 @@ Pool_PurgeStat(unsigned nobj)
 }
 
 /*--------------------------------------------------------------------
+ * Wake all idle workers so they can release their cached VCL references.
+ * Called when entering drain mode to speed up graceful shutdown.
+ */
+
+void
+Pool_WakeIdle(void)
+{
+	struct pool *pp;
+	struct pool_task *pt;
+	struct worker *wrk;
+
+	Lck_Lock(&pool_mtx);
+	VTAILQ_FOREACH(pp, &pools, list) {
+		Lck_Lock(&pp->mtx);
+		VTAILQ_FOREACH(pt, &pp->idle_queue, list) {
+			wrk = pt->priv;
+			CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+			PTOK(pthread_cond_signal(&wrk->cond));
+		}
+		Lck_Unlock(&pp->mtx);
+	}
+	Lck_Unlock(&pool_mtx);
+}
+
+/*--------------------------------------------------------------------
  * Special function to summ stats
  */
 
