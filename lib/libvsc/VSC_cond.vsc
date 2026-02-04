@@ -1,0 +1,47 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+.. varnish_vsc_begin::	cond
+	:oneliner:	Condition Counters
+	:order:		70
+
+	Counters which track the activity in the different classes
+	of condition variables.
+
+.. varnish_vsc:: init
+	:type:	counter
+	:level:	debug
+	:oneliner:	Initialized condition variables.
+
+.. varnish_vsc:: fini
+	:type:	counter
+	:level:	debug
+	:oneliner:	Uninitialized condition variables.
+
+.. varnish_vsc:: signal
+	:type:	counter
+	:level:	debug
+	:oneliner:	Number of times a signal is posted on condition variables.
+
+.. varnish_vsc:: broadcast
+	:type:	counter
+	:level:	debug
+	:oneliner:	Number of times a broadcast is posted on condition variables.
+
+.. varnish_vsc:: waits
+	:type:	counter
+	:level:	debug
+	:oneliner:	Number of times a wait occurred on condition variables.
+
+.. varnish_vsc:: waiting
+    :type:	gauge
+	:level:	debug
+	:oneliner:	Number of currently waiting thread on condition variables.
+
+.. varnish_vsc:: wait_duration_ns
+	:type:	counter
+	:level:	debug
+	:oneliner:	Amount of nanoseconds spent waiting of condition variables.
+
+.. varnish_vsc_end::	cond
