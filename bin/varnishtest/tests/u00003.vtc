@@ -22,6 +22,10 @@ varnish v1 -vcl+backend {
 	sub vcl_hit {
 		return (synth(404));
 	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = 360s;
+	}
 } -start
 
 shell {
@@ -197,3 +201,14 @@ shell {
 }
 
 # ESI coverage in e00003.vtc
+
+# %{VSL:tag:prefix} with space separator
+
+shell {
+	varnishncsa -n ${v1_name} -d -b -F '%{VSL:Begin:bereq[2]}x %{VSL:TTL:RFC[1]}x %{VSL:TTL:VCL[1]}x %{VSL:BerespHeader:server}x' -k1 > vsl_prefix.txt
+
+	cat >expected_vsl_prefix.txt <<-EOF
+	fetch 120 360 s1
+	EOF
+	diff -u expected_vsl_prefix.txt vsl_prefix.txt
+}
