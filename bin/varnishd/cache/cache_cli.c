@@ -47,6 +47,7 @@ pthread_t		cli_thread;
 static struct lock	cli_mtx;
 static int		add_check;
 static struct VCLS	*cache_cls;
+static volatile int cli_wakeup = 0;
 
 /*
  * The CLI commandlist is split in three:
@@ -108,9 +109,18 @@ CLI_Run(void)
 	cli->auth = 255;	// Non-zero to disable paranoia in vcli_serve
 
 	do {
-		i = VCLS_Poll(cache_cls, cli, -1);
+		i = VCLS_Poll(cache_cls, cli, 100);
+		if (cli_wakeup)
+			break;
 	} while (i == 0);
 	VSL(SLT_CLI, NO_VXID, "EOF on CLI connection, worker stops");
+}
+
+void
+CLI_Wakeup(void)
+{
+
+	cli_wakeup = 1;
 }
 
 /*--------------------------------------------------------------------*/

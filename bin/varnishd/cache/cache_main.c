@@ -543,6 +543,7 @@ child_main(int sigmagic, size_t altstksz)
 
 	CLI_AddFuncs(debug_cmds);
 	CLI_AddFuncs(child_cmds);
+	DRAIN_Init();
 
 #ifdef WITH_PERSISTENT_STORAGE
 	/* Wait for persistent storage to load if asked to */

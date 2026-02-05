@@ -1,0 +1,41 @@
+varnishtest "Test Connection: close header during draining"
+
+# This test verifies that during draining mode, Varnish sends
+# Connection: close headers to signal clients to close keep-alive connections
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	# Signal that we received the request
+	barrier b1 sync
+	# Small delay to ensure drain starts while response is being prepared
+	delay 0.5
+	txresp -body "OK"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+# Start client in background - it will wait at barrier
+client c1 {
+	txreq -hdr "Connection: keep-alive"
+	rxresp
+	expect resp.status == 200
+	# During draining, Connection: close should be set
+	expect resp.http.Connection == "close"
+} -start
+
+# Wait for request to reach the backend
+barrier b1 sync
+
+# Now start draining - the request is in flight
+# Use debug.drain directly since stop -t is non-blocking
+varnish v1 -cliok "debug.drain 10s"
+
+# Wait for client to complete
+client c1 -wait
+
+# Child should exit after draining (no active sessions)
+# Need to wait a bit for child to finish cleanup and manager to reap it
+delay 2
+varnish v1 -cliexpect "stopped" status

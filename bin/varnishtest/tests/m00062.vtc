@@ -1,0 +1,60 @@
+varnishtest "Test graceful shutdown with connection draining"
+
+server s1 {
+	rxreq
+	txresp -body "OK"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+# Test 1: stop -t with explicit timeout (non-blocking)
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+# stop -t returns immediately, child exits when draining completes
+varnish v1 -cliexpect "Draining for" "stop -t 1"
+
+# Wait for child to exit (draining completes quickly with no active sessions)
+# Need extra time for VCL cleanup and manager to reap child
+delay 2
+varnish v1 -cliexpect "stopped" status
+
+# Restart for next test
+varnish v1 -cliok "start"
+
+server s1 -wait
+server s1 {
+	rxreq
+	txresp -body "OK"
+} -start
+
+# Test 2: stop -t uses shutdown_timeout parameter
+varnish v1 -cliok "param.set shutdown_timeout 1"
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliexpect "Draining for" "stop -t"
+delay 2
+varnish v1 -cliexpect "stopped" status
+
+# Restart for next test
+varnish v1 -cliok "start"
+
+# Test 3: Invalid option rejected
+varnish v1 -clierr 106 "stop -x"
+varnish v1 -clierr 106 "stop -t invalid"
+
+# Test 4: stop (without -t) when running does immediate stop
+varnish v1 -cliok "stop"
+varnish v1 -cliexpect "stopped" status
+
+# Test 5: stop when already stopped
+varnish v1 -clierr 300 "stop"
+varnish v1 -clierr 300 "stop -t 5"

@@ -1,0 +1,26 @@
+varnishtest "Test drain early exit when sessions close"
+
+# This test verifies that draining exits early when all sessions close
+# instead of always waiting for the full timeout
+
+server s1 {
+	rxreq
+	txresp -body "OK"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+# Make a request to establish a session
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+# Start drain with a long timeout - should exit early since no sessions
+# Use 10 second timeout - test will fail if we actually wait that long
+varnish v1 -cliexpect "Draining for" "stop -t 10"
+
+# Child should exit quickly (within 1-2 seconds) since there are no sessions
+delay 2
+varnish v1 -cliexpect "stopped" status

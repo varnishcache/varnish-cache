@@ -267,6 +267,14 @@ void VBO_Init(void);
 void CLI_Init(void);
 void CLI_Run(void);
 void CLI_AddFuncs(struct cli_proto *p);
+void CLI_Wakeup(void);
+
+/* cache_drain.c */
+int DRAIN_Active(void);
+void DRAIN_Init(void);
+void DRAIN_Start(vtim_dur timeout);
+void DRAIN_IncSess(void);
+void DRAIN_DecSess(void);
 
 /* cache_expire.c */
 void EXP_Init(void);
@@ -416,6 +424,7 @@ void Pool_Sumstat(const struct worker *w);
 int Pool_TrySumstat(const struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
+void Pool_WakeIdle(void);
 void pan_pool(struct vsb *);
 
 /* cache_range.c */

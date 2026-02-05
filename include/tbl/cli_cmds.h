@@ -210,10 +210,13 @@ CLI_CMD(PARAM_SET,
 
 CLI_CMD(SERVER_STOP,
 	"stop",
-	"stop",
+	"stop [-t [<seconds>]]",
 	"Stop the Varnish cache process.",
-	"",
-	0, 0
+	"  -t <seconds>  Drain connections for up to <seconds> before stopping.\n"
+	"  -t            Drain using the shutdown_timeout parameter value.\n\n"
+	"  During draining, new connections are rejected and existing\n"
+	"  connections receive 'Connection: close' headers.",
+	0, 2
 )
 
 CLI_CMD(SERVER_START,
@@ -371,6 +374,14 @@ CLI_CMD(DEBUG_SHUTDOWN_DELAY,
 	"debug.shutdown.delay",
 	"debug.shutdown.delay",
 	"Add a delay to the child process shutdown.",
+	"",
+	1, 1
+)
+
+CLI_CMD(DEBUG_DRAIN,
+	"debug.drain",
+	"debug.drain <seconds>",
+	"Enter connection draining mode.",
 	"",
 	1, 1
 )

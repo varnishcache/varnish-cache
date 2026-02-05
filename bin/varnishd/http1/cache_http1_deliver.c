@@ -81,6 +81,10 @@ V1D_Deliver(struct req *req, int sendbody)
 	CHECK_OBJ_ORNULL(req->boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
+	/* Force connection close during draining */
+	if (DRAIN_Active() && req->doclose == SC_NULL)
+		req->doclose = SC_RESP_CLOSE;
+
 	if (req->doclose == SC_NULL &&
 	    http_HdrIs(req->resp, H_Connection, "close")) {
 		req->doclose = SC_RESP_CLOSE;
