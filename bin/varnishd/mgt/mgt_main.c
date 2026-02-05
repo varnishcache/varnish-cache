@@ -387,7 +387,9 @@ mgt_x_arg(const char *x_arg)
 		(void)printf("%s\n", opt_spec);
 	else if (!strcmp(x_arg, "options"))
 		mgt_DumpOptions();
-	else
+       else if (!strcmp(x_arg, "workdir")) {
+               (void)printf("%s\n", VIN_n_Arg(NULL));
+       } else
 		ARGV_ERR("Invalid -x argument\n");
 }
 
