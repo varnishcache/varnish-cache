@@ -38,17 +38,23 @@
 
 #include "cache_varnishd.h"
 #include "cache_objhead.h"
+#include "cache_pool.h"		// taskhead
 
 #include "vbh.h"
 #include "vtim.h"
+
+VSTAILQ_HEAD(exp_inbox_head, objcore);
 
 struct exp_priv {
 	unsigned			magic;
 #define EXP_PRIV_MAGIC			0x9db22482
 	/* shared */
 	struct lock			mtx;
-	VSTAILQ_HEAD(,objcore)		inbox;
+	struct exp_inbox_head		inbox;
 	pthread_cond_t			condvar;
+
+	/* shared with exp_remove_oc tasks */
+	struct taskhead			free_tasks;
 
 	/* owned by exp thread */
 	struct worker			*wrk;
@@ -283,11 +289,188 @@ EXP_Rearm(struct objcore *oc, vtim_real now,
 }
 
 /*--------------------------------------------------------------------
+ * Finish removal of an oc
+ */
+
+static void
+exp_remove_oc(struct worker *wrk, struct objcore *oc, vtim_real now)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	assert(oc->timer_idx == VBH_NOIDX);
+	assert(oc->refcnt > 0);
+	AZ(oc->exp_flags);
+	// no objhead check
+	VSLb(wrk->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%jd",
+	    VXID(ObjGetXID(wrk, oc)), EXP_Ttl(NULL, oc) - now,
+	    (intmax_t)oc->hits);
+	ObjSendEvent(wrk, oc, OEV_EXPIRE);
+	(void)HSH_DerefObjCore(wrk, &oc);
+}
+
+/*--------------------------------------------------------------------
+ * Finish expiry of an oc
+ * This is subtly different from exp_remove_oc, also besides the VSL:
+ * - additional HSH_Kill()
+ * - assert ob objhead
+ * - do not assert on exp_flags
+ */
+
+static void
+exp_expire_oc(struct worker *wrk, struct vsl_log *vsl, struct objcore *oc, vtim_real now)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (!(oc->flags & OC_F_DYING))
+		HSH_Kill(oc);
+
+	assert(oc->timer_idx == VBH_NOIDX);
+	assert(oc->refcnt > 0);
+	// no exp_flags check
+	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+	VSLb(vsl, SLT_ExpKill, "EXP_Expired x=%ju t=%.0f h=%jd",
+	    VXID(ObjGetXID(wrk, oc)), EXP_Ttl(NULL, oc) - now,
+	    (intmax_t)oc->hits);
+	ObjSendEvent(wrk, oc, OEV_EXPIRE);
+	(void)HSH_DerefObjCore(wrk, &oc);
+}
+
+/*--------------------------------------------------------------------
+ * keep track of ocs to deref
+ */
+
+struct exp_deref {
+	unsigned			magic;
+#define EXP_DEREF_MAGIC			0xb5854b59
+	unsigned			n;
+	struct exp_inbox_head		remove_head;
+	struct exp_inbox_head		expire_head;
+};
+
+/* take lists from src to dsk */
+static void
+exp_deref_take(struct exp_deref *dst, struct exp_deref *src)
+{
+
+	AN(dst);
+	INIT_OBJ(dst, EXP_DEREF_MAGIC);
+	CHECK_OBJ_NOTNULL(src, EXP_DEREF_MAGIC);
+
+	dst->n = src->n;
+	src->n = 0;
+	VSTAILQ_INIT(&dst->remove_head);
+	VSTAILQ_SWAP(&dst->remove_head, &src->remove_head, objcore);
+	VSTAILQ_INIT(&dst->expire_head);
+	VSTAILQ_SWAP(&dst->expire_head, &src->expire_head, objcore);
+}
+
+static void
+exp_deref_work(struct worker *wrk, struct exp_deref *deref, vtim_real now)
+{
+	struct objcore *oc, *save;
+	unsigned n = 0;
+
+	CHECK_OBJ_NOTNULL(deref, EXP_DEREF_MAGIC);
+	VSTAILQ_FOREACH_SAFE(oc, &deref->remove_head, exp_list, save) {
+		exp_remove_oc(wrk, oc, now);
+		n++;
+		if (n % 1024 == 0)
+			Pool_Sumstat(wrk);
+	}
+	VSTAILQ_FOREACH_SAFE(oc, &deref->expire_head, exp_list, save) {
+		exp_expire_oc(wrk, wrk->vsl, oc, now);
+		n++;
+		if (n % 1024 == 0)
+			Pool_Sumstat(wrk);
+	}
+	assert(deref->n == n);
+	memset(deref, 0, sizeof *deref);
+}
+
+// trivial functions to wrap n increment.
+static void
+exp_deref_add_remove(struct exp_deref *deref, struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(deref, EXP_DEREF_MAGIC);
+	VSTAILQ_INSERT_TAIL(&deref->remove_head, oc, exp_list);
+	deref->n++;
+}
+
+static void
+exp_deref_add_expire(struct exp_deref *deref, struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(deref, EXP_DEREF_MAGIC);
+	VSTAILQ_INSERT_TAIL(&deref->expire_head, oc, exp_list);
+	deref->n++;
+}
+
+static void
+exp_deref_init(struct exp_deref *deref)
+{
+
+	INIT_OBJ(deref, EXP_DEREF_MAGIC);
+	VSTAILQ_INIT(&deref->remove_head);
+	VSTAILQ_INIT(&deref->expire_head);
+}
+
+/*--------------------------------------------------------------------
+ * task to finish removal of ocs
+ *
+ * the struct is only needed until the task is running and has taken the
+ * remove_head, when it returns the struct to the free_tasks list
+ */
+
+struct exp_deref_task_s {
+	// initialized once
+	unsigned			magic;
+#define EXP_DEREF_TASK_MAGIC		0xaf5a6732
+	struct exp_priv			*ep;
+
+	// per invocation
+	struct exp_deref		deref;
+	struct pool_task		task;
+};
+
+static void
+exp_deref_task(struct worker *wrk, void *priv)
+{
+	struct exp_deref_task_s *deref_task;
+	struct exp_deref deref;
+	struct exp_priv *ep;
+	struct vsl_log vsl;
+	char vsl_buf[4096];
+
+	CAST_OBJ_NOTNULL(deref_task, priv, EXP_DEREF_TASK_MAGIC);
+	ep = deref_task->ep;
+	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
+
+	exp_deref_take(&deref, &deref_task->deref);
+
+	Lck_Lock(&ep->mtx);
+	VTAILQ_INSERT_TAIL(&ep->free_tasks, &deref_task->task, list);
+	PTOK(pthread_cond_signal(&ep->condvar));
+	Lck_Unlock(&ep->mtx);
+
+	VSL_Setup(&vsl, vsl_buf, sizeof vsl_buf);
+	AZ(wrk->vsl);
+	wrk->vsl = &vsl;
+
+	exp_deref_work(wrk, &deref, VTIM_real());
+	VSL_Flush(wrk->vsl, 0);
+	Pool_Sumstat(wrk);
+	wrk->vsl = NULL;
+}
+
+/*--------------------------------------------------------------------
  * Handle stuff in the inbox
  */
 
 static void
-exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, vtim_real now)
+exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 {
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
@@ -297,21 +480,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, vtim_real now
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox flg=%x p=%p e=%.6f f=0x%x",
 	    flags, oc, oc->timer_when, oc->flags);
 
-	if (flags & OC_EF_REMOVE) {
-		if (!(flags & OC_EF_INSERT)) {
-			assert(oc->timer_idx != VBH_NOIDX);
-			VBH_delete(ep->heap, oc->timer_idx);
-		}
-		assert(oc->timer_idx == VBH_NOIDX);
-		assert(oc->refcnt > 0);
-		AZ(oc->exp_flags);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%jd",
-		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
-		    (intmax_t)oc->hits);
-		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc);
-		return;
-	}
+	AZ(flags & OC_EF_REMOVE); // handled in exp_thread
 
 	if (flags & OC_EF_MOVE) {
 		oc->timer_when = EXP_WHEN(oc);
@@ -345,51 +514,54 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, vtim_real now
  */
 
 static vtim_real
-exp_expire(struct exp_priv *ep, vtim_real now)
+exp_expire(struct exp_priv *ep, struct exp_deref *deref, vtim_real now)
 {
 	struct objcore *oc;
+	vtim_real ret;
+	unsigned n = 0;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 
-	oc = VBH_root(ep->heap);
-	if (oc == NULL)
-		return (now + 355. / 113.);
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inspect p=%p e=%.6f f=0x%x", oc,
-	    oc->timer_when - now, oc->flags);
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	/* Ready ? */
-	if (oc->timer_when > now)
-		return (oc->timer_when);
-
-	VSC_C_main->n_expired++;
-
 	Lck_Lock(&ep->mtx);
-	if (oc->exp_flags & OC_EF_POSTED) {
-		oc->exp_flags |= OC_EF_REMOVE;
-		oc = NULL;
-	} else {
-		oc->exp_flags &= ~OC_EF_REFD;
-	}
-	Lck_Unlock(&ep->mtx);
-	if (oc != NULL) {
-		if (!(oc->flags & OC_F_DYING))
-			HSH_Kill(oc);
+	while (1) {
+		oc = VBH_root(ep->heap);
+		if (oc == NULL) {
+			ret = now + 355. / 113.;
+			break;
+		}
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inspect p=%p e=%.6f f=0x%x",
+		    oc, oc->timer_when - now, oc->flags);
 
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+		/* Ready ? */
+		if (oc->timer_when > now) {
+			ret = oc->timer_when;
+			break;
+		}
+
+		n++;
+
+		if (oc->exp_flags & OC_EF_POSTED) {
+			if (oc->exp_flags & OC_EF_REMOVE)
+				n--;
+			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
+			oc->exp_flags = 0;
+		}
+		else
+			oc->exp_flags &= ~OC_EF_REFD;
+
+		exp_deref_add_expire(deref, oc);
 		/* Remove from binheap */
 		assert(oc->timer_idx != VBH_NOIDX);
 		VBH_delete(ep->heap, oc->timer_idx);
-		assert(oc->timer_idx == VBH_NOIDX);
 
-		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%ju t=%.0f h=%jd",
-		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
-		    (intmax_t)oc->hits);
-		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc);
+		assert(oc->timer_idx == VBH_NOIDX);
 	}
-	return (0);
+	Lck_Unlock(&ep->mtx);
+	VSC_C_main->n_expired += n;
+
+	return (ret);
 }
 
 /*--------------------------------------------------------------------
@@ -418,13 +590,32 @@ object_update(void *priv, void *p, unsigned u)
 	oc->timer_idx = u;
 }
 
+struct exp_inbox_item {
+	unsigned		magic;
+#define EXP_INBOX_ITEM_MAGIC	0x0519627d
+	unsigned		flags;
+	struct objcore		*oc;
+};
+
 static void * v_matchproto_(bgthread_t)
 exp_thread(struct worker *wrk, void *priv)
 {
+	struct exp_inbox_item batch[1024];
+	struct exp_inbox_item * const batch_lim =
+	    batch + sizeof batch / sizeof *batch;
+	struct exp_inbox_item *todo, *item;
+	/* a small number of task structs is sufficient because
+	 * exp_deref_task() immediately returns the task struct to the free
+	 * tasks list.
+	 */
+	const unsigned ntasks = 4;
+	struct exp_deref_task_s tasks[ntasks];
+	struct exp_deref_task_s *deref_task;
+	struct pool_task *task;
+	struct exp_deref deref;
 	struct objcore *oc;
 	vtim_real t = 0, tnext = 0;
 	struct exp_priv *ep;
-	unsigned flags = 0;
 
 	CAST_OBJ_NOTNULL(ep, priv, EXP_PRIV_MAGIC);
 	ep->wrk = wrk;
@@ -433,36 +624,117 @@ exp_thread(struct worker *wrk, void *priv)
 	wrk->vsl = &ep->vsl;
 	ep->heap = VBH_new(NULL, object_cmp, object_update);
 	AN(ep->heap);
+
+	for (item = batch; item < batch_lim; item++)
+		INIT_OBJ(item, EXP_INBOX_ITEM_MAGIC);
+
+	VTAILQ_INIT(&ep->free_tasks);
+	for (deref_task = tasks; deref_task < tasks + ntasks; deref_task++) {
+		INIT_OBJ(deref_task, EXP_DEREF_TASK_MAGIC);
+		deref_task->ep = ep;
+		VTAILQ_INSERT_TAIL(&ep->free_tasks, &deref_task->task, list);
+	}
+
 	while (exp_shutdown == 0) {
+		exp_deref_init(&deref);
+		todo = batch;
 
 		Lck_Lock(&ep->mtx);
-		oc = VSTAILQ_FIRST(&ep->inbox);
-		CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
-		if (oc != NULL) {
+		while ((oc = VSTAILQ_FIRST(&ep->inbox)) != NULL &&
+		    todo < batch_lim) {
+			unsigned flags;
+
+			CHECK_OBJ(oc, OBJCORE_MAGIC);
+			CHECK_OBJ(todo, EXP_INBOX_ITEM_MAGIC);
+			AZ(todo->flags);
+			AZ(todo->oc);
+
 			assert(oc->refcnt >= 1);
 			assert(oc->exp_flags & OC_EF_POSTED);
 			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
 			VSC_C_main->exp_received++;
 			tnext = 0;
 			flags = oc->exp_flags;
-			if (flags & OC_EF_REMOVE)
+			assert(flags & OC_EF_POSTED);
+			if (flags & OC_EF_REMOVE) {
 				oc->exp_flags = 0;
+				exp_deref_add_remove(&deref, oc);
+				if (flags & OC_EF_INSERT)
+					continue;
+			}
 			else
 				oc->exp_flags &= OC_EF_REFD;
-		} else if (tnext > t) {
+
+			todo->flags = flags;
+			todo->oc = oc;
+			todo++;
+		}
+		if (todo == batch && deref.n == 0 && tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
 			Pool_Sumstat(wrk);
 			(void)Lck_CondWaitUntil(&ep->condvar, &ep->mtx, tnext);
 		}
 		Lck_Unlock(&ep->mtx);
 
-		t = VTIM_real();
+		for (item = batch; item < todo; item++) {
+			CHECK_OBJ(item, EXP_INBOX_ITEM_MAGIC);
+			if (item->flags & OC_EF_REMOVE) {
+				AZ(item->flags & OC_EF_INSERT);
+				VBH_delete(ep->heap, item->oc->timer_idx);
+			}
+			else
+				exp_inbox(ep, item->oc, item->flags);
+			INIT_OBJ(item, EXP_INBOX_ITEM_MAGIC);
+		}
 
-		if (oc != NULL)
-			exp_inbox(ep, oc, flags, t);
-		else
-			tnext = exp_expire(ep, t);
+		t = VTIM_real();
+		tnext = exp_expire(ep, &deref, t);
+
+		if (deref.n == 0)
+			continue;
+
+		/* arbitrary threshold to not start a task,
+		 * probably does not matter much */
+		if (deref.n < 128) {
+			exp_deref_work(ep->wrk, &deref, t);
+			continue;
+		}
+
+		/* call exp_deref_work() in a task */
+		Lck_Lock(&ep->mtx);
+		while ((task = VTAILQ_FIRST(&ep->free_tasks)) == NULL) {
+			VSL_Flush(&ep->vsl, 0);
+			Pool_Sumstat(wrk);
+			(void)Lck_CondWait(&ep->condvar, &ep->mtx);
+		}
+		VTAILQ_REMOVE(&ep->free_tasks, task, list);
+		Lck_Unlock(&ep->mtx);
+
+		deref_task =
+		    __containerof(task, struct exp_deref_task_s, task);
+		CHECK_OBJ(deref_task, EXP_DEREF_TASK_MAGIC);
+		exp_deref_take(&deref_task->deref, &deref);
+		task->func = exp_deref_task;
+		task->priv = deref_task;
+		AZ(Pool_Task_Any(task, TASK_QUEUE_BO));
 	}
+
+	Lck_Lock(&ep->mtx);
+	unsigned u = 0;
+	do {
+		u = 0;
+		VTAILQ_FOREACH(task, &ep->free_tasks, list)
+			u++;
+		if (u == ntasks)
+			break;
+		(void)Lck_CondWait(&ep->condvar, &ep->mtx);
+	} while (u < ntasks);
+	Lck_Unlock(&ep->mtx);
+
+	VTAILQ_INIT(&ep->free_tasks);
+
+	VSL_Flush(&ep->vsl, 0);
+	Pool_Sumstat(wrk);
 	wrk->vsl = NULL;
 	return (NULL);
 }
