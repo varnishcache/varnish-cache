@@ -968,3 +968,84 @@ MCF_DumpRstParam(void)
 		printf("\n\n");
 	}
 }
+
+void
+MCF_DumpJsonParam(void)
+{
+	struct plist *pl;
+	const struct parspec *pp;
+	const char *p, *q;
+	unsigned flags;
+	struct vsb *vsb = VSB_new_auto();
+
+	CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC);
+
+	p = "\n";
+	VSB_cat(vsb, "{");
+	VSB_indent(vsb, 2);
+	VTAILQ_FOREACH(pl, &phead, list) {
+		pp = pl->spec;
+		if (!strcmp("deprecated_dummy", pp->name))
+		    continue;
+
+	VSB_cat(vsb, p);
+	p = ",\n";
+	VSB_cat(vsb, "\"");
+	VSB_quote(vsb, pp->name, -1, VSB_QUOTE_JSON);
+	VSB_cat(vsb, "\": {\n");
+	VSB_indent(vsb, 2);
+		if (pp->flags & PLATFORM_DEPENDENT)
+			VSB_cat(vsb, "\"platformDependent\": true,\n");
+
+		if (pp->flags & BUILD_OPTIONS)
+			VSB_cat(vsb, "\"buildDependent\": true,\n");
+
+		if (pp->units != NULL && *pp->units != '\0')
+			VSB_printf(vsb, "\"units\": \"%s\",\n", pp->units);
+#define MCF_DYN_REASON(lbl, nm)						\
+		if (pp->dyn_ ## nm ## _reason != NULL)			\
+			VSB_printf(vsb, "\"" #lbl "\": \"%s\",\n",	\
+			    pp->dyn_ ## nm ## _reason);			\
+		else if (pp->nm != NULL)				\
+			VSB_printf(vsb, "\"" #lbl "\": \"%s\",\n", pp->nm);
+		MCF_DYN_REASON(default, def);
+		MCF_DYN_REASON(minimum, min);
+		MCF_DYN_REASON(maximum, max);
+#undef MCF_DYN_REASON
+		flags = pp->flags & ~DOCS_FLAGS;
+		if (pp->func == tweak_timeout)
+			flags |= TYPE_TIMEOUT;
+		if (flags) {
+			q = "\n";
+			VSB_cat(vsb, "\"flags\": [");
+			VSB_indent(vsb, 2);
+#define MCF_DYN_FLAGS(f, s)					\
+			if (flags & f) {			\
+				VSB_bcat(vsb, q, strlen(q));	\
+				q = ",\n";			\
+				VSB_printf(vsb, #s);		\
+			}
+			MCF_DYN_FLAGS(TYPE_TIMEOUT, "timeout");
+			MCF_DYN_FLAGS(DELAYED_EFFECT, "delayed");
+			MCF_DYN_FLAGS(MUST_RESTART, "must_restart");
+			MCF_DYN_FLAGS(MUST_RELOAD, "smust_reload");
+			MCF_DYN_FLAGS(EXPERIMENTAL, "experimental");
+			MCF_DYN_FLAGS(WIZARD, "wizard");
+			MCF_DYN_FLAGS(ONLY_ROOT, "only_root");
+			MCF_DYN_FLAGS(OBJ_STICKY, "obj_sticky");
+#undef MCF_DYN_FLAGS
+			VSB_indent(vsb, -2);
+			VSB_cat(vsb, "\n],\n");
+		}
+		VSB_cat(vsb, "\"description\": \"");
+		VSB_quote(vsb, pp->descr, -1, VSB_QUOTE_JSON);
+		VSB_bcat(vsb, "\"\n", 2);
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "}");
+	}
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "\n}");
+	AZ(VSB_finish(vsb));
+	printf("%s\n", VSB_data(vsb));
+	VSB_destroy(&vsb);
+}

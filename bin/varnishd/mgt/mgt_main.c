@@ -137,7 +137,8 @@ usage(void)
 
 	printf("\nDocumentation options:\n");
 	printf(FMT, "-?", "Prints this usage message");
-	printf(FMT, "-x parameter", "Parameter documentation");
+	printf(FMT, "-x parameter", "Parameter documentation in RST format");
+	printf(FMT, "-x parameter-json", "Parameter documentation in JSON format");
 	printf(FMT, "-x vsl", "VSL record documentation");
 	printf(FMT, "-x cli", "CLI command documentation");
 	printf(FMT, "-x builtin", "Builtin VCL program");
@@ -377,6 +378,8 @@ mgt_x_arg(const char *x_arg)
 {
 	if (!strcmp(x_arg, "parameter"))
 		MCF_DumpRstParam();
+	else if (!strcmp(x_arg, "parameter-json"))
+		MCF_DumpJsonParam();
 	else if (!strcmp(x_arg, "vsl"))
 		mgt_DumpRstVsl();
 	else if (!strcmp(x_arg, "cli"))
