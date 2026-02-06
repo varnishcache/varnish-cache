@@ -12,7 +12,7 @@ jobs:
     steps:
       - run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install --no-install-recommends -y \
             autoconf \
             automake \
             build-essential \
@@ -26,12 +26,12 @@ jobs:
             libunwind-dev \
             pkg-config \
             python3-sphinx
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: true
       - run: ./autogen.sh
       - run: ./configure --with-persistent-storage
-      - uses: vapier/coverity-scan-action@v1.8.0
+      - uses: vapier/coverity-scan-action@2068473c7bdf8c2fb984a6a40ae76ee7facd7a85 # v1.8.0
         with:
           project: varnish
           email: varnish-dev@varnish-cache.org
