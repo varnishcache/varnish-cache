@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2026 Varnish Software AS
  * All rights reserved.
  *
  * Author: Cecilie Fritzvold <cecilihf@linpro.no>
@@ -67,6 +67,7 @@
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"
+#include "vin.h"
 #include "vjsn.h"
 #include "vtcp.h"
 
@@ -390,6 +391,8 @@ usage(int status)
 	fprintf(stderr,
 	    "Usage: varnishadm [-h] [-n workdir] [-p] [-S secretfile] "
 	    "[-T [address]:port] [-t timeout] [command [...]]\n");
+	fprintf(stderr,
+	    "       varnishadm -x workdir [name]\n");
 	fprintf(stderr, "\t-n is mutually exclusive with -S and -T\n");
 	exit(status);
 }
@@ -452,11 +455,12 @@ t_arg_timeout(const char *t_arg)
 	return (1);
 }
 
-#define OPTARG "hn:pS:T:t:"
+#define OPTARG "hn:pS:T:t:x:"
 
 int
 main(int argc, char * const *argv)
 {
+	char *wd;
 	const char *T_arg = NULL;
 	const char *S_arg = NULL;
 	const char *n_arg = NULL;
@@ -495,6 +499,21 @@ main(int argc, char * const *argv)
 		case 't':
 			t_arg = optarg;
 			break;
+		case 'x':
+			if (argc != 3 && argc != 4) {
+				fprintf(stderr,
+				    "-x must be the only option\n");
+				usage(1);
+			}
+			if (strcmp(optarg, "workdir")) {
+				fprintf(stderr, "Invalid -x argument\n");
+				usage(1);
+			}
+			wd = VIN_n_Arg(argc == 4 ? argv[3] : NULL);
+			AN(wd);
+			printf("%s\n", wd);
+			free(wd);
+			exit(0);
 		default:
 			usage(1);
 		}

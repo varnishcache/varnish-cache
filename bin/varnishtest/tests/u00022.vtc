@@ -1,0 +1,32 @@
+varnishtest "varnishadm -x workdir"
+
+# happy paths
+shell {
+    # -x workdir
+	DEFAULT_WORKDIR=$(varnishadm -x workdir)
+	test -n "$DEFAULT_WORKDIR"
+
+	# -x workdir foo: returns dirname(DEFAULT_WORKDIR)/foo
+	WORKDIR_FOO=$(varnishadm -x workdir foo)
+	EXPECTED_FOO=$(dirname "$DEFAULT_WORKDIR")/foo
+	test "$WORKDIR_FOO" = "$EXPECTED_FOO"
+
+	# -x workdir /foo: returns /foo
+	WORKDIR_ABSOLUTE=$(varnishadm -x workdir /foo)
+	test "$WORKDIR_ABSOLUTE" = "/foo"
+}
+
+# -x with other options is rejected
+shell -exit 1 -match "-x must be the only option" {
+	varnishadm -n /tmp -x workdir
+}
+
+# -x with invalid argument fails
+shell -exit 1 -match "Invalid -x argument" {
+	varnishadm -x invalid
+}
+
+# -x workdir with too many arguments is rejected
+shell -exit 1 -match "-x must be the only option" {
+	varnishadm -x workdir arg1 arg2
+}
