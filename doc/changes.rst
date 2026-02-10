@@ -49,6 +49,9 @@ Vinyl-Cache NEXT (2026-03-15)
   being retained as an alias. ``req.ttl`` is now deprecated, but no warning is
   emitted yet. It will be removed in a future version of Vinyl-Cache. (`4389`_)
 
+* ``varnishadm -x workdir`` will print the default work directory and exit. This
+  is useful for tools that need to discover the VSM location in most setups.
+
 ================================
 Varnish-Cache 8.0.0 (2025-09-15)
 ================================
