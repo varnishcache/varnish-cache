@@ -34,9 +34,6 @@ if ! HAVE_DAEMON
 libvarnishapi_la_SOURCES += daemon.c
 endif
 
-libvarnishapi_la_CFLAGS = \
-	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
-
 libvarnishapi_la_LIBADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	${NET_LIBS} ${RT_LIBS} ${LIBM}

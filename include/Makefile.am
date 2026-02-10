@@ -56,6 +56,7 @@ nobase_pkginclude_HEADERS = \
 	vapi/vsm.h \
 	vapi/voptget.h \
 	vapi/vapi_options.h \
+	vapi/workdir.h \
 	vcli.h \
 	vut.h \
 	vut_options.h
