@@ -65,7 +65,7 @@
   REQ_STEP(fetch,               FETCH,		static) \
   REQ_STEP(deliver,             DELIVER,	static) \
   REQ_STEP(vclfail,             VCLFAIL,	static) \
-  REQ_STEP(synth,               SYNTH,		static) \
+  REQ_STEP(synth,               SYNTH,		) \
   REQ_STEP(transmit,            TRANSMIT,	static) \
   REQ_STEP(finish,              FINISH,		static)
 
@@ -341,7 +341,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
-	while (wrk->vpi->handling == VCL_RET_FAIL) {
+	while (req->req_reset || wrk->vpi->handling == VCL_RET_FAIL) {
 		if (req->esi_level > 0) {
 			wrk->vpi->handling = VCL_RET_DELIVER;
 			break;
@@ -596,9 +596,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the
-		 * worker thread.   We return to STP_LOOKUP when the busy
-		 * object has been unbusied, and still have the objhead
-		 * around to restart the lookup with.
+		 * worker thread.  We return to R_STP_LOOKUP, with the
+		 * object still around when it has been unbusied, to
+		 * restart the lookup with.
 		 */
 		return (REQ_FSM_DISEMBARK);
 	}
