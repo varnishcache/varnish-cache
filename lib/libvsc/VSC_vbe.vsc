@@ -104,6 +104,86 @@
 
 	Number of times the max_connections limit was reached
 
+.. varnish_vsc:: closed
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed
+
+.. varnish_vsc:: closed_err
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed with error
+
+.. varnish_vsc:: rem_close
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed by backend
+
+.. varnish_vsc:: req_close
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closure requested by backend
+
+.. varnish_vsc:: req_http10
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for proto < HTTP/1.1
+
+.. varnish_vsc:: rx_bad
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for received bad response
+
+.. varnish_vsc:: rx_body
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for failed receiving request body
+
+.. varnish_vsc:: rx_junk
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for received junk data
+
+.. varnish_vsc:: rx_overflow
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for receive buffer overflow
+
+.. varnish_vsc:: rx_timeout
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for receive timeout
+
+.. varnish_vsc:: tx_proxy
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for proxy transaction
+
+.. varnish_vsc:: tx_pipe
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for piped transaction
+
+.. varnish_vsc:: tx_error
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for error transaction
+
+.. varnish_vsc:: tx_eof
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for EOF transmission
+
+.. varnish_vsc:: resp_close
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for backend/VCL requested close
+
+.. varnish_vsc:: overload
+	:type:	counter
+	:level: info
+	:oneliner:	Connection closed for out of some resource
+
 ..
 	=== Anything below is actually per VCP entry, but collected per
 	=== backend for simplicity

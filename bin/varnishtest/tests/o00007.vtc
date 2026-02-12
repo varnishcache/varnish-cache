@@ -1,0 +1,50 @@
+varnishtest "Failing to send proxy headers to backend"
+
+server s1 {} -start
+
+varnish v1 -vcl {
+	backend default {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.proxy_header = 2;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +proxy_error"
+
+logexpect l1 -v v1 {
+	expect * 1002 Timestamp {^Connected:}
+	expect * 1002 FetchError {^backend default: proxy write errno}
+	expect * 1002 BackendClose {default close TX_ERROR}
+} -start
+
+client c1 {
+	txreq
+	rxresphdrs
+	expect resp.status == 503
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect MAIN.backend_conn == 1
+varnish v1 -expect MAIN.backend_req == 0
+varnish v1 -expect MAIN.backend_closed == 1
+varnish v1 -expect MAIN.backend_closed_err == 1
+
+varnish v1 -expect MAIN.bc_rx_bad == 0
+varnish v1 -expect MAIN.bc_rem_close == 0
+varnish v1 -expect MAIN.bc_rx_timeout == 0
+varnish v1 -expect MAIN.bc_tx_error == 1
+varnish v1 -expect MAIN.bc_tx_proxy == 0
+
+varnish v1 -expect VBE.vcl1.default.conn == 0
+varnish v1 -expect VBE.vcl1.default.req == 0
+varnish v1 -expect VBE.vcl1.default.fail == 0
+varnish v1 -expect VBE.vcl1.default.closed == 1
+varnish v1 -expect VBE.vcl1.default.closed_err == 1
+
+varnish v1 -expect VBE.vcl1.default.rx_bad == 0
+varnish v1 -expect VBE.vcl1.default.rem_close == 0
+varnish v1 -expect VBE.vcl1.default.rx_timeout == 0
+varnish v1 -expect VBE.vcl1.default.tx_error == 1
+varnish v1 -expect VBE.vcl1.default.tx_proxy == 0

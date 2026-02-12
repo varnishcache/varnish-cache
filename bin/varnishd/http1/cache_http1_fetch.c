@@ -229,9 +229,9 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			VSLb(bo->vsl, SLT_FetchError, "Received junk");
 			htc->doclose = SC_RX_JUNK;
 			break;
-		case HTC_S_CLOSE:
+		case HTC_S_EOF:
 			VSLb(bo->vsl, SLT_FetchError, "backend closed");
-			htc->doclose = SC_RESP_CLOSE;
+			htc->doclose = SC_REM_CLOSE;
 			break;
 		case HTC_S_TIMEOUT:
 			VSLb(bo->vsl, SLT_FetchError, "timeout");
