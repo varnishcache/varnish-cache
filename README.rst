@@ -3,6 +3,12 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
+=========================
+IMPORTANT - WE ARE MOVING
+=========================
+
+Read this: https://vinyl-cache.org/organization/moving.html
+
 Varnish Cache
 =============
 
