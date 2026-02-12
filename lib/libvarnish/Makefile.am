@@ -11,7 +11,6 @@ AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 noinst_LTLIBRARIES = libvarnish.la
 
 libvarnish_la_CFLAGS = \
-	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	$(AM_CFLAGS)
 
 libvarnish_la_SOURCES = \

@@ -647,6 +647,10 @@ else
 fi
 AC_SUBST(VARNISH_STATE_DIR)
 
+# Default relative name for working directory
+VARNISH_DEFAULT_REL_NAME='varnishd'
+AC_SUBST(VARNISH_DEFAULT_REL_NAME)
+
 # Default configuration directory.
 pkgsysconfdir='${sysconfdir}/varnish'
 AC_SUBST(pkgsysconfdir)
@@ -931,6 +935,7 @@ AC_CONFIG_FILES([
     doc/sphinx/conf.py
     etc/Makefile
     include/Makefile
+    include/vapi/workdir.h
     lib/Makefile
     lib/libvsc/Makefile
     lib/libvarnish/Makefile
