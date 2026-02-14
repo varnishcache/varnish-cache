@@ -125,7 +125,7 @@ jobs:
   package:
     parameters:
       platform:
-        description: the Linux distribution, with release, e.g. debian:bookworm, fedora:latest
+        description: the Linux distribution, with release, e.g. debian:trixie, fedora:latest
         type: string
       rclass:
         description: the resource class to use, usually arm.medium or medium
@@ -205,7 +205,7 @@ jobs:
         description: the Linux distribution (debian|ubuntu)
         type: string
       release:
-        description: the release name (bookworm|focal|jammy|noble)
+        description: the release name (bookworm|trixie|jammy|noble)
         type: string
       make_target:
         description: the make target to execute during the build
@@ -394,11 +394,11 @@ workflows:
           name: build_debian_bookworm
           dist: debian
           release: bookworm
-      # latest ubuntu uses sanitizers
       - build:
-          name: build_ubuntu_focal
-          dist: ubuntu
-          release: focal
+          name: build_debian_trixie
+          dist: debian
+          release: trixie
+      # latest ubuntu uses sanitizers
       - build:
           name: build_ubuntu_jammy
           dist: ubuntu
@@ -433,10 +433,10 @@ workflows:
           matrix:
             parameters:
               platform:
-                - ubuntu:focal
                 - ubuntu:jammy
                 - ubuntu:noble
                 - debian:bookworm
+                - debian:trixie
                 - almalinux:8
                 - almalinux:9
                 - fedora:latest
