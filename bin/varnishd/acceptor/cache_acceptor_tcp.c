@@ -398,6 +398,7 @@ vca_tcp_make_session(struct worker *wrk, void *arg)
 
 	vca_pace_good();
 	wrk->stats->sess_conn++;
+	DRAIN_IncSess();
 
 	if (wa->acceptlsock->test_heritage) {
 		vca_tcp_sockopt_test(wa->acceptlsock, sp);

@@ -35,6 +35,7 @@
 
 #include <sys/types.h>
 
+#include <math.h>
 #include <poll.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -56,6 +57,7 @@
 #include "vev.h"
 #include "vfil.h"
 #include "vlu.h"
+#include "vnum.h"
 #include "vtim.h"
 
 #include "common/heritage.h"
@@ -82,6 +84,8 @@ static const char * const ch_state[] = {
 	[CH_STOPPING] =	"stopping",
 	[CH_DIED] =	"died, (restarting)",
 };
+
+static int		mgt_draining = 0;	/* Drain in progress */
 
 static struct vev	*ev_poker;
 static struct vev	*ev_listen;
@@ -273,8 +277,10 @@ child_poker(const struct vev *e, int what)
 
 	(void)e;
 	(void)what;
-	if (child_state != CH_RUNNING)
+	if (child_state != CH_RUNNING) {
+		ev_poker = NULL;	/* VEV will free, clear our pointer */
 		return (1);
+	}
 	if (child_pid < 0)
 		return (0);
 	if (mgt_cli_askchild(&status, &r, "ping\n") || strncmp("PONG ", r, 5)) {
@@ -632,8 +638,10 @@ mgt_reap_child(void)
 		mgt_launch_child(NULL);
 	else if (child_state == CH_DIED)
 		child_state = CH_STOPPED;
-	else if (child_state == CH_STOPPING)
+	else if (child_state == CH_STOPPING) {
 		child_state = CH_STOPPED;
+		mgt_draining = 0;
+	}
 }
 
 /*=====================================================================
@@ -758,15 +766,67 @@ mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mch_cli_server_stop(struct cli *cli, const char * const *av, void *priv)
 {
+	vtim_dur timeout = 0.0;
+	unsigned status;
+	char *r = NULL;
+	char cmd[64];
 
-	(void)av;
 	(void)priv;
-	if (child_state == CH_RUNNING) {
-		MCH_Stop_Child();
-	} else {
+
+	if (child_state != CH_RUNNING) {
 		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
+		return;
 	}
+
+	/* Parse optional -t parameter */
+	if (av[2] != NULL) {
+		if (strcmp(av[2], "-t") != 0) {
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Unknown option: %s", av[2]);
+			return;
+		}
+		/* Default to shutdown_timeout parameter */
+		timeout = mgt_param.shutdown_timeout;
+		/* Check for optional timeout value */
+		if (av[3] != NULL) {
+			/* Try duration format first, then bare number */
+			timeout = VNUM_duration(av[3]);
+			if (isnan(timeout))
+				timeout = VNUM(av[3]);
+			if (isnan(timeout) || timeout < 0) {
+				VCLI_SetResult(cli, CLIS_PARAM);
+				VCLI_Out(cli, "Invalid timeout value: %s", av[3]);
+				return;
+			}
+		}
+	}
+
+	if (timeout > 0.0) {
+		/*
+		 * Send drain command to child.  The child will stop
+		 * accepting new connections, add Connection: close to
+		 * responses, and exit when all sessions are closed or
+		 * the timeout expires.  The manager's event loop will
+		 * detect the child exit and call mgt_reap_child().
+		 */
+		bprintf(cmd, "debug.drain %.3fs\n", timeout);
+		if (mgt_cli_askchild(&status, &r, "%s", cmd) != 0) {
+			VCLI_SetResult(cli, CLIS_COMMS);
+			VCLI_Out(cli, "Failed to start drain: %s",
+			    r ? r : "communication error");
+			free(r);
+			return;
+		}
+		free(r);
+
+		child_state = CH_STOPPING;
+		mgt_draining = 1;
+		VCLI_Out(cli, "Draining for %.0f seconds", timeout);
+		return;
+	}
+
+	MCH_Stop_Child();
 }
 
 static void v_matchproto_(cli_func_t)
